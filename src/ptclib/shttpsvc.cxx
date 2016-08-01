@@ -75,6 +75,7 @@ PSecureHTTPServiceProcess::~PSecureHTTPServiceProcess()
 
 void PSecureHTTPServiceProcess::DisableSSL()
 {
+  PSYSTEMLOG(Info, "SSL disabled");
   delete m_sslContext;
   m_sslContext = NULL;
 }
@@ -130,6 +131,7 @@ PChannel * PSecureHTTPServiceProcess::CreateChannelForHTTP(PChannel * channel)
     return ssl;
 
   PSYSTEMLOG(Error, "Accept failed: " << ssl->GetErrorText());
+  ssl->Detach();
   delete ssl;
   return NULL;
 }
@@ -146,9 +148,6 @@ bool PSecureHTTPServiceProcess::SetServerCertificate(const PFilePath & certifica
                                                      bool create,
                                                      const char * dn)
 {
-  if (m_sslContext == NULL)
-    m_sslContext = new PSSLContext;
-
   if (create && !PFile::Exists(certificateFile)) {
     PSSLPrivateKey key(1024);
     PSSLCertificate certificate;
@@ -167,15 +166,24 @@ bool PSecureHTTPServiceProcess::SetServerCertificate(const PFilePath & certifica
     key.Save(certificateFile, true);
   }
 
-  if (m_sslContext->UseCertificate(certificateFile) && m_sslContext->UsePrivateKey(certificateFile))
-    return true;
+  return SetServerCredentials(certificateFile, certificateFile, PString::Empty());
+}
+
+
+bool PSecureHTTPServiceProcess::SetServerCredentials(const PString & cert, const PString & key, const PString & ca)
+{
+  if (m_sslContext == NULL)
+    m_sslContext = new PSSLContext(PSSLContext::TLSv1);
+
+  if (m_sslContext->SetCredentials(ca, cert, key))
+      return true;
 
   DisableSSL();
   return false;
 }
 
 PBoolean PSecureHTTPServiceProcess::OnDetectedNonSSLConnection(PChannel * chan, const PString & line)
-{ 
+{
   // get the MIME info
   PMIMEInfo mime(*chan);
 
@@ -206,7 +214,10 @@ PBoolean PSecureHTTPServiceProcess::OnDetectedNonSSLConnection(PChannel * chan, 
     }
   }
 
-  PString str = CreateNonSSLMessage(PString("http://") + url);
+  url.Splice("http://", 0);
+  PSYSTEMLOG(Info, "Detected non-SSL connection, redirecting to " << url);
+
+  PString str = CreateNonSSLMessage(url);
   
   chan->WriteString(str);
   chan->Close();

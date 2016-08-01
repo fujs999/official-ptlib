@@ -1316,7 +1316,6 @@ void PTimer::List::Timeout::Work()
     if (list->OnTimeout(m_handle))
       return;
 
-    PTRACE(5, NULL, PTraceModule(), "Timer: [" << m_handle << "] already in OnTimeout(), waiting.");
     PThread::Sleep(10);
   }
 }
@@ -1337,8 +1336,13 @@ bool PTimer::List::OnTimeout(PIdGenerator::Handle handle)
     if (!timer->m_oneshot && !timer->m_running)
       return true; // Was recurring timer and was stopped
 
-    if (!timer->m_callbackMutex.Try())
+    if (!timer->m_callbackMutex.Try()) {
+      PTRACE(4, timer, PTraceModule(), "Timer: [handle=" << handle << ","
+                                              " ptr=" << timer << ","
+                                              " name=\"" << timer->m_threadName << "\"]"
+                                              " already in OnTimeout(), waiting.");
       return false; // Try again
+    }
 
     // Remove the expired one shot timers from map
     if (timer->m_oneshot && !timer->m_running)
@@ -2326,7 +2330,7 @@ void PProcess::PostShutdown()
 PProcess & PProcess::Current()
 {
   if (PProcessInstance == NULL) {
-    PAssertFunc("Catastrophic failure, PProcess::Current() = NULL!!");
+    PAssertAlways("Catastrophic failure, PProcess::Current() = NULL!!");
     PBreakToDebugger();
     _exit(1);
   }
