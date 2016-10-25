@@ -330,6 +330,7 @@ int PServiceProcess::InternalMain(void * arg)
     return 1;
   }
 
+  PArgList & arguments = GetArguments();
   m_debugMode = arguments.GetCount() > 0 && 
 	              (strcasecmp(arguments[0], "Debug") == 0 || strcasecmp(arguments[0], "foreground") == 0);
   m_debugHidden = arguments.GetCount() > 0 && strcasecmp(arguments[0], "DebugHidden") == 0;
@@ -930,7 +931,7 @@ void PServiceProcess::DebugOutput(const char * out)
   if (!IsWindowVisible(m_controlWindow) && !m_debugHidden)
     ShowWindow(m_controlWindow, SW_SHOWDEFAULT);
 
-  int len = strlen(out);
+  size_t len = strlen(out);
   while (GetWindowTextLength(m_debugWindow)+len >= 128000) {
     SendMessage(m_debugWindow, WM_SETREDRAW, false, 0);
     DWORD start, finish;
@@ -947,7 +948,7 @@ void PServiceProcess::DebugOutput(const char * out)
   const char * prev = out;
   while ((lf = strchr(prev, '\n')) != NULL) {
     if (lf == out || *(lf-1) != '\r') {
-      size_t len = lf - out;
+      len = lf - out;
       char * line = (char *)alloca(len+3);
       memcpy(line, out, len);
       strcpy(line+len, crlfString);
@@ -1008,7 +1009,7 @@ void PServiceProcess::MainEntry(DWORD argc, LPTSTR * argv)
 
   CloseHandle(m_startedEvent);
   CloseHandle(m_terminationEvent);
-  ReportStatus(SERVICE_STOPPED, terminationValue);
+  ReportStatus(SERVICE_STOPPED, GetTerminationValue());
 }
 
 
@@ -1046,7 +1047,7 @@ void PServiceProcess::ThreadEntry()
       DebugOutput("Failed to initialise service.\n");
   }
 
-  ReportStatus(SERVICE_STOP_PENDING, terminationValue, 1, 30000);
+  ReportStatus(SERVICE_STOP_PENDING, GetTerminationValue(), 1, 30000);
   SetEvent(m_terminationEvent);
 }
 
