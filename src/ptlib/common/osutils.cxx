@@ -2116,6 +2116,8 @@ PProcess::PProcess(const char * manuf, const char * name,
   m_version.m_minor = minor;
   m_version.m_status = stat;
   m_version.m_build = build;
+  m_version.m_svn = 0;
+  m_version.m_git = NULL;
 
   m_activeThreads[GetThreadId()] = this;
 
@@ -2147,7 +2149,7 @@ PProcess::PProcess(const char * manuf, const char * name,
   char path[10000];
   uint32_t size = sizeof(path);
   if (_NSGetExecutablePath(path, &size) == 0)
-    executableFile = path;
+    m_executableFile = path;
 #elif defined(P_RTEMS)
   cout << "Enter program arguments:\n";
   arguments.ReadFrom(cin);
