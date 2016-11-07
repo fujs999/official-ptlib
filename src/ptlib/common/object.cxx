@@ -2181,7 +2181,7 @@ namespace PProfiling
       unsigned level = isTime && percentOver >= m_thresholdPercent ? m_throttledLogLevel : m_unthrottledLogLevel;
 
       if (PTrace::CanTrace(level)) {
-        ostream & trace = PTRACE_BEGIN(level, object, "TimeScope");
+        ostream & trace = PTrace::Begin(level, m_file, m_line, object, "TimeScope");
         trace << m_name << ":"
                   " since=" << m_lastOutputTime.AsString(PTime::TodayFormat) << ","
               << setprecision(3) << scientific << showbase << m_mma << noshowbase
