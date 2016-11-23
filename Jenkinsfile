@@ -19,6 +19,11 @@ pipeline {
         // Then let rpmbuild and the spec file handle the rest
         sh "rpmbuild -ta --define='jenkins_release .${env.BUILD_NUMBER}' ~/rpmbuild/SOURCES/zsdk-ptlib.src.tgz"
       }
+      post {
+        success {
+          archive "~/rpmbuild/RPMS/**/*"
+        }
+      }
     }
     stage('publish-staging') {
       when {
