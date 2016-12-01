@@ -1,48 +1,50 @@
 pipeline {
-  // Build within a clean CentOS 6 container
-  agent label:'docker', docker:'centos:6'
+  // Build environment is defined by the Dockerfile
+  agent dockerfile:true
   stages {
-    stage('prep') {
-      steps {
-        // Install the necessary RPM tools
-        sh 'sudo yum install -y rpmdevtools yum-utils'
-        // Install build dependencies for the target package
-        sh 'sudo yum-builddep bbcollab-ptlib.spec'
-        // Create the rpmbuild directory tree
-        sh 'rpmdev-setuptree'
-      }
-    }
     stage('package') {
       steps {
+        // Create the rpmbuild directory tree
+        sh "HOME=$WORKSPACE rpmdev-setuptree"
+        sh "HOME=$WORKSPACE rpmdev-wipetree"
         // Create our source tarball
-        sh 'tar -czf ~/rpmbuild/SOURCES/zsdk-ptlib.src.tgz --exclude-vcs .'
+        sh 'tar -czf rpmbuild/SOURCES/zsdk-ptlib.src.tgz --exclude-vcs --exclude=rpmbuild .'
         // Then let rpmbuild and the spec file handle the rest
-        sh "rpmbuild -ta --define='jenkins_release .${env.BUILD_NUMBER}' ~/rpmbuild/SOURCES/zsdk-ptlib.src.tgz"
+        sh "HOME=$WORKSPACE rpmbuild -ta --define='jenkins_release .${env.BUILD_NUMBER}' rpmbuild/SOURCES/zsdk-ptlib.src.tgz"
       }
       post {
         success {
-          archive "~/rpmbuild/RPMS/**/*"
+          fingerprint 'build-deps/*.rpm'
+          archive 'rpmbuild/RPMS/**/*'
         }
       }
     }
-    stage('publish-staging') {
+    stage('publish-develop') {
       when {
-        env.BRANCH == 'staging'
+        env.BRANCH_NAME == 'staging'
       }
       steps {
-        // TODO
+        build job: '/rpm-repo-deploy', parameters: [string(name: 'SOURCE_JOB', value: "$JOB_NAME"), string(name: 'SOURCE_BUILD', value: "$BUILD_NUMBER"), string(name: 'DEST_REPO', value: 'mcu-develop')], quietPeriod: 0
+      }
+    }
+    stage('publish-release') {
+      when {
+        env.BRANCH_NAME ==~ /release\/.*/
+      }
+      steps {
+        build job: '/rpm-repo-deploy', parameters: [string(name: 'SOURCE_JOB', value: "$JOB_NAME"), string(name: 'SOURCE_BUILD', value: "$BUILD_NUMBER"), string(name: 'DEST_REPO', value: 'mcu-release')], quietPeriod: 0
       }
     }
   }
   post {
     success {
-      hipchatSend color: "GREEN", message: "Build Successful: ${env.JOB_NAME} ${env.BUILD_NUMBER}"
+      hipchatSend color: "GREEN", message: "SUCCESS: <a href=\"${currentBuild.absoluteUrl}\">${currentBuild.fullDisplayName}</a>"
     }
     failure {
-      hipchatSend color: "RED", message: "Build Failed: ${env.JOB_NAME} ${env.BUILD_NUMBER}"
+      hipchatSend color: "RED", message: "FAILURE: <a href=\"${currentBuild.absoluteUrl}\">${currentBuild.fullDisplayName}</a>"
     }
     unstable {
-      hipchatSend color: "YELLOW", message: "Build Unstable: ${env.JOB_NAME} ${env.BUILD_NUMBER}"
+      hipchatSend color: "YELLOW", message: "UNSTABLE: <a href=\"${currentBuild.absoluteUrl}\">${currentBuild.fullDisplayName}</a>"
     }
   }
 }

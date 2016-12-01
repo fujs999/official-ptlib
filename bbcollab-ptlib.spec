@@ -1,5 +1,9 @@
+%global version_major  2
+%global version_minor  17
+%global version_bugfix 1
+
 Name:           bbcollab-ptlib
-Version:        2.17.1
+Version:        %{version_major}.%{version_minor}.%{version_bugfix}
 Release:        1%{?jenkins_release}%{?dist}
 Summary:        PTLib: Portable Tools Library
 
@@ -12,7 +16,6 @@ BuildRequires:  %__sed
 BuildRequires:  bbcollab-gcc >= 5.1.0
 BuildRequires:  gperftools
 BuildRequires:  bbcollab-openssl-devel
-Requires:       bbcollab-openssl
 
 %description
 PTLib: Portable Tools Library
@@ -26,7 +29,6 @@ Requires:       bbcollab-openssl-devel
 %description    devel
 The %{name}-devel package contains libraries and header files for
 developing applications that use %{name}.
-
 
 %package        static
 Summary:        Development files for %{name}
@@ -75,9 +77,9 @@ BUILDVER=$(echo %{version} | sed -r 's/[0-9]+\.[0-9]+\.([0-9]+).*/\1/')
         CXX=/opt/bbcollab/bin/g++ \
         LD=/opt/bbcollab/bin/g++ \
         LDFLAGS=-Wl,--build-id \
-        PTLIB_MAJOR=$MAJORVER \
-        PTLIB_MINOR=$MINORVER \
-        PTLIB_BUILD=$BUILDVER
+        PTLIB_MAJOR=%{version_major} \
+        PTLIB_MINOR=%{version_minor} \
+        PTLIB_BUILD=%{version_bugfix}
 make %{?_smp_mflags} all
 
 
@@ -118,4 +120,3 @@ rm -rf $RPM_BUILD_ROOT
 %changelog
 * Mon Nov 21 2016 Gavin Llewellyn <gavin.llewellyn@blackboard.com> - 2.17.1-1
 - Initial RPM release
-
