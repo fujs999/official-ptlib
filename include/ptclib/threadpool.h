@@ -501,10 +501,17 @@ class PQueuedThreadPool : public PThreadPool<Work_T>
                                const PTimeInterval & PTRACE_PARAM(latency),
                                const string & PTRACE_PARAM(group))
     {
+      if (this->m_maxWorkUnitCount > 0) {
+#if PTRACING
+        TraceMaxWaitTime(2, "using max work units, threads=", 0, thread, latency, group);
+#endif
+        return;
+      }
+
       PTime now;
       if (this->m_nextWorkerIncreaseTime > now) {
 #if PTRACING
-        TraceMaxWaitTime(5, "recent adjustment prevents increase of", 0, thread, latency, group);
+        TraceMaxWaitTime(5, "recent adjustment prevents increase, threads=", 0, thread, latency, group);
 #endif
         return;
       }
@@ -514,13 +521,13 @@ class PQueuedThreadPool : public PThreadPool<Work_T>
       unsigned newMaxWorkers = std::min((this->m_maxWorkerCount*11+9)/10, this->m_workerIncreaseLimit);
       if (newMaxWorkers == this->m_maxWorkerCount) {
 #if PTRACING
-        TraceMaxWaitTime(2, "cannot increase", newMaxWorkers, thread, latency, group);
+        TraceMaxWaitTime(2, "cannot increase threads from ", newMaxWorkers, thread, latency, group);
 #endif
         return;
       }
 
 #if PTRACING
-      TraceMaxWaitTime(2, "increasing pool", newMaxWorkers, thread, latency, group);
+      TraceMaxWaitTime(2, "increasing pool threads from ", newMaxWorkers, thread, latency, group);
 #endif
       this->m_maxWorkerCount = newMaxWorkers;
     }
@@ -541,10 +548,10 @@ class PQueuedThreadPool : public PThreadPool<Work_T>
           trace << " (group=\"" << group << "\")";
         trace << " latency excessive (" << latency << "s > " << this->m_workerIncreaseLatency << "s,"
                  " work-size=" << thread.GetWorkSize() << "), "
-              << msg << " threads from " << this->m_maxWorkerCount;
+              << msg << this->m_maxWorkerCount;
         if (newMaxWorkers > 0)
           trace << " to " << newMaxWorkers;
-        trace << ", max=" << this->m_workerIncreaseLimit
+        trace << ", limit=" << this->m_workerIncreaseLimit
               << PTrace::End;
       }
     }
