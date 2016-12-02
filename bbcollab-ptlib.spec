@@ -1,9 +1,9 @@
 %global version_major  2
 %global version_minor  17
-%global version_bugfix 1
+%global version_patch 1
 
 Name:           bbcollab-ptlib
-Version:        %{version_major}.%{version_minor}.%{version_bugfix}
+Version:        %{version_major}.%{version_minor}.%{version_patch}
 Release:        1%{?jenkins_release}%{?dist}
 Summary:        PTLib: Portable Tools Library
 
@@ -71,7 +71,8 @@ BUILDVER=$(echo %{version} | sed -r 's/[0-9]+\.[0-9]+\.([0-9]+).*/\1/')
         --disable-sasl \
         --disable-openldap \
         --disable-plugins \
-        --enable-cpp11 \
+        --enable-cpp14 \
+        --enable-debug \
         OPT_CFLAGS=-fno-strict-aliasing \
         CC=/opt/bbcollab/bin/gcc \
         CXX=/opt/bbcollab/bin/g++ \
@@ -79,7 +80,7 @@ BUILDVER=$(echo %{version} | sed -r 's/[0-9]+\.[0-9]+\.([0-9]+).*/\1/')
         LDFLAGS=-Wl,--build-id \
         PTLIB_MAJOR=%{version_major} \
         PTLIB_MINOR=%{version_minor} \
-        PTLIB_BUILD=%{version_bugfix}
+        PTLIB_BUILD=%{version_patch}
 make %{?_smp_mflags} all
 
 
