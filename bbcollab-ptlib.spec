@@ -83,7 +83,6 @@ PKG_CONFIG_PATH=/opt/bbcollab/lib64/pkgconfig:/opt/bbcollab/lib/pkgconfig
         --disable-openldap \
         --disable-plugins \
         --enable-cpp14 \
-        OPT_CFLAGS=-fno-strict-aliasing \
         CC=/opt/bbcollab/bin/gcc \
         CXX=/opt/bbcollab/bin/g++ \
         LD=/opt/bbcollab/bin/g++ \
