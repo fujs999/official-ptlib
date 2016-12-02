@@ -924,11 +924,11 @@ class PHTTPConnectionInfo : public PObject
 
     /**Get the maximum time a persistent connection may persist.
       */
-    PTimeInterval GetPersistenceTimeout() const { return persistenceTimeout; }
+    PTimeInterval GetPersistenceTimeout() const { return PTimeInterval(0,persistenceSeconds); }
 
     /**Set the maximum time a persistent connection may persist.
       */
-    void SetPersistenceTimeout(const PTimeInterval & t) { persistenceTimeout = t; }
+    void SetPersistenceTimeout(const PTimeInterval & t) { persistenceSeconds = t.GetSeconds(); }
 
     /**Get the maximum number of transations (GET/POST etc) for persistent connection.
        If this is zero then there is no maximum.
@@ -967,7 +967,7 @@ class PHTTPConnectionInfo : public PObject
     int             minorVersion;
     PString         entityBody;        // original entity body (POST only)
     long            entityBodyLength;
-    PTimeInterval   persistenceTimeout;
+    unsigned        persistenceSeconds;
     unsigned        persistenceMaximum;
     PMultiPartList  m_multipartFormInfo;
 
@@ -1230,9 +1230,16 @@ class PHTTPServer : public PHTTP
       const PString & protocol
     );
 
+    /// Set start of service time
+    void SetServiceStartTime(const PTime & startTime) { m_serviceStartTime = startTime; }
+
+    /// Get start of service time
+    const PTime & GetServiceStartTime() const { return m_serviceStartTime; }
+
   protected:
     void Construct();
 
+    PTime               m_serviceStartTime;
     PHTTPSpace          m_urlSpace;
     PHTTPConnectionInfo m_connectInfo;
     unsigned            m_transactionCount;
@@ -1286,6 +1293,7 @@ public:
 
     PHTTPListener & m_listener;
     PTCPSocket    * m_socket;
+    PTime           m_queuedTime;
   };
   typedef PQueuedThreadPool<Worker> ThreadPool;
   const ThreadPool & GetThreadPool() const { return m_threadPool; }
