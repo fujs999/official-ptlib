@@ -39,6 +39,7 @@ Summary:        Development files for %{name}
 Group:          Development/Libraries
 Requires:       %{name} = %{version}-%{release}
 Requires:       bbcollab-openssl-devel
+Requires:       unixODBC-devel
 
 %description    devel
 The %{name}-devel package contains libraries and header files for
