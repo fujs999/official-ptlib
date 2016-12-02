@@ -61,9 +61,6 @@ developing applications that use %{name}.
 
 %build
 PKG_CONFIG_PATH=/opt/bbcollab/lib64/pkgconfig:/opt/bbcollab/lib/pkgconfig
-MAJORVER=$(echo %{version} | sed -r 's/([0-9]+)\..*/\1/')
-MINORVER=$(echo %{version} | sed -r 's/[0-9]+\.([0-9]+)\..*/\1/')
-BUILDVER=$(echo %{version} | sed -r 's/[0-9]+\.[0-9]+\.([0-9]+).*/\1/')
 %configure --prefix=/opt/bbcollab \
         --exec-prefix=/opt/bbcollab \
         --bindir=/opt/bbcollab/bin \
