@@ -87,7 +87,6 @@ PKG_CONFIG_PATH=/opt/bbcollab/lib64/pkgconfig:/opt/bbcollab/lib/pkgconfig
         CC=/opt/bbcollab/bin/gcc \
         CXX=/opt/bbcollab/bin/g++ \
         LD=/opt/bbcollab/bin/g++ \
-        LDFLAGS=-Wl,--build-id \
         PTLIB_MAJOR=%{version_major} \
         PTLIB_MINOR=%{version_minor} \
         PTLIB_BUILD=%{version_patch}
@@ -103,6 +102,7 @@ find $RPM_BUILD_ROOT -name '*.la' -exec rm -f {} ';'
 %clean
 rm -rf $RPM_BUILD_ROOT
 
+
 # No need to call ldconfig, as we're not installing to the default dynamic linker path
 #%post -p /sbin/ldconfig
 
@@ -111,12 +111,11 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-,root,root,-)
-%doc
+%doc ReadMe.txt History.txt
 /opt/bbcollab/lib64/*.so.*
 
 %files devel
 %defattr(-,root,root,-)
-%doc
 /opt/bbcollab/include/*
 /opt/bbcollab/lib64/*.so
 /opt/bbcollab/lib64/pkgconfig/*.pc
@@ -124,7 +123,6 @@ rm -rf $RPM_BUILD_ROOT
 
 %files static
 %defattr(-,root,root,-)
-%doc
 /opt/bbcollab/lib64/*.a
 
 
