@@ -16,10 +16,19 @@ file.
     ./mockbuild.sh
 
 The provided mock config file, `mcu-epel-6-x86_64.cfg`, adds MCU yum
-repository definitions, though only the release repository is enabled by
-default. If you need a newer, unreleased version of an MCU dependency,
-additional repositories can be enabled by adding an `--enablerepo` flag to the
-`mock` command, e.g. `--enablerepo=mcu-develop`.
+repository definitions. If you need to build against an RPM that is not
+available from Nexus, use the following steps to set up an `mcu-local` repo:
+
+    mkdir /tmp/mcu-local
+    cp some.rpm /tmp/mcu-local
+    createrepo /tmp/mcu-local
+    ./mockbuild.sh --enablerepo=mcu-local
+
+If any of your RPMs in mcu-local are older versions of ones available from
+Nexus, you will either need to specify explicit versions in the spec file, or
+disable the Nexus repos and provide all MCU RPMs in the local repo:
+
+    ./mockbuild.sh --enablerepo=mcu-local --disablerepo=mcu-release --disablerepo=mcu-develop
 
 ### Jenkins build
 

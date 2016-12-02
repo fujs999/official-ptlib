@@ -16,8 +16,8 @@ fi
 # Build the source RPM
 mkdir -p rpmbuild/SOURCES
 tar -czf rpmbuild/SOURCES/zsdk-ptlib.src.tgz --exclude-vcs --exclude=rpmbuild .
-mock --root=mcu-epel-6-x86_64.cfg --buildsrpm --spec bbcollab-ptlib.spec --sources rpmbuild/SOURCES --resultdir rpmbuild/SRPMS
+mock --root=mcu-epel-6-x86_64.cfg $@ --buildsrpm --spec bbcollab-ptlib.spec --sources rpmbuild/SOURCES --resultdir rpmbuild/SRPMS
 
 # Build the final RPMs
-mock --root=mcu-epel-6-x86_64.cfg --resultdir rpmbuild/RPMS rpmbuild/SRPMS/bbcollab-ptlib-*.el6.src.rpm
+mock --root=mcu-epel-6-x86_64.cfg $@ --resultdir rpmbuild/RPMS rpmbuild/SRPMS/bbcollab-ptlib-*.el6.src.rpm
 
