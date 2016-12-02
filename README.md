@@ -87,7 +87,8 @@ builds on the existing Jenkins by changing everything.
 1. Perform appropriate testing of the release candidate, and apply additional
    commits to the branch as needed. Non-trivial fixes should be performed on an
    additional `bugfix/` branch (with an increment to the Release number in the
-   spec file) to allow for code review.
+   spec file) to allow for code review. Note that Jenkins will build commits to
+   the bugfix branch, but will not publish the output to Nexus.
 1. When testing has completed, tag the final release commit.
 1. Once the release is tagged, merge it back into the integration branch as
    follows:
