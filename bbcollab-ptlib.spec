@@ -14,8 +14,22 @@ Source0:        zsdk-ptlib.src.tgz
 
 BuildRequires:  %__sed
 BuildRequires:  bbcollab-gcc >= 5.1.0
-BuildRequires:  gperftools
 BuildRequires:  bbcollab-openssl-devel
+BuildRequires:  gperftools
+# The following are recommended here: http://wiki.opalvoip.org/index.php?n=Main.BuildingPTLibUnix
+BuildRequires:  cyrus-sasl-devel
+BuildRequires:  expat-devel
+# gstreamer 0.10 support seems to be broken, but 1.0 isn't available
+#BuildRequires:  gstreamer-plugins-base-devel
+#BuildRequires:  gstreamer-devel
+BuildRequires:  libjpeg-devel
+BuildRequires:  libpcap-devel
+BuildRequires:  lua-devel
+BuildRequires:  ncurses-devel
+BuildRequires:  openldap-devel
+BuildRequires:  SDL-devel
+BuildRequires:  unixODBC-devel
+BuildRequires:  v8-devel
 
 %description
 PTLib: Portable Tools Library
@@ -72,7 +86,6 @@ BUILDVER=$(echo %{version} | sed -r 's/[0-9]+\.[0-9]+\.([0-9]+).*/\1/')
         --disable-openldap \
         --disable-plugins \
         --enable-cpp14 \
-        --enable-debug \
         OPT_CFLAGS=-fno-strict-aliasing \
         CC=/opt/bbcollab/bin/gcc \
         CXX=/opt/bbcollab/bin/g++ \
