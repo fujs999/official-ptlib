@@ -41,10 +41,10 @@ pipeline {
       hipchatSend color: "GREEN", message: "SUCCESS: <a href=\"${currentBuild.absoluteUrl}\">${currentBuild.fullDisplayName}</a>"
     }
     failure {
-      hipchatSend color: "RED", message: "FAILURE: <a href=\"${currentBuild.absoluteUrl}\">${currentBuild.fullDisplayName}</a>"
+      hipchatSend color: "RED", message: "FAILURE: <a href=\"${currentBuild.absoluteUrl}\">${currentBuild.fullDisplayName}</a>", notify: true
     }
     unstable {
-      hipchatSend color: "YELLOW", message: "UNSTABLE: <a href=\"${currentBuild.absoluteUrl}\">${currentBuild.fullDisplayName}</a>"
+      hipchatSend color: "YELLOW", message: "UNSTABLE: <a href=\"${currentBuild.absoluteUrl}\">${currentBuild.fullDisplayName}</a>", notify: true
     }
   }
 }
