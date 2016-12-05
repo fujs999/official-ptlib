@@ -1,10 +1,10 @@
 %global version_major  2
 %global version_minor  17
-%global version_patch 1
+%global version_patch 4
 
 Name:           bbcollab-ptlib
 Version:        %{version_major}.%{version_minor}.%{version_patch}
-Release:        1%{?jenkins_release}%{?dist}
+Release:        0.0.1%{?jenkins_release}%{?dist}
 Summary:        PTLib: Portable Tools Library
 
 Group:          System Environment/Libraries
