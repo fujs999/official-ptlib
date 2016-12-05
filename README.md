@@ -41,7 +41,7 @@ results.
 ## Versioning
 
 The PTLib package version number should always match the version number of the
-open source releaase it is based on. If we have applied our own patches to this
+open source release it is based on. If we have applied our own patches to this
 release (generally via git commits rather than patches applied by the spec file)
 this should be reflected in the RPM release tag. Each time the upstream version
 is updated, we should reset the release tag to "0.0.1". Each time we merge a new
