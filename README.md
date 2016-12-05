@@ -40,32 +40,38 @@ results.
 
 ## Versioning
 
-The PTLib version number should follow the rules of [Semantic Versioning][2].
-Every merge (or direct commit) to the integration branch should include a
-version number update to the spec file.
+The PTLib package version number should always match the version number of the
+open source releaase it is based on. If we have applied our own patches to this
+release (generally via git commits rather than patches applied by the spec file)
+this should be reflected in the RPM release tag. Each time the upstream version
+is updated, we should reset the release tag to "0.0.1". Each time we merge a new
+patch into the integration branch, we should increment the release tag,
+following the rules of [Semantic Versioning][2] (we don't expect to increment
+the major version number with these changes).
 
-Note that the spec file is now considered the master copy of the version number,
-so the RPM build process should use this in favour of any version numbers
-elsewhere in the code. If you perform a local build, you may need to adjust any
-built-in version manually.
+To ensure consistency, the spec file is now considered the master copy of the
+version number, so the RPM build process will use this in favour of version
+numbers elsewhere in the code. However, if you perform a local (non-RPM) build,
+you may need to adjust any built-in version manually.
 
-The RPM release number should always remain at 1 on the integration branch. The
-number should be set to 2 in the first commit on a release branch, providing
-an easy way to distinguish a develop RPM from a release RPM of the same verison.
+The RPM release major version should always remain at 0 on the integration
+branch, and be incremented to 1 in the first commit on a release branch. This
+provides an easy way to distinguish a development RPM from a release RPM of the
+same verison.
 
 Note that Jenkins appends its build number to the release number, so it should
-be easy to distinguish RPMs that contain different code vs RPMs that are
+be easy to distinguish RPMs that contain functional changes vs RPMs that are
 different builds of the same code. If an RPM has been built outside of Jenkins
 the build number component should be missing.
 
 For example:
 
-    bbcollab-ptlib-2.17.1-1.2.el6.x86_64.rpm
+    bbcollab-ptlib-2.17.1-1.2.0.el6.x86_64.rpm
     package        ver    rel     arch
 
 * Package: bbcollab-ptlib
 * Version: 2.17.1
-* Release: 1.2.el6 (Release increment: 1, Jenkins build number: 2, Dist tag: el6)
+* Release: 1.2.0.55.el6 (Release RPM, Jenkins build number: 55, Dist tag: el6)
 * Arch: x86_64
 
 ## Branching
@@ -84,9 +90,11 @@ builds on the existing Jenkins by changing everything.
 
 1. Create a new release branch named `release/<YYYY-MM>` from an appropriate
    position on the integration branch.
-1. Update the Release number in the RPM spec file to 2 (should always be 1 on
-   the integration branch).
+1. Increment the major version component of the Release tag in the RPM spec file
+   to 1 (should always be 0 on the integration branch).
 1. Update the build dependencies in the RPM spec file to require exact versions.
+   Consider whether the release tag also needs to be included in the target
+   version (may vary from dependency to dependency).
    This makes it easier to go back and recreate a specific release build at a
    later date, even if newer versions of the build dependencies have been
    released.
@@ -95,7 +103,7 @@ builds on the existing Jenkins by changing everything.
    `mcu-release` yum repository on Nexus.
 1. Perform appropriate testing of the release candidate, and apply additional
    commits to the branch as needed. Non-trivial fixes should be performed on an
-   additional `bugfix/` branch (with an increment to the Release number in the
+   additional `bugfix/` branch (with an increment to the Release tag in the
    spec file) to allow for code review. Note that Jenkins will build commits to
    the bugfix branch, but will not publish the output to Nexus.
 1. When testing has completed, tag the final release commit.
@@ -108,8 +116,10 @@ builds on the existing Jenkins by changing everything.
 
    This allows you to make some changes before committing and pushingthe merge,
    effectively reverting the first commit on the release branch:
-   * Reset the Release number to 1
-   * Restore the normal build dependency version requirements (not exact)
+   * Reset the Release tag major version to 0 (don't change the other
+     components)
+   * Restore the normal build dependency version requirements (not exact, but
+     may have minimum required version)
 
 [1]: http://collab-jenkins.bbpd.io/job/zsdk-ptlib/
 [2]: http://semver.org/
