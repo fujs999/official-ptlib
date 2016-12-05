@@ -12,24 +12,26 @@ License:        MPL 1.0 + others
 URL:            https://stash.bbpd.io/projects/COL/repos/zsdk-ptlib/browse
 Source0:        zsdk-ptlib.src.tgz
 
+# Initial dependency list based on Opal wiki:
+# http://wiki.opalvoip.org/index.php?n=Main.BuildingPTLibUnix
+# Optional build dependencies not needed for the MCU are commented-out
 BuildRequires:  %__sed
 BuildRequires:  bbcollab-gcc >= 5.1.0
 BuildRequires:  bbcollab-openssl-devel
-BuildRequires:  gperftools
-# The following are recommended here: http://wiki.opalvoip.org/index.php?n=Main.BuildingPTLibUnix
-BuildRequires:  cyrus-sasl-devel
+#BuildRequires:  cyrus-sasl-devel
 BuildRequires:  expat-devel
+BuildRequires:  gperftools
 # gstreamer 0.10 support seems to be broken, but 1.0 isn't available
 #BuildRequires:  gstreamer-plugins-base-devel
 #BuildRequires:  gstreamer-devel
-BuildRequires:  libjpeg-devel
+#BuildRequires:  libjpeg-devel
 BuildRequires:  libpcap-devel
-BuildRequires:  lua-devel
+#BuildRequires:  lua-devel
 BuildRequires:  ncurses-devel
-BuildRequires:  openldap-devel
-BuildRequires:  SDL-devel
-BuildRequires:  unixODBC-devel
-BuildRequires:  v8-devel
+#BuildRequires:  openldap-devel
+#BuildRequires:  SDL-devel
+#BuildRequires:  unixODBC-devel
+#BuildRequires:  v8-devel
 
 %description
 PTLib: Portable Tools Library
@@ -39,7 +41,9 @@ Summary:        Development files for %{name}
 Group:          Development/Libraries
 Requires:       %{name} = %{version}-%{release}
 Requires:       bbcollab-openssl-devel
-Requires:       unixODBC-devel
+Requires:       expat-devel
+Requires:       libpcap-devel
+Requires:       ncurses-devel
 
 %description    devel
 The %{name}-devel package contains libraries and header files for
@@ -119,7 +123,7 @@ rm -rf $RPM_BUILD_ROOT
 /opt/bbcollab/include/*
 /opt/bbcollab/lib64/*.so
 /opt/bbcollab/lib64/pkgconfig/*.pc
-/opt/bbcollab/share/ptlib/make/*
+/opt/bbcollab/share/ptlib
 
 %files static
 %defattr(-,root,root,-)
