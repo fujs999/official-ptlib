@@ -11,6 +11,7 @@ pipeline {
         sh 'tar -czf rpmbuild/SOURCES/zsdk-ptlib.src.tgz --exclude-vcs --exclude=rpmbuild .'
         // Then let rpmbuild and the spec file handle the rest
         sh "HOME=$WORKSPACE rpmbuild -ta --define='jenkins_release .${env.BUILD_NUMBER}' rpmbuild/SOURCES/zsdk-ptlib.src.tgz"
+        sh 'cp -r /var/cache/jenkins/build-deps .'
       }
       post {
         success {
