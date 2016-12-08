@@ -719,13 +719,13 @@ PHTTPListener::PHTTPListener(unsigned maxWorkers)
 }
 
 
-bool PHTTPListener::ListenForHTTP(WORD port, PSocket::Reusability reuse)
+bool PHTTPListener::ListenForHTTP(WORD port, PSocket::Reusability reuse, unsigned queueSize)
 {
-  return ListenForHTTP(PString::Empty(), port, reuse);
+  return ListenForHTTP(PString::Empty(), port, reuse, queueSize);
 }
 
 
-bool PHTTPListener::ListenForHTTP(const PString & interfaces, WORD port, PSocket::Reusability reuse)
+bool PHTTPListener::ListenForHTTP(const PString & interfaces, WORD port, PSocket::Reusability reuse, unsigned queueSize)
 {
   if (port == 0) {
     PAssertAlways(PInvalidParameter);
@@ -752,7 +752,7 @@ bool PHTTPListener::ListenForHTTP(const PString & interfaces, WORD port, PSocket
     PIPSocket::Address binding(ifaces[i]);
     if (binding.IsValid()) {
       PTCPSocket * listener = new PTCPSocket(port);
-      if (listener->Listen(binding, 5, 0, reuse)) {
+      if (listener->Listen(binding, queueSize, 0, reuse)) {
         PTRACE(3, "Listening for HTTP on " << listener->GetLocalAddress());
         m_httpListeningSockets.Append(listener);
         atLeastOne = true;
@@ -1293,6 +1293,7 @@ bool PWebSocket::WriteHeader(OpCodes  opCode,
                              int64_t  masking)
 {
   BYTE header[14];
+  PUInt64b * pLen = (PUInt64b *)&header[2];
   PINDEX len = 2;
 
   header[0] = (BYTE)opCode;
@@ -1303,12 +1304,12 @@ bool PWebSocket::WriteHeader(OpCodes  opCode,
     header[1] = (BYTE)payloadLength;
   else if (payloadLength < 65536) {
     header[1] = 126;
-    *(PUInt16b *)&header[len] = (uint16_t)payloadLength;
+    *(PUInt16b *)pLen = (uint16_t)payloadLength;
     len += 2;
   }
   else {
     header[1] = 127;
-    *(PUInt64b *)&header[len] = payloadLength;
+    *pLen = payloadLength;
     len += 8;
   }
 
