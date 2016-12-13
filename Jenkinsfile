@@ -25,7 +25,17 @@ pipeline {
         env.BRANCH_NAME == 'staging'
       }
       steps {
-        build job: '/rpm-repo-deploy', parameters: [string(name: 'SOURCE_JOB', value: "$JOB_NAME"), string(name: 'SOURCE_BUILD', value: "$BUILD_NUMBER"), string(name: 'DEST_REPO', value: 'mcu-develop')], quietPeriod: 0
+        build job: '/rpm-repo-deploy', parameters: [
+          string(name: 'SOURCE_JOB', value: "$JOB_NAME"),
+          string(name: 'SOURCE_BUILD', value: "$BUILD_NUMBER"),
+          string(name: 'DEST_REPO', value: 'mcu-develop')
+        ], quietPeriod: 0
+      }
+      post {
+        success {
+          // Trigger builds of downstream staging/develop branches
+          build job: '/zsdk-opal/staging', wait: false
+        }
       }
     }
     stage('publish-release') {
@@ -33,7 +43,11 @@ pipeline {
         env.BRANCH_NAME ==~ /release\/.*/
       }
       steps {
-        build job: '/rpm-repo-deploy', parameters: [string(name: 'SOURCE_JOB', value: "$JOB_NAME"), string(name: 'SOURCE_BUILD', value: "$BUILD_NUMBER"), string(name: 'DEST_REPO', value: 'mcu-release')], quietPeriod: 0
+        build job: '/rpm-repo-deploy', parameters: [
+          string(name: 'SOURCE_JOB', value: "$JOB_NAME"),
+          string(name: 'SOURCE_BUILD', value: "$BUILD_NUMBER"),
+          string(name: 'DEST_REPO', value: 'mcu-release')
+        ], quietPeriod: 0
       }
     }
   }
