@@ -1,6 +1,6 @@
 pipeline {
   // Build environment is defined by the Dockerfile
-  agent dockerfile:true, dockerArgs:"--no-cache=true"
+  agent dockerfile:true
   stages {
     stage('package') {
       steps {
