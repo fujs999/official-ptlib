@@ -541,7 +541,7 @@ bool PSocket::os_vwrite(const Slice * slices, size_t sliceCount, int flags, stru
 
     switch (GetErrorNumber(LastWriteError)) {
       case ENOBUFS :
-        if (++noBufferRetry > NoBufferRetryCount;)
+        if (++noBufferRetry > NoBufferRetryCount)
           return false;
         usleep(100);
         break;
