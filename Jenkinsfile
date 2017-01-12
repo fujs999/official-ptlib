@@ -34,12 +34,6 @@ pipeline {
           string(name: 'DEST_REPO', value: 'mcu-develop')
         ], quietPeriod: 0
       }
-      post {
-        success {
-          // Trigger builds of downstream staging/develop branches
-          build job: '/zsdk-opal/staging', wait: false
-        }
-      }
     }
     stage('publish-release') {
       when {

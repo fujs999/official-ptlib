@@ -3,8 +3,8 @@
 %global version_patch 4
 
 Name:           bbcollab-ptlib
-Version:        %{version_major}.%{version_minor}.%{version_patch}
-Release:        0.0.1%{?jenkins_release}%{?dist}
+Version:        %{version_major}.%{version_minor}.%{version_patch}.0
+Release:        0%{?jenkins_release}%{?dist}
 Summary:        PTLib: Portable Tools Library
 
 Group:          System Environment/Libraries
@@ -16,8 +16,8 @@ Source0:        zsdk-ptlib.src.tgz
 # http://wiki.opalvoip.org/index.php?n=Main.BuildingPTLibUnix
 # Optional build dependencies not needed for the MCU are commented-out
 BuildRequires:  %__sed
-BuildRequires:  bbcollab-gcc >= 5.1.0
-BuildRequires:  bbcollab-openssl-devel
+BuildRequires:  bbcollab-gcc = 5.1.0
+BuildRequires:  bbcollab-openssl-devel = 1.0.2c
 #BuildRequires:  cyrus-sasl-devel
 BuildRequires:  expat-devel
 BuildRequires:  gperftools
