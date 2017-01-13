@@ -40,24 +40,20 @@ results.
 
 ## Versioning
 
-The PTLib package version number should always match the version number of the
-open source release it is based on. If we have applied our own patches to this
-release (generally via git commits rather than patches applied by the spec file)
-this should be reflected in the RPM release tag. Each time the upstream version
-is updated, we should reset the release tag to "0.0.1". Each time we merge a new
-patch into the integration branch, we should increment the release tag,
-following the rules of [Semantic Versioning][2] (we don't expect to increment
-the major version number with these changes).
+The first three components of the PTLib package version number should always
+match the version number of the open source release it is based on. A fourth
+component has been added to reflect our own patches to the open source code. The
+fourth component should be incremented each time we merge a new patch into the
+integration branch.
 
 To ensure consistency, the spec file is now considered the master copy of the
 version number, so the RPM build process will use this in favour of version
 numbers elsewhere in the code. However, if you perform a local (non-RPM) build,
 you may need to adjust any built-in version manually.
 
-The RPM release major version should always remain at 0 on the integration
-branch, and be incremented to 1 in the first commit on a release branch. This
-provides an easy way to distinguish a development RPM from a release RPM of the
-same verison.
+The RPM release tag should always remain at 0 on the integration branch, and be
+incremented to 1 in the first commit on a release branch. This provides an easy
+way to distinguish a development RPM from a release RPM of the same verison.
 
 Note that Jenkins appends its build number to the release number, so it should
 be easy to distinguish RPMs that contain functional changes vs RPMs that are
@@ -66,12 +62,12 @@ the build number component should be missing.
 
 For example:
 
-    bbcollab-ptlib-2.17.1-1.2.0.55.el6.x86_64.rpm
-    package        ver    rel          arch
+    bbcollab-ptlib-2.17.4.13-1.55.el6.x86_64.rpm
+    package        ver       rel      arch
 
 * Package: bbcollab-ptlib
-* Version: 2.17.1
-* Release: 1.2.0.55.el6 (Release RPM, patch version 1.2.0, Jenkins build number: 55, Dist tag: el6)
+* Version: 2.17.4.13 (Open source 2.17.4, plus 13 patches)
+* Release: 1.55.el6 (Release branch build, Jenkins build number: 55, Dist tag: el6)
 * Arch: x86_64
 
 ## Branching
@@ -92,11 +88,10 @@ builds on the existing Jenkins by changing everything.
 
 1. Create a new release branch named `release/<YYYY-MM>` from an appropriate
    position on the integration branch.
-1. Increment the major version component of the Release tag in the RPM spec file
-   to 1 (should always be 0 on the integration branch).
-1. Update the build dependencies in the RPM spec file to require exact versions.
-   Consider whether the release tag also needs to be included in the target
-   version (may vary from dependency to dependency).
+1. Increment the Release tag in the RPM spec file to 1 (should always be 0 on
+   the integration branch).
+1. Update the build dependencies in the RPM spec file to require exact versions
+   (including the full release tag of the target RPM).
    This makes it easier to go back and recreate a specific release build at a
    later date, even if newer versions of the build dependencies have been
    released.
@@ -116,10 +111,9 @@ builds on the existing Jenkins by changing everything.
        git pull
        git merge --no-ff --no-commit release/2016-12
 
-   This allows you to make some changes before committing and pushingthe merge,
+   This allows you to make some changes before committing and pushing the merge,
    effectively reverting the first commit on the release branch:
-   * Reset the Release tag major version to 0 (don't change the other
-     components)
+   * Reset the Release tag to 0
    * Restore the normal build dependency version requirements (not exact, but
      may have minimum required version)
 
