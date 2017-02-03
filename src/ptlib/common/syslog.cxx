@@ -418,6 +418,9 @@ bool PSystemLogToFile::InternalOpen()
   if (m_file.IsOpen())
     return true;
 
+  // Make sure directory exists, don't care if Create() fails, which is nearly all the time
+  m_file.GetFilePath().GetDirectory().Create(PFileInfo::DefaultDirPerms, true);
+
   if (!m_file.Open(PFile::WriteOnly))
     return false;
 
