@@ -3050,7 +3050,8 @@ PMutexExcessiveLockInfo::PMutexExcessiveLockInfo(const char * name,
   : m_fileOrName(name)
   , m_timeWait(timeWait)
   , m_timeHeld(timeHeld)
-  , m_samplePointCycle(0)
+  , m_acquiringCycle(0)
+  , m_acquiredCycle(0)
 #else
 PMutexExcessiveLockInfo::PMutexExcessiveLockInfo(const char * name, unsigned line, unsigned timeout)
   : m_fileOrName(name)
@@ -3075,7 +3076,8 @@ PMutexExcessiveLockInfo::PMutexExcessiveLockInfo(const PMutexExcessiveLockInfo &
 #if PTRACING
   , m_timeWait(other.m_timeWait)
   , m_timeHeld(other.m_timeHeld)
-  , m_samplePointCycle(0)
+  , m_acquiringCycle(0)
+  , m_acquiredCycle(0)
 #endif
   , m_fileLine(other.m_fileLine)
   , m_excessiveLockTimeout(other.m_excessiveLockTimeout)
@@ -3110,7 +3112,7 @@ void PMutexExcessiveLockInfo::ExcessiveLockPhantom(const PObject & mutex) const
 void PMutexExcessiveLockInfo::AcquiringLock()
 {
 #if PTRACING
-  m_samplePointCycle = PProfiling::GetCycles();
+  m_acquiringCycle = PProfiling::GetCycles();
 #endif
 }
 
@@ -3118,10 +3120,9 @@ void PMutexExcessiveLockInfo::AcquiringLock()
 void PMutexExcessiveLockInfo::AcquiredLock(const PObject & PTRACE_PARAM(mutex))
 {
 #if PTRACING
+  m_acquiredCycle = PProfiling::GetCycles();
   if (m_timeWait)
-    m_timeWait->EndMeasurement(&mutex, &mutex, m_samplePointCycle);
-
-  m_samplePointCycle = PProfiling::GetCycles();
+    m_timeWait->EndMeasurement(&mutex, &mutex, m_acquiringCycle);
 #endif
 }
 
@@ -3130,7 +3131,7 @@ void PMutexExcessiveLockInfo::ReleasedLock(const PObject & mutex)
 {
 #if PTRACING
   if (m_timeHeld)
-    m_timeHeld->EndMeasurement(&mutex, &mutex, m_samplePointCycle);
+    m_timeHeld->EndMeasurement(&mutex, &mutex, m_acquiredCycle);
 #endif
 
   if (m_excessiveLockActive) {
@@ -3182,12 +3183,12 @@ void PTimedMutex::CommonWaitComplete()
   // Note this is protected by the mutex itself only the thread with
   // the lock can alter these variables.
 
+  AcquiredLock(*this);
+
   if (m_lockCount++ == 0) {
     m_lastLockerId = m_lockerId = PThread::GetCurrentThreadId();
     m_lastUniqueId = PThread::GetCurrentUniqueIdentifier();
   }
-
-  AcquiredLock(*this);
 }
 
 
