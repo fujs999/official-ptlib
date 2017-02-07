@@ -3136,7 +3136,10 @@ void PMutexExcessiveLockInfo::ReleasedLock(const PObject & mutex)
   if (m_excessiveLockActive) {
 #if PTRACING
     ostream & trace = PTRACE_BEGIN(0, "PTLib");
-    trace << "Assertion fail: Released phantom deadlock in " << mutex;
+    trace << "Assertion fail: Released phantom deadlock";
+    if (m_timeHeld)
+      trace << " after " << m_timeHeld->GetLastDuration() << 's';
+    trace << " in " << mutex;
     if (PTimedMutex::DeadlockStackWalkMode == PTimedMutex::DeadlockStackWalkOnPhantomRelease)
       PTrace::WalkStack(trace);
     trace << PTrace::End;
