@@ -49,8 +49,7 @@ class PMutexExcessiveLockInfo
 #if PTRACING
     PProfiling::TimeScope * m_timeWait;
     PProfiling::TimeScope * m_timeHeld;
-    uint64_t                m_acquiringCycle;
-    uint64_t                m_acquiredCycle;
+    uint64_t                m_samplePointCycle;
 #endif
     unsigned     m_fileLine;
     unsigned     m_excessiveLockTimeout;
