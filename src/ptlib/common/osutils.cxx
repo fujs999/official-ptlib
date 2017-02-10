@@ -3137,10 +3137,13 @@ void PMutexExcessiveLockInfo::ReleasedLock(const PObject & mutex)
 
   if (m_excessiveLockActive) {
 #if PTRACING
+    PTime releaseTime;
     ostream & trace = PTRACE_BEGIN(0, "PTLib");
     trace << "Assertion fail: Released phantom deadlock";
     if (m_timeHeld)
-      trace << " after " << m_timeHeld->GetLastDuration() << 's';
+      trace << ", held from " << (releaseTime-m_timeHeld->GetLastDuration()).AsString(PTime::TodayFormat)
+            << " to " << releaseTime.AsString(PTime::TodayFormat)
+            << " (" << m_timeHeld->GetLastDuration() << "s),";
     trace << " in " << mutex;
     if (PTimedMutex::DeadlockStackWalkMode == PTimedMutex::DeadlockStackWalkOnPhantomRelease)
       PTrace::WalkStack(trace);
@@ -3161,9 +3164,15 @@ void PTimedMutex::ExcessiveLockWait()
   PUniqueThreadIdentifier lastUniqueId = m_lastUniqueId;
 
   ostream & trace = PTRACE_BEGIN(0, "PTLib");
-  trace << "Assertion fail: Possible deadlock in " << *this << "\n  Blocked Thread";
-  OutputThreadInfo(trace, PThread::GetCurrentThreadId(), PThread::GetCurrentUniqueIdentifier(), DeadlockStackWalkMode == DeadlockStackWalkEnabled);
-  trace << "\n  Owner Thread ";
+  trace << "Assertion fail: Possible deadlock in " << *this;
+  if (DeadlockStackWalkMode != DeadlockStackWalkEnabled)
+    trace << ", ";
+  else {
+    trace << "\n  Blocked Thread";
+    OutputThreadInfo(trace, PThread::GetCurrentThreadId(), PThread::GetCurrentUniqueIdentifier(), true);
+    trace << "\n  ";
+  }
+  trace << "Owner Thread ";
   if (lockerId != PNullThreadIdentifier)
     OutputThreadInfo(trace, lockerId, lastUniqueId, DeadlockStackWalkMode == DeadlockStackWalkEnabled);
   else {
