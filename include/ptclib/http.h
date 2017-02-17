@@ -922,6 +922,10 @@ class PHTTPConnectionInfo : public PObject
 
     long GetEntityBodyLength() const  { return entityBodyLength; }
 
+    /**Do not persist.
+      */
+    void DisablePersistence() { isPersistent = false; }
+
     /**Get the maximum time a persistent connection may persist.
       */
     PTimeInterval GetPersistenceTimeout() const { return PTimeInterval(0,persistenceSeconds); }
