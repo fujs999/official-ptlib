@@ -538,7 +538,8 @@ void PProcess::PXOnSignal(int sig)
     case SIGINT:
     case SIGHUP:
     case SIGTERM:
-      Terminate(1);
+      Terminate();
+      abort(); // Shouldn't get here, but just in case ...
 
 #ifdef _DEBUG
     case 28 :
