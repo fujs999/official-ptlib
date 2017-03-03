@@ -220,7 +220,7 @@
           m_addressCount = -1;
           m_addresses.resize(InternalMaxStackWalk+OtherThreadSkip);
           m_signalSentTime.SetCurrentTime();
-          if (!PThread::PX_kill(tid, PProcess::WalkStackSignal)) {
+          if (!PThread::PX_kill(tid, uid, PProcess::WalkStackSignal)) {
             strm << "\n\tThread " << PThread::GetIdentifiersAsString(tid, uid) << " is no longer running";
             pthread_mutex_unlock(&m_mainMutex);
             return;
