@@ -204,6 +204,11 @@
         {
           DEBUG_CERR("WalkOther: " << PThread::GetIdentifiersAsString(tid, uid));
 
+          if (tid == 0) {
+            strm << "\n\tStack trace WalkOther with zero thread ID.";
+            return;
+          }
+
           // Needs to all be done within X seconds
           struct timespec absTime;
           clock_gettime(CLOCK_REALTIME, &absTime);

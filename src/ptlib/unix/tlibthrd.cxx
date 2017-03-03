@@ -458,7 +458,7 @@ bool PThread::PX_kill(PThreadIdentifier tid, PUniqueThreadIdentifier uid, int si
   PProcess & process = PProcess::Current();
   PWaitAndSignal mutex(process.m_threadMutex);
   PProcess::ThreadMap::iterator it = process.m_activeThreads.find(tid);
-  if (it == process.m_activeThreads.end() || it->second->GetUniqueIdentifier() != uid)
+  if (it == process.m_activeThreads.end() || (uid != 0 && it->second->GetUniqueIdentifier() != uid))
     return false;
 #endif
 
