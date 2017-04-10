@@ -1,9 +1,9 @@
 %global version_major  2
 %global version_minor  17
-%global version_patch 4
+%global version_patch  4
 
 Name:           bbcollab-ptlib
-Version:        %{version_major}.%{version_minor}.%{version_patch}.6
+Version:        %{version_major}.%{version_minor}.%{version_patch}.7
 Release:        1%{?jenkins_release}%{?dist}
 Summary:        PTLib: Portable Tools Library
 
@@ -40,7 +40,7 @@ PTLib: Portable Tools Library
 Summary:        Development files for %{name}
 Group:          Development/Libraries
 Requires:       %{name} = %{version}-%{release}
-Requires:       bbcollab-openssl-devel
+Requires:       bbcollab-openssl-devel = 1.0.2c
 Requires:       expat-devel
 Requires:       libpcap-devel
 Requires:       ncurses-devel

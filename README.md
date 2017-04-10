@@ -51,8 +51,8 @@ version number, so the RPM build process will use this in favour of version
 numbers elsewhere in the code. However, if you perform a local (non-RPM) build,
 you may need to adjust any built-in version manually.
 
-The RPM release tag should always remain at 0 on the integration branch, and be
-incremented to 1 in the first commit on a release branch. This provides an easy
+The RPM release tag should always remain at 1 on the integration branch, and be
+incremented to 2 in the first commit on a release branch. This provides an easy
 way to distinguish a development RPM from a release RPM of the same verison.
 
 Note that Jenkins appends its build number to the release number, so it should
@@ -62,12 +62,12 @@ the build number component should be missing.
 
 For example:
 
-    bbcollab-ptlib-2.17.4.13-1.55.el6.x86_64.rpm
+    bbcollab-ptlib-2.17.4.13-2.55.el6.x86_64.rpm
     package        ver       rel      arch
 
 * Package: bbcollab-ptlib
 * Version: 2.17.4.13 (Open source 2.17.4, plus 13 patches)
-* Release: 1.55.el6 (Release branch build, Jenkins build number: 55, Dist tag: el6)
+* Release: 2.55.el6 (Release branch build, Jenkins build number: 55, Dist tag: el6)
 * Arch: x86_64
 
 ## Branching
@@ -88,7 +88,7 @@ builds on the existing Jenkins by changing everything.
 
 1. Create a new release branch named `release/<YYYY-MM>` from an appropriate
    position on the integration branch.
-1. Increment the Release tag in the RPM spec file to 1 (should always be 0 on
+1. Increment the Release tag in the RPM spec file to 2 (should always be 1 on
    the integration branch).
 1. Update the build dependencies in the RPM spec file to require exact versions
    (including the full release tag of the target RPM).
@@ -113,7 +113,8 @@ builds on the existing Jenkins by changing everything.
 
    This allows you to make some changes before committing and pushing the merge,
    effectively reverting the first commit on the release branch:
-   * Reset the Release tag to 0
+   * Increment the version number for the next release
+   * Reset the Release tag to 1
    * Restore the normal build dependency version requirements (not exact, but
      may have minimum required version)
 
