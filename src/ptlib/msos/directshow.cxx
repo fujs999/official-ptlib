@@ -29,10 +29,6 @@
  * Initial work sponsored by Requestec Ltd.
  *
  * Contributor(s): ______________________________________.
- *
- * $Revision$
- * $Author$
- * $Date$
  */
 
 
@@ -1214,6 +1210,8 @@ PStringArray PVideoInputDevice_DirectShow::GetDeviceNames() const
       devices.AppendString(name);
     }
   }
+
+  PTRACE_IF(3, devices.IsEmpty(), "No video capture devices available.");
 
   return devices;
 }
