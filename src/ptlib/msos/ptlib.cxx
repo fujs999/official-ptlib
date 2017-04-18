@@ -25,10 +25,6 @@
  * All Rights Reserved.
  *
  * Contributor(s): ______________________________________.
- *
- * $Revision$
- * $Author$
- * $Date$
  */
 
 #include <ptlib.h>
@@ -43,6 +39,10 @@
 #ifndef _WIN32_WCE
 #include <signal.h>
 #include <share.h>
+#ifdef _WIN32
+#include <WERAPI.H>
+#pragma comment(lib,"wer")
+#endif
 #endif
 
 
@@ -1006,7 +1006,36 @@ bool PConsoleChannel::InternalSetConsoleMode(DWORD bit, bool on)
 static void (__cdecl * PreviousSigIntHandler)(int);
 static void (__cdecl * PreviousSigTermHandler)(int);
 
-#ifndef _WIN32_WCE 
+#ifdef _WIN32_WCE
+
+PBoolean PProcess::IsGUIProcess() const
+{
+  return true;
+}
+
+#else
+
+#ifdef _WIN32
+
+LONG WINAPI MyExceptionHandler(_EXCEPTION_POINTERS * info)
+{
+  ostringstream str;
+  str << "Unhandled exception: code=" << info->ExceptionRecord->ExceptionCode
+      << ", when=" << PTime().AsString(PTime::LoggingFormat) << ends;
+  
+  PAssertAlways(str.str().c_str());
+  ExitProcess(1);
+}
+
+#else
+
+PBoolean PProcess::IsGUIProcess() const
+{
+  return false;
+}
+
+#endif
+
 void SignalHandler(int sig)
 {
   if (PProcess::Current().OnInterrupt(sig == SIGTERM))
@@ -1019,6 +1048,7 @@ void SignalHandler(int sig)
   else if (previous != SIG_IGN)
     previous(sig);
 }
+
 #endif
 
 void PProcess::Construct()
@@ -1037,6 +1067,11 @@ void PProcess::Construct()
 #ifndef _WIN32_WCE 
   PreviousSigIntHandler = signal(SIGINT, SignalHandler);
   PreviousSigTermHandler = signal(SIGTERM, SignalHandler);
+#ifdef _WIN32
+  SetUnhandledExceptionFilter(MyExceptionHandler);
+  HRESULT result = WerAddExcludedApplication(m_executableFile.AsUCS2(), false);
+  PTRACE_IF(1, result != 0, "PTLib", "Error excluding application from WER crash dialogs: err=" << result);
+#endif
 #endif
 }
 
