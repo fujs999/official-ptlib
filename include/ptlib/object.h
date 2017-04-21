@@ -938,8 +938,8 @@ See PTRACE() for more information on level, instance, module and stream.
 /**Execute trace precisely once, and no more.
 
 Note, this will execute once only if the current log level is sufficient.
-Thus, if log level is increased it will stillexecute even if the statement
-was passed peviously.
+Thus, if log level is increased it will still execute even if the statement
+was passed previously.
 
 See PTRACE() for more information on level, instance, module and stream.
 */
@@ -1393,7 +1393,7 @@ namespace PProfiling
 
           ~Measure()
           {
-            m_scope.EndMeasurement(m_context, m_object, PDebugLocation(), m_startCycle);
+            m_scope.EndMeasurement(m_context, m_object, PDebugLocation::None, m_startCycle);
           }
       };
   };
