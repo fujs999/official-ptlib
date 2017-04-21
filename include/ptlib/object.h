@@ -165,9 +165,16 @@ typedef bool   PBoolean;
 // Handy macros
 
 /// Count the number of arguments passed in macro
-#define PARG_COUNT(...) PARG_COUNT_PART1(PARG_COUNT_PART2(__VA_ARGS__,40,39,38,37,36,35,34,33,32,31,30,29,28,27,26,25,24,23,22,21,20,19,18,17,16,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0))
-#define PARG_COUNT_PART1(arg) arg
-#define PARG_COUNT_PART2(_1,_2,_3,_4,_5,_6,_7,_8,_9,_10,_11,_12,_13,_14,_15,_16,_17,_18,_19,_20,_21,_22,_23,_24,_25,_26,_27,_28,_29,_30,_31,_32,_33,_34,_35,_36,_37,_38,_39,_40,N,...) N
+#if _MSC_VER
+  #define PARG_COUNT(...) PARG_COUNT_PART2(PARG_COUNT_PART1(__VA_ARGS__))
+  #define PARG_COUNT_PART1(...) unused, __VA_ARGS__
+  #define PARG_COUNT_PART2(...) PARG_COUNT_PART3(PARG_COUNT_PART4(__VA_ARGS__,39,38,37,36,35,34,33,32,31,30,29,28,27,26,25,24,23,22,21,20,19,18,17,16,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0))
+  #define PARG_COUNT_PART3(x) x
+  #define PARG_COUNT_PART4(_1,_2,_3,_4,_5,_6,_7,_8,_9,_10,_11,_12,_13,_14,_15,_16,_17,_18,_19,_20,_21,_22,_23,_24,_25,_26,_27,_28,_29,_30,_31,_32,_33,_34,_35,_36,_37,_38,_39,_40,N,...) N
+#else
+  #define PARG_COUNT(...) PARG_COUNT_INTERNAL(0,##__VA_ARGS__,40,39,38,37,36,35,34,33,32,31,30,29,28,27,26,25,24,23,22,21,20,19,18,17,16,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0)
+  #define PARG_COUNT_INTERNAL(_0,_1,_2,_3,_4,_5,_6,_7,_8,_9,_10,_11,_12,_13,_14,_15,_16,_17,_18,_19,_20,_21,_22,_23,_24,_25,_26,_27,_28,_29,_30,_31,_32,_33,_34,_35,_36,_37,_38,_39,_40,N,...) N
+#endif
 
 /// Turn the argument into a string
 #define P_STRINGISE(v) P_STRINGISE_PART2(v)
@@ -288,6 +295,28 @@ extern int PParseEnum(const char * str, int begin, int end, char const * const *
 ///////////////////////////////////////////////////////////////////////////////
 // Declare the debugging support
 
+/// Information about a source file location
+struct PDebugLocation
+{
+    const char * m_file;
+    unsigned     m_line;
+    const char * m_extra; // Function or class name, if available
+
+    PDebugLocation(const char * extra = NULL) // Not explicit for backward compatibility
+      : m_file(NULL), m_line(0), m_extra(extra) { }
+    PDebugLocation(const char * file, unsigned line, const char * extra = NULL)
+      : m_file(file), m_line(line), m_extra(extra) { }
+
+    void PrintOn(ostream & strm, const char * prefix = NULL) const;
+
+    static PDebugLocation const None;
+};
+
+__inline ostream & operator<<(ostream & strm, const PDebugLocation & location) { location.PrintOn(strm); return strm; }
+
+#define P_DEBUG_LOCATION PDebugLocation(__FILE__, __LINE__)
+
+
 #ifndef P_USE_ASSERTS
 #define P_USE_ASSERTS 1
 #endif
@@ -324,8 +353,8 @@ enum PStandardAssertMessage {
 #define __CLASS__ NULL
 
 extern bool PAssertWalksStack;
-bool PAssertFunc(const char * file, int line, const char * className, PStandardAssertMessage msg);
-bool PAssertFunc(const char * file, int line, const char * className, const char * msg);
+bool PAssertFunc(const PDebugLocation & location, PStandardAssertMessage msg);
+bool PAssertFunc(const PDebugLocation & location, const char * msg);
 
 
 /** This macro is used to assert that a condition must be true.
@@ -334,7 +363,7 @@ file and line number the macro was instantiated on, plus the message described
 by the <code>msg</code> parameter. This parameter may be either a standard value
 from the <code>PStandardAssertMessage</code> enum or a literal string.
 */
-#define PAssert(b, msg) ((b)?true:PAssertFunc(__FILE__,__LINE__,__CLASS__,(msg)))
+#define PAssert(b, msg) ((b)?true:PAssertFunc(PDebugLocation(__FILE__,__LINE__,__CLASS__),(msg)))
 
 /** This macro is used to assert that a condition must be true.
 If the condition is false then an assert function is called with the source
@@ -343,7 +372,7 @@ by the <code>msg</code> parameter. This parameter may be either a standard value
 from the <code>PStandardAssertMessage</code> enum or a literal string.
 The <code>cls</code> parameter specifies the class name that the error occurred in
 */
-#define PAssert2(b, cls, msg) ((b)?true:PAssertFunc(__FILE__,__LINE__,(cls),(msg)))
+#define PAssert2(b, cls, msg) ((b)?true:PAssertFunc(PDebugLocation(__FILE__,__LINE__,(cls)),(msg)))
 
 /** This macro is used to assert that an operating system call succeeds.
 If the condition is false then an assert function is called with the source
@@ -351,7 +380,7 @@ file and line number the macro was instantiated on, plus the message
 described by the <code>POperatingSystemError</code> value in the <code>PStandardAssertMessage</code>
 enum.
  */
-#define PAssertOS(b) ((b)?true:PAssertFunc(__FILE__,__LINE__,__CLASS__,POperatingSystemError))
+#define PAssertOS(b) ((b)?true:PAssertFunc(PDebugLocation(__FILE__,__LINE__,__CLASS__),POperatingSystemError))
 
 /** This macro is used to assert that a pointer must be non-null.
 If the pointer is NULL then an assert function is called with the source file
@@ -363,7 +392,7 @@ prevent incorrect behaviour with this, the macro will assume that the
 <code>ptr</code> parameter is an L-Value.
  */
 #define PAssertNULL(ptr) (((ptr)!=NULL)?(ptr): \
-                     (PAssertFunc(__FILE__,__LINE__, __CLASS__, PNullPointerReference),(ptr)))
+                     (PAssertFunc(PDebugLocation(__FILE__,__LINE__, __CLASS__), PNullPointerReference),(ptr)))
 
 /** This macro is used to assert immediately.
 The assert function is called with the source file and line number the macro
@@ -371,7 +400,7 @@ was instantiated on, plus the message described by the <code>msg</code> paramete
 parameter may be either a standard value from the <code>PStandardAssertMessage</code>
 enum or a literal string.
 */
-#define PAssertAlways(msg) PAssertFunc(__FILE__,__LINE__,__CLASS__,(msg))
+#define PAssertAlways(msg) PAssertFunc(PDebugLocation(__FILE__,__LINE__,__CLASS__),(msg))
 
 /** This macro is used to assert immediately.
 The assert function is called with the source file and line number the macro
@@ -379,7 +408,7 @@ was instantiated on, plus the message described by the <code>msg</code> paramete
 parameter may be either a standard value from the <code>PStandardAssertMessage</code>
 enum or a literal string.
 */
-#define PAssertAlways2(cls, msg) PAssertFunc(__FILE__,__LINE__,(cls),(msg))
+#define PAssertAlways2(cls, msg) PAssertFunc(PDebugLocation(__FILE__,__LINE__,(cls)),(msg))
 
 #endif // P_USE_ASSERTS
 
@@ -913,6 +942,20 @@ See PTRACE() for more information on level, instance, module and stream.
 */
 #define PTRACE_IF(...) PTRACE_IF_PART1(PARG_COUNT(__VA_ARGS__), (__VA_ARGS__))
 
+/**Execute trace precisely once, and no more.
+
+Note, this will execute once only if the current log level is sufficient.
+Thus, if log level is increased it will still execute even if the statement
+was passed previously.
+
+See PTRACE() for more information on level, instance, module and stream.
+*/
+#define PTRACE_ONCE(level, ...) \
+    { \
+      static PAtomicBoolean firstTrace(true); \
+      PTRACE_IF((level), firstTrace.TestAndSet(false), __VA_ARGS__); \
+    }
+
 /** Begin output trace.
 This macro returns a ostream & for trace output.
 
@@ -1244,9 +1287,7 @@ namespace PProfiling
     public:
       PPROFILE_EXCLUDE(
         Block(
-          const char * name,
-          const char * file,
-          unsigned line
+          const PDebugLocation & location
         )
       );
       PPROFILE_EXCLUDE(
@@ -1254,10 +1295,10 @@ namespace PProfiling
       );
 
     protected:
-      const char * m_name;
+      PDebugLocation m_location;
   };
 
-  #define PPROFILE_BLOCK(name) ::PProfiling::Block p_profile_block_instance(name, __FILE__, __LINE__)
+  #define PPROFILE_BLOCK(name) ::PProfiling::Block p_profile_block_instance(PDebugLocation(__FILE,__LINE__, name))
   #define PPROFILE_FUNCTION() PPROFILE_BLOCK(__PRETTY_FUNCTION__)
 
   #define PPROFILE_PRE_SYSTEM()  ::PProfiling::PreSystem()
@@ -1290,11 +1331,9 @@ namespace PProfiling
          by the PPROFILE_TIMESCOPE() macro.
         */
       TimeScope(
-        const char * name,                ///< Name of the measurement point
-        const char * file,                ///< Source file, typically __FILE__
-        unsigned line,                    ///< Source line, typically __LINE__
+        const PDebugLocation & location,  ///< Source location, typically from macro P_DEBUG_LOCATION
         unsigned thresholdTime,           ///< Threshold time in milliseconds
-        unsigned throttleTime = 10000,    ///< Time between PTRACE outpout in milliseconds
+        unsigned throttleTime = 10000,    ///< Time between PTRACE output in milliseconds
         unsigned throttledLogLevel = 2,   ///< PTRACE level to use if enough samples are above thresholdTime
         unsigned unthrottledLogLevel = 6, ///< PTRACE level to use otherwise
         unsigned thresholdPercent = 5,    ///< Percentage of samples above thresholdTime to trigger throttledLogLevel
@@ -1305,10 +1344,26 @@ namespace PProfiling
       /// Destroy scope timer
       ~TimeScope();
 
+      /// Set time between PTRACE output in milliseconds
+      void SetThrottleTime(unsigned throttleTime);
+
+      /// Set PTRACE level to use if enough samples are above thresholdTime
+      void SetThrottledLogLevel(unsigned throttledLogLevel);
+
+      /// Set PTRACE level to use otherwise
+      void SetUnthrottledLogLevel(unsigned unthrottledLogLevel);
+
+      /// Set Percentage of samples above thresholdTime to trigger throttledLogLevel
+      void SetThresholdPercent(unsigned thresholdPercent);
+
+      /// Set optional number of samples above thresholdTime to display sincle last PTRACE()
+      void SetMaxHistory(unsigned maxHistory);
+
       /// End and process a measurement period
       void EndMeasurement(
         const void * context,
         const PObject * object,
+        const PDebugLocation & location,
         uint64_t startTime
       );
 
@@ -1345,14 +1400,13 @@ namespace PProfiling
 
           ~Measure()
           {
-            m_scope.EndMeasurement(m_context, m_object, m_startCycle);
+            m_scope.EndMeasurement(m_context, m_object, PDebugLocation::None, m_startCycle);
           }
       };
-      friend Measure::~Measure();
   };
 
   #define PPROFILE_TIMESCOPE(name, context, ...) \
-      static ::PProfiling::TimeScope p_profile_timescope_static_instance##name(#name, __FILE__, __LINE__, __VA_ARGS__); \
+      static ::PProfiling::TimeScope p_profile_timescope_static_instance##name(PDebugLocation(__FILE__, __LINE__, #name), __VA_ARGS__); \
       ::PProfiling::TimeScope::Measure p_profile_timescope_instance##name(p_profile_timescope_static_instance##name, context)
 #else
   #define PPROFILE_TIMESCOPE(...)
@@ -1983,7 +2037,7 @@ of compatibility with documentation systems.
 
 #if P_USE_ASSERTS
 template<class BaseClass> inline BaseClass * PAssertCast(BaseClass * obj, const char * file, int line) 
-  { if (obj == NULL) PAssertFunc(file, line, obj->Class(), PInvalidCast); return obj; }
+  { if (obj == NULL) PAssertFunc(PDebugLocation(file, line, obj->Class()), PInvalidCast); return obj; }
 #define PDownCast(cls, ptr) PAssertCast<cls>(dynamic_cast<cls*>(ptr),__FILE__,__LINE__)
 #else
 #define PDownCast(cls, ptr) (dynamic_cast<cls*>(ptr))
