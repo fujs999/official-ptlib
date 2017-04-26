@@ -396,8 +396,11 @@ PTHREAD_MUTEX_RECURSIVE_NP
       if (PProcess::IsInitialised()) {
         PProcess & process = PProcess::Current();
         log << process.GetName()
-            << " version " << process.GetVersion(true)
-            << " by " << process.GetManufacturer()
+            << " version " << process.GetVersion(true);
+#if _DEBUG
+        log << " [debug]";
+#endif
+        log << " by " << process.GetManufacturer()
             << " on ";
       }
 
@@ -672,6 +675,11 @@ void PTraceInfo::InternalInitialise(unsigned level, const char * filename, const
   OpenTraceFile(filename, level > 0);
 }
 
+
+void PTrace::SetFilename(const char * filename)
+{
+  PTraceInfo::Instance().OpenTraceFile(filename, GetLevel() > 0);
+}
 
 void PTrace::SetOptions(unsigned options)
 {
