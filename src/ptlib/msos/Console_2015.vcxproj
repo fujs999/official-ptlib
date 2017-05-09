@@ -400,9 +400,12 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\..\include;C:\gstreamer\1.0\x86\include\gstreamer-1.0;c:\gstreamer\1.0\x86\include\glib-2.0;C:\gstreamer-sdk\0.10\x86\include\gstreamer-0.10;c:\gstreamer-sdk\0.10\x86\include\glib-2.0;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <ClCompile Include="..\..\ptclib\jscript.cxx">
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\..\..\external\v8\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">..\..\..\..\external\v8\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\..\..\external\v8\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectDir)../../../../external/v8/v8/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">$(ProjectDir)../../../../external/v8/v8/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(ProjectDir)../../../../external/v8/v8/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)../../../../external/v8/v8/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">$(ProjectDir)../../../../external/v8/v8/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)../../../../external/v8/v8/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <ClCompile Include="..\..\ptclib\script.cxx" />
     <ClCompile Include="..\..\ptclib\ssdp.cxx" />
@@ -845,9 +848,12 @@
     <ClCompile Include="..\..\ptclib\psoap.cxx" />
     <ClCompile Include="..\..\ptclib\psockbun.cxx" />
     <ClCompile Include="..\..\ptclib\pssl.cxx">
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">C:\Program Files (x86)\OpenSSL-Win32\include;C:\Program Files\OpenSSL-Win32\include;C:\OpenSSL-Win32\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">C:\Program Files (x86)\OpenSSL-Win32\include;C:\Program Files\OpenSSL-Win32\include;C:\OpenSSL-Win32\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">C:\Program Files (x86)\OpenSSL-Win32\include;C:\Program Files\OpenSSL-Win32\include;C:\OpenSSL-Win32\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProgramFiles)\OpenSSL-Win64\include;$(ProgramW6432)\OpenSSL-Win64\include;C:\OpenSSL-Win32\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">$(ProgramFiles)\OpenSSL-Win64\include;$(ProgramW6432)\OpenSSL-Win64\include;C:\OpenSSL-Win32\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(ProgramFiles)\OpenSSL-Win64\include;$(ProgramW6432)\OpenSSL-Win64\include;C:\OpenSSL-Win32\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProgramFiles)\OpenSSL-Win64\include;$(ProgramW6432)\OpenSSL-Win64\include;C:\OpenSSL-Win64\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">$(ProgramFiles)\OpenSSL-Win64\include;$(ProgramW6432)\OpenSSL-Win64\include;C:\OpenSSL-Win64\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProgramFiles)\OpenSSL-Win64\include;$(ProgramW6432)\OpenSSL-Win64\include;C:\OpenSSL-Win64\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <ClCompile Include="..\..\ptclib\pstun.cxx" />
     <ClCompile Include="..\..\ptclib\pstunsrvr.cxx" />
