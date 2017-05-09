@@ -1358,7 +1358,7 @@ PBoolean PTimedMutex::PlatformWait(const PTimeInterval & waitTime)
   PPROFILE_PRE_SYSTEM();
   if (pthread_mutex_timedlock(&m_mutex, &absTime) != 0) {
     PPROFILE_POST_SYSTEM();
-    return false;
+    return errno == EDEADLK; // Just a recursive call
   }
   PPROFILE_POST_SYSTEM();
 
