@@ -25,7 +25,7 @@ pipeline {
     }
     stage('publish-develop') {
       when {
-        env.BRANCH_NAME == 'staging'
+        env.BRANCH_NAME == 'develop'
       }
       steps {
         build job: '/rpm-repo-deploy', parameters: [
