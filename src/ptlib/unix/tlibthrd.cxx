@@ -1363,7 +1363,7 @@ PBoolean PTimedMutex::PlatformWait(const PTimeInterval & waitTime)
 #else // P_PTHREADS_XPG6
 
     PPROFILE_PRE_SYSTEM();
-    while ((result = pthread_mutex_trylock(&m_mutex)) != 0 && errno != EBUSY) {
+    while ((result = pthread_mutex_trylock(&m_mutex)) != 0) {
       if (PTime() >= finishTime) {
         PPROFILE_POST_SYSTEM();
         return false;
@@ -1380,12 +1380,11 @@ PBoolean PTimedMutex::PlatformWait(const PTimeInterval & waitTime)
 #endif
   }
 
-  if (result == 0)
-    return true; // Got the lock
-
-  switch (errno) {
+  switch (result) {
+    case 0:
+      return true; // Got the lock
     case EDEADLK :
-      return true;// Just a recursive call
+      return true; // Just a recursive call
     case ETIMEDOUT :
       return false; // No assert
   }
