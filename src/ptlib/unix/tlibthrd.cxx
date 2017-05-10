@@ -1373,18 +1373,16 @@ PBoolean PTimedMutex::PlatformWait(const PTimeInterval & waitTime)
     PPROFILE_POST_SYSTEM();
 
 #endif // P_PTHREADS_XPG6
-
-#if !P_HAS_RECURSIVE_MUTEX
-    PAssert((lockerId == PNullThreadIdentifier) && m_lockCount == 0,
-            "PMutex acquired whilst locked by another thread");
-#endif
   }
 
   switch (result) {
-    case 0:
-      return true; // Got the lock
-    case EDEADLK :
-      return true; // Just a recursive call
+  case 0 :       // Got the lock
+  case EDEADLK : // Just a recursive call
+#if !P_HAS_RECURSIVE_MUTEX
+      PAssert(lockerId == PNullThreadIdentifier && m_lockCount == 0,
+          "PMutex acquired whilst locked by another thread");
+#endif
+      return true;
     case ETIMEDOUT :
       return false; // No assert
   }
