@@ -1376,8 +1376,8 @@ PBoolean PTimedMutex::PlatformWait(const PTimeInterval & waitTime)
   }
 
   switch (result) {
-  case 0 :       // Got the lock
-  case EDEADLK : // Just a recursive call
+    case 0 :       // Got the lock
+    case EDEADLK : // Just a recursive call
 #if !P_HAS_RECURSIVE_MUTEX
       PAssert(lockerId == PNullThreadIdentifier && m_lockCount == 0,
           "PMutex acquired whilst locked by another thread");
