@@ -1363,7 +1363,7 @@ PBoolean PTimedMutex::PlatformWait(const PTimeInterval & waitTime)
 #else // P_PTHREADS_XPG6
 
     PPROFILE_PRE_SYSTEM();
-    while ((result = pthread_mutex_trylock(&m_mutex)) != 0) {
+    while ((result = pthread_mutex_trylock(&m_mutex)) == EBUSY) {
       if (PTime() >= finishTime) {
         PPROFILE_POST_SYSTEM();
         return false;
