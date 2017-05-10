@@ -1389,7 +1389,7 @@ PBoolean PTimedMutex::PlatformWait(const PTimeInterval & waitTime)
       return false; // No assert
   }
 
-  PAssertAlways(psprintf("Mutex lock failed, errno=%i", errno));
+  PAssertAlways(psprintf("Mutex lock failed, result=%i", result));
   return false;
 }
 
