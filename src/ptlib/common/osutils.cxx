@@ -2395,7 +2395,7 @@ PProcess & PProcess::Current()
 
 void PProcess::OnThreadStart(PThread & PTRACE_PARAM(thread))
 {
-  PTRACE(5, "PTLib\tStarted thread " << thread);
+  PTRACE(5, "Started thread " << thread);
 }
 
 
