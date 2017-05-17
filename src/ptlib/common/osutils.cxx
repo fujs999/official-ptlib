@@ -976,41 +976,66 @@ PTrace::Block::~Block()
 }
 
 
-PTrace::ThrottleBase::ThrottleBase(unsigned lowLevel, unsigned interval, unsigned highLevel)
+PTrace::ThrottleBase::ThrottleBase(unsigned lowLevel, unsigned interval, unsigned highLevel, unsigned maxShown)
   : m_interval(interval)
   , m_lowLevel(lowLevel)
   , m_highLevel(highLevel)
-  , m_lastLog(0)
-  , m_count(0)
+  , m_maxShown(maxShown)
+  , m_currentLevel(highLevel)
+  , m_nextLog(0)
+  , m_repeatCount(0)
+  , m_hiddenCount(0)
+{
+}
+
+
+PTrace::ThrottleBase::ThrottleBase(const ThrottleBase & other)
+  : m_interval(other.m_interval)
+  , m_lowLevel(other.m_lowLevel)
+  , m_highLevel(other.m_highLevel)
+  , m_maxShown(other.m_maxShown)
+  , m_currentLevel(other.m_highLevel)
+  , m_nextLog(0)
+  , m_repeatCount(0)
+  , m_hiddenCount(0)
 {
 }
 
 
 bool PTrace::ThrottleBase::CanTrace()
 {
-  PTimeInterval now = PTimer::Tick();
+  if (!PTrace::CanTrace(m_lowLevel))
+    return false;
 
-  if (m_lastLog == 0 || (now - m_lastLog) > m_interval) {
-    m_currentLevel = m_lowLevel;
-    m_lastLog = now.GetMilliSeconds();
+  if (PTrace::CanTrace(m_highLevel))
+    return true;
+
+  int64_t now = PTimer::Tick().GetMilliSeconds();
+  if (now > m_nextLog) {
+    unsigned otherLevel = m_highLevel;
+    if (m_currentLevel.compare_exchange_strong(otherLevel, m_lowLevel)) {
+      m_nextLog = now + m_interval;
+      m_repeatCount = 1;
+    }
   }
-  else if (m_currentLevel == m_highLevel) {
-    if (!PTrace::CanTrace(m_highLevel))
-      ++m_count;
-  }
-  else {
-    m_count = 1;
-    m_currentLevel = m_highLevel;
+  else if (++m_repeatCount > m_maxShown) {
+    unsigned otherLevel = m_lowLevel;
+    if (m_currentLevel.compare_exchange_strong(otherLevel, m_highLevel))
+      m_hiddenCount = 1;
   }
 
-  return PTrace::CanTrace(m_currentLevel);
+  if (PTrace::CanTrace(m_currentLevel))
+    return true;
+
+  ++m_hiddenCount;
+  return false;
 }
 
 
 std::ostream & operator<<(ostream & strm, const PTrace::ThrottleBase & throttle)
 {
-  if (throttle.m_count > 1)
-    strm << " (repeated " << throttle.m_count << " times)";
+  if (throttle.m_hiddenCount > 1)
+    strm << " (repeated " << throttle.m_hiddenCount << " times)";
   return strm;
 }
 
