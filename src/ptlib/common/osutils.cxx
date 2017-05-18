@@ -1002,7 +1002,7 @@ PTrace::ThrottleBase::ThrottleBase(const ThrottleBase & other)
 }
 
 
-bool PTrace::ThrottleBase::CanTrace()
+bool PTrace::ThrottleBase::CanTrace(int64_t now)
 {
   if (!PTrace::CanTrace(m_lowLevel))
     return false;
@@ -1010,13 +1010,19 @@ bool PTrace::ThrottleBase::CanTrace()
   if (PTrace::CanTrace(m_highLevel))
     return true;
 
-  int64_t now = PTimer::Tick().GetMilliSeconds();
-  if (now > m_nextLog) {
-    unsigned otherLevel = m_highLevel;
-    if (m_currentLevel.compare_exchange_strong(otherLevel, m_lowLevel)) {
-      m_nextLog = now + m_interval;
+  if (now == 0)
+    now = PTimer::Tick().GetMilliSeconds();
+
+  int64_t nextLog = m_nextLog.load();
+  if (now > nextLog) {
+    if (m_nextLog.compare_exchange_strong(nextLog, now + m_interval)) {
+      m_currentLevel = m_lowLevel;
       m_repeatCount = 1;
     }
+    /* Note, there is a race in the else clause here, where one extra log could
+       "escape" without being counted in m_hiddenCount or m_repeatCount. It is
+       a minor thing, really, and deemed better to have that one extra output
+       than to suppress it */
   }
   else if (++m_repeatCount <= m_maxShown)
     m_hiddenCount = 0; // Note this only occurs if m_currentLevel == m_lowLevel

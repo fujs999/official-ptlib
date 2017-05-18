@@ -783,6 +783,12 @@ public:
         PTRACE_THROTTLE_STATIC(m_throttleIt, 2, 2000);
         PTRACE(m_throttleIt, "A very frequent log" << m_throttleIt);
       </code></pre>
+
+      The maxShown parameter indicates the maximum number of trace outputs that
+      can occur in the time interval.
+
+      Additional note: the "repeated" count optionally output is not 100% accurate
+      in multi-threaded usage.
     */
   class ThrottleBase
   {
@@ -795,7 +801,7 @@ public:
       );
       ThrottleBase(const ThrottleBase & other);
 
-      bool CanTrace();
+      bool CanTrace(int64_t now = 0);
       operator unsigned() const { return m_currentLevel; }
 
       friend ostream & operator<<(ostream & strm, const ThrottleBase & throttle);
