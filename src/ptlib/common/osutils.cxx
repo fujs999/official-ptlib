@@ -1018,10 +1018,12 @@ bool PTrace::ThrottleBase::CanTrace()
       m_repeatCount = 1;
     }
   }
-  else if (++m_repeatCount > m_maxShown) {
+  else if (++m_repeatCount <= m_maxShown)
+    m_hiddenCount = 0; // Note this only occurs if m_currentLevel == m_lowLevel
+  else {
     unsigned otherLevel = m_lowLevel;
     if (m_currentLevel.compare_exchange_strong(otherLevel, m_highLevel))
-      m_hiddenCount = 1;
+      m_hiddenCount = 0;
   }
 
   if (PTrace::CanTrace(m_currentLevel))
@@ -1035,7 +1037,7 @@ bool PTrace::ThrottleBase::CanTrace()
 std::ostream & operator<<(ostream & strm, const PTrace::ThrottleBase & throttle)
 {
   if (throttle.m_hiddenCount > 1)
-    strm << " (repeated " << throttle.m_hiddenCount << " times)";
+    strm << " (repeated " << std::dec << throttle.m_hiddenCount << " times)";
   return strm;
 }
 

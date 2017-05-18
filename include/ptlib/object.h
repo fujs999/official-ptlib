@@ -800,8 +800,10 @@ public:
 
       friend ostream & operator<<(ostream & strm, const ThrottleBase & throttle);
 
-      unsigned GetLowLevel() const { return m_lowLevel; }
-      unsigned GetHighLevel() const { return m_highLevel; }
+      __inline unsigned GetLowLevel() const { return m_lowLevel; }
+      __inline unsigned GetHighLevel() const { return m_highLevel; }
+      __inline unsigned GetCurrentLevel() const { return m_currentLevel; }
+      __inline unsigned GetHiddenCount() const { return m_hiddenCount; }
 
     protected:
       const unsigned   m_interval;
