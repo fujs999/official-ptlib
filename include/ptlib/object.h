@@ -1193,7 +1193,7 @@ namespace PProfiling
 {
   __inline uint64_t GetCycles()
   {
-#if defined(_MSC_VER) || defined(P_LINUX)
+#if defined(P_HAS_RDTSC)
     return __rdtsc();
 #elif defined(__i386__) || defined(__x86_64__)
     uint32_t l,h;
@@ -1206,7 +1206,7 @@ namespace PProfiling
 #elif defined(CLOCK_MONOTONIC)
     timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
-    return ts.ts_sec*1000000000ULL+ts.ts_nsec;
+    return ts.tv_sec*1000000000ULL+ts.tv_nsec;
 #else
     timeval tv;
     gettimeofday(&tv, NULL);

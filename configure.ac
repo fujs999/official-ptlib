@@ -464,6 +464,23 @@ MY_COMPILE_IFELSE(
 
 
 dnl ########################################################################
+dnl Do we have __rdtsc
+
+dnl MSWIN_DISPLAY rdtsc,Has read TSC function
+dnl MSWIN_DEFINE  rdtsc,P_HAS_RDTSC=1
+
+MY_COMPILE_IFELSE(
+   [if has read TSC function],
+   [],
+   [#include <x86intrin.h>],
+   [unsigned long long = __rdtsc()],
+   [
+      AC_DEFINE(P_HAS_RDTSC, 1)
+   ]
+)
+
+
+dnl ########################################################################
 dnl check the endianness
 
 dnl MSWIN_DISPLAY byteorder,Byte Order
@@ -1754,31 +1771,9 @@ PTLIB_MODULE_OPTION(
    [-lv8],
    [#include <v8.h>],
    [
-      v8::Isolate * isolate = v8::Isolate::GetCurrent();
-   ],
-   [MY_COMPILE_IFELSE(
-      [V8 Javascript API version 2],
-      [$V8_CFLAGS],
-      [#include <v8.h>],
-      [
-         v8::Isolate * isolate;
-         const char * name;
-         v8::String::NewFromUtf8(isolate, name);
-         v8::V8::InitializeICU();
-      ],
-      [MY_COMPILE_IFELSE(
-         [V8 Javascript API version 3],
-         [$V8_CFLAGS],
-         [#include <v8.h>],
-         [
-            v8::Isolate * isolate;
-            isolate->SetEventLogger(NULL);
-         ],
-         [AC_DEFINE(P_V8_API, 3)],
-         [AC_DEFINE(P_V8_API, 2)]
-      )],
-      [AC_DEFINE(P_V8_API, 1)]
-   )]
+      v8::Isolate * isolate;
+      isolate->SetEventLogger(NULL);
+   ]
 )
 
 

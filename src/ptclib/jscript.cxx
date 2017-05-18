@@ -42,10 +42,12 @@ For Unix variants, follow build isntructions for v8 or just use distro.
 
 For Windows the following commands was used to build V8:
 
-Install Visual Studio 2015
-Install Windows 10 SDK from https://developer.microsoft.com/en-us/windows/downloads/windows-10-sdk
-Download https://storage.googleapis.com/chrome-infra/depot_tools.zip
-Unpack to somehere, e.g. C:\tools\depot_tools
+Install Visual Studio 2015, note you should do a full isntallation, in
+    particular the "Windows SDK" component.
+Install Windows 10 SDK (yes, in addition to the above) from
+    https://developer.microsoft.com/en-us/windows/downloads/windows-10-sdk
+Download https://storage.googleapis.com/chrome-infra/depot_tools.zip and
+    unpack to somehere, e.g. C:\tools\depot_tools
 set DEPOT_TOOLS_WIN_TOOLCHAIN=0
 set GYP_MSVS_VERSION=2015
 PATH=C:\tools\depot_tools;%PATH%
@@ -119,13 +121,13 @@ They are usually in the output directory of the build, e.g. out.gn\x64.release
       #pragma comment(lib, P_V8_ICUI18N_RELEASE64)
       #pragma comment(lib, P_V8_ICUUC_RELEASE64)
     #else
-      #pragma comment(lib, P_V8_BASE_DEBUG32)
-      #pragma comment(lib, P_V8_LIBBASE_DEBUG32)
-      #pragma comment(lib, P_V8_SNAPSHOT_DEBUG32)
-      #pragma comment(lib, P_V8_LIBPLATFORM_DEBUG32)
-      #pragma comment(lib, P_V8_LIBSAMPLER_DEBUG32)
-      #pragma comment(lib, P_V8_ICUI18N_DEBUG32)
-      #pragma comment(lib, P_V8_ICUUC_DEBUG32)
+      #pragma comment(lib, P_V8_BASE_RELEASE32)
+      #pragma comment(lib, P_V8_LIBBASE_RELEASE32)
+      #pragma comment(lib, P_V8_SNAPSHOT_RELEASE32)
+      #pragma comment(lib, P_V8_LIBPLATFORM_RELEASE32)
+      #pragma comment(lib, P_V8_LIBSAMPLER_RELEASE32)
+      #pragma comment(lib, P_V8_ICUI18N_RELEASE32)
+      #pragma comment(lib, P_V8_ICUUC_RELEASE32)
     #endif
   #endif
 #endif
