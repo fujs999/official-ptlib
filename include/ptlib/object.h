@@ -789,9 +789,9 @@ public:
     public:
       ThrottleBase(
         unsigned lowLevel,          ///< Level at which low frequency logs made
-        unsigned interval = 60000,  ///< TIme between low frequency logs
+        unsigned interval = 60000,  ///< Time between low frequency logs
         unsigned highLevel = 6,     ///< Level for high frequency (every) logs
-        unsigned maxShown = 1      ///< Max shown messages in time interval
+        unsigned maxShown = 1       ///< Max shown messages in time interval
       );
       ThrottleBase(const ThrottleBase & other);
 
@@ -823,7 +823,7 @@ public:
       This is primarily to set configuration values to compile time defaults
       without needing to be in ctor. */
   template <unsigned lowLevel,          ///< Level at which low frequency logs made
-            unsigned interval = 60000,  ///< TIme between low frequency logs
+            unsigned interval = 60000,  ///< Time between low frequency logs
             unsigned highLevel = 6,     ///< Level for high frequency (every) logs
             unsigned maxShown = 1       ///< Max repeated message in time interval
            > struct Throttle : ThrottleBase
