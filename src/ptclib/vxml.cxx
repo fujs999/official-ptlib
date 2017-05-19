@@ -2087,9 +2087,11 @@ PBoolean PVXMLSession::TraverseSubmit(PXMLElement & element)
     }
 
     PMIMEInfo replyMIME;
-	PString body;
-    if (client.GetTextDocument(url, body))
+    PString body;
+    if (client.GetTextDocument(url, body)) {
+      PTRACE(4, "VXML\t<submit> GET " << url << " succeeded and returned body:\n" << body);
       return InternalLoadVXML(body, PString::Empty());
+    }
 
     PTRACE(1, "VXML\t<submit> GET " << url << " failed with "
            << client.GetLastResponseCode() << ' ' << client.GetLastResponseInfo());
@@ -2105,8 +2107,12 @@ PBoolean PVXMLSession::TraverseSubmit(PXMLElement & element)
         vars.SetAt(namelist[i], GetVar(namelist[i]));
     }
 
-    if (client.PostData(url, vars))
-      return true;
+    PMIMEInfo replyMIME;
+    PString replyBody;
+    if (client.PostData(url, vars, replyMIME, replyBody)) {
+      PTRACE(4, "VXML\t<submit> POST " << url << " succeeded and returned body:\n" << replyBody);
+      return InternalLoadVXML(replyBody, PString::Empty());
+    }
 
     PTRACE(1, "VXML\t<submit> POST " << url << " failed with "
            << client.GetLastResponseCode() << ' ' << client.GetLastResponseInfo());
@@ -2125,6 +2131,19 @@ PBoolean PVXMLSession::TraverseSubmit(PXMLElement & element)
   PStringStream entityBody;
 
   for (PINDEX i = 0; i < namelist.GetSize(); ++i) {
+    PString type = GetVar(namelist[i] + ".type");
+    if (type.IsEmpty()) {
+      PMIMEInfo part1;
+
+      part1.Set(PMIMEInfo::ContentTypeTag, "text/plain");
+      part1.Set(PMIMEInfo::ContentDispositionTag, "form-data; name=\"" + namelist[i] + "\"; ");
+
+      entityBody << "--" << boundary << "\r\n"
+                 << part1 << GetVar(namelist[i]) << "\r\n";
+
+      continue;
+    }
+
     if (GetVar(namelist[i] + ".type") != "audio/wav" ) {
       PTRACE(1, "VXML\t<submit> does not (yet) support submissions of types other than \"audio/wav\"");
       continue;
@@ -2157,8 +2176,12 @@ PBoolean PVXMLSession::TraverseSubmit(PXMLElement & element)
     return false;
   }
 
-  if (client.PostData(url, sendMIME, entityBody))
-    return true;
+  PMIMEInfo replyMIME;
+  PString replyBody;
+  if (client.PostData(url, sendMIME, entityBody, replyMIME, replyBody)) {
+    PTRACE(1, "VXML\t<submit> POST " << url << " succeeded and returned body:\n" << replyBody);
+    return InternalLoadVXML(replyBody, PString::Empty());
+  }
 
   PTRACE(1, "VXML\t<submit> POST " << url << " failed with "
          << client.GetLastResponseCode() << ' ' << client.GetLastResponseInfo());
@@ -2398,7 +2421,7 @@ void PVXMLGrammar::Start()
 
 void PVXMLGrammar::OnTimeout(PTimer &, P_INT_PTR)
 {
-	PTRACE(3, "VXML\tTimeout for grammar " << *this );
+  PTRACE(3, "VXML\tTimeout for grammar " << *this );
   m_mutex.Wait();
 
   if (m_state == Started) {
@@ -2521,14 +2544,13 @@ void PVXMLDigitsGrammar::OnUserInput(const char ch)
 
 bool PVXMLDigitsGrammar::IsFilled()
 {
-	PINDEX len = m_value.GetLength();
-	bool filled = len >= m_minDigits && len <= m_maxDigits;
+  PINDEX len = m_value.GetLength();
+  bool filled = len >= m_minDigits && len <= m_maxDigits;
 
-	PTRACE(4, "VXML\t Grammar " << *this << 
-		(filled ? " has been FILLED" : " has NOT yet been filled" ) 
-		<< ". Collected value=" << m_value << ", length: " << len << ", while min=" << m_minDigits << " max=" << m_maxDigits);
+  PTRACE(4, "VXML\t Grammar " << *this << (filled ? " has been FILLED" : " has NOT yet been filled") << "."
+            " Collected value=" << m_value << ", length: " << len << ", while min=" << m_minDigits << " max=" << m_maxDigits);
 
-	return filled;
+  return filled;
 }
 
 //////////////////////////////////////////////////////////////////
