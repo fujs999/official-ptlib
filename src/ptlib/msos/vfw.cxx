@@ -1284,16 +1284,6 @@ VOID CALLBACK PVideoOutputDevice_Window::TimerProc(_In_  HWND,
 }
 
 
-static int GetTokenValue(const PString & deviceName, const char * token, int defaultValue)
-{
-  PINDEX pos = deviceName.Find(token);
-  if (pos == P_MAX_INDEX)
-    return defaultValue;
-
-  return strtoul(((const char *)deviceName)+pos+strlen(token), NULL, 0);
-}
-
-
 PBoolean PVideoOutputDevice_Window::Open(const PString & name, PBoolean startImmediate)
 {
   if (name.NumCompare(P_MSWIN_VIDEO_PREFIX) != EqualTo)
@@ -1305,18 +1295,13 @@ PBoolean PVideoOutputDevice_Window::Open(const PString & name, PBoolean startImm
 
   m_deviceName = name;
 
-  m_hParent = NULL;
-  PINDEX pos = m_deviceName.Find("PARENT=");
-  if (pos != P_MAX_INDEX) {
-    m_hParent = (HWND)m_deviceName.Mid(+pos+7).AsUnsigned64();
-    if (!::IsWindow(m_hParent)) {
-      PTRACE(2, "Illegal parent window " << m_hParent << " specified.");
-      return false;
-    }
+  m_hParent = (HWND)ParseDeviceNameTokenUnsigned("PARENT", 0);
+  if (m_hParent != NULL && !::IsWindow(m_hParent)) {
+    PTRACE(2, "Illegal parent window " << m_hParent << " specified.");
+    return false;
   }
 
-  pos = m_deviceName.Find("STYLE=");
-  m_dwStyle = pos == P_MAX_INDEX ? DEFAULT_STYLE : strtoul(((const char *)m_deviceName)+pos+6, NULL, 0);
+  m_dwStyle = (DWORD)ParseDeviceNameTokenUnsigned("STYLE", DEFAULT_STYLE);
   if ((m_dwStyle&(WS_POPUP|WS_CHILD)) == 0) {
     PTRACE(1, "Window must be WS_POPUP or WS_CHILD window.");
     return false;
@@ -1328,12 +1313,12 @@ PBoolean PVideoOutputDevice_Window::Open(const PString & name, PBoolean startImm
     return false;
   }
 
-  m_lastPosition.x = GetTokenValue(m_deviceName, "X=", CW_USEDEFAULT);
-  m_lastPosition.y = GetTokenValue(m_deviceName, "Y=", CW_USEDEFAULT);
-  m_fixedSize.cx   = GetTokenValue(m_deviceName, "WIDTH=", 0);
-  m_fixedSize.cy   = GetTokenValue(m_deviceName, "HEIGHT=", 0);
-  m_bgColour       = GetTokenValue(m_deviceName, "BACKGROUND=", 0);
-  m_rotation       = GetTokenValue(m_deviceName, "ROTATION=", 0);
+  m_lastPosition.x = ParseDeviceNameTokenInt("X=", CW_USEDEFAULT);
+  m_lastPosition.y = ParseDeviceNameTokenInt("Y=", CW_USEDEFAULT);
+  m_fixedSize.cx   = ParseDeviceNameTokenInt("WIDTH=", 0);
+  m_fixedSize.cy   = ParseDeviceNameTokenInt("HEIGHT=", 0);
+  m_bgColour       = ParseDeviceNameTokenInt("BACKGROUND=", 0);
+  m_rotation       = ParseDeviceNameTokenInt("ROTATION=", 0);
 
   m_mouseEnabled = m_deviceName.Find("NO-MOUSE") == P_MAX_INDEX;
   m_hidden = !startImmediate || m_deviceName.Find("HIDE") != P_MAX_INDEX;
@@ -1523,11 +1508,11 @@ PBoolean PVideoOutputDevice_Window::SetChannel(int newChannelNumber)
 
 PBoolean PVideoOutputDevice_Window::SetColourFormat(const PString & colourFormat)
 {
-  PWaitAndSignal m(mutex);
+  PWaitAndSignal lock(m_mutex);
 
   if (((colourFormat *= "BGR24") || (colourFormat *= "BGR32")) &&
                 PVideoOutputDeviceRGB::SetColourFormat(colourFormat)) {
-    m_bitmap.bmiHeader.biBitCount = (WORD)(bytesPerPixel*8);
+    m_bitmap.bmiHeader.biBitCount = (WORD)(m_bytesPerPixel*8);
     m_bitmap.bmiHeader.biSizeImage = m_frameStore.GetSize();
     return true;
   }
@@ -1553,7 +1538,7 @@ PBoolean PVideoOutputDevice_Window::SetVFlipState(PBoolean newVFlip)
 PBoolean PVideoOutputDevice_Window::SetFrameSize(unsigned width, unsigned height)
 {
   {
-    PWaitAndSignal m(mutex);
+    PWaitAndSignal lock(m_mutex);
 
     if (width == m_frameWidth && height == m_frameHeight)
       return true;
@@ -1578,7 +1563,7 @@ PBoolean PVideoOutputDevice_Window::FrameComplete()
   if (m_hidden)
     m_hidden = !ShowWindow(m_hWnd, SW_SHOW);
 
-  PWaitAndSignal m(mutex);
+  PWaitAndSignal lock(m_mutex);
 
   if (m_hWnd == NULL)
     return false;
@@ -1704,7 +1689,7 @@ void PVideoOutputDevice_Window::Draw(HDC hDC)
     int imageWidth = m_frameWidth;
     int imageHeight = m_frameHeight;
     if (m_rotation != 0) {
-      Rotate(m_frameStore, m_frameWidth, m_frameHeight, bytesPerPixel, m_rotation);
+      Rotate(m_frameStore, m_frameWidth, m_frameHeight, m_bytesPerPixel, m_rotation);
       if (m_rotation != 180) {
         imageWidth = m_frameHeight;
         imageHeight = m_frameWidth;
@@ -1842,11 +1827,7 @@ void PVideoOutputDevice_Window::CreateDisplayWindow()
     PAssertOS(RegisterClass(&wndClass));
   }
 
-  PVarString title = DEFAULT_TITLE;
-  PINDEX pos = m_deviceName.Find("TITLE=\"");
-  if (pos != P_MAX_INDEX)
-    title = PString(PString::Literal, m_deviceName.Mid(pos+6));
-
+  PVarString title = ParseDeviceNameTokenString("TITLE", DEFAULT_TITLE);
   if ((m_hWnd = CreateWindow(wndClassName,
                              title, 
                              m_dwStyle,
@@ -1874,7 +1855,7 @@ void PVideoOutputDevice_Window::HandleDisplay(PThread &, P_INT_PTR)
 
 LRESULT PVideoOutputDevice_Window::WndProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-  PWaitAndSignal m(mutex);
+  PWaitAndSignal lock(m_mutex);
 
   switch (uMsg) {
     case WM_PAINT :

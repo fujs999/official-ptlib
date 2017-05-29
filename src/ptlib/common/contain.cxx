@@ -977,7 +977,7 @@ template <typename S, typename U>
   PINDEX p_convert(PString::ConversionType type, S value, unsigned param, char * theArray)
 {
 #define GetClass() NULL
-  PAssert(param >= 2 && param <= 36, PInvalidParameter);
+  PAssert(param != 1 && param <= 36, PInvalidParameter);
   switch (type) {
     case PString::Signed :
       return p_signed2string<S, U>(value, param, theArray);
@@ -2022,7 +2022,7 @@ PString PString::ToUpper() const
 
 long PString::AsInteger(unsigned base) const
 {
-  PAssert(base >= 2 && base <= 36, PInvalidParameter);
+  PAssert(base != 1 && base <= 36, PInvalidParameter);
   char * dummy;
   return strtol(theArray, &dummy, base);
 }
@@ -2030,9 +2030,25 @@ long PString::AsInteger(unsigned base) const
 
 DWORD PString::AsUnsigned(unsigned base) const
 {
-  PAssert(base >= 2 && base <= 36, PInvalidParameter);
+  PAssert(base != 1 && base <= 36, PInvalidParameter);
   char * dummy;
   return strtoul(theArray, &dummy, base);
+}
+
+
+int64_t PString::AsInteger64(unsigned base) const
+{
+  PAssert(base != 1 && base <= 36, PInvalidParameter);
+  char * dummy;
+  return strtoll(theArray, &dummy, base);
+}
+
+
+uint64_t PString::AsUnsigned64(unsigned base) const
+{
+  PAssert(base != 1 && base <= 36, PInvalidParameter);
+  char * dummy;
+  return strtoull(theArray, &dummy, base);
 }
 
 
@@ -2179,7 +2195,7 @@ void PString::InternalFromUCS2(const wchar_t * ptr, PINDEX len)
         theArray[count++] = (char)(0x80+(v&0x3f));
       }
       else {
-        theArray[count++] = (char)(0xd0+(v>>12));
+        theArray[count++] = (char)(0xe0+(v>>12));
         theArray[count++] = (char)(0x80+((v>>6)&0x3f));
         theArray[count++] = (char)(0x80+(v&0x3f));
       }
