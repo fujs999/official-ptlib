@@ -2133,27 +2133,31 @@ dnl ########################################################################
 dnl look for SDL
 
 dnl MSWIN_DISPLAY    libsdl,Simple DirectMedia Layer
-dnl MSWIN_CHECK_FILE libsdl,lib\x86\SDL.lib,P_SDL_WIN32=1
-dnl MSWIN_CHECK_FILE libsdl,lib\x64\SDL.lib,P_SDL_WIN64=1
+dnl MSWIN_DEFAULT    libsdl,Disabled
+dnl MSWIN_CHECK_FILE libsdl,lib\x86\SDL2.lib,P_SDL_WIN32=1
+dnl MSWIN_CHECK_FILE libsdl,lib\x64\SDL2.lib,P_SDL_WIN64=1
 dnl MSWIN_DIR_SYMBOL libsdl,SDL_DIR
-dnl MSWIN_CHECK_DIR  libsdl,..\sdl*
-dnl MSWIN_CHECK_DIR  libsdl,..\external\sdl*
-dnl MSWIN_CHECK_DIR  libsdl,\sdl\
-dnl MSWIN_CHECK_DIR  libsdl,c:\sdl\
-dnl MSWIN_CHECK_DIR  libsdl,%ProgramFiles%\OSSBuild\GStreamer\v0.10.6\sdk
-dnl MSWIN_CHECK_DIR  libsdl,%ProgramW6432%\OSSBuild\GStreamer\v0.10.6\sdk
+dnl MSWIN_CHECK_DIR  libsdl,..\sdl2*
+dnl MSWIN_CHECK_DIR  libsdl,..\external\sdl2*
+dnl MSWIN_CHECK_DIR  libsdl,\sdl2\
+dnl MSWIN_CHECK_DIR  libsdl,c:\sdl2\
 
 PTLIB_MODULE_OPTION(
    [SDL], 
    [sdl],
-   [disable libSDL (video display) support],
-   [sdl], 
+   [disable libSDL2 (video display) support],
+   [sdl2], 
    [],[],
    [
+      #define SDL_MAIN_HANDLED 1
       #include <SDL.h>
-      #undef main
    ],
-   [SDL_Init(SDL_INIT_VIDEO|SDL_INIT_NOPARACHUTE)],
+   [
+      #if !SDL_VERSION_ATLEAST(2,0,0)
+         #error Unsupported version
+      #endif
+      SDL_Init(SDL_INIT_VIDEO)
+   ],
    [],
    [],
    [HAS_VIDEO]
@@ -2737,7 +2741,7 @@ MY_OUTPUT_SUMMARY(
    [                              shm], PTLIB_AUDIOSHM,
    [], [],
    [                            Video], PTLIB_VIDEO,
-   [                              SDL], PTLIB_SDL,
+   [                             SDL2], PTLIB_SDL,
    [                     Video4linux ], PTLIB_V4L,
    [                     Video4linux2], PTLIB_V4L2,
    [                              BSD], PTLIB_BSDVIDEOCAP,

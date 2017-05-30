@@ -488,6 +488,44 @@ POrdinalToString::Initialiser const PProcess::InternalSigNames[] = {
   SIG_NAME(SIGPIPE  ),      /* Broken pipe (POSIX).  */
   SIG_NAME(SIGALRM  ),      /* Alarm clock (POSIX).  */
   SIG_NAME(SIGTERM  ),      /* Termination (ANSI).  */
+#ifdef SIGSTKFLT
+  SIG_NAME(SIGSTKFLT),      /* Stack fault.  */
+#endif
+  SIG_NAME(SIGCHLD  ),      /* Child status has changed (POSIX).  */
+  SIG_NAME(SIGCONT  ),      /* Continue (POSIX).  */
+  SIG_NAME(SIGSTOP  ),      /* Stop, unblockable (POSIX).  */
+  SIG_NAME(SIGTSTP  ),      /* Keyboard stop (POSIX).  */
+  SIG_NAME(SIGTTIN  ),      /* Background read from tty (POSIX).  */
+  SIG_NAME(SIGTTOU  ),      /* Background write to tty (POSIX).  */
+  SIG_NAME(SIGURG   ),      /* Urgent condition on socket (4.2 BSD).  */
+  SIG_NAME(SIGXCPU  ),      /* CPU limit exceeded (4.2 BSD).  */
+  SIG_NAME(SIGXFSZ  ),      /* File size limit exceeded (4.2 BSD).  */
+  SIG_NAME(SIGVTALRM),      /* Virtual alarm clock (4.2 BSD).  */
+  SIG_NAME(SIGPROF  ),      /* Profiling alarm clock (4.2 BSD).  */
+  SIG_NAME(SIGWINCH ),      /* Window size change (4.3 BSD, Sun).  */
+  SIG_NAME(SIGIO    ),      /* I/O now possible (4.2 BSD).  */
+#ifdef SIGPWR
+  SIG_NAME(SIGPWR   ),      /* Power failure restart (System V).  */
+
+
+#define SIG_NAME(s) { s, #s }
+POrdinalToString::Initialiser const PProcess::InternalSigNames[] = {
+  SIG_NAME(SIGHUP   ),      /* Hangup (POSIX).  */
+  SIG_NAME(SIGINT   ),      /* Interrupt (ANSI).  */
+  SIG_NAME(SIGQUIT  ),      /* Quit (POSIX).  */
+  SIG_NAME(SIGILL   ),      /* Illegal instruction (ANSI).  */
+  SIG_NAME(SIGTRAP  ),      /* Trace trap (POSIX).  */
+  SIG_NAME(SIGABRT  ),      /* Abort (ANSI).  */
+  SIG_NAME(SIGIOT   ),      /* IOT trap (4.2 BSD).  */
+  SIG_NAME(SIGBUS   ),      /* BUS error (4.2 BSD).  */
+  SIG_NAME(SIGFPE   ),      /* Floating-point exception (ANSI).  */
+  SIG_NAME(SIGKILL  ),      /* Kill, unblockable (POSIX).  */
+  SIG_NAME(SIGUSR1  ),      /* User-defined signal 1 (POSIX).  */
+  SIG_NAME(SIGSEGV  ),      /* Segmentation violation (ANSI).  */
+  SIG_NAME(SIGUSR2  ),      /* User-defined signal 2 (POSIX).  */
+  SIG_NAME(SIGPIPE  ),      /* Broken pipe (POSIX).  */
+  SIG_NAME(SIGALRM  ),      /* Alarm clock (POSIX).  */
+  SIG_NAME(SIGTERM  ),      /* Termination (ANSI).  */
   SIG_NAME(SIGSTKFLT),      /* Stack fault.  */
   SIG_NAME(SIGCHLD  ),      /* Child status has changed (POSIX).  */
   SIG_NAME(SIGCONT  ),      /* Continue (POSIX).  */

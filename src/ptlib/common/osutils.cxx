@@ -47,6 +47,7 @@
   #include <ptlib/msos/ptlib/debstrm.h>
 #elif defined(P_MACOSX)
   #include <mach-o/dyld.h>
+  #include <ptlib/videoio.h>
 #endif
 
 
@@ -2126,6 +2127,12 @@ PProcess * PProcessInstance = NULL;
 
 int PProcess::InternalMain(void *)
 {
+#if P_SDL && defined(P_MACOSX)
+  PVideoOutputDevice * device = PVideoOutputDevice::CreateDeviceByName(P_SDL_VIDEO_PREFIX);
+  if (device != NULL && device->ApplicationMain())
+    return m_terminationValue;
+#endif
+  
 #if P_EXCEPTIONS
   try {
     Main();
@@ -3248,13 +3255,26 @@ static void OutputThreadInfo(ostream & strm, PThreadIdentifier tid, PUniqueThrea
 unsigned PTimedMutex::ExcessiveLockWaitTime;
 
 
+PMutexExcessiveLockInfo::PMutexExcessiveLockInfo()
+{
+  Construct(0);
+}
+
 PMutexExcessiveLockInfo::PMutexExcessiveLockInfo(const PDebugLocation & location, unsigned timeout)
   : m_location(location)
-  , m_excessiveLockTimeout(timeout)
-  , m_excessiveLockActive(false)
-  , m_startHeldSamplePoint(0)
 {
-  if (m_excessiveLockTimeout == 0) {
+  Construct(timeout);
+}
+
+
+void PMutexExcessiveLockInfo::Construct(unsigned timeout)
+{
+  m_excessiveLockActive = false;
+  m_startHeldSamplePoint = 0;
+
+  if (timeout > 0)
+      m_excessiveLockTimeout = timeout;
+  else {
     if (PTimedMutex::ExcessiveLockWaitTime == 0) {
       const char * env = getenv("PTLIB_DEADLOCK_TIME");
       int seconds = env != NULL ? atoi(env) : 0;
@@ -3303,7 +3323,7 @@ void PMutexExcessiveLockInfo::ReleasedLock(const PObject & mutex,
   if (m_excessiveLockActive) {
 #if PTRACING
     PTime releaseTime;
-    PTimeInterval heldDuration = PTimeInterval::NanoSeconds(PProfiling::CyclesToNanoseconds(PProfiling::GetCycles() - startHeldSamplePoint));
+    PNanoSeconds heldDuration(PProfiling::CyclesToNanoseconds(PProfiling::GetCycles() - startHeldSamplePoint));
     ostream & trace = PTRACE_BEGIN(0, "PTLib");
     trace << "Assertion fail: Released phantom deadlock"
           << ", held from " << (releaseTime - heldDuration).AsString(PTime::TodayFormat, PTrace::GetTimeZone())
@@ -3322,16 +3342,47 @@ void PMutexExcessiveLockInfo::ReleasedLock(const PObject & mutex,
 }
 
 
+PTimedMutex::PTimedMutex()
+  : PMutexExcessiveLockInfo()
+{
+  Construct();
+}
+
+
+PTimedMutex::PTimedMutex(const PDebugLocation & location, unsigned timeout)
+  : PMutexExcessiveLockInfo(location, timeout)
+{
+  Construct();
+}
+
+
+PTimedMutex::PTimedMutex(const PTimedMutex & other)
+  : PMutexExcessiveLockInfo(other)
+{
+  Construct();
+}
+
+
+void PTimedMutex::Construct()
+{
+  m_lockerId = PNullThreadIdentifier;
+  m_lastLockerId = PNullThreadIdentifier;
+  m_lastUniqueId = 0;
+  m_lockCount = 0;
+  PlatformConstruct();
+}
+
+
 void PTimedMutex::Wait()
 {
-  CommonWait(PDebugLocation::None);
+  InternalWait(NULL);
 }
 
 
 PBoolean PTimedMutex::Wait(const PTimeInterval & timeout)
 {
   if (timeout == PMaxTimeInterval) {
-    CommonWait(PDebugLocation::None);
+    InternalWait(NULL);
     return true;
   }
 
@@ -3340,18 +3391,18 @@ PBoolean PTimedMutex::Wait(const PTimeInterval & timeout)
   if (!PlatformWait(timeout))
     return false;
 
-  CommonWaitComplete(startWaitCycle, PDebugLocation::None);
+  InternalWaitComplete(startWaitCycle, NULL);
   return true;
 }
 
 
 void PTimedMutex::Signal()
 {
-  PlatformSignal(PDebugLocation::None);
+  PlatformSignal(NULL);
 }
 
 
-void PTimedMutex::CommonWait(const PDebugLocation & location)
+void PTimedMutex::InternalWait(const PDebugLocation * location)
 {
   uint64_t startWaitCycle = PProfiling::GetCycles();
 
@@ -3388,11 +3439,11 @@ void PTimedMutex::CommonWait(const PDebugLocation & location)
     ExcessiveLockPhantom(*this);
   }
 
-  CommonWaitComplete(startWaitCycle, location);
+  InternalWaitComplete(startWaitCycle, location);
 }
 
 
-void PTimedMutex::CommonWaitComplete(uint64_t startWaitCycle, const PDebugLocation & location)
+void PTimedMutex::InternalWaitComplete(uint64_t startWaitCycle, const PDebugLocation * location)
 {
   // Note this is protected by the mutex itself only the thread with
   // the lock can alter these variables.
@@ -3406,7 +3457,7 @@ void PTimedMutex::CommonWaitComplete(uint64_t startWaitCycle, const PDebugLocati
 }
 
 
-bool PTimedMutex::CommonSignal(const PDebugLocation & location)
+bool PTimedMutex::InternalSignal(const PDebugLocation * location)
 {
   if (--m_lockCount > 0)
     return true;
@@ -3430,27 +3481,27 @@ bool PInstrumentedMutex::InstrumentedWait(const PTimeInterval & timeout, const P
   uint64_t startWaitCycle = PProfiling::GetCycles();
 
   if (timeout == PMaxTimeInterval) {
-    CommonWait(location);
+    InternalWait(&location);
     return true;
   }
 
   if (!PlatformWait(timeout))
     return false;
 
-  CommonWaitComplete(startWaitCycle, location);
+  InternalWaitComplete(startWaitCycle, &location);
   return true;
 }
 
 
 void PInstrumentedMutex::AcquiredLock(uint64_t startWaitCycle, bool, const PDebugLocation & location)
 {
-  m_timeWaitContext.EndMeasurement(this, this, location, startWaitCycle);
+  m_timeWaitContext.EndMeasurement(this, this, &location, startWaitCycle);
 }
 
 
 void PInstrumentedMutex::ReleasedLock(const PObject & mutex, uint64_t startHeldSamplePoint, bool readOnly, const PDebugLocation & location)
 {
-  m_timeHeldContext.EndMeasurement(this, this, location, startHeldSamplePoint);
+  m_timeHeldContext.EndMeasurement(this, this, &location, startHeldSamplePoint);
   PTimedMutex::ReleasedLock(mutex, startHeldSamplePoint, readOnly, location);
 }
 #endif
@@ -3601,6 +3652,28 @@ PIntCondMutex & PIntCondMutex::operator-=(int dec)
 
 /////////////////////////////////////////////////////////////////////////////
 
+PReadWriteMutex::PReadWriteMutex()
+  : PMutexExcessiveLockInfo()
+#if P_READ_WRITE_ALGO2
+  , m_inSemaphore(1, 1)
+  , m_inCount(0)
+  , m_outSemaphore(1, 1)
+  , m_outCount(0)
+  , m_writeSemaphore(0, 1)
+  , m_wait(false)
+#else
+  , m_readerSemaphore(1, 1)
+  , m_readerMutex()
+  , m_readerCount(0)
+  , m_starvationPreventer()
+  , m_writerSemaphore(1, 1)
+  , m_writerMutex()
+  , m_writerCount(0)
+#endif
+{
+  PTRACE(5, "Created read/write mutex " << *this);
+}
+
 PReadWriteMutex::PReadWriteMutex(const PDebugLocation & location, unsigned timeout)
   : PMutexExcessiveLockInfo(location, timeout)
 #if P_READ_WRITE_ALGO2
@@ -3672,7 +3745,7 @@ PReadWriteMutex::Nest & PReadWriteMutex::StartNest()
 }
 
 
-void PReadWriteMutex::StartRead(const PDebugLocation & location)
+void PReadWriteMutex::InternalStartRead(const PDebugLocation * location)
 {
   uint64_t startWaitCycle = PProfiling::GetCycles();
 
@@ -3687,7 +3760,7 @@ void PReadWriteMutex::StartRead(const PDebugLocation & location)
   // previous call to StartWrite() then actually do the text book read only
   // lock, otherwise we leave it as just having incremented the reader count.
   if (nest.m_readerCount == 1 && nest.m_writerCount == 0) {
-    InternalStartRead(nest, location);
+    InternalStartReadWithNest(nest, location);
     AcquiredLock(startWaitCycle, true, location);
     nest.m_startHeldCycle = PProfiling::GetCycles();
   }
@@ -3740,7 +3813,7 @@ void PReadWriteMutex::InternalWait(Nest & nest, PSync & sync, const PDebugLocati
 }
 
 
-void PReadWriteMutex::EndRead(const PDebugLocation & location)
+void PReadWriteMutex::InternalEndRead(const PDebugLocation * location)
 {
   // Get the nested thread info structure for the curent thread
   Nest * nest = GetNest();
@@ -3764,7 +3837,7 @@ void PReadWriteMutex::EndRead(const PDebugLocation & location)
   ReleasedLock(*this, nest->m_startHeldCycle, true, location);
 
   // Do text book read lock
-  InternalEndRead(*nest, location);
+  InternalEndReadWithNest(*nest, location);
 
   // At this point all read and write locks are gone for this thread so we can
   // reclaim the memory.
@@ -3772,7 +3845,7 @@ void PReadWriteMutex::EndRead(const PDebugLocation & location)
 }
 
 
-void PReadWriteMutex::StartWrite(const PDebugLocation & location)
+void PReadWriteMutex::InternalStartWrite(const PDebugLocation * location)
 {
   uint64_t startWaitCycle = PProfiling::GetCycles();
 
@@ -3792,18 +3865,18 @@ void PReadWriteMutex::StartWrite(const PDebugLocation & location)
   // but do not change the lock count, calls to EndRead() will now just
   // decrement the count instead of doing the unlock (its already done!)
   if (nest.m_readerCount > 0)
-    InternalEndRead(nest, location);
+    InternalEndReadWithNest(nest, location);
 
   // Note in this gap another thread could grab the write lock
 
-  InternalStartWrite(nest, location);
+  InternalStartWriteWithNest(nest, location);
 
   AcquiredLock(startWaitCycle, false, location);
   m_startHeldSamplePoint = PProfiling::GetCycles();
 }
 
 
-void PReadWriteMutex::EndWrite(const PDebugLocation & location)
+void PReadWriteMutex::InternalEndWrite(const PDebugLocation * location)
 {
   // Get the nested thread info structure for the curent thread
   Nest * nest = GetNest();
@@ -3826,19 +3899,19 @@ void PReadWriteMutex::EndWrite(const PDebugLocation & location)
 
   ReleasedLock(*this, m_startHeldSamplePoint, false, location);
 
-  InternalEndWrite(*nest, location);
+  InternalEndWriteWithNest(*nest, location);
 
   // Now check to see if there was a read lock present for this thread, if so
   // then reacquire the read lock (not changing the count) otherwise clean up the
   // memory for the nested thread info structure
   if (nest->m_readerCount > 0)
-    InternalStartRead(*nest, location);
+    InternalStartReadWithNest(*nest, location);
   else
     EndNest();
 }
 
 
-void PReadWriteMutex::InternalStartRead(Nest & nest, const PDebugLocation & location)
+void PReadWriteMutex::InternalStartReadWithNest(Nest & nest, const PDebugLocation & location)
 {
 #if P_READ_WRITE_ALGO2
   InternalWait(nest, m_inSemaphore);
@@ -3860,7 +3933,7 @@ void PReadWriteMutex::InternalStartRead(Nest & nest, const PDebugLocation & loca
 }
 
 
-void PReadWriteMutex::InternalEndRead(Nest & nest, const PDebugLocation & location)
+void PReadWriteMutex::InternalEndReadWithNest(Nest & nest, const PDebugLocation & location)
 {
 #if P_READ_WRITE_ALGO2
   InternalWait(nest, m_outSemaphore);
@@ -3880,7 +3953,7 @@ void PReadWriteMutex::InternalEndRead(Nest & nest, const PDebugLocation & locati
 }
 
 
-void PReadWriteMutex::InternalStartWrite(Nest & nest, const PDebugLocation & location)
+void PReadWriteMutex::InternalStartWriteWithNest(Nest & nest, const PDebugLocation & location)
 {
 #if P_READ_WRITE_ALGO2
   InternalWait(nest, m_inSemaphore);
@@ -3907,7 +3980,7 @@ void PReadWriteMutex::InternalStartWrite(Nest & nest, const PDebugLocation & loc
 }
 
 
-void PReadWriteMutex::InternalEndWrite(Nest & nest, const PDebugLocation & location)
+void PReadWriteMutex::InternalEndWriteWithNest(Nest & nest, const PDebugLocation & location)
 {
 #if P_READ_WRITE_ALGO2
   m_inSemaphore.Signal();
@@ -3935,18 +4008,18 @@ void PReadWriteMutex::PrintOn(ostream & strm) const
 void PInstrumentedReadWriteMutex::AcquiredLock(uint64_t startWaitCycle, bool readOnly, const PDebugLocation & location)
 {
   if (readOnly)
-    m_timeWaitReadOnlyContext.EndMeasurement(this, this, location, startWaitCycle);
+    m_timeWaitReadOnlyContext.EndMeasurement(this, this, &location, startWaitCycle);
   else
-    m_timeWaitReadWriteContext.EndMeasurement(this, this, location, startWaitCycle);
+    m_timeWaitReadWriteContext.EndMeasurement(this, this, &location, startWaitCycle);
 }
 
 
 void PInstrumentedReadWriteMutex::ReleasedLock(const PObject & mutex, uint64_t startHeldSamplePoint, bool readOnly, const PDebugLocation & location)
 {
   if (readOnly)
-    m_timeHeldReadOnlyContext.EndMeasurement(this, this, location, startHeldSamplePoint);
+    m_timeHeldReadOnlyContext.EndMeasurement(this, this, &location, startHeldSamplePoint);
   else
-    m_timeHeldReadWriteContext.EndMeasurement(this, this, location, startHeldSamplePoint);
+    m_timeHeldReadWriteContext.EndMeasurement(this, this, &location, startHeldSamplePoint);
 
   PReadWriteMutex::ReleasedLock(mutex, startHeldSamplePoint, readOnly, location);
 }
