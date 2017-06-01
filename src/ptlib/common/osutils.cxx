@@ -2979,7 +2979,7 @@ PString PThread::GetThreadName() const
 
 #if defined(_DEBUG) && defined(_MSC_VER) && !defined(_WIN32_WCE)
 
-static void SetWinDebugThreadName(const char * threadName, DWORD threadId)
+static void SetOperatingSystemThreadName(DWORD threadId, const char * threadName)
 {
   struct THREADNAME_INFO
   {
@@ -3000,9 +3000,18 @@ static void SetWinDebugThreadName(const char * threadName, DWORD threadId)
   }
 }
 
+#elif defined(P_PTHREADS) && !defined(P_MACOSX)
+  #if defined(P_MACOSX)
+    // For some bizarre reason Mac OS-X version of this function only has one argument.
+    // So can only be called from the current thread, other calls to SetThreadName() will be ignored
+    #define SetOperatingSystemThreadName(threadId, threadName) \
+                    if (pthread_self() == threadId) pthread_setname_np(threadId, threadName.Left(15))
+  #else
+    #define SetOperatingSystemThreadName(threadId, threadName) pthread_setname_np(threadId, threadName.Left(15))
+  #endif
 #else
 
-#define SetWinDebugThreadName(p1,p2)
+#define SetOperatingSystemThreadName(p1,p2)
 
 #endif // defined(_DEBUG) && defined(_MSC_VER) && !defined(_WIN32_WCE)
 
@@ -3010,14 +3019,14 @@ void PThread::SetThreadName(const PString & name)
 {
   PWaitAndSignal mutex(m_threadNameMutex);
 
-  PUniqueThreadIdentifier threadId = GetUniqueIdentifier();
+  PUniqueThreadIdentifier uniqueId = GetUniqueIdentifier();
   if (name.Find('%') != P_MAX_INDEX)
-    m_threadName = psprintf(name, threadId);
+    m_threadName = psprintf(name, uniqueId);
   else {
 #ifdef P_UNIQUE_THREAD_ID_FMT
-    PString idStr(PString::Printf, ":" P_UNIQUE_THREAD_ID_FMT, threadId);
+    PString idStr(PString::Printf, ":" P_UNIQUE_THREAD_ID_FMT, uniqueId);
 #else
-    PString idStr(PString::Printf, ":" P_THREAD_ID_FMT, threadId);
+    PString idStr(PString::Printf, ":" P_THREAD_ID_FMT, uniqueId);
 #endif
 
     m_threadName = name;
@@ -3025,7 +3034,7 @@ void PThread::SetThreadName(const PString & name)
       m_threadName += idStr;
   }
 
-  SetWinDebugThreadName(m_threadName, threadId);
+  SetOperatingSystemThreadName(GetThreadId(), m_threadName);
 }
  
 

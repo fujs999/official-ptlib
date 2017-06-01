@@ -150,6 +150,12 @@
   #include <mach/mach_time.h>
 #endif
 
+#if HAVE_IOCTL_H
+  #include <ioctl.h>
+#elif HAVE_SYS_IOCTL_H
+  #include <sys/ioctl.h>
+#endif
+
 
 #define  LINE_SIZE_STEP  100
 
@@ -1057,12 +1063,7 @@ PBoolean PConsoleChannel::Open(ConsoleType type)
 
 PString PConsoleChannel::GetName() const
 {
-#ifdef P_VXWORKS
-  PAssertAlways("PConsoleChannel::GetName - Not implemented for VxWorks");
-  return PString("Not Implemented");
-#else
   return ttyname(os_handle);
-#endif // P_VXWORKS
 }
 
 
@@ -1119,15 +1120,15 @@ bool PConsoleChannel::SetLocalEcho(bool localEcho)
   if (CheckNotOpen())
     return false;
 
-#if P_CURSES==1
-  if (localEcho)
-    return echo() == OK;
-  else
-    return noecho() == OK;
-#elif defined(P_VXWORKS)
-  PAssertAlways("PConsoleChannel::GetName - Not implemented for VxWorks");
-  return PString("Not Implemented");
-#else
+  #if P_CURSES==1
+  if (stdscr) {
+    if (localEcho)
+      return echo() == OK;
+    else
+      return noecho() == OK;
+  }
+#endif
+
   struct termios ios;
   if (!ConvertOSError(tcgetattr(os_handle, &ios)))
     return false;
@@ -1137,7 +1138,6 @@ bool PConsoleChannel::SetLocalEcho(bool localEcho)
   else
     ios.c_lflag &= ~ECHO;
   return ConvertOSError(tcsetattr(os_handle, TCSANOW, &ios));
-#endif
 }
 
 
@@ -1147,14 +1147,14 @@ bool PConsoleChannel::SetLineBuffered(bool lineBuffered)
     return false;
 
 #if P_CURSES==1
-  if (lineBuffered)
-    return nocbreak() == OK;
-  else
-    return cbreak() == OK;
-#elif defined(P_VXWORKS)
-  PAssertAlways("PConsoleChannel::GetName - Not implemented for VxWorks");
-  return PString("Not Implemented");
-#else
+  if (stdscr) {
+    if (lineBuffered)
+      return nocbreak() == OK;
+    else
+      return cbreak() == OK;
+  }
+#endif
+
   struct termios ios;
   if (!ConvertOSError(tcgetattr(os_handle, &ios)))
     return false;
@@ -1164,6 +1164,31 @@ bool PConsoleChannel::SetLineBuffered(bool lineBuffered)
   else
     ios.c_lflag &= ~ICANON;
   return ConvertOSError(tcsetattr(os_handle, TCSANOW, &ios));
+}
+
+
+bool PConsoleChannel::GetTerminalSize(unsigned & rows, unsigned & columns)
+{
+  if (CheckNotOpen())
+    return false;
+
+#if P_CURSES==1
+  if (stdscr) {
+    getmaxyx(stdscr, rows, columns);
+    return rows > 0 && columns > 0;
+  }
+#endif
+
+#ifdef TIOCGWINSZ
+  struct winsize w;
+  if (ioctl(os_handle, TIOCGWINSZ, &w) != 0)
+    return false;
+
+  rows = w.ws_row;
+  columns = w.ws_col;
+  return rows > 0 && columns > 0;
+#else
+  return false;
 #endif
 }
 
