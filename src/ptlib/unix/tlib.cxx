@@ -563,10 +563,10 @@ PBoolean PProcess::SetMaxHandles(int newMax)
 
 #if defined(P_LINUX)
 
-static inline PTimeInterval jiffies_to_msecs(const uint64_t jiffies)
+static inline PMicroSeconds jiffies_to_usecs(const uint64_t jiffies)
 {
   static long sysconf_HZ = sysconf(_SC_CLK_TCK);
-  return (jiffies * 1000) / sysconf_HZ;
+  return (jiffies * 1000000) / sysconf_HZ;
 }
 
 
@@ -653,44 +653,36 @@ static bool InternalGetTimes(const char * filename, PThread::Times & times)
     if (!statfile.good())
       continue;
 
-    int pid;
-    char comm[100];
-    char state;
-    int ppid, pgrp, session, tty_nr, tpgid;
-    unsigned long flags, minflt, cminflt, majflt, cmajflt, utime, stime;
-    long cutime, cstime, priority, nice, num_threads, itrealvalue;
-    unsigned long starttime, vsize;
-    long rss;
-    unsigned long rlim, startcode, endcode, startstack, kstkesp, kstkeip, signal, blocked, sigignore, sigcatch, wchan, nswap, cnswap;
-    int exit_signal, processor;
-    unsigned long rt_priority, policy;
-    unsigned long long delayacct_blkio_ticks;
-
-    // 17698 (maxmcu) R 1 17033 8586 34833 17467 4202560 7
+    // 17698 (MyApp:1234) R 1 17033 8586 34833 17467 4202560 7
     // 0 0 0 0 0 0 0 -100 0 16
     // 0 55172504 258756608 6741 4294967295 134512640 137352760 3217892976 8185700 15991824
     // 0 0 4 201349635 0 0 0 -1 7 99
     // 2 0
-
-    int count = sscanf(line,
-                       "%d%s %c%d%d%d%d%d%lu%lu"
-                       "%lu%lu%lu%lu%lu%ld%ld%ld%ld%ld"
-                       "%ld%lu%lu%ld%lu%lu%lu%lu%lu%lu"
-                       "%lu%lu%lu%lu%lu%lu%lu%d%d%lu"
-                       "%lu%llu",
-                       &pid, comm, &state, &ppid, &pgrp, &session, &tty_nr, &tpgid, &flags, &minflt,
-                       &cminflt, &majflt, &cmajflt, &utime, &stime, &cutime, &cstime, &priority, &nice, &num_threads,
-                       &itrealvalue, &starttime, &vsize, &rss, &rlim, &startcode, &endcode, &startstack, &kstkesp, &kstkeip,
-                       &signal, &blocked, &sigignore, &sigcatch, &wchan, &nswap, &cnswap, &exit_signal, &processor, &rt_priority,
-                       &policy, &delayacct_blkio_ticks);
-    if (count != 42)
+    //
+    char * str = line;
+    while (*str != '\0' && *str++ != ')'); //  get past pid and thread name
+    while (*str != '\0' && !isdigit(*str++)); // get past state
+    while (*str != '\0' && *str++ != ' '); // ppid
+    while (*str != '\0' && *str++ != ' '); // pgrp
+    while (*str != '\0' && *str++ != ' '); // session
+    while (*str != '\0' && *str++ != ' '); // tty_nr
+    while (*str != '\0' && *str++ != ' '); // tpgid
+    while (*str != '\0' && *str++ != ' '); // flags
+    while (*str != '\0' && *str++ != ' '); // minflt
+    while (*str != '\0' && *str++ != ' '); // cminflt
+    while (*str != '\0' && *str++ != ' '); // majflt
+    while (*str != '\0' && *str++ != ' '); // cmajflt
+    uint64_t utime = strtoull(str, &str, 10);
+    uint64_t stime = strtoull(str, &str, 10);
+    if (*str == '\0')
       continue;
 
-    times.m_kernel = jiffies_to_msecs(stime);
-    times.m_user = jiffies_to_msecs(utime);
+    times.m_kernel = jiffies_to_usecs(stime);
+    times.m_user = jiffies_to_usecs(utime);
     return true;
   }
 
+  PTRACE(4, "Could not obtain thread times from " << filename);
   return false;
 }
 
@@ -704,6 +696,7 @@ bool PThread::GetTimes(Times & times)
 #if P_PTHREADS
   times.m_real = (PX_endTick != 0 ? PX_endTick : PTimer::Tick()) - PX_startTick;
 #endif
+  times.m_sample.SetCurrentTime();
 
   std::stringstream path;
   path << "/proc/self/task/" << times.m_uniqueId << "/stat";
@@ -715,6 +708,7 @@ bool PProcess::GetProcessTimes(Times & times) const
 {
   times.m_name = "Process Total";
   times.m_real = PTime() - GetStartTime();
+  times.m_sample.SetCurrentTime();
   return InternalGetTimes("/proc/self/stat", times);
 }
 
@@ -730,9 +724,10 @@ bool PProcess::GetSystemTimes(Times & times)
     uint64_t user, nice, system, idle, iowait, irq, softirq, steal;
     statfile >> dummy >> user >> nice >> system >> idle >> iowait >> irq >> softirq >> steal;
     if (statfile.good()) {
-      times.m_kernel = jiffies_to_msecs(system);
-      times.m_user = jiffies_to_msecs(user);
-      times.m_real = times.m_kernel + times.m_user + jiffies_to_msecs(idle);
+      times.m_kernel = jiffies_to_usecs(system);
+      times.m_user = jiffies_to_usecs(user);
+      times.m_real = times.m_kernel + times.m_user + jiffies_to_usecs(idle);
+      times.m_sample.SetCurrentTime();
       return true;
     }
   }
