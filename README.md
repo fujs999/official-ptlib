@@ -74,7 +74,7 @@ For example:
 
 Loosely follow the [GitFlow][3] model, but with the following modifications:
 * There is no "production" branch (normally `master` in Git Flow)
-* The `master` branches does exist, but are lost in history somewhere
+* The `master` branch did exist, but is lost in history somewhere
   and should be ignored
 * The `trunk` branch is used for changes being pushed to/pulled from the public
   PTLib repository
