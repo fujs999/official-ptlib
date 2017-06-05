@@ -74,8 +74,7 @@ For example:
 
 Loosely follow the [GitFlow][3] model, but with the following modifications:
 * There is no "production" branch (normally `master` in Git Flow)
-* The integration branch is named `staging` instead of `develop`
-* `master` and `develop` branches do exist, but are lost in history somewhere
+* The `master` branches does exist, but are lost in history somewhere
   and should be ignored
 * The `trunk` branch is used for changes being pushed to/pulled from the public
   PTLib repository
@@ -107,7 +106,7 @@ builds on the existing Jenkins by changing everything.
 1. Once the release is tagged, merge it back into the integration branch as
    follows:
 
-       git checkout staging
+       git checkout develop
        git pull
        git merge --no-ff --no-commit release/2016-12
 
