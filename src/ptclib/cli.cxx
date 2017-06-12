@@ -336,6 +336,7 @@ bool PCLI::Context::ProcessInput(int ch)
   if (m_commandLine.IsEmpty())
     return WritePrompt();
 
+  m_pagedLines = 0;
   m_editPosition = 0;
   m_historyPosition = m_commandHistory.GetSize()+1;
 
@@ -810,7 +811,7 @@ void PCLI::OnReceivedLine(Arguments & args)
   {
     Commands_t::iterator nextCmd = cmd;
     if (++nextCmd != m_commands.end() && nextCmd->IsMatch(args)) {
-      args.GetContext() << GetAmbiguousCommandError() << endl;
+      args.GetContext() << GetAmbiguousCommandError() <<  " \"" << args << '"' << endl;
       return;
     }
   }
@@ -1350,10 +1351,18 @@ public:
   virtual bool FillChar(unsigned row, unsigned col, char ch, unsigned count)
   {
     while (count-- > 0) {
-      if (mvwaddch(m_inner, row, col++, ch) == ERR) {
-        PTRACE(2, "Write failed: errno=" << errno);
+      if (mvwaddch(m_inner, row, col, ch) == ERR) {
+        // Work around long established behaviour (bug!) where above returns an error if
+        // writing to the bottom right corner of the window
+        int rows, cols;
+        getmaxyx(m_inner, rows, cols);
+        if (row == rows-1 && col == cols-1)
+          return true;
+
+        PTRACE(2, "Write failed: win=" << m_inner << ", row=" << row <<", col=" << col << ", ch=" << ch);
         return false;
       }
+      ++col;
     }
 
     return true;
@@ -1380,7 +1389,13 @@ public:
     if (m_inner != NULL)
       delwin(m_inner);
 
-    PTRACE(4, "New window " << this << ": row=" << row << " col=" << col << " rows=" << rows << " cols=" << cols);
+    PTRACE(4, "New window:"
+              " ptr=" << this << ","
+              " row=" << row << ","
+              " col=" << col << ","
+              " rows=" << rows << ","
+              " cols=" << cols << ","
+              " border=" << m_border);
 
     m_outer = newwin(rows, cols, row, col);
     switch (m_border) {
@@ -1817,13 +1832,13 @@ PCLICurses::~PCLICurses()
 
 void PCLICurses::Construct()
 {
-  m_editCodes.SetAt(m_leftCodes.GetSize(), PConsoleChannel::KeyBackSpace);
+  m_editCodes.SetAt(m_editCodes.GetSize(), PConsoleChannel::KeyBackSpace);
   m_leftCodes.SetAt(m_leftCodes.GetSize(), PConsoleChannel::KeyLeft);
-  m_rightCodes.SetAt(m_leftCodes.GetSize(), PConsoleChannel::KeyRight);
-  m_beginCodes.SetAt(m_leftCodes.GetSize(), PConsoleChannel::KeyHome);
-  m_endCodes.SetAt(m_leftCodes.GetSize(), PConsoleChannel::KeyEnd);
-  m_prevCmdCodes.SetAt(m_leftCodes.GetSize(), PConsoleChannel::KeyUp);
-  m_nextCmdCodes.SetAt(m_leftCodes.GetSize(), PConsoleChannel::KeyDown);
+  m_rightCodes.SetAt(m_rightCodes.GetSize(), PConsoleChannel::KeyRight);
+  m_beginCodes.SetAt(m_beginCodes.GetSize(), PConsoleChannel::KeyHome);
+  m_endCodes.SetAt(m_endCodes.GetSize(), PConsoleChannel::KeyEnd);
+  m_prevCmdCodes.SetAt(m_prevCmdCodes.GetSize(), PConsoleChannel::KeyUp);
+  m_nextCmdCodes.SetAt(m_nextCmdCodes.GetSize(), PConsoleChannel::KeyDown);
 
   m_requireEcho = true;
 
