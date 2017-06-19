@@ -32,6 +32,7 @@ BuildRequires:  ncurses-devel
 #BuildRequires:  SDL-devel
 #BuildRequires:  unixODBC-devel
 #BuildRequires:  v8-devel
+BuildRequires:  ImageMagick-devel
 
 %description
 PTLib: Portable Tools Library
