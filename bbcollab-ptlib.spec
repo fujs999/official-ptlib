@@ -45,6 +45,7 @@ Requires:       bbcollab-openssl-devel = 1.0.2c
 Requires:       expat-devel
 Requires:       libpcap-devel
 Requires:       ncurses-devel
+Requires:       ImageMagick-devel
 
 %description    devel
 The %{name}-devel package contains libraries and header files for
