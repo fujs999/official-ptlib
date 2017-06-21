@@ -32,7 +32,7 @@ BuildRequires:  ncurses-devel
 #BuildRequires:  SDL-devel
 #BuildRequires:  unixODBC-devel
 #BuildRequires:  v8-devel
-BuildRequires:  ImageMagick-devel
+BuildRequires:  ImageMagick-devel >= 6.7
 
 %description
 PTLib: Portable Tools Library
@@ -45,7 +45,7 @@ Requires:       bbcollab-openssl-devel = 1.0.2c
 Requires:       expat-devel
 Requires:       libpcap-devel
 Requires:       ncurses-devel
-Requires:       ImageMagick-devel
+Requires:       ImageMagick-devel >= 6.7
 
 %description    devel
 The %{name}-devel package contains libraries and header files for
