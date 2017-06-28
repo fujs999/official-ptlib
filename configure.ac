@@ -1,4 +1,4 @@
-:nl
+dnl
 dnl PTLib configuration
 dnl
 
@@ -17,6 +17,7 @@ AC_CONFIG_AUX_DIR(make)
 
 AC_CONFIG_SRCDIR([include/ptlib.h])
 
+m4_include(make/my_macros.m4)
 m4_include(make/ptlib.m4)
 m4_include(make/m4_ax_pthread.m4)
 
@@ -1170,18 +1171,18 @@ else
          HAS_BACKTRACE=1
          AC_DEFINE(P_HAS_BACKTRACE, 1, "Stack back trace enabled")
 
-	 MY_COMPILE_IFELSE(
-	    [for C++ demangle support],
-	    [],
-	    [#include <cxxabi.h>],
-	    [
-	       char name[100];
-	       size_t size;
-	       int status;
-	       abi::__cxa_demangle("something", name, &size, &status);
-	    ],
-	    [AC_DEFINE(P_HAS_DEMANGLE, 1, "C++ demangle enabled")]
-	 )
+      MY_COMPILE_IFELSE(
+         [for C++ demangle support],
+            [],
+            [#include <cxxabi.h>],
+            [
+               char name[100];
+               size_t size;
+               int status;
+               abi::__cxa_demangle("something", name, &size, &status);
+            ],
+            [AC_DEFINE(P_HAS_DEMANGLE, 1, "C++ demangle enabled")]
+         )
       ]
    )
 fi
@@ -1384,6 +1385,79 @@ else
 fi
 
 PTLIB_SUBST(PCAP)
+
+
+dnl ########################################################################
+dnl check for FFMPEG
+
+dnl MSWIN_DISPLAY    ffmpeg32,FFMPEG 32 bit support
+dnl MSWIN_CHECK_FILE ffmpeg32,include\libavformat\avformat.h,P_FFMPEG_WIN32=1
+dnl MSWIN_DIR_SYMBOL ffmpeg32,FFMPEG_WIN32_DIR
+dnl MSWIN_CHECK_DIR  ffmpeg32,\ffmpeg-win32-dev*
+dnl MSWIN_CHECK_DIR  ffmpeg32,..\external\ffmpeg-win32-dev*
+dnl MSWIN_CHECK_DIR  ffmpeg32,%ProgramFiles%\ffmpeg-win32-dev*
+dnl MSWIN_CHECK_DIR  ffmpeg32,%ProgramW6432%\ffmpeg-win32-dev*
+
+dnl MSWIN_DISPLAY    ffmpeg64,FFMPEG 64 bit support
+dnl MSWIN_CHECK_FILE ffmpeg64,include\libavformat\avformat.h,P_FFMPEG_WIN64=1
+dnl MSWIN_DIR_SYMBOL ffmpeg64,FFMPEG_WIN64_DIR
+dnl MSWIN_CHECK_DIR  ffmpeg64,\ffmpeg-win64-dev*
+dnl MSWIN_CHECK_DIR  ffmpeg64,..\external\ffmpeg-win64-dev*
+dnl MSWIN_CHECK_DIR  ffmpeg64,%ProgramFiles%\ffmpeg-win64-dev*
+dnl MSWIN_CHECK_DIR  ffmpeg64,%ProgramW6432%\ffmpeg-win64-dev*
+
+AC_LANG_PUSH(C)
+
+oldLIBS="$LIBS"
+CFLAGS="$CFLAGS -D__STDC_CONSTANT_MACROS"
+
+MY_PKG_CHECK_MODULE(
+   [LIBAVUTIL],
+   [libavutil >= 55],
+   [#include <libavutil/avutil.h>],
+   [avutil_version()],
+   [HAS_LIBAVUTIL=1]
+)
+
+MY_PKG_CHECK_MODULE(
+   [LIBSWRESAMPLE],
+   [libswresample],
+   [#include <libswresample/swresample.h>],
+   [swresample_version()],
+   [HAS_LIBSWRESAMPLE=1]
+)
+
+MY_PKG_CHECK_MODULE(
+   [LIBSWSCALE],
+   [libswscale >= 4],
+   [#include <libswscale/swscale.h>],
+   [swscale_version()],
+   [HAS_LIBSWSCALE=1]
+)
+
+MY_PKG_CHECK_MODULE(
+   [LIBAVCODEC],
+   [libavcodec >= 57],
+   [#include <libavcodec/avcodec.h>],
+   [avcodec_version()],
+   [HAS_LIBAVCODEC=1]
+)
+
+MY_PKG_CHECK_MODULE(
+   [LIBAVFORMAT],
+   [libavformat >= 57],
+   [#include <libavformat/avformat.h>],
+   [avformat_version()],
+   [HAS_LIBAVFORMAT=1]
+)
+
+if test "$HAS_LIBAVUTIL" = 1 -a "$HAS_LIBSWRESAMPLE" = 1 -a "$HAS_LIBSWSCALE" = 1 -a "$HAS_LIBAVCODEC" = 1 -a "$HAS_LIBAVFORMAT" = 1; then
+   PTLIB_SUBST(FFMPEG, 1)
+else
+   LIBS="$oldLIBS"
+fi
+
+AC_LANG_POP(C)
 
 
 dnl ########################################################################
@@ -2113,7 +2187,7 @@ dnl check for enabling FFMpeg video file support
 dnl MSWIN_DISPLAY    ffvdev,FFMpeg video file support
 dnl MSWIN_DEFINE     ffvdev,P_FFVDEV
 
-PTLIB_SIMPLE_OPTION([ffvdev], [FFVDEV], [FFMpeg video file support], [HAS_VIDEO], [HAS_PIPECHAN])
+PTLIB_SIMPLE_OPTION([ffvdev], [FFVDEV], [FFMPEG application video file support], [HAS_VIDEO], [HAS_PIPECHAN])
 
 dnl ########################################################################
 dnl check for enabling app share support
@@ -2682,7 +2756,7 @@ if test "x$enable_plugins" != "xno" ; then
                  const char *dma_device_file;
                  dc1394_cameracapture *camera;
                  dc1394_dma_setup_capture(handle, node, channel, format, mode, speed, frame_rate, num_dma_buffers,
-			                  do_extra_buffering, drop_frames, dma_device_file, camera);
+                                          do_extra_buffering, drop_frames, dma_device_file, camera);
                  return 0;
                }
             ])],
@@ -2771,6 +2845,7 @@ MY_OUTPUT_SUMMARY(
    [                              BSD], PTLIB_BSDVIDEOCAP,
    [                    IEEE-1394/AVC], PTLIB_AVC1394,
    [                    IEEE-1394/DC ], PTLIB_DC1394,
+   [                           FFMPEG], [PTLIB_FFMPEG],
    [                      ImageMagick], [PTLIB_IMAGEMAGICK],
    [                        JPEG File], [PTLIB_LIBJPEG]dnl
 )
