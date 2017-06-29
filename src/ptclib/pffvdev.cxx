@@ -40,6 +40,7 @@
 
 #include <ptlib/vconvert.h>
 #include <ptclib/pffvdev.h>
+#include <ptclib/pvfiledev.h>
 #include <ptlib/pfactory.h>
 #include <ptlib/pluginmgr.h>
 #include <ptlib/videoio.h>
@@ -62,9 +63,7 @@ PCREATE_VIDINPUT_PLUGIN_EX(FFMPEG,
 
   virtual bool ValidateDeviceName(const PString & deviceName, P_INT_PTR /*userData*/) const
   {
-    PCaselessString type = PFilePath(deviceName).GetType();
-    type.Replace("*", "");
-    return m_extensions.Contains(type);
+    return m_extensions.Contains("*" + PFilePath(deviceName).GetType());
   }
 );
 
@@ -90,11 +89,22 @@ PCREATE_VIDINPUT_PLUGIN_EX(FFMPEG,
   PPlugin_PVideoInputDevice_FFMPEG::PPlugin_PVideoInputDevice_FFMPEG()
   {
     av_register_all();
+
+#if P_VIDFILE
+    PStringSet extensionsAlreadyAvailable = PVideoInputDevice_VideoFile::GetInputDeviceNames();
+#endif
+
     AVInputFormat *fmt = NULL;
     while ((fmt = av_iformat_next(fmt)) != NULL) {
       PStringArray extensions(PString(fmt->extensions).Tokenise(","));
-      for (PINDEX i = 0; i < extensions.GetSize(); ++i)
-        m_extensions += "." + extensions[i];
+      for (PINDEX i = 0; i < extensions.GetSize(); ++i) {
+        PString ext = "*." + extensions[i];
+#if P_VIDFILE
+        if (extensionsAlreadyAvailable.Contains(ext))
+          continue;
+#endif
+        m_extensions += ext;
+      }
     }
   }
 
@@ -265,9 +275,9 @@ PCREATE_VIDINPUT_PLUGIN_EX(FFMPEG,
 
   static const char * const ffmpegExtensions[] = {
     #ifndef _WIN32
-      ".avi",
+      "*.avi",
     #endif
-      ".mp4", ".mpg", ".wmv", ".mov"
+      "*.mp4", "*.mpg", "*.wmv", "*.mov"
   };
 
   PPlugin_PVideoInputDevice_FFMPEG::PPlugin_PVideoInputDevice_FFMPEG()
@@ -462,7 +472,7 @@ PStringArray PVideoInputDevice_FFMPEG::GetInputDeviceNames()
   PStringArray names(PAssertNULL(plugin)->m_extensions.size());
   PINDEX count = 0;
   for (PStringSet::const_iterator ext = plugin->m_extensions.begin(); ext != plugin->m_extensions.end(); ++ext)
-    names[count++] = "*" + *ext;
+    names[count++] = *ext;
   return names;
 }
 
