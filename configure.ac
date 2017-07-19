@@ -1776,6 +1776,7 @@ dnl MSWIN_CHECK_DIR  expat,%EXPATDIR%\expat
 dnl MSWIN_CHECK_DIR  expat,..\Expat\expat\
 dnl MSWIN_CHECK_DIR  expat,..\external\Expat\expat\
 dnl MSWIN_CHECK_DIR  expat,C:\Work\external\Expat\expat\
+dnl MSWIN_CHECK_DIR  expat,\Expat\expat
 dnl MSWIN_CHECK_DIR  expat,c:\Expat\expat\
 dnl MSWIN_CHECK_DIR  expat,\libs\Expat\expat\
 
