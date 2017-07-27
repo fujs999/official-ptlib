@@ -1,4 +1,4 @@
-:nl
+dnl
 dnl PTLib configuration
 dnl
 
@@ -1035,6 +1035,7 @@ dnl ########################################################################
 dnl look for IPV6 functions
 
 dnl MSWIN_DISPLAY    ipv6,IPv6 Support
+dnl MSWIN_CHECK_FILE ipv6,ws2tcpip.h,P_HAS_IPV6=1
 dnl MSWIN_CHECK_FILE ipv6,include\ws2tcpip.h,P_HAS_IPV6=1
 dnl MSWIN_CHECK_FILE ipv6,include\um\ws2tcpip.h,P_HAS_IPV6=1
 dnl MSWIN_CHECK_DIR  ipv6,%ProgramFiles%\Windows Kits\8.*
@@ -1170,18 +1171,18 @@ else
          HAS_BACKTRACE=1
          AC_DEFINE(P_HAS_BACKTRACE, 1, "Stack back trace enabled")
 
-	 MY_COMPILE_IFELSE(
-	    [for C++ demangle support],
-	    [],
-	    [#include <cxxabi.h>],
-	    [
-	       char name[100];
-	       size_t size;
-	       int status;
-	       abi::__cxa_demangle("something", name, &size, &status);
-	    ],
-	    [AC_DEFINE(P_HAS_DEMANGLE, 1, "C++ demangle enabled")]
-	 )
+      MY_COMPILE_IFELSE(
+         [for C++ demangle support],
+            [],
+            [#include <cxxabi.h>],
+            [
+               char name[100];
+               size_t size;
+               int status;
+               abi::__cxa_demangle("something", name, &size, &status);
+            ],
+            [AC_DEFINE(P_HAS_DEMANGLE, 1, "C++ demangle enabled")]
+         )
       ]
    )
 fi
@@ -1267,6 +1268,7 @@ dnl on some systems, the resolver is in libc
 dnl but needs resolv.h included which defines res_search as __res_search
 
 dnl MSWIN_DISPLAY    resolver,DNS Resolver
+dnl MSWIN_CHECK_FILE resolver,windns.h,P_DNS_RESOLVER=1
 dnl MSWIN_CHECK_FILE resolver,include\windns.h,P_DNS_RESOLVER=1
 dnl MSWIN_CHECK_FILE resolver,include\um\windns.h,P_DNS_RESOLVER=1
 dnl MSWIN_CHECK_DIR  resolver,%ProgramFiles%\Windows Kits\8.*
@@ -1353,6 +1355,7 @@ dnl MSWIN_DISPLAY    pcap,WinPCAP Support
 dnl MSWIN_CHECK_FILE pcap,include\pcap\pcap.h,P_PCAP_WIN32=1
 dnl MSWIN_CHECK_FILE pcap,lib\x64\wpcap.lib,P_PCAP_WIN64=1
 dnl MSWIN_DIR_SYMBOL pcap,PCAP_DIR
+dnl MSWIN_CHECK_DIR  pcap,%PCAPDIR%\
 dnl MSWIN_CHECK_DIR  pcap,..\WpdPack
 dnl MSWIN_CHECK_DIR  pcap,..\external\WpdPack*
 dnl MSWIN_CHECK_DIR  pcap,\WpdPack\
@@ -1387,12 +1390,85 @@ PTLIB_SUBST(PCAP)
 
 
 dnl ########################################################################
+dnl check for FFMPEG
+
+dnl MSWIN_DISPLAY    ffmpeg32,FFMPEG 32 bit support
+dnl MSWIN_CHECK_FILE ffmpeg32,include\libavformat\avformat.h,P_FFMPEG_WIN32=1
+dnl MSWIN_DIR_SYMBOL ffmpeg32,FFMPEG_WIN32_DIR
+dnl MSWIN_CHECK_DIR  ffmpeg32,%FFMPEGDIR%\
+dnl MSWIN_CHECK_DIR  ffmpeg32,..\external\ffmpeg-win32-dev*
+dnl MSWIN_CHECK_DIR  ffmpeg32,%ProgramFiles%\ffmpeg-win32-dev*
+dnl MSWIN_CHECK_DIR  ffmpeg32,%ProgramW6432%\ffmpeg-win32-dev*
+
+dnl MSWIN_DISPLAY    ffmpeg64,FFMPEG 64 bit support
+dnl MSWIN_CHECK_FILE ffmpeg64,include\libavformat\avformat.h,P_FFMPEG_WIN64=1
+dnl MSWIN_DIR_SYMBOL ffmpeg64,FFMPEG_WIN64_DIR
+dnl MSWIN_CHECK_DIR  ffmpeg64,%FFMPEG64DIR%\
+dnl MSWIN_CHECK_DIR  ffmpeg64,..\external\ffmpeg-win64-dev*
+dnl MSWIN_CHECK_DIR  ffmpeg64,%ProgramFiles%\ffmpeg-win64-dev*
+dnl MSWIN_CHECK_DIR  ffmpeg64,%ProgramW6432%\ffmpeg-win64-dev*
+
+AC_LANG_PUSH(C)
+
+oldLIBS="$LIBS"
+CFLAGS="$CFLAGS -D__STDC_CONSTANT_MACROS"
+
+MY_PKG_CHECK_MODULE(
+   [LIBAVUTIL],
+   [libavutil >= 55],
+   [#include <libavutil/avutil.h>],
+   [avutil_version()],
+   [HAS_LIBAVUTIL=1]
+)
+
+MY_PKG_CHECK_MODULE(
+   [LIBSWRESAMPLE],
+   [libswresample],
+   [#include <libswresample/swresample.h>],
+   [swresample_version()],
+   [HAS_LIBSWRESAMPLE=1]
+)
+
+MY_PKG_CHECK_MODULE(
+   [LIBSWSCALE],
+   [libswscale >= 4],
+   [#include <libswscale/swscale.h>],
+   [swscale_version()],
+   [HAS_LIBSWSCALE=1]
+)
+
+MY_PKG_CHECK_MODULE(
+   [LIBAVCODEC],
+   [libavcodec >= 57],
+   [#include <libavcodec/avcodec.h>],
+   [avcodec_version()],
+   [HAS_LIBAVCODEC=1]
+)
+
+MY_PKG_CHECK_MODULE(
+   [LIBAVFORMAT],
+   [libavformat >= 57],
+   [#include <libavformat/avformat.h>],
+   [avformat_version()],
+   [HAS_LIBAVFORMAT=1]
+)
+
+if test "$HAS_LIBAVUTIL" = 1 -a "$HAS_LIBSWRESAMPLE" = 1 -a "$HAS_LIBSWSCALE" = 1 -a "$HAS_LIBAVCODEC" = 1 -a "$HAS_LIBAVFORMAT" = 1; then
+   PTLIB_SUBST(FFMPEG, 1)
+else
+   LIBS="$oldLIBS"
+fi
+
+AC_LANG_POP(C)
+
+
+dnl ########################################################################
 dnl check for ImageMagick
 
 dnl MSWIN_DISPLAY    imagemagick,ImageMagick support
 dnl MSWIN_CHECK_FILE imagemagick,include\MagickWand\MagickWand.h,P_IMAGEMAGICK=2
 dnl MSWIN_DIR_SYMBOL imagemagick,IMAGEMAGICK_DIR
-dnl MSWIN_CHECK_DIR  imagemagick,\ImageMagick*
+dnl MSWIN_CHECK_DIR  imagemagick,%IMAGEMAGICKDIR%\ImageMagick*
 dnl MSWIN_CHECK_DIR  imagemagick,..\external\ImageMagick*
 dnl MSWIN_CHECK_DIR  imagemagick,%ProgramFiles%\ImageMagick*
 dnl MSWIN_CHECK_DIR  imagemagick,%ProgramW6432%\ImageMagick*
@@ -1419,7 +1495,7 @@ dnl MSWIN_CHECK_FILE libjpeg,lib\win32\libjpeg.lib,P_LIBJPEG_WIN32=1
 dnl MSWIN_CHECK_FILE libjpeg,lib\x64\libjpeg.lib,P_LIBJPEG_WIN64=1
 dnl MSWIN_DIR_SYMBOL libjpeg,LIBJPEG_DIR
 dnl MSWIN_FIND_FILE  libjpeg,P_LIBJPEG_LIBRARY,jpeg.lib,lib
-dnl MSWIN_CHECK_DIR  libjpeg,\libjpeg-turbo
+dnl MSWIN_CHECK_DIR  libjpeg,%JPEGTURBODIR%\libjpeg-turbo
 dnl MSWIN_CHECK_DIR  libjpeg,..\external\libjpeg-turbo
 dnl MSWIN_CHECK_DIR  libjpeg,%ProgramFiles%\libjpeg-turbo
 dnl MSWIN_CHECK_DIR  libjpeg,%ProgramW6432%\libjpeg-turbo
@@ -1485,11 +1561,11 @@ dnl Look for SASL
 dnl MSWIN_DISPLAY    sasl,Cyrus SASL
 dnl MSWIN_CHECK_FILE sasl,include\sasl.h,P_SASL_WIN32=1
 dnl MSWIN_DIR_SYMBOL sasl,SASL_DIR
+dnl MSWIN_CHECK_DIR  sasl,%SASLDIR%\sasl\
 dnl MSWIN_CHECK_DIR  sasl,..\sasl\
 dnl MSWIN_CHECK_DIR  sasl,..\cyrus-sasl\
 dnl MSWIN_CHECK_DIR  sasl,..\external\sasl\
 dnl MSWIN_CHECK_DIR  sasl,..\external\cyrus-sasl\
-dnl MSWIN_CHECK_DIR  sasl,\sasl\
 dnl MSWIN_CHECK_DIR  sasl,\cyrus-sasl\
 dnl MSWIN_CHECK_DIR  sasl,c:\sasl\
 dnl MSWIN_CHECK_DIR  sasl,c:\cyrus-sasl\
@@ -1543,9 +1619,9 @@ dnl MSWIN_DISPLAY    openldap,Open LDAP
 dnl MSWIN_IF_FEATURE openldap,sasl
 dnl MSWIN_CHECK_FILE openldap,include\ldap.h|OpenLDAP,P_LDAP_WIN32=1
 dnl MSWIN_DIR_SYMBOL openldap,LDAP_DIR
+dnl MSWIN_CHECK_DIR  openldap,%OPENLDAPDIR%\openldap\
 dnl MSWIN_CHECK_DIR  openldap,..\openldap\
 dnl MSWIN_CHECK_DIR  openldap,..\external\openldap\
-dnl MSWIN_CHECK_DIR  openldap,\openldap\
 dnl MSWIN_CHECK_DIR  openldap,c:\openldap\
 
 AC_LANG_PUSH(C)
@@ -1584,10 +1660,10 @@ dnl MSWIN_CHECK_FILE openssl,include\openssl\ssl.h,P_SSL_WIN32=2
 dnl MSWIN_FIND_FILE  openssl,P_SSL_AES32,aes.h,...
 dnl MSWIN_DEFINE     openssl,P_SSL_SRTP
 dnl MSWIN_DIR_SYMBOL openssl,SSL_WIN32_DIR
+dnl MSWIN_CHECK_DIR  openssl,%OPENSSLDIR%\
 dnl MSWIN_CHECK_DIR  openssl,..\openssl\
 dnl MSWIN_CHECK_DIR  openssl,..\external\openssl\
 dnl MSWIN_CHECK_DIR  openssl,\openssl\
-dnl MSWIN_CHECK_DIR  openssl,\libs\openssl\
 dnl MSWIN_CHECK_DIR  openssl,%ProgramFiles%\OpenSSL-Win32\
 dnl MSWIN_CHECK_DIR  openssl,%ProgramW6432%\OpenSSL-Win32\
 dnl MSWIN_CHECK_DIR  openssl,%ProgramFiles%\OpenSSL\
@@ -1599,6 +1675,7 @@ dnl MSWIN_CHECK_FILE openssl64,include\openssl\ssl.h,P_SSL_WIN64=1
 dnl MSWIN_FIND_FILE  openssl64,P_SSL_AES64,aes.h,...
 dnl MSWIN_DIR_SYMBOL openssl64,SSL_WIN64_DIR
 dnl MSWIN_DEFINE     openssl64,P_SSL_SRTP
+dnl MSWIN_CHECK_DIR  openssl64,%OPENSSL64DIR%\
 dnl MSWIN_CHECK_DIR  openssl64,..\openssl64\
 dnl MSWIN_CHECK_DIR  openssl64,..\external\openssl64\
 dnl MSWIN_CHECK_DIR  openssl64,\openssl64\
@@ -1695,12 +1772,12 @@ dnl MSWIN_FIND_FILE  expat,P_EXPAT_LIBRARY_WM6_DEBUG,expat.lib,wm6/Debug
 dnl MSWIN_FIND_FILE  expat,P_EXPAT_LIBRARY_WM6_RELEASE,expat.lib,wm6/Release
 dnl MSWIN_FIND_FILE  expat,P_EXPAT_LIBRARY_W64_DEBUG,expat.lib,x64/Debug
 dnl MSWIN_FIND_FILE  expat,P_EXPAT_LIBRARY_W64_RELEASE,expat.lib,x64/Release
-dnl MSWIN_CHECK_DIR  expat,..\expat\
-dnl MSWIN_CHECK_DIR  expat,..\external\expat\
+dnl MSWIN_CHECK_DIR  expat,%EXPATDIR%\expat
+dnl MSWIN_CHECK_DIR  expat,..\Expat\expat\
+dnl MSWIN_CHECK_DIR  expat,..\external\Expat\expat\
 dnl MSWIN_CHECK_DIR  expat,C:\Work\external\Expat\expat\
-dnl MSWIN_CHECK_DIR  expat,\expat
-dnl MSWIN_CHECK_DIR  expat,c:\expat\
-dnl MSWIN_CHECK_DIR  expat,\libs\expat\
+dnl MSWIN_CHECK_DIR  expat,c:\Expat\expat\
+dnl MSWIN_CHECK_DIR  expat,\libs\Expat\expat\
 
 dnl MSWIN_DISPLAY    expat32,Expat XML (precompiled)
 dnl MSWIN_CHECK_FILE expat32,Source\lib\expat.h,P_EXPAT_WIN32=1
@@ -1726,6 +1803,7 @@ dnl look for Lua library
 dnl MSWIN_DISPLAY    lua,Lua interpreter
 dnl MSWIN_CHECK_FILE lua,include\lua.h,P_LUA_WIN32=1
 dnl MSWIN_DIR_SYMBOL lua,LUA_DIR
+dnl MSWIN_CHECK_DIR  lua,%LUADIR%\5.1
 dnl MSWIN_CHECK_DIR  lua,%ProgramFiles%\Lua\5.1
 dnl MSWIN_CHECK_DIR  lua,%ProgramW6432%\Lua\5.1
 
@@ -1781,6 +1859,7 @@ dnl MSWIN_FIND_FILE  v8,P_V8_ICUUC_DEBUG64,icuuc.lib,out.gn/x64.debug/...
 dnl MSWIN_FIND_FILE  v8,P_V8_ICUUC_RELEASE64,icuuc.lib,out.gn/x64.release/...
 
 dnl MSWIN_DIR_SYMBOL v8,V8_DIR
+dnl MSWIN_CHECK_DIR  v8,%V8DIR%\
 dnl MSWIN_CHECK_DIR  v8,..\v8
 dnl MSWIN_CHECK_DIR  v8,..\v8\v8
 dnl MSWIN_CHECK_DIR  v8,..\external\v8
@@ -1930,6 +2009,7 @@ PTLIB_SIMPLE_OPTION([jabber], [JABBER], [Jabber support], [HAS_EXPAT])
 dnl ########################################################################
 dnl Speech
 dnl MSWIN_DISPLAY    sapi,Speech API
+dnl MSWIN_CHECK_FILE sapi,sphelper.h,P_SAPI=1
 dnl MSWIN_CHECK_FILE sapi,include\sphelper.h,P_SAPI=1
 dnl MSWIN_CHECK_FILE sapi,include\um\sphelper.h,P_SAPI=1
 dnl MSWIN_DEFINE     sapi,P_TTS
@@ -2113,7 +2193,7 @@ dnl check for enabling FFMpeg video file support
 dnl MSWIN_DISPLAY    ffvdev,FFMpeg video file support
 dnl MSWIN_DEFINE     ffvdev,P_FFVDEV
 
-PTLIB_SIMPLE_OPTION([ffvdev], [FFVDEV], [FFMpeg video file support], [HAS_VIDEO], [HAS_PIPECHAN])
+PTLIB_SIMPLE_OPTION([ffvdev], [FFVDEV], [FFMPEG application video file support], [HAS_VIDEO], [HAS_PIPECHAN])
 
 dnl ########################################################################
 dnl check for enabling app share support
@@ -2194,6 +2274,7 @@ dnl check for GStreamer library
 dnl MSWIN_DISPLAY    gstreamer,GStreamer 0.10 (OSSBuild)
 dnl MSWIN_CHECK_FILE gstreamer,include\gstreamer-0.10\gst\gst.h,P_GSTREAMER_WIN32=1
 dnl MSWIN_DIR_SYMBOL gstreamer,GSTREAMER_DIR
+dnl MSWIN_CHECK_DIR  gstreamer,%GSTREAMERDIR%\0.10\x86
 dnl MSWIN_CHECK_DIR  gstreamer,..\external\gstreamer-sdk\0.10\x86
 dnl MSWIN_CHECK_DIR  gstreamer,\gstreamer-sdk\0.10\x86
 dnl MSWIN_CHECK_DIR  gstreamer,%ProgramFiles%\gstreamer-sdk\0.10\x86
@@ -2203,6 +2284,7 @@ dnl MSWIN_DISPLAY    gstreamer1,GStreamer 1.0
 dnl MSWIN_CHECK_FILE gstreamer1,include\gstreamer-1.0\gst\gst.h,P_GSTREAMER_WIN32=1
 dnl MSWIN_DIR_SYMBOL gstreamer1,GSTREAMER1_DIR
 dnl MSWIN_DEFINE     gstreamer1,P_GSTREAMER_1_0_API
+dnl MSWIN_CHECK_DIR  gstreamer,%GSTREAMERDIR%\1.0\x86
 dnl MSWIN_CHECK_DIR  gstreamer1,..\external\gstreamer\1.0\x86
 dnl MSWIN_CHECK_DIR  gstreamer1,\gstreamer\1.0\x86
 dnl MSWIN_CHECK_DIR  gstreamer1,%ProgramFiles%\gstreamer-sdk\1.0\x86
@@ -2380,6 +2462,7 @@ if test "x$enable_plugins" != "xno" ; then
       dnl look for Direct Sound
 
       dnl MSWIN_DISPLAY    dsound,Direct Sound Support
+      dnl MSWIN_CHECK_FILE dsound,dsound.h,P_DIRECTSOUND=1
       dnl MSWIN_CHECK_FILE dsound,include\dsound.h,P_DIRECTSOUND=1
       dnl MSWIN_CHECK_FILE dsound,include\um\dsound.h,P_DIRECTSOUND=1
       dnl MSWIN_FIND_FILE  dsound,P_DIRECTSOUND_DXERR_H,dxerr.h,include
@@ -2392,6 +2475,7 @@ if test "x$enable_plugins" != "xno" ; then
       dnl look for Direct Show (video)
 
       dnl MSWIN_DISPLAY    dshow,Direct Show Support
+      dnl MSWIN_CHECK_FILE dshow,dshow.h,P_DIRECTSHOW=1
       dnl MSWIN_CHECK_FILE dshow,include\dshow.h,P_DIRECTSHOW=1
       dnl MSWIN_CHECK_FILE dshow,include\um\dshow.h,P_DIRECTSHOW=1
       dnl MSWIN_FIND_FILE  dshow,P_DIRECTSHOW_QEDIT_H,Qedit.h,include
@@ -2682,7 +2766,7 @@ if test "x$enable_plugins" != "xno" ; then
                  const char *dma_device_file;
                  dc1394_cameracapture *camera;
                  dc1394_dma_setup_capture(handle, node, channel, format, mode, speed, frame_rate, num_dma_buffers,
-			                  do_extra_buffering, drop_frames, dma_device_file, camera);
+                                          do_extra_buffering, drop_frames, dma_device_file, camera);
                  return 0;
                }
             ])],
@@ -2771,6 +2855,7 @@ MY_OUTPUT_SUMMARY(
    [                              BSD], PTLIB_BSDVIDEOCAP,
    [                    IEEE-1394/AVC], PTLIB_AVC1394,
    [                    IEEE-1394/DC ], PTLIB_DC1394,
+   [                           FFMPEG], [PTLIB_FFMPEG],
    [                      ImageMagick], [PTLIB_IMAGEMAGICK],
    [                        JPEG File], [PTLIB_LIBJPEG]dnl
 )

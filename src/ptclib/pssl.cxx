@@ -101,7 +101,7 @@ extern "C" {
 #endif
 };
 
-#if (OPENSSL_VERSION_NUMBER < 0x1000105fL)
+#if (OPENSSL_VERSION_NUMBER < 0x0090819fL)
   #error OpenSSL too old!
 #endif
 
@@ -113,9 +113,15 @@ extern "C" {
 
 // On Windows, use a define from the header to guess the API type
 #ifdef _WIN32
-#ifdef SSL_OP_NO_QUERY_MTU
-#define P_SSL_USE_CONST 1
-#endif
+  #include <wincrypt.h>
+  #include <cryptuiapi.h>
+  #undef X509_NAME
+  #pragma comment (lib, "crypt32.lib")
+  #pragma comment (lib, "cryptui.lib")
+
+  #ifdef SSL_OP_NO_QUERY_MTU
+    #define P_SSL_USE_CONST 1
+  #endif
 #endif
 
 #define PTraceModule() "SSL"
@@ -563,13 +569,28 @@ void PSSLCertificate::Attach(x509_st * cert)
 }
 
 
-PBoolean PSSLCertificate::CreateRoot(const PString & subject,
-                                 const PSSLPrivateKey & privateKey)
+bool PSSLCertificate::CreateRoot(const PString & subject,
+                                 const PSSLPrivateKey & privateKey,
+                                 const char * digest,
+                                 unsigned version)
 {
   FreeCertificate();
 
-  if (privateKey == NULL)
+  if (!privateKey.IsValid()) {
+    PTRACE(1, "Cannot create root certiicate: invalid private key");
     return false;
+  }
+
+  const EVP_MD * pDigest;
+  if (digest == NULL)
+    pDigest = EVP_sha1();
+  else {
+    pDigest = EVP_get_digestbyname(digest);
+    if (pDigest == NULL) {
+      PTRACE(1, "Cannot create root certiicate: invalid digest algorithm \"" << digest << '"');
+      return false;
+    }
+  }
 
   POrdinalToString info;
   PStringArray fields = subject.Tokenise('/', false);
@@ -583,15 +604,21 @@ PBoolean PSSLCertificate::CreateRoot(const PString & subject,
         info.SetAt(nid, field.Mid(equals+1));
     }
   }
-  if (info.IsEmpty())
+  if (info.IsEmpty()) {
+    PTRACE(1, "Cannot create root certiicate: invalid subject \"" << subject << '"');
     return false;
+  }
 
   m_certificate = X509_new();
-  if (m_certificate == NULL)
+  if (PAssertNULL(m_certificate) == NULL)
     return false;
 
-  if (X509_set_version(m_certificate, 2)) {
-    /* Set version to V3 */
+  if (version == 0)
+    version = 2;
+
+  if (X509_set_version(m_certificate, version) == 0)
+    PTRACE(1, "Cannot create root certiicate: invalid version " << version);
+  else {
     {
       static PMutex s_mutex;
       PWaitAndSignal lock(s_mutex);
@@ -621,8 +648,10 @@ PBoolean PSSLCertificate::CreateRoot(const PString & subject,
       EVP_PKEY_free(pkey);
       X509_PUBKEY_free(pubkey);
 
-      if (X509_sign(m_certificate, privateKey, EVP_md5()) > 0)
+      if (X509_sign(m_certificate, privateKey, pDigest) > 0)
         return true;
+
+      PTRACE(1, "Cannot sign root certificate: " << PSSLError());
     }
   }
 
@@ -1884,28 +1913,33 @@ void PSSLContext::Construct(const void * sessionId, PINDEX idSize)
   const SSL_METHOD * meth;
 
   switch (m_method) {
-    case SSLv23:
-      meth = SSLv23_method();
-      break;
-#ifndef OPENSSL_NO_SSL3
-    // fall through to SSLv23_method if unsupported
     case SSLv3:
+#ifndef OPENSSL_NO_SSL3
+      // fall through to SSLv23_method if unsupported
       meth = SSLv3_method();
       break;
 #endif
-    case TLSv1:
-      meth = TLSv1_method(); 
+    case SSLv23:
+      meth = SSLv23_method();
       break;
+
+#if OPENSSL_VERSION_NUMBER > 0x0090819fL
     case TLSv1_1 :
       meth = TLSv1_1_method(); 
       break;
     case TLSv1_2 :
       meth = TLSv1_2_method(); 
       break;
-#if OPENSSL_VERSION_NUMBER > 0x10002000L
-    case DTLSv1:
-      meth = DTLSv1_method();
+#else
+  #pragma message ("Using " OPENSSL_VERSION_TEXT " - TLS 1.1 & 1.2 not available, using 1.0")
+    case TLSv1_1 :
+    case TLSv1_2 :
+#endif
+    case TLSv1:
+      meth = TLSv1_method(); 
       break;
+
+#if OPENSSL_VERSION_NUMBER > 0x10002000L
     case DTLSv1_2 :
       meth = DTLSv1_2_method(); 
       break;
@@ -1913,13 +1947,13 @@ void PSSLContext::Construct(const void * sessionId, PINDEX idSize)
       meth = DTLS_method(); 
       break;
 #else
-  #pragma message ("Using " OPENSSL_VERSION_TEXT " - DTLS 1.2 not available")
-    case DTLSv1:
+  #pragma message ("Using " OPENSSL_VERSION_TEXT " - DTLS 1.2 not available, using 1.0")
     case DTLSv1_2 :
     case DTLSv1_2_v1_0 :
+#endif
+    case DTLSv1:
       meth = DTLSv1_method();
       break;
-#endif
     default :
       PAssertAlways("Unsupported TLS/DTLS version");
       m_context = NULL;
@@ -1974,13 +2008,67 @@ bool PSSLContext::SetVerifyLocations(const PFilePath & caFile, const PDirectory 
     return false;
 
   PString caPath = caDir.Left(caDir.GetLength()-1);
-  if (SSL_CTX_load_verify_locations(m_context, caFile.IsEmpty() ? NULL : (const char *)caFile,
-                                               caPath.IsEmpty() ? NULL : (const char *)caPath)) {
-    PTRACE(4, "Set context " << m_context << " verify locations file=\"" << caFile << "\", dir=\"" << caDir << '"');
-    return true;
+
+  if (caFile.IsEmpty() && caPath.IsEmpty()) {
+#if _WIN32
+    HCERTSTORE hStore = CertOpenSystemStore(NULL, "ROOT");
+    if (hStore != NULL) {
+      X509_STORE *store = X509_STORE_new();
+      unsigned count = 0;
+
+      PCCERT_CONTEXT pContext = NULL;
+      while (pContext = CertEnumCertificatesInStore(hStore, pContext)) {
+        X509 *x509 = d2i_X509(NULL, (const unsigned char **)&pContext->pbCertEncoded, pContext->cbCertEncoded);
+        if (x509 == NULL)
+          PTRACE(2, "Could not create OpenSSL X.509 certificate from Windows Certificate Store: " << PSSLError());
+        else {
+          if (X509_STORE_add_cert(store, x509))
+            ++count;
+          else {
+            unsigned long err = ERR_peek_error();
+            PTRACE_IF(2, err != 0x0B07C065, "Could not add certificate OpenSSL X.509 store: " << PSSLError(err));
+          }
+          X509_free(x509);
+        }
+      }
+
+      CertFreeCertificateContext(pContext);
+      CertCloseStore(hStore, 0);
+
+      if (count > 0) {
+        SSL_CTX_set_cert_store(m_context, store);
+        PTRACE(4, "Set context " << m_context << " to use " << count << " certificates from Windows Certificate Store");
+      }
+      else
+        PTRACE(2, "No usable certificates in Windows System Certificate store for context " << m_context);
+    }
+    else
+      PTRACE(2, "Could not open Windows System Certificate store for context " << m_context);
+#else
+    static const char * const caBundles[] = {
+      "/etc/pki/tls/certs/ca-bundle.crt",
+      "/etc/ssl/certs/ca-bundle.crt"
+    };
+    for (PINDEX i = 0; i < PARRAYSIZE(caBundles); ++i) {
+      if (SSL_CTX_load_verify_locations(m_context, caBundles[i], NULL)) {
+        PTRACE(4, "Set context " << m_context << " to system certificates store at " << caBundles[i]);
+        return true;
+      }
+    }
+
+    PTRACE(2, "Could not set context " << m_context << " to system certficate store.");
+#endif // _WIN32
+  }
+  else {
+    if (SSL_CTX_load_verify_locations(m_context, caFile.IsEmpty() ? NULL : (const char *)caFile,
+                                      caPath.IsEmpty() ? NULL : (const char *)caPath)) {
+      PTRACE(4, "Set context " << m_context << " verify locations file=\"" << caFile << "\", dir=\"" << caDir << '"');
+      return true;
+    }
+
+    PTRACE(2, "Could not set context " << m_context << " verify locations file=\"" << caFile << "\", dir=\"" << caDir << '"');
   }
 
-  PTRACE(2, "Could not set context " << m_context << " verify locations file=\"" << caFile << "\", dir=\"" << caDir << '"');
   return SSL_CTX_set_default_verify_paths(m_context);
 }
 
@@ -2124,7 +2212,9 @@ bool PSSLContext::SetCredentials(const PString & authority,
 
   if (!authority.IsEmpty()) {
     bool ok;
-    if (PDirectory::Exists(authority))
+    if (authority == "*")
+      ok = SetVerifyLocations(PString::Empty(), PString::Empty());
+    else if (PDirectory::Exists(authority))
       ok = SetVerifyLocations(PString::Empty(), authority);
     else if (PFile::Exists(authority))
       ok = SetVerifyLocations(authority, PString::Empty());
