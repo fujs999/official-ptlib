@@ -64,12 +64,16 @@ class PExternalThread : public PThread
       : PThread(false)
     {
       SetThreadName("External thread");
-      PTRACE(5, "Created external thread " << this << ", id=" << GetCurrentThreadId());
+      PTRACE(5, "Created external thread " << this << ","
+                " thread-id=" << GetCurrentThreadId() << ","
+                " unique-id=" << GetCurrentUniqueIdentifier());
     }
 
     ~PExternalThread()
     {
-      PTRACE(5, "Destroyed external thread " << this << ", id " << GetThreadId());
+      PTRACE(5, "Destroyed external thread " << this << ","
+                " thread-id=" << GetThreadId() << ","
+                " unique-id=" << GetUniqueIdentifier());
     }
 
     virtual void Main()
@@ -78,7 +82,9 @@ class PExternalThread : public PThread
 
     virtual void Terminate()
     {
-      PTRACE(2, "Cannot terminate external thread " << this << ", id " << GetThreadId());
+      PTRACE(2, "Cannot terminate external thread " << this << ","
+                " thread-id=" << GetThreadId() << ","
+                " unique-id=" << GetUniqueIdentifier());
     }
 };
 
@@ -2585,7 +2591,22 @@ void PProcess::RemoveRunTimeSignalHandlers()
 
 void PProcess::AsynchronousRunTimeSignal(int signal, int PTRACE_PARAM(source))
 {
-  PTRACE(2, "PTLib", "Received signal " << GetRunTimeSignalName(signal) << " from source=" << source);
+#if PTRACING
+  if (PTrace::CanTrace(2)) {
+    ostream & trace = PTRACE_BEGIN(2);
+    trace << "Received signal " << GetRunTimeSignalName(signal) << " from ";
+    if (source == GetCurrentProcessID())
+      trace << "self";
+    else {
+      PTextFile proc(PSTRSTRM("/proc/" << source << "/cmdline"), PFile::ReadOnly);
+      if (proc.IsOpen())
+        trace << "pid=" << source << " cmdline=\"" << proc.ReadString(P_MAX_INDEX) << '"';
+      else if (source != 0)
+        trace << "source=" << source;
+    }
+    trace << PTrace::End;
+  }
+#endif // PTRACING
 
   switch (signal) {
     case SIGINT:
@@ -2851,12 +2872,6 @@ void PThread::InternalThreadMain()
 #endif
 
   InternalPostMain();
-}
-
-
-PThreadIdentifier PThread::GetThreadId() const
-{
-  return m_threadId;
 }
 
 
@@ -3279,11 +3294,11 @@ void PThread::LocalStorageBase::ThreadDestroyed(PThread & thread)
 
 void * PThread::LocalStorageBase::GetStorage() const
 {
-  PThreadIdentifier threadId = PThread::GetCurrentUniqueIdentifier();
+  PUniqueThreadIdentifier uinqueId = PThread::GetCurrentUniqueIdentifier();
   PWaitAndSignal lock(m_mutex);
-  DataMap::iterator it = m_data.find(threadId);
+  DataMap::iterator it = m_data.find(uinqueId);
   if (it == m_data.end())
-    it = m_data.insert(make_pair(threadId, Allocate())).first;
+    it = m_data.insert(make_pair(uinqueId, Allocate())).first;
   return it->second;
 }
 

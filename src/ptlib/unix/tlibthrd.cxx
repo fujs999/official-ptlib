@@ -172,9 +172,9 @@ PThread::PThread(bool isProcess)
   : m_type(isProcess ? e_IsProcess : e_IsExternal)
   , m_originalStackSize(0)
   , m_threadId(pthread_self())
+  , m_uniqueId(GetCurrentUniqueIdentifier())
   , PX_priority(NormalPriority)
 #if defined(P_LINUX)
-  , PX_linuxId(GetCurrentUniqueIdentifier())
   , PX_startTick(PTimer::Tick())
 #endif
   , PX_suspendMutex(MutexInitialiser)
@@ -212,10 +212,8 @@ PThread::PThread(PINDEX stackSize,
   , m_originalStackSize(std::max(stackSize, PThreadMinimumStack))
   , m_threadName(name)
   , m_threadId(PNullThreadIdentifier)  // indicates thread has not started
+  , m_uniqueId(0)
   , PX_priority(priorityLevel)
-#if defined(P_LINUX)
-  , PX_linuxId(0)
-#endif
   , PX_suspendMutex(MutexInitialiser)
   , PX_suspendCount(1)
   , PX_state(PX_firstResume) // new thread is actually started the first time Resume() is called.
@@ -277,8 +275,8 @@ void PThread::InternalPreMain()
   PAssert(PX_state == PX_starting, PLogicError);
   PX_state = PX_running;
 
+  m_uniqueId = GetCurrentUniqueIdentifier();
 #if defined(P_LINUX)
-  PX_linuxId = GetCurrentUniqueIdentifier();
   PX_startTick = PTimer::Tick();
 #endif
 
@@ -414,17 +412,41 @@ void PThread::PX_StartThread()
 
 bool PThread::PX_kill(PThreadIdentifier tid, PUniqueThreadIdentifier uid, int sig)
 {
-#if defined(P_LINUX)
   if (!PProcess::IsInitialised())
     return false;
+
   PProcess & process = PProcess::Current();
   PWaitAndSignal mutex(process.m_threadMutex);
   PProcess::ThreadMap::iterator it = process.m_activeThreads.find(tid);
   if (it == process.m_activeThreads.end() || (uid != 0 && it->second->GetUniqueIdentifier() != uid))
     return false;
-#endif
 
-  return pthread_kill(tid, sig) == 0;
+#if !P_NO_PTHREAD_KILL
+  int error = pthread_kill(tid, sig);
+  switch (error) {
+    case 0:
+      return true;
+
+    case EPERM:
+      return sig == 0; // If just test for existance, is true even if we don't have permission
+
+#if PTRACING
+    case ESRCH:   // Thread not running any more
+    case EINVAL:  // Id has never been used for a thread
+    case ENOTSUP: // Mac OS-X does this
+      break;
+
+    default:
+      // Output direct to stream, do not use PTRACE as it might cause an infinite recursion.
+      ostream * trace = PTrace::GetStream();
+      if (trace != NULL)
+          *trace << "pthread_kill failed for thread " << GetIdentifiersAsString(tid, uid)
+                 << " errno " << error << ' ' << strerror(error) << endl;
+#endif // PTRACING
+  }
+#endif // !defined(P_MACOSX) && !P_NO_PTHREAD_KILL
+
+  return false;
 }
 
 
@@ -808,38 +830,18 @@ PBoolean PThread::IsTerminated() const
   if (m_type != e_IsExternal)
     return false;
 
-#if P_NO_PTHREAD_KILL
   /* Some flavours of Linux crash in pthread_kill() if the thread id
      is invalid. Now, IMHO, a pthread function that is not itself
      thread safe is utter madness, but apparently, the authors would
      rather change the Posix standard than fix the problem!  What is
      the point of an ESRCH error return for invalid id if it can
-     crash on an invalid id? As I said, complete madness. */
+     crash on an invalid id? As I said, complete madness.
+     
+     So, if we have a /proc, we always use that mechanism to determine
+     if the external thread still exists. */
   char fn[100];
-  snprintf(fn, sizeof(fn), "/proc/%u/task/%u/stat", getpid(), PX_linuxId);
-  return access(fn, R_OK) != 0;
-#else
-  int error = pthread_kill(id, 0);
-  switch (error) {
-    case 0 :
-    case EPERM : // Thread exists, even if we can't send signal
-     return false;
-
-#if PTRACING
-    case ESRCH :  // Thread not running any more
-    case EINVAL : // Id has never been used for a thread
-      break;
-
-    default :
-      // Output direct to stream, do not use PTRACE as it might cause an infinite recursion.
-      ostream * trace = PTrace::GetStream();
-      if (trace != NULL)
-        *trace << "Error " << error << " calling pthread_kill: thread=" << this << ", id=" << id << endl;
-#endif
-  }
-
-  return true;
-#endif
+  snprintf(fn, sizeof(fn), "/proc/%u/task/%u/stat", getpid(), (unsigned)(intptr_t)GetUniqueIdentifier());
+  return access(fn, R_OK) != 0 && !PX_kill(id, GetUniqueIdentifier(), 0);
 }
 
 
@@ -873,34 +875,18 @@ PBoolean PThread::WaitForTermination(const PTimeInterval & maxWait) const
 }
 
 
+
+PUniqueThreadIdentifier PThread::GetCurrentUniqueIdentifier()
+{
 #if defined(P_LINUX)
-
-PUniqueThreadIdentifier PThread::GetUniqueIdentifier() const
-{
-  return PX_linuxId;
-}
-
-
-PUniqueThreadIdentifier PThread::GetCurrentUniqueIdentifier()
-{
   return syscall(SYS_gettid);
-}
-
-
+#elif defined(P_MACOSX)
+  PUniqueThreadIdentifier id;
+  return pthread_threadid_np(::pthread_self(), &id) == 0 ? id : 0;
 #else
-
-PUniqueThreadIdentifier PThread::GetUniqueIdentifier() const
-{
-  return GetThreadId();
-}
-
-
-PUniqueThreadIdentifier PThread::GetCurrentUniqueIdentifier()
-{
-  return GetCurrentThreadId();
-}
-
+  return (PUniqueThreadIdentifier)GetCurrentThreadId();
 #endif
+}
 
 
 int PThread::PXBlockOnIO(int handle, int type, const PTimeInterval & timeout)

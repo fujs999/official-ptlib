@@ -166,6 +166,11 @@ class PCLI : public PObject
           unsigned & rows,
           unsigned & columns
         );
+
+        /// Handle Broadcast
+        virtual void Broadcast(
+          const PString & message  ///< Message to broadcase
+        );
       //@}
 
       /**@name Member access */
@@ -184,6 +189,7 @@ class PCLI : public PObject
         bool InternalMoveCursor(bool left, PINDEX count);
         bool InternalEchoCommandLine(PINDEX echoPosition, PINDEX moveLeftCount);
         bool InternalMoveHistoryCommand(int direction);
+        bool InternalWrite(const char * str, PINDEX len, PINDEX & written);
 
         PCLI      & m_cli;
         PString     m_commandLine;
