@@ -43,7 +43,10 @@
 #import <AVFoundation/AVFoundation.h>
 
 #define PTraceModule() "MacVideo"
-#define PTRACE_DETAILED(...) PTRACE(__VA_ARGS__)
+#define PTRACE_DETAILED(...) PTRACE(4, __VA_ARGS__)
+
+
+static OSType const s_PixelFormat = kCVPixelFormatType_420YpCbCr8Planar;
 
 
 class PLocalMemoryPool
@@ -57,9 +60,11 @@ public:
 
 @interface PVideoInputDevice_MacFrame : NSObject <AVCaptureVideoDataOutputSampleBufferDelegate>
 {
-  CMSampleBufferRef m_videoFrame;
-  PSyncPoint       m_grabbed;
-  bool             m_frameAvailable;
+  PBYTEArray m_frameBuffer;
+  unsigned   m_frameWidth;
+  unsigned   m_frameHeight;
+  PSyncPoint m_grabbed;
+  bool       m_frameAvailable;
 }
 
 @end
@@ -83,16 +88,55 @@ public:
         didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
         fromConnection:       (AVCaptureConnection *)connection
 {
-  PTRACE_DETAILED(5, "Frame received: m_frameAvailable=" << m_frameAvailable);
 
   // If we have not processed previous frame, ignore this one
-  if (m_frameAvailable)
+  if (m_frameAvailable) {
+    PTRACE_DETAILED("Frame received, but previous framenot yet processed");
     return;
+  }
 
   // The Apple docs state that this action must be synchronized
   // as this method will be run on another thread
   @synchronized (self) {
-    m_videoFrame = sampleBuffer;
+    CVImageBufferRef pixels = CMSampleBufferGetImageBuffer(sampleBuffer);
+    if (pixels == NULL) {
+      PTRACE(2, "Could not get image buffer form sample.");
+      return;
+    }
+    
+    OSType sourcePixelFormat = CVPixelBufferGetPixelFormatType(pixels);
+    unsigned actualWidth = CVPixelBufferGetWidth(pixels);
+    unsigned actualHeight = CVPixelBufferGetHeight(pixels);
+    
+    if (sourcePixelFormat != s_PixelFormat || actualWidth != m_frameWidth || actualHeight != m_frameHeight) {
+      PTRACE(4, "Buffer has incorrect resolution or pixel format.");
+      return;
+    }
+    
+    uint8_t * buffer = m_frameBuffer.GetPointer();
+    
+    CVPixelBufferLockBaseAddress(pixels, kCVPixelBufferLock_ReadOnly);
+
+    size_t planes = CVPixelBufferGetPlaneCount(pixels);
+    for (int plane = 0; plane < planes; ++plane) {
+      const uint8_t * src = (const uint8_t *)CVPixelBufferGetBaseAddressOfPlane(pixels, plane);
+      size_t rowBytes = CVPixelBufferGetBytesPerRowOfPlane(pixels, plane);
+      for (unsigned y = 0; y < actualHeight; ++y) {
+        memcpy(buffer, src, actualWidth);
+        buffer += actualWidth;
+        src += rowBytes;
+      }
+      
+      if (plane == 0) {
+        actualWidth /= 2;
+        actualHeight /= 2;
+      }
+    }
+    
+    CVPixelBufferUnlockBaseAddress(pixels, kCVPixelBufferLock_ReadOnly);
+    
+    PTRACE_DETAILED("Frame grabbed: " << actualWidth << 'x' << actualHeight << ", "
+                    << (buffer - m_frameBuffer.GetPointer()) << " bytes copied, size=" << m_frameBuffer.GetSize());
     m_frameAvailable = true;
     m_grabbed.Signal();
   }
@@ -108,72 +152,38 @@ public:
 
 - (void)waitFrame
 {
-  PTRACE_DETAILED(5, "Waiting");
+  PTRACE_DETAILED("Waiting");
   m_grabbed.Wait();
 }
 
 
-- (void)grabFrame:(BYTE *)buffer withWidth:(unsigned)expectedWidth andHeight:(unsigned)expectedHeight
+- (bool)grabFrame:(BYTE *)destFrame withConverter:(PColourConverter *)converter returningBytes:(PINDEX *)bytesReturned
 {
   if (!m_frameAvailable)
     m_grabbed.Wait();
 
-  CVPixelBufferRef pixels;
-  
   @synchronized (self){
-    pixels = CMSampleBufferGetImageBuffer(m_videoFrame);
     m_frameAvailable = false;
-  }
-
-  unsigned actualWidth = CVPixelBufferGetWidth(pixels);
-  unsigned actualHeight = CVPixelBufferGetHeight(pixels);
-  
-  PTRACE_IF(3, expectedWidth != actualWidth || expectedHeight != actualHeight,
-            "Not grabbing the size we expected: "
-            << actualWidth << 'x' << actualHeight << "!=" << expectedWidth << 'x' << expectedHeight);
-
-  PTRACE_DETAILED(5, "Frame grabbed: " << actualWidth << 'x' << actualHeight);
-
-  if (actualWidth > expectedWidth)
-    actualWidth = expectedWidth;
-  if (actualHeight > expectedHeight)
-    actualHeight = expectedHeight;
-  
-  CVPixelBufferLockBaseAddress(pixels, 0);
-
-  const uint8_t * src = (const uint8_t *)CVPixelBufferGetBaseAddressOfPlane(pixels, 0);
-  size_t rowBytes = CVPixelBufferGetBytesPerRowOfPlane(pixels, 0);
-  for (unsigned y = 0; y < actualHeight; ++y) {
-    memcpy(buffer, src, actualWidth);
-    buffer += expectedWidth;
-    src += rowBytes;
-  }
-
-  actualWidth /= 2;
-  actualHeight /= 2;
-  expectedWidth /= 2;
-  expectedHeight /= 2;
-  
-  src = (const uint8_t *)CVPixelBufferGetBaseAddressOfPlane(pixels, 1);
-  rowBytes = CVPixelBufferGetBytesPerRowOfPlane(pixels, 1);
-  for (unsigned y = 0; y < actualHeight; ++y) {
-    memcpy(buffer, src, actualWidth);
-    buffer += expectedWidth;
-    src += rowBytes;
-  }
-  
-  src = (const uint8_t *)CVPixelBufferGetBaseAddressOfPlane(pixels, 2);
-  rowBytes = CVPixelBufferGetBytesPerRowOfPlane(pixels, 2);
-  for (unsigned y = 0; y < actualHeight; ++y) {
-    memcpy(buffer, src, actualWidth);
-    buffer += expectedWidth;
-    src += rowBytes;
-  }
     
-  CVPixelBufferUnlockBaseAddress(pixels, 0);
-  CVBufferRelease(pixels);
+    if (converter != NULL)
+      return converter->Convert(m_frameBuffer, destFrame, bytesReturned);
+
+    memcpy(destFrame, m_frameBuffer, m_frameBuffer.GetSize());
+    if (bytesReturned != NULL)
+      *bytesReturned = m_frameBuffer.GetSize();
+    return true;
+  }
 }
 
+
+- (void)setFrameSize:(PINDEX)size withWidth:(unsigned)width andHeight:(unsigned)height
+{
+  @synchronized (self){
+    m_frameBuffer.SetSize(size);
+    m_frameWidth = width;
+    m_frameHeight = height;
+  }
+}
 @end
 
 
@@ -203,6 +213,8 @@ class PVideoInputDevice_Mac : public PVideoInputDevice
     virtual PBoolean SetFrameSize(unsigned width, unsigned height);
 
   protected:
+    void InternalSetFrameRate();
+  
     AVCaptureSession * m_session;
     AVCaptureDevice * m_device;
     AVCaptureDeviceInput * m_captureInput;
@@ -211,7 +223,6 @@ class PVideoInputDevice_Mac : public PVideoInputDevice
   
     PINDEX m_frameSizeBytes;
     PReadWriteMutex m_mutex;
-    PBYTEArray m_tempFrame;
 };
 
 PCREATE_VIDINPUT_PLUGIN(Mac);
@@ -268,9 +279,8 @@ PBoolean PVideoInputDevice_Mac::Open(const PString & devName, PBoolean startImme
     return false;
   }
 
-  [m_device setActiveVideoMinFrameDuration:CMTimeMake(1, m_frameRate)];
-  [m_device setActiveVideoMaxFrameDuration:CMTimeMake(1, m_frameRate)];
-
+  InternalSetFrameRate();
+  
   m_captureInput = [AVCaptureDeviceInput deviceInputWithDevice:m_device error:&error];
   if (error != nil) {
     PTRACE(2, "Could not get input device "
@@ -290,16 +300,20 @@ PBoolean PVideoInputDevice_Mac::Open(const PString & devName, PBoolean startImme
   m_captureOutput.alwaysDiscardsLateVideoFrames = NO;
   m_captureOutput.videoSettings =
       [NSDictionary dictionaryWithObjectsAndKeys:
-          [NSNumber numberWithInt:m_frameWidth],
-                  (id)kCVPixelBufferWidthKey,
-          [NSNumber numberWithInt:m_frameHeight],
-                  (id)kCVPixelBufferHeightKey,
-          [NSNumber numberWithInt:kCVPixelFormatType_420YpCbCr8Planar],
-                  (id)kCVPixelBufferPixelFormatTypeKey,
-          nil
+        [NSNumber numberWithInt:m_frameWidth],  (id)kCVPixelBufferWidthKey,
+        [NSNumber numberWithInt:m_frameHeight], (id)kCVPixelBufferHeightKey,
+        [NSNumber numberWithInt:s_PixelFormat], (id)kCVPixelBufferPixelFormatTypeKey,
+        nil
       ];
 
+  if (![m_session canAddOutput:m_captureOutput]) {
+    PTRACE(2, "Could not add output capture for \"" << devName << '"');
+    return false;
+  }
+  
   [m_session addOutput:m_captureOutput];
+  
+  [m_session commitConfiguration];
   
   m_captureFrame = [[PVideoInputDevice_MacFrame alloc] init];
   dispatch_queue_t captureQueue = dispatch_queue_create( "captureQueue", DISPATCH_QUEUE_SERIAL );
@@ -307,6 +321,7 @@ PBoolean PVideoInputDevice_Mac::Open(const PString & devName, PBoolean startImme
   
   m_deviceName = devName;
   m_frameSizeBytes = CalculateFrameBytes(m_frameWidth, m_frameHeight, m_colourFormat);
+  [m_captureFrame setFrameSize:m_frameSizeBytes withWidth:m_frameWidth andHeight:m_frameHeight];
 
   PTRACE(3, "Opened \"" << devName << "\""
             " res=" << m_frameWidth << 'x' << m_frameHeight << '@' << m_frameRate);
@@ -332,14 +347,6 @@ PBoolean PVideoInputDevice_Mac::Close()
 
   m_mutex.StartWrite();
 
-  PLocalMemoryPool localPool;
-
-  if (m_captureInput != nil) {
-    [m_session removeInput:m_captureInput];
-    [m_captureInput release];
-    m_captureInput = nil;
-  }
-
   if (m_captureOutput != nil) {
     [m_session removeOutput:m_captureOutput];
     [m_captureOutput setSampleBufferDelegate:nil queue:nil];
@@ -350,6 +357,11 @@ PBoolean PVideoInputDevice_Mac::Close()
   if (m_captureFrame != nil) {
     [m_captureFrame release];
     m_captureFrame = nil;
+  }
+  
+  if (m_captureInput != nil) {
+    [m_session removeInput:m_captureInput];
+    m_captureInput = nil;
   }
   
   if (m_device != nil) {
@@ -480,16 +492,36 @@ PBoolean PVideoInputDevice_Mac::SetFrameRate(unsigned rate)
   PLocalMemoryPool localPool;
   
   m_mutex.StartRead();
-  
-  [m_device setActiveVideoMinFrameDuration:CMTimeMake(1, m_frameRate)];
-  [m_device setActiveVideoMaxFrameDuration:CMTimeMake(1, m_frameRate)];
-
+  InternalSetFrameRate();
   m_mutex.EndRead();
   
   if (restart)
     return Start();
   
   return true;
+}
+
+
+void PVideoInputDevice_Mac::InternalSetFrameRate()
+{
+  AVCaptureDeviceFormat * compatibleFormat = nil;
+  for (AVCaptureDeviceFormat * format in [m_device formats]) {
+    for (AVFrameRateRange * range in format.videoSupportedFrameRateRanges) {
+      if (range.minFrameRate <= m_frameRate && m_frameRate <= range.maxFrameRate) {
+        compatibleFormat = format;
+        break;
+      }
+    }
+    if (compatibleFormat)
+      break;
+  }
+  
+  if (compatibleFormat && [m_device lockForConfiguration:NULL] == YES) {
+    m_device.activeFormat = compatibleFormat;
+    m_device.activeVideoMinFrameDuration = CMTimeMake(1, m_frameRate);
+    m_device.activeVideoMaxFrameDuration = CMTimeMake(1, m_frameRate);
+    [m_device unlockForConfiguration];
+  }
 }
 
 
@@ -508,7 +540,8 @@ PBoolean PVideoInputDevice_Mac::SetFrameSize(unsigned width, unsigned height)
     return false;
 
   m_frameSizeBytes = CalculateFrameBytes(m_frameWidth, m_frameHeight, m_colourFormat);
-  
+  [m_captureFrame setFrameSize:m_frameSizeBytes withWidth:m_frameWidth andHeight:m_frameHeight];
+
   if (IsOpen())
     return Open(m_deviceName, IsCapturing());
   
@@ -524,10 +557,6 @@ bool PVideoInputDevice_Mac::GetDeviceCapabilities(const PString &, Capabilities 
   frameInfo.SetFrameSize(320, 240);
   caps->m_frameSizes.push_back(frameInfo);
   frameInfo.SetFrameSize(640, 480);
-  caps->m_frameSizes.push_back(frameInfo);
-  frameInfo.SetFrameSize(176, 144);
-  caps->m_frameSizes.push_back(frameInfo);
-  frameInfo.SetFrameSize(352, 288);
   caps->m_frameSizes.push_back(frameInfo);
   return true;
 }
@@ -553,25 +582,13 @@ PBoolean PVideoInputDevice_Mac::GetFrameData(BYTE * buffer, PINDEX * bytesReturn
  
 PBoolean PVideoInputDevice_Mac::GetFrameDataNoDelay(BYTE *destFrame, PINDEX * bytesReturned)
 {
-  PTRACE_DETAILED(5, "Get frame, converter=" << m_converter);
+  PTRACE_DETAILED("Get frame, converter=" << m_converter);
   
   if (!IsCapturing())
     return false;
 
   PReadWaitAndSignal mutex(m_mutex);
-
-  if (m_converter != NULL) {
-    [m_captureFrame grabFrame:m_tempFrame.GetPointer(m_frameSizeBytes) withWidth:m_frameWidth andHeight:m_frameHeight];
-    if (!m_converter->Convert(m_tempFrame, destFrame, bytesReturned))
-      return false;
-  }
-  else {
-    [m_captureFrame grabFrame:destFrame withWidth:m_frameWidth andHeight:m_frameHeight];
-    if (bytesReturned != NULL)
-      *bytesReturned = m_frameSizeBytes;
-  }
-  
-  return true;
+  return [m_captureFrame grabFrame:destFrame withConverter:m_converter returningBytes:bytesReturned];
 }
 
 
