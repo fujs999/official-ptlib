@@ -41,7 +41,7 @@ PTLib: Portable Tools Library
 Summary:        Development files for %{name}
 Group:          Development/Libraries
 Requires:       %{name} = %{version}-%{release}
-Requires:       bbcollab-openssl-devel = 1.0.2l
+Requires:       bbcollab-openssl-devel >= 1.0.2c, bbcollab-openssl-devel < 1.0.3
 Requires:       expat-devel
 Requires:       libpcap-devel
 Requires:       ncurses-devel
