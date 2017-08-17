@@ -17,7 +17,7 @@ Source0:        zsdk-ptlib.src.tgz
 # Optional build dependencies not needed for the MCU are commented-out
 BuildRequires:  %__sed
 BuildRequires:  bbcollab-gcc = 5.1.0
-BuildRequires:  bbcollab-openssl-devel = 1.0.2c
+BuildRequires:  bbcollab-openssl-devel >= 1.0.2c, bbcollab-openssl-devel < 1.0.3
 #BuildRequires:  cyrus-sasl-devel
 BuildRequires:  expat-devel
 BuildRequires:  gperftools
@@ -41,7 +41,7 @@ PTLib: Portable Tools Library
 Summary:        Development files for %{name}
 Group:          Development/Libraries
 Requires:       %{name} = %{version}-%{release}
-Requires:       bbcollab-openssl-devel = 1.0.2c
+Requires:       bbcollab-openssl-devel = 1.0.2l
 Requires:       expat-devel
 Requires:       libpcap-devel
 Requires:       ncurses-devel
