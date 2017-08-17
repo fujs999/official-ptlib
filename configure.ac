@@ -1408,6 +1408,25 @@ dnl MSWIN_CHECK_DIR  ffmpeg64,..\external\ffmpeg-win64-dev*
 dnl MSWIN_CHECK_DIR  ffmpeg64,%ProgramFiles%\ffmpeg-win64-dev*
 dnl MSWIN_CHECK_DIR  ffmpeg64,%ProgramW6432%\ffmpeg-win64-dev*
 
+dnl MSWIN_DISPLAY    ffmpeg32wb,FFMPEG 32 bit support (Win-Builds)
+dnl MSWIN_IF_FEATURE ffmpeg32wb,!ffmpeg32
+dnl MSWIN_CHECK_FILE ffmpeg32wb,include\libavformat\avformat.h,P_FFMPEG_WINBUILDS_WIN32=1
+dnl MSWIN_DIR_SYMBOL ffmpeg32wb,FFMPEG_WINBUILDS_WIN32_DIR
+dnl MSWIN_CHECK_DIR  ffmpeg32wb,%WINBUILDSDIR%\
+dnl MSWIN_CHECK_DIR  ffmpeg32wb,..\Win-Builds\
+dnl MSWIN_CHECK_DIR  ffmpeg32wb,..\external\Win-Builds\
+dnl MSWIN_CHECK_DIR  ffmpeg32wb,\Win-Builds\
+
+dnl MSWIN_DISPLAY    ffmpeg64wb,FFMPEG 64 bit support (Win-Builds)
+dnl MSWIN_IF_FEATURE ffmpeg64wb,!ffmpeg64
+dnl MSWIN_CHECK_FILE ffmpeg64wb,include\libavformat\avformat.h,P_FFMPEG_WINBUILDS_WIN64=1
+dnl MSWIN_DIR_SYMBOL ffmpeg64wb,FFMPEG_WINBUILDS_WIN64_DIR
+dnl MSWIN_CHECK_DIR  ffmpeg64wb,%WINBUILDSDIR%\
+dnl MSWIN_CHECK_DIR  ffmpeg64wb,..\Win-Builds\
+dnl MSWIN_CHECK_DIR  ffmpeg64wb,..\external\Win-Builds\
+dnl MSWIN_CHECK_DIR  ffmpeg64wb,\Win-Builds\
+
+
 AC_LANG_PUSH(C)
 
 oldLIBS="$LIBS"
@@ -1785,6 +1804,12 @@ dnl MSWIN_DIR_SYMBOL expat32,EXPAT_WIN32_DIR
 dnl MSWIN_FIND_FILE  expat32,P_EXPAT_LIBRARY,libexpatMT.lib,bin
 dnl MSWIN_CHECK_DIR  expat32,%ProgramFiles%\Expat 2.*
 dnl MSWIN_CHECK_DIR  expat32,%ProgramW6432%\Expat 2.*
+
+dnl MSWIN_DISPLAY    expat64,Expat XML (Win-Builds)
+dnl MSWIN_CHECK_FILE expat64,include\expat.h,P_EXPAT_WIN64=1
+dnl MSWIN_DIR_SYMBOL expat64,EXPAT_WIN64_DIR
+dnl MSWIN_FIND_FILE  expat64,P_EXPAT_LIBRARY,libexpat.dll.a,lib64
+dnl MSWIN_CHECK_DIR  expat64,%WINBUILDSDIR%\
 
 PTLIB_MODULE_OPTION(
    [EXPAT],
