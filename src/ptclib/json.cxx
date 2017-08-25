@@ -245,7 +245,10 @@ static bool ReadString(istream & strm, PString & str)
           str += '\t';
           break;
         case 'u' :
-          str += '\b';
+          char hex[5];
+          strm.read(hex, 4);
+          hex[4] = '\0';
+          str += (char)strtoul(hex, NULL, 16);
           break;
       }
     }
@@ -259,15 +262,35 @@ static void PrintString(ostream & strm, const PString & str)
 {
   strm << '"';
   for (PINDEX i = 0; i < str.GetLength(); ++i) {
-    switch (str[i]) {
+    unsigned c = str[i] & 0xff;
+    switch (c) {
       case '"' :
         strm << "\\\"";
         break;
       case '\\' :
         strm << "\\\\";
         break;
+      case '\t' :
+        strm << "\\t";
+        break;
+      case '\r' :
+        strm << "\\r";
+        break;
+      case '\n' :
+        strm << "\\n";
+        break;
       default :
-        strm << str[i];
+        if (c >= ' ')
+          strm << str[i];
+        else {
+          char oldFill = strm.fill('0');
+          ios_base::fmtflags oldFlags = strm.setf(ios_base::hex, ios_base::dec);
+
+          strm << "\\u" << setw(4) << c;
+
+          strm.setf(oldFlags);
+          strm.fill(oldFill);
+        }
     }
   }
   strm << '"';
@@ -365,51 +388,37 @@ bool PJSON::Object::IsType(const PString & name, Types type) const
 }
 
 
-PJSON::Object & PJSON::Object::GetObject(const PString & name) const
-{
-  Object * obj = Get<Object>(name);
-  return *PAssertNULL(obj);
-}
-
-
-PJSON::Array & PJSON::Object::GetArray(const PString & name) const
-{
-  Array * arr = Get<Array>(name);
-  return *PAssertNULL(arr);
-}
-
-
 PString PJSON::Object::GetString(const PString & name) const
 {
-  String * str = Get<String>(name);
+  const String * str = Get<String>(name);
   return str != NULL ? *str : PString::Empty();
 }
 
 
 int PJSON::Object::GetInteger(const PString & name) const
 {
-  Number * num = Get<Number>(name);
+  const Number * num = Get<Number>(name);
   return num != NULL ? (int)num->GetValue() : 0;
 }
 
 
 unsigned PJSON::Object::GetUnsigned(const PString & name) const
 {
-  Number * num = Get<Number>(name);
+  const Number * num = Get<Number>(name);
   return num != NULL ? (unsigned)num->GetValue() : 0;
 }
 
 
 double PJSON::Object::GetNumber(const PString & name) const
 {
-  Number * num = Get<Number>(name);
+  const Number * num = Get<Number>(name);
   return num != NULL ? num->GetValue() : 0;
 }
 
 
 bool PJSON::Object::GetBoolean(const PString & name) const
 {
-  Boolean * flag = Get<Boolean>(name);
+  const Boolean * flag = Get<Boolean>(name);
   return flag != NULL && flag->GetValue();
 }
 
@@ -556,51 +565,37 @@ bool PJSON::Array::IsType(size_t index, Types type) const
 }
 
 
-PJSON::Object & PJSON::Array::GetObject(size_t index) const
-{
-  Object * obj = Get<Object>(index);
-  return *PAssertNULL(obj);
-}
-
-
-PJSON::Array & PJSON::Array::GetArray(size_t index) const
-{
-  Array * arr = Get<Array>(index);
-  return *PAssertNULL(arr);
-}
-
-
 PString PJSON::Array::GetString(size_t index) const
 {
-  String * str = Get<String>(index);
+  const String * str = Get<String>(index);
   return str != NULL ? *str : PString::Empty();
 }
 
 
 int PJSON::Array::GetInteger(size_t index) const
 {
-  Number * num = Get<Number>(index);
+  const Number * num = Get<Number>(index);
   return num != NULL ? (int)num->GetValue() : 0;
 }
 
 
 unsigned PJSON::Array::GetUnsigned(size_t index) const
 {
-  Number * num = Get<Number>(index);
+  const Number * num = Get<Number>(index);
   return num != NULL ? (unsigned)num->GetValue() : 0;
 }
 
 
 double PJSON::Array::GetNumber(size_t index) const
 {
-  Number * num = Get<Number>(index);
+  const Number * num = Get<Number>(index);
   return num != NULL ? num->GetValue() : 0;
 }
 
 
 bool PJSON::Array::GetBoolean(size_t index) const
 {
-  Boolean * flag = Get<Boolean>(index);
+  const Boolean * flag = Get<Boolean>(index);
   return flag != NULL && flag->GetValue();
 }
 
@@ -693,20 +688,21 @@ void PJSON::Number::ReadFrom(istream & strm)
 void PJSON::Number::PrintOn(ostream & strm) const
 {
   if (m_value < 0) {
-    int intval = (int)m_value;
+    int64_t intval = (int64_t)m_value;
     if (intval == m_value) {
       strm << intval;
       return;
     }
   }
-  else if (m_value < UINT_MAX) {
-    unsigned uintval = (unsigned)m_value;
+  else {
+    uint64_t uintval = (uint64_t)m_value;
     if (uintval == m_value) {
       strm << uintval;
       return;
     }
   }
-    strm << m_value;
+
+  strm << m_value;
 }
 
 
