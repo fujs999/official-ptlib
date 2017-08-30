@@ -1,6 +1,6 @@
 pipeline {
   // Build environment is defined by the Dockerfile
-  agent dockerfile:true
+  agent { dockerfile true }
   stages {
     stage('package') {
       steps {
@@ -24,9 +24,7 @@ pipeline {
       }
     }
     stage('publish-develop') {
-      when {
-        env.BRANCH_NAME == 'develop'
-      }
+      when { branch 'develop' }
       steps {
         build job: '/rpm-repo-deploy', parameters: [
           string(name: 'SOURCE_JOB', value: "$JOB_NAME"),
@@ -36,9 +34,7 @@ pipeline {
       }
     }
     stage('publish-release') {
-      when {
-        env.BRANCH_NAME ==~ /release\/.*/
-      }
+      when { branch 'release/*' }
       steps {
         build job: '/rpm-repo-deploy', parameters: [
           string(name: 'SOURCE_JOB', value: "$JOB_NAME"),
