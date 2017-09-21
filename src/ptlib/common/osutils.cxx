@@ -2535,8 +2535,7 @@ PProcess & PProcess::Current()
 {
   if (PProcessInstance == NULL) {
     PAssertAlways("Catastrophic failure, PProcess::Current() = NULL!!");
-    PBreakToDebugger();
-    _exit(1);
+    abort();
   }
   return *PProcessInstance;
 }
@@ -2773,6 +2772,7 @@ PObject::Comparison PProcess::Compare(const PObject & obj) const
 void PProcess::Terminate()
 {
   // With extreme prejudice
+  PTRACE(0, "Process \"" << GetName() << "\" terminating without clean up!");
   _exit(m_terminationValue);
 }
 
