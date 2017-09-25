@@ -2,6 +2,12 @@
 %global version_minor  17
 %global version_patch  4
 
+# Disable the separate debug package and automatic stripping, as detailed here:
+# http://fedoraproject.org/wiki/How_to_create_an_RPM_package
+%global _enable_debug_package 0
+%global debug_package %{nil}
+%global __os_install_post /usr/lib/rpm/brp-compress %{nil}
+
 Name:           bbcollab-ptlib
 Version:        %{version_major}.%{version_minor}.%{version_patch}.23
 Release:        1%{?jenkins_release}%{?dist}
