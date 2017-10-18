@@ -2683,12 +2683,18 @@ void PProcess::AsynchronousRunTimeSignal(int signal, PProcessIdentifier PTRACE_P
     trace << "Received signal " << GetRunTimeSignalName(signal) << " from ";
     if (source == GetCurrentProcessID())
       trace << "self";
-    else {
-      PTextFile proc(PSTRSTRM("/proc/" << source << "/cmdline"), PFile::ReadOnly);
-      if (proc.IsOpen())
-        trace << "pid=" << source << " cmdline=\"" << proc.ReadString(P_MAX_INDEX) << '"';
-      else if (source != 0)
+    else if (source != 0) {
+      PFile proc(PSTRSTRM("/proc/" << source << "/cmdline"), PFile::ReadOnly);
+      if (!proc.IsOpen())
         trace << "source=" << source;
+      else {
+        PString cmdline = proc.ReadString(P_MAX_INDEX);
+        for (PINDEX i = 0; i < cmdline.GetLength(); ++i) {
+          if (cmdline[i] == '\0')
+            cmdline[i] = ' ';
+        }
+        trace << "pid=" << source << ", cmdline=\"" << cmdline << '"';
+      }
     }
     trace << PTrace::End;
   }
