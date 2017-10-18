@@ -2688,12 +2688,15 @@ void PProcess::AsynchronousRunTimeSignal(int signal, PProcessIdentifier PTRACE_P
       if (!proc.IsOpen())
         trace << "source=" << source;
       else {
-        PString cmdline = proc.ReadString(P_MAX_INDEX);
-        for (PINDEX i = 0; i < cmdline.GetLength(); ++i) {
-          if (cmdline[i] == '\0')
-            cmdline[i] = ' ';
+        PString cmdline;
+        int c;
+        while ((c = proc.ReadChar()) >= 0) {
+          if (c == '\0')
+            cmdline += ' ';
+          else
+            cmdline += (char)c;
         }
-        trace << "pid=" << source << ", cmdline=\"" << cmdline << '"';
+        trace << "pid=" << source << ", cmdline=\"" << cmdline.RightTrim() << '"';
       }
     }
     trace << PTrace::End;
