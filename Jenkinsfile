@@ -46,13 +46,13 @@ pipeline {
   }
   post {
     success {
-      hipchatSend color: "GREEN", message: "SUCCESS: <a href=\"${currentBuild.absoluteUrl}\">${currentBuild.fullDisplayName}</a>"
+      slackSend color: "good", message: "SUCCESS: <${currentBuild.absoluteUrl}|${currentBuild.fullDisplayName}>"
     }
     failure {
-      hipchatSend color: "RED", message: "FAILURE: <a href=\"${currentBuild.absoluteUrl}\">${currentBuild.fullDisplayName}</a>", notify: true
+      slackSend color: "danger", message: "FAILURE: <${currentBuild.absoluteUrl}|${currentBuild.fullDisplayName}>"
     }
     unstable {
-      hipchatSend color: "YELLOW", message: "UNSTABLE: <a href=\"${currentBuild.absoluteUrl}\">${currentBuild.fullDisplayName}</a>", notify: true
+      slackSend color: "warning", message: "UNSTABLE: <${currentBuild.absoluteUrl}|${currentBuild.fullDisplayName}>"
     }
   }
 }
