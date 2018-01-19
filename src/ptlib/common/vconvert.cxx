@@ -116,7 +116,11 @@ class PStandardColourConverter : public PColourConverter
         if (rgbIncrement == 3)
           fmt = redOffset == 0 ? AV_PIX_FMT_RGB24 : AV_PIX_FMT_BGR24;
         else
+#ifdef P_MACOSX
+          fmt = redOffset == 0 ? AV_PIX_FMT_ABGR : AV_PIX_FMT_ARGB;
+#else
           fmt = redOffset == 0 ? AV_PIX_FMT_RGBA : AV_PIX_FMT_BGRA;
+#endif
       }
     }
 
@@ -2046,17 +2050,9 @@ bool PStandardColourConverter::YUV420PtoRGB(const BYTE * srcFrameBuffer,
 
   BYTE * scanLinePtrRGB = dstFrameBuffer;
   int scanLineSizeRGB = (int)((rgbIncrement*m_dstFrameWidth+3)&~3);
-
-  unsigned srcPixpos[4] = { 0, 1, planeWidth, planeWidth + 1 };
-  unsigned dstPixpos[4] = { 0, rgbIncrement, (unsigned)scanLineSizeRGB, (unsigned)scanLineSizeRGB+rgbIncrement };
-
   if (m_verticalFlip) {
-    scanLinePtrRGB += (m_dstFrameHeight - 2) * scanLineSizeRGB;
+    scanLinePtrRGB += (m_dstFrameHeight - 1) * scanLineSizeRGB;
     scanLineSizeRGB = -scanLineSizeRGB;
-    dstPixpos[0] = dstPixpos[2];
-    dstPixpos[1] = dstPixpos[3];
-    dstPixpos[2] = 0;
-    dstPixpos[3] = rgbIncrement;
   }
 
 #if P_FFMPEG_SWSCALE
@@ -2073,6 +2069,23 @@ bool PStandardColourConverter::YUV420PtoRGB(const BYTE * srcFrameBuffer,
   }
 
 #endif // P_FFMPEG_SWSCALE
+
+  unsigned srcPixpos[4] = { 0, 1, planeWidth, planeWidth + 1 };
+  unsigned dstPixpos[4];
+
+  if (m_verticalFlip) {
+    scanLinePtrRGB -= scanLineSizeRGB; // We do two scan lines at a time
+    dstPixpos[0] = (unsigned)scanLineSizeRGB;
+    dstPixpos[1] =  (unsigned)scanLineSizeRGB+rgbIncrement;
+    dstPixpos[2] = 0;
+    dstPixpos[3] = rgbIncrement;
+  }
+  else {
+    dstPixpos[0] = 0;
+    dstPixpos[1] = rgbIncrement;
+    dstPixpos[2] = (unsigned)scanLineSizeRGB;
+    dstPixpos[3] = (unsigned)scanLineSizeRGB+rgbIncrement;
+  }
 
   scanLineSizeRGB *= 2;
 
@@ -2188,7 +2201,7 @@ PBoolean PStandardColourConverter::YUV420PtoRGB565(const BYTE * srcFrameBuffer,
   BYTE * dstScanLine   = dstFrameBuffer;
 
   unsigned int srcPixpos[4] = { 0, 1, m_srcFrameWidth, m_srcFrameWidth + 1 };
-  unsigned int dstPixpos[4] = { 0, rgbIncrement, m_dstFrameWidth*rgbIncrement, (m_dstFrameWidth+1)*rgbIncrement };
+  unsigned int dstPixpos[4];
 
   if (m_verticalFlip) {
     dstScanLine += (m_dstFrameHeight - 2) * m_dstFrameWidth * rgbIncrement;
@@ -2196,6 +2209,12 @@ PBoolean PStandardColourConverter::YUV420PtoRGB565(const BYTE * srcFrameBuffer,
     dstPixpos[1] = (m_dstFrameWidth +1)*rgbIncrement;
     dstPixpos[2] = 0;
     dstPixpos[3] = 1*rgbIncrement;
+  }
+  else {
+    dstPixpos[0] = 0;
+    dstPixpos[1] = rgbIncrement;
+    dstPixpos[2] = m_dstFrameWidth * rgbIncrement;
+    dstPixpos[3] = (m_dstFrameWidth + 1)*rgbIncrement;
   }
 
   for (unsigned y = 0; y < height; y += 2)
@@ -2248,15 +2267,16 @@ PSTANDARD_COLOUR_CONVERTER(YUV420B,YUV420P)
   if (!CanUseFFMPEG(AV_PIX_FMT_NV12, AV_PIX_FMT_YUV420P, 0, 0))
     return false;
   
+  const uint8_t* srcSlice[] = { srcFrameBuffer, srcFrameBuffer+m_srcFrameWidth*m_srcFrameHeight };
+  const int srcStride[] = { (int)m_srcFrameWidth, (int)m_srcFrameWidth };
+  
   int planeHeight = (m_dstFrameHeight+1)&~1;
   int scanLineSizeY = (m_dstFrameWidth+1)&~1;
   int scanLineSizeUV = scanLineSizeY/2;
   int planeSizeY = planeHeight*scanLineSizeY;
-  
-  const uint8_t* srcSlice[] = { srcFrameBuffer, srcFrameBuffer+planeSizeY };
-  const int srcStride[] = { scanLineSizeY, scanLineSizeY };
-  
-  uint8_t* dstSlice[] = { dstFrameBuffer, dstFrameBuffer+planeSizeY, dstFrameBuffer+planeSizeY*5/4 };
+  int planeSizeUV = planeHeight/2*scanLineSizeUV;
+
+  uint8_t* dstSlice[] = { dstFrameBuffer, dstFrameBuffer+planeSizeY, dstFrameBuffer+planeSizeY+planeSizeUV };
   const int dstStride[] = { scanLineSizeY, scanLineSizeUV, scanLineSizeUV };
     
   sws_scale(m_swsContext, srcSlice, srcStride, 0, m_srcFrameHeight, dstSlice, dstStride);

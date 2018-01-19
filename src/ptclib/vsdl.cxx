@@ -331,6 +331,8 @@ bool PVideoOutputDevice_SDL::InternalOpen()
     return false;
   }
   
+  SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear");
+
   m_texture = SDL_CreateTexture(m_renderer,
                                 SDL_PIXELFORMAT_IYUV,
                                 SDL_TEXTUREACCESS_STREAMING,
@@ -411,6 +413,9 @@ void PVideoOutputDevice_SDL::InternalSetFrameSize()
                                 SDL_TEXTUREACCESS_STREAMING,
                                 GetFrameWidth(), GetFrameHeight());
   PTRACE_IF(1, m_texture == NULL, "Couldn't create SDL texture: " << ::SDL_GetError());
+
+  if (m_window)
+      SDL_SetWindowSize(m_window, GetFrameWidth(), GetFrameHeight());
 }
 
 
@@ -425,12 +430,15 @@ PBoolean PVideoOutputDevice_SDL::SetFrameData(unsigned x, unsigned y,
   if (x != 0 || y != 0 || width != m_frameWidth || height != m_frameHeight || data == NULL || !endFrame)
     return false;
 
-  void * ptr;
-  int pitch;
-  SDL_LockTexture(m_texture, NULL, &ptr, &pitch);
-  if (pitch == (int)width)
-    memcpy(ptr, data, width*height*3/2);
-  SDL_UnlockTexture(m_texture);
+  {
+    void * ptr;
+    int pitch;
+    PWaitAndSignal lock(m_texture_mutex);
+    SDL_LockTexture(m_texture, NULL, &ptr, &pitch);
+    if (pitch == (int)width)
+      memcpy(ptr, data, width*height*3/2);
+    SDL_UnlockTexture(m_texture);
+  }
   
   PostEvent(PSDL_System::e_SetFrameData, false);
   return true;
@@ -442,6 +450,7 @@ void PVideoOutputDevice_SDL::InternalSetFrameData()
   if (m_texture == NULL)
     return;
   
+  PWaitAndSignal lock(m_texture_mutex);
   SDL_RenderClear(m_renderer);
   SDL_RenderCopy(m_renderer, m_texture, NULL, NULL);
   SDL_RenderPresent(m_renderer);

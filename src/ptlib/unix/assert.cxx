@@ -52,6 +52,7 @@
   #endif // PTRACING
 
 
+#ifndef P_MACOSX
   static bool fgetstr(std::string & str, FILE * fp)
   {
     for (;;) {
@@ -87,6 +88,7 @@
       str += (char)c;
     }
   }
+#endif // P_MACOSX
 
 
   static void InternalWalkStack(ostream & strm, unsigned framesToSkip, void * const * addresses, unsigned addressCount)
@@ -99,6 +101,7 @@
 
     std::vector<std::string> lines(addressCount);
 
+#ifndef P_MACOSX
     {
       FILE * pipe;
       {
@@ -128,6 +131,7 @@
         fclose(pipe);
       }
     }
+#endif // P_MACOSX
 
 
     DEBUG_CERR("InternalWalkStack: before backtrace_symbols");
