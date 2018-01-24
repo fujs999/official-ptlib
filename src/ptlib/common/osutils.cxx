@@ -152,14 +152,14 @@ class PTraceInfo : public PTrace
    */
 
 public:
-  unsigned        m_currentLevel;
+  atomic<unsigned> m_currentLevel;
   atomic<unsigned> m_thresholdLevel;
-  unsigned        m_options;
-  PCaselessString m_filename;
-  ostream       * m_stream;
-  PTimeInterval   m_startTick;
-  PString         m_rolloverPattern;
-  unsigned        m_lastRotate;
+  atomic<unsigned> m_options;
+  PCaselessString  m_filename;
+  ostream        * m_stream;
+  PTimeInterval    m_startTick;
+  PString          m_rolloverPattern;
+  unsigned         m_lastRotate;
 
 
 #if defined(_WIN32)
@@ -247,7 +247,7 @@ PTHREAD_MUTEX_RECURSIVE_NP
       InternalInitialise(levelEnv != NULL ? atoi(levelEnv) : m_thresholdLevel.load(),
                          fileEnv,
                          NULL,
-                         optEnv != NULL ? atoi(optEnv) : m_options);
+                         optEnv != NULL ? atoi(optEnv) : m_options.load());
   }
 
   ~PTraceInfo()
@@ -750,7 +750,7 @@ ostream & PTraceInfo::InternalBegin(bool topLevel, unsigned level, const char * 
 {
   PThread * thread = NULL;
   PTraceInfo::ThreadLocalInfo * threadInfo = NULL;
-  ostream * streamPtr = m_stream;
+  ostream * streamPtr = NULL;
 
   if (topLevel) {
     if (PProcess::IsInitialised()) {
@@ -771,13 +771,11 @@ ostream & PTraceInfo::InternalBegin(bool topLevel, unsigned level, const char * 
       if (rotateVal != m_lastRotate || GetStream() == &cerr) {
         m_lastRotate = rotateVal;
         OpenTraceFile(m_filename, true);
-        if (threadInfo == NULL)
-          streamPtr = m_stream;
       }
     }
   }
 
-  ostream & stream = *streamPtr;
+  ostream & stream = *(streamPtr ? streamPtr : m_stream);
 
   // Before we do new trace, make sure we clear any errors on the stream
   stream.clear();
@@ -1411,7 +1409,8 @@ void PTimer::InternalSet(int64_t nanoseconds)
 
 void PTimer::RunContinuous(const PTimeInterval & time)
 {
-  InternalStart(false, time.GetNanoSeconds());
+  if (!m_running || GetResetTime() != time)
+    InternalStart(false, time.GetNanoSeconds());
 }
 
 
@@ -1450,10 +1449,10 @@ void PTimer::Stop(bool wait)
   unsigned retry = 0;
   do {
     /* Take out of timer list first, so when callback is waited for it's
-       completion it cannot then be called again. */
+       completion it cannot then be called again. Note, the bitwise OR is
+       intentional! We don't want McCarthy breaking things. */
     list->m_timersMutex.Wait();
-    PAssert(list->m_timers.erase(m_handle) == 1 || !m_running, PLogicError);
-    m_running = false;
+    PAssert((list->m_timers.erase(m_handle) == 1) | !m_running.exchange(false), PLogicError);
     list->m_timersMutex.Signal();
 
     if (wait) {
@@ -2309,9 +2308,8 @@ PProcess::PProcess(const char * manuf, const char * name,
   , m_shuttingDown(false)
   , m_keepingHouse(false)
   , m_houseKeeper(NULL)
-#ifndef P_VXWORKS
   , m_processID(GetCurrentProcessID())
-#endif
+  , m_previousRunTimeSignalHandlers(SIGRTMAX)
 {
   m_version.m_major = major;
   m_version.m_minor = minor;
@@ -2694,12 +2692,12 @@ void PProcess::AddRunTimeSignalHandlers(const int * signals)
 
 void PProcess::RemoveRunTimeSignalHandlers()
 {
-  for (std::map<unsigned, PRunTimeSignalHandler>::iterator it  = m_previousRunTimeSignalHandlers.begin();
-                                                           it != m_previousRunTimeSignalHandlers.end(); ++it) {
-    if (it->second != NULL)
-      PlatformResetRunTimeSignalHandler(it->first, it->second);
+  for (size_t sig = 0; sig < m_previousRunTimeSignalHandlers.size(); ++sig) {
+    if (m_previousRunTimeSignalHandlers[sig] != NULL) {
+      PlatformResetRunTimeSignalHandler(sig, m_previousRunTimeSignalHandlers[sig]);
+      m_previousRunTimeSignalHandlers[sig] = NULL;
+    }
   }
-  m_previousRunTimeSignalHandlers.clear();
 }
 
 
@@ -2777,13 +2775,20 @@ void PProcess::HandleRunTimeSignal(int signal)
 }
 
 
-PString PProcess::GetRunTimeSignalName(int signal)
+const char * PProcess::GetRunTimeSignalName(int signal)
 {
   for (POrdinalToString::Initialiser const * name = InternalSigNames; name->key != 0; ++name) {
     if (name->key == signal)
       return name->value;
   }
-  return psprintf("SIG%i", signal);
+
+  /* Not strictly thread safe, but should be extremely rare for two signal
+     handlers in two differnt threads get an unknown signal at exactly
+     the same time, and we don't want to do any heap operations here in
+     case the heap is trashed and the signal is a SIGSEGV etc. */
+  static char buffer[100];
+  snprintf(buffer, sizeof(buffer), "SIG%i", signal);
+  return buffer;
 }
 
 
