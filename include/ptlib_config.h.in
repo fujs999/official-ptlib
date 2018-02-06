@@ -637,12 +637,18 @@
 #endif
 
 #if defined(_MSC_VER) && defined(P_LUA)
-  #pragma include_alias(<lua.hpp>,   <@LUA_DIR@/include/lua.hpp>)
-  #pragma include_alias(<lua.h>,     <@LUA_DIR@/include/lua.h>)
-  #pragma include_alias(<lauxlib.h>, <@LUA_DIR@/include/lauxlib.h>)
-  #pragma include_alias(<lualib.h>,  <@LUA_DIR@/include/lualib.h>)
-  
-  #define P_LUA_LIBRARY "@LUA_DIR@/lib/lua5.1.lib"
+  #if defined(P_64BIT)
+    #define P_LUA_INCLUDE(inc) include_alias(<inc>, <@LUA_DIR_WIN64@/include/inc>)
+    #define P_LUA_LIBRARY "@LUA_DIR_WIN64@/liblua53.a"
+  #else
+    #define P_LUA_INCLUDE(inc) include_alias(<inc>, <@LUA_DIR_WIN32@/include/inc>)
+    #define P_LUA_LIBRARY "@LUA_DIR_WIN32@/liblua53.a"
+  #endif
+
+  #pragma P_LUA_INCLUDE(lua.hpp)
+  #pragma P_LUA_INCLUDE(lua.h)
+  #pragma P_LUA_INCLUDE(lauxlib.h)
+  #pragma P_LUA_INCLUDE(lualib.h)
 #endif
 
 
@@ -655,10 +661,15 @@
 #if P_SCRIPTS
   #undef P_V8_WIN32
   #undef P_V8_WIN64
-  #undef P_V8_BASE_DEBUG32
-  #undef P_V8_BASE_DEBUG64
-  #undef P_V8_BASE_RELEASE32
-  #undef P_V8_BASE_RELEASE64
+
+  #undef P_V8_BASE0_DEBUG32
+  #undef P_V8_BASE0_DEBUG64
+  #undef P_V8_BASE0_RELEASE32
+  #undef P_V8_BASE0_RELEASE64
+  #undef P_V8_BASE1_DEBUG32
+  #undef P_V8_BASE1_DEBUG64
+  #undef P_V8_BASE1_RELEASE32
+  #undef P_V8_BASE1_RELEASE64
   #undef P_V8_LIBBASE_DEBUG32
   #undef P_V8_LIBBASE_DEBUG64
   #undef P_V8_LIBBASE_RELEASE32
@@ -683,16 +694,24 @@
   #undef P_V8_ICUUC_DEBUG64
   #undef P_V8_ICUUC_RELEASE32
   #undef P_V8_ICUUC_RELEASE64
+  #undef P_V8_SNAPSHOT_BLOB_DEBUG32
+  #undef P_V8_SNAPSHOT_BLOB_DEBUG64
+  #undef P_V8_SNAPSHOT_BLOB_RELEASE32
+  #undef P_V8_SNAPSHOT_BLOB_RELEASE64
+  #undef P_V8_NATIVES_BLOB_DEBUG32
+  #undef P_V8_NATIVES_BLOB_DEBUG64
+  #undef P_V8_NATIVES_BLOB_RELEASE32
+  #undef P_V8_NATIVES_BLOB_RELEASE64
 #endif
 
 #if defined(P_64BIT)
   #if defined(P_V8_WIN64)
     #if defined(_DEBUG)
-      #if defined(P_V8_BASE_DEBUG64)
+      #if defined(P_V8_LIBBASE_DEBUG64)
         #define P_V8 1
       #endif
     #else
-      #if defined(P_V8_BASE_RELEASE64)
+      #if defined(P_V8_LIBBASE_RELEASE64)
         #define P_V8 1
       #endif
     #endif
@@ -700,11 +719,11 @@
 #else
   #if defined(P_V8_WIN32)
     #if defined(_DEBUG)
-      #if defined(P_V8_BASE_DEBUG32)
+      #if defined(P_V8_LIBBASE_DEBUG32)
         #define P_V8 1
       #endif
     #else
-      #if defined(P_V8_BASE_RELEASE32)
+      #if defined(P_V8_LIBBASE_RELEASE32)
         #define P_V8 1
       #endif
     #endif
