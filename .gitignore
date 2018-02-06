@@ -25,3 +25,4 @@ src/ptlib/common/getdate.c
 rpmbuild/
 .vs
 nbproject/private/
+/samples/vxmltest/cache/
