@@ -53,6 +53,15 @@ pipeline {
         sh "createrepo --update $BASE_PATH/$REPO"
         sh "aws s3 sync --acl public-read --delete $BASE_PATH/$REPO/repodata s3://citc-artifacts/yum/$REPO/repodata/"
       }
+      post {
+        success {
+          script {
+            if (env.BRANCH_NAME == 'develop') {
+              build job: "/zsdk-opal/develop", quietPeriod: 60, wait: false
+            }
+          }
+        }
+      }
     }
   }
   post {
