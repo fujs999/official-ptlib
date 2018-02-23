@@ -1,19 +1,19 @@
 pipeline {
-  // Build environment is defined by the Dockerfile
-  agent { dockerfile true }
+  agent none
   stages {
     stage('package') {
+      // Build environment is defined by the Dockerfile
+      agent { dockerfile true }
       steps {
         // Create the rpmbuild directory tree
         sh "HOME=$WORKSPACE rpmdev-setuptree"
         sh "HOME=$WORKSPACE rpmdev-wipetree"
-        // Remove build dependencies for previous builds
-        sh 'rm -rf build-deps'
         // Create our source tarball
         sh 'tar -czf rpmbuild/SOURCES/zsdk-ptlib.src.tgz --exclude-vcs --exclude=rpmbuild .'
         // Then let rpmbuild and the spec file handle the rest
         sh "HOME=$WORKSPACE rpmbuild -ta --define='jenkins_release .${env.BUILD_NUMBER}' rpmbuild/SOURCES/zsdk-ptlib.src.tgz"
         // Copy build dependencies to the workspace for fingerprinting
+        sh 'rm -rf build-deps'
         sh 'cp -r /var/cache/jenkins/build-deps .'
       }
       post {
