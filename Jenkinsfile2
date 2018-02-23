@@ -1,0 +1,69 @@
+pipeline {
+  agent none
+  stages {
+    stage('package') {
+      // Build environment is defined by the Dockerfile
+      agent { dockerfile true }
+      steps {
+        // Create the rpmbuild directory tree
+        sh "HOME=$WORKSPACE rpmdev-setuptree"
+        sh "HOME=$WORKSPACE rpmdev-wipetree"
+        // Create our source tarball
+        sh 'tar -czf rpmbuild/SOURCES/zsdk-ptlib.src.tgz --exclude-vcs --exclude=rpmbuild .'
+        // Then let rpmbuild and the spec file handle the rest
+        sh "HOME=$WORKSPACE rpmbuild -ta --define='jenkins_release .${env.BUILD_NUMBER}' rpmbuild/SOURCES/zsdk-ptlib.src.tgz"
+        // Copy build dependencies to the workspace for fingerprinting
+        sh 'rm -rf build-deps'
+        sh 'cp -r /var/cache/jenkins/build-deps .'
+      }
+      post {
+        success {
+          fingerprint 'build-deps/*.rpm'
+          archive 'rpmbuild/RPMS/**/*'
+        }
+      }
+    }
+    stage('publish') {
+      when {
+        beforeAgent true
+        allOf {
+          anyOf {
+            branch 'develop'
+            branch 'release/*'
+          }
+          environment name: 'YUM_PUBLISH', value: 'true'
+        }
+      }
+      agent { label 'Nexus' }
+      options { skipDefaultCheckout() }
+      environment {
+        BASE_PATH = '/var/www/html/yum'
+        REPO = 'mcu-release'
+      }
+      steps {
+        script {
+          if (env.BRANCH_NAME == 'develop') {
+            env.REPO = 'mcu-develop'
+          }
+        }
+        unarchive mapping:['rpmbuild/' : '.']
+        sh "aws s3 sync --acl public-read rpmbuild/RPMS/x86_64 s3://citc-artifacts/yum/$REPO/base/"
+        sh "mv rpmbuild/RPMS/x86_64/* $BASE_PATH/$REPO/base/"
+        // Update Nexus repository metadata
+        sh "createrepo --update $BASE_PATH/$REPO"
+        sh "aws s3 sync --acl public-read --delete $BASE_PATH/$REPO/repodata s3://citc-artifacts/yum/$REPO/repodata/"
+      }
+    }
+  }
+  post {
+    success {
+      slackSend color: "good", message: "SUCCESS: <${currentBuild.absoluteUrl}|${currentBuild.fullDisplayName}>"
+    }
+    failure {
+      slackSend color: "danger", message: "FAILURE: <${currentBuild.absoluteUrl}|${currentBuild.fullDisplayName}>"
+    }
+    unstable {
+      slackSend color: "warning", message: "UNSTABLE: <${currentBuild.absoluteUrl}|${currentBuild.fullDisplayName}>"
+    }
+  }
+}
