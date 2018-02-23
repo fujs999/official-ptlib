@@ -23,24 +23,35 @@ pipeline {
         }
       }
     }
-    stage('publish-develop') {
-      when { branch 'develop' }
-      steps {
-        build job: '/rpm-repo-deploy', parameters: [
-          string(name: 'SOURCE_JOB', value: "$JOB_NAME"),
-          string(name: 'SOURCE_BUILD', value: "$BUILD_NUMBER"),
-          string(name: 'DEST_REPO', value: 'mcu-develop')
-        ], quietPeriod: 0
+    stage('publish') {
+      when {
+        beforeAgent true
+        allOf {
+          anyOf {
+            branch 'develop'
+            branch 'release/*'
+          }
+          environment name: 'YUM_PUBLISH', value: 'true'
+        }
       }
-    }
-    stage('publish-release') {
-      when { branch 'release/*' }
+      agent { label 'Nexus' }
+      options { skipDefaultCheckout() }
+      environment {
+        BASE_PATH = '/var/www/html/yum'
+        REPO = 'mcu-release'
+      }
       steps {
-        build job: '/rpm-repo-deploy', parameters: [
-          string(name: 'SOURCE_JOB', value: "$JOB_NAME"),
-          string(name: 'SOURCE_BUILD', value: "$BUILD_NUMBER"),
-          string(name: 'DEST_REPO', value: 'mcu-release')
-        ], quietPeriod: 0
+        script {
+          if (env.BRANCH_NAME == 'develop') {
+            env.REPO = 'mcu-develop'
+          }
+        }
+        unarchive mapping:['rpmbuild/' : '.']
+        sh "aws s3 sync --acl public-read rpmbuild/RPMS/x86_64 s3://citc-artifacts/yum/$REPO/base/"
+        sh "mv rpmbuild/RPMS/x86_64/* $BASE_PATH/$REPO/base/"
+        // Update Nexus repository metadata
+        sh "createrepo --update $BASE_PATH/$REPO"
+        sh "aws s3 sync --acl public-read --delete $BASE_PATH/$REPO/repodata s3://citc-artifacts/yum/$REPO/repodata/"
       }
     }
   }
