@@ -128,12 +128,17 @@ class PSafeObject : public PObject
   //@{
     /**Create a thread safe object.
      */
+    PSafeObject();
+    PSafeObject(
+      const PSafeObject & other ///< Other safe object
+    );
     explicit PSafeObject(
-      PSafeObject * indirectLock = NULL ///< Other safe object to be locked when this is locked
+      PSafeObject * indirectLock ///< Other safe object to be locked when this is locked
     );
     explicit PSafeObject(
       PReadWriteMutex & mutex ///< Mutex to be locked when this is locked
     );
+    ~PSafeObject();
   //@}
 
   /**@name Operations */
@@ -283,16 +288,19 @@ class PSafeObject : public PObject
   //@}
 
   private:
+    void operator=(const PSafeObject &) { }
+
     bool InternalLockReadOnly(const PDebugLocation * location) const;
     void InternalUnlockReadOnly(const PDebugLocation * location) const;
     bool InternalLockReadWrite(const PDebugLocation * location) const;
     void InternalUnlockReadWrite(const PDebugLocation * location) const;
+    PReadWriteMutex & InternalGetMutex() const;
 
     mutable PCriticalSection m_safetyMutex;
     unsigned          m_safeReferenceCount;
     bool              m_safelyBeingRemoved;
-    PReadWriteMutex   m_safeInUseMutex;
-    PReadWriteMutex * m_safeInUse;
+    bool              m_safeMutexCreated;
+    PReadWriteMutex * m_safeInUseMutex;
 
   friend class PSafeCollection;
   friend class PSafePtrBase;
