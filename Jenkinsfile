@@ -3,23 +3,21 @@ pipeline {
   stages {
     stage('package') {
       // Build environment is defined by the Dockerfile
-      agent { dockerfile true }
+      agent {
+        dockerfile {
+          additionalBuildArgs  '--build-arg SPECFILE=bbcollab-ptlib.spec'
+          customWorkspace "${JOB_NAME.replaceAll('%2F', '_')}"
+        }
+      }
       steps {
-        // Create the rpmbuild directory tree
-        sh "HOME=$WORKSPACE rpmdev-setuptree"
-        sh "HOME=$WORKSPACE rpmdev-wipetree"
-        // Create our source tarball
-        sh 'tar -czf rpmbuild/SOURCES/zsdk-ptlib.src.tgz --exclude-vcs --exclude=rpmbuild .'
-        // Then let rpmbuild and the spec file handle the rest
-        sh "HOME=$WORKSPACE rpmbuild -ta --define='jenkins_release .${env.BUILD_NUMBER}' rpmbuild/SOURCES/zsdk-ptlib.src.tgz"
-        // Copy build dependencies to the workspace for fingerprinting
-        sh 'rm -rf build-deps'
-        sh 'cp -r /var/cache/jenkins/build-deps .'
+        // Copy RPM dependencies to the workspace for fingerprinting (see Dockerfile)
+        sh 'cp -r /tmp/build-deps .'
+        sh './rpmbuild.sh'
       }
       post {
         success {
           fingerprint 'build-deps/*.rpm'
-          archive 'rpmbuild/RPMS/**/*'
+          archiveArtifacts artifacts: 'rpmbuild/**/*', fingerprint: true
         }
       }
     }
