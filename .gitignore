@@ -25,4 +25,5 @@ private/
 /include/ptlib_config.h
 /src/ptlib/common/getdate.c
 /samples/vxmltest/cache/
+/rpmbuild/
 
