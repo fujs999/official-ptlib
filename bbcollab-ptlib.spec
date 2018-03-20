@@ -2,6 +2,10 @@
 %global version_minor  17
 %global version_patch  4
 
+# Branch ID should be 0 for local builds/PRs
+# Jenkins builds should use 1 for develop, 2 for master (release builds)
+%{!?branch_id: %global branch_id 0}
+
 # Disable the separate debug package and automatic stripping, as detailed here:
 # http://fedoraproject.org/wiki/How_to_create_an_RPM_package
 %global _enable_debug_package 0
@@ -10,7 +14,7 @@
 
 Name:           bbcollab-ptlib
 Version:        %{version_major}.%{version_minor}.%{version_patch}.39
-Release:        1%{?jenkins_release}%{?dist}
+Release:        %{branch_id}%{?jenkins_release}%{?dist}
 Summary:        PTLib: Portable Tools Library
 
 Group:          System Environment/Libraries
