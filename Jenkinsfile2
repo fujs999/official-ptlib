@@ -17,7 +17,7 @@ pipeline {
       post {
         success {
           fingerprint 'build-deps/*.rpm'
-          archive 'rpmbuild/RPMS/**/*', fingerprint: true
+          archiveArtifacts artifacts: 'rpmbuild/**/*', fingerprint: true
         }
       }
     }
