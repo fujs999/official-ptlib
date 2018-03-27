@@ -106,10 +106,10 @@ class PVideoInputDevice_VideoForWindows : public PVideoInputDevice
 
     /**Retrieve a list of Device Capabilities
       */
-    bool GetDeviceCapabilities(
+    virtual bool GetDeviceCapabilities(
       Capabilities * /*caps*/         ///< List of supported capabilities
     );
-    static PBoolean GetDeviceCapabilities(const PString & deviceName, Capabilities * capabilities);
+    static PBoolean GetInputDeviceCapabilities(const PString & deviceName, Capabilities * capabilities);
 
     /**Start the video device I/O.
       */
@@ -512,7 +512,7 @@ PBoolean PVideoInputDevice_VideoForWindows::Close()
 }
 
 
-PBoolean PVideoInputDevice_VideoForWindows::GetDeviceCapabilities(const PString & deviceName,
+PBoolean PVideoInputDevice_VideoForWindows::GetInputDeviceCapabilities(const PString & deviceName,
                                                                   Capabilities * capabilities)
 {
   PVideoInputDevice_VideoForWindows instance;
@@ -1313,12 +1313,12 @@ PBoolean PVideoOutputDevice_Window::Open(const PString & name, PBoolean startImm
     return false;
   }
 
-  m_lastPosition.x = ParseDeviceNameTokenInt("X=", CW_USEDEFAULT);
-  m_lastPosition.y = ParseDeviceNameTokenInt("Y=", CW_USEDEFAULT);
-  m_fixedSize.cx   = ParseDeviceNameTokenInt("WIDTH=", 0);
-  m_fixedSize.cy   = ParseDeviceNameTokenInt("HEIGHT=", 0);
-  m_bgColour       = ParseDeviceNameTokenInt("BACKGROUND=", 0);
-  m_rotation       = ParseDeviceNameTokenInt("ROTATION=", 0);
+  m_lastPosition.x = ParseDeviceNameTokenInt("X", CW_USEDEFAULT);
+  m_lastPosition.y = ParseDeviceNameTokenInt("Y", CW_USEDEFAULT);
+  m_fixedSize.cx   = ParseDeviceNameTokenInt("WIDTH", 0);
+  m_fixedSize.cy   = ParseDeviceNameTokenInt("HEIGHT", 0);
+  m_bgColour       = ParseDeviceNameTokenInt("BACKGROUND", 0);
+  m_rotation       = ParseDeviceNameTokenInt("ROTATION", 0);
 
   m_mouseEnabled = m_deviceName.Find("NO-MOUSE") == P_MAX_INDEX;
   m_hidden = !startImmediate || m_deviceName.Find("HIDE") != P_MAX_INDEX;

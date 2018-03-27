@@ -37,6 +37,7 @@
 
 #include <ptlib/plugin.h>
 #include <ptlib/pluginmgr.h>
+#include <ptclib/delaychan.h>
 #include <list>
 
 class PColourConverter;
@@ -795,36 +796,46 @@ class PVideoOutputDevice : public PVideoDevice
      */
     virtual PBoolean CanCaptureVideo() const;
 
+    struct FrameData
+    {
+      unsigned     x;               ///< Horizontal position in frame where data is put
+      unsigned     y;               ///< Vertical position in frame where data is put
+      unsigned     width;           ///< Width of area in frame where data is put
+      unsigned     height;          ///< Height of area in frame where data is put
+      unsigned     sarWidth;        ///< Aspect ratio width of area in frame where data is put
+      unsigned     sarHeight;       ///< Aspect ratio height of area in frame where data is put
+      int64_t      timestamp;       ///< Display time for the frame
+      const BYTE * pixels;          ///< Data to put into the video frame store
+      bool         partialFrame;    ///< Indicate partial video frame
+      bool *       keyFrameNeeded;  ///< Indicates bad video and a new key frame is required
+      void *       mark;            // For backward compatibility, not sure what it is for ...
+
+      FrameData() { memset(this, 0, sizeof(*this)); }
+    };
+
     /**Set a section of the output frame buffer.
       */
     virtual PBoolean SetFrameData(
-      unsigned x,               ///< Horizontal position in frame where data is put
-      unsigned y,               ///< Vertical position in frame where data is put
-      unsigned width,           ///< Width of area in frame where data is put
-      unsigned height,          ///< Height of area in frame where data is put
-      const BYTE * data,        ///< Data to put into the video frame store
-      PBoolean endFrame = true  ///< Indicate no more data for this video frame
+      const FrameData & frameData   ///< Data for frame output
     ) = 0;
-    virtual PBoolean SetFrameData(
+
+    // For backward compatibility
+    bool SetFrameData(
       unsigned x,               ///< Horizontal position in frame where data is put
       unsigned y,               ///< Vertical position in frame where data is put
       unsigned width,           ///< Width of area in frame where data is put
       unsigned height,          ///< Height of area in frame where data is put
       const BYTE * data,        ///< Data to put into the video frame store
-      PBoolean endFrame,        ///< Indicate no more data for this video frame
-      bool & keyFrameNeeded     ///< Indicates bad video and a new key frame is required
+      bool endFrame = true      ///< Indicate no more data for this video frame
     );
-    virtual PBoolean SetFrameData(
+    bool SetFrameData(
       unsigned x,               ///< Horizontal position in frame where data is put
       unsigned y,               ///< Vertical position in frame where data is put
       unsigned width,           ///< Width of area in frame where data is put
       unsigned height,          ///< Height of area in frame where data is put
-      unsigned sarWidth,        ///< Aspect ratio width of area in frame where data is put
-      unsigned sarHeight,       ///< Aspect ratio height of area in frame where data is put
       const BYTE * data,        ///< Data to put into the video frame store
-      PBoolean endFrame,        ///< Indicate no more data for this video frame
-      bool & keyFrameNeeded,    ///< Indicates bad video and a new key frame is required
-      const void * mark
+      bool endFrame,            ///< Indicate no more data for this video frame
+      bool & keyFrameNeeded     ///< Indicates bad video and a new key frame is required
     );
 
     /**Allow the outputdevice decide whether the 
@@ -910,14 +921,7 @@ class PVideoOutputDeviceRGB : public PVideoOutputDevice
 
     /**Set a section of the output frame buffer.
       */
-    virtual PBoolean SetFrameData(
-      unsigned x,
-      unsigned y,
-      unsigned width,
-      unsigned height,
-      const BYTE * data,
-      PBoolean endFrame = true
-    );
+    virtual PBoolean SetFrameData(const FrameData & frameData);
 
     /**Indicate frame may be displayed.
       */
@@ -1047,6 +1051,9 @@ class PVideoInputDevice : public PVideoDevice
       Capabilities * caps,                  ///< List of supported capabilities
       PPluginManager * pluginMgr = NULL     ///< Plug in manager, use default if NULL
     );
+
+    static PBoolean GetInputDeviceCapabilities(const PString &, Capabilities *)
+      { return false; }
 
     /**Open the device given the device name.
       */
@@ -1236,6 +1243,116 @@ class PVideoInputDeviceIndirect : public PVideoInputDevice
 };
 
 
+class PVideoInputEmulatedDevice : public PVideoInputDevice
+{
+  PCLASSINFO(PVideoInputEmulatedDevice, PVideoInputDevice);
+  public:
+    explicit PVideoInputEmulatedDevice();
+    ~PVideoInputEmulatedDevice();
+
+    /**Start the video device I/O.
+      */
+    PBoolean Start();
+
+    /**Stop the video device I/O capture.
+      */
+    PBoolean Stop();
+
+    /**Determine if the video device I/O capture is in progress.
+      */
+    PBoolean IsCapturing();
+
+    /**Grab a frame. 
+
+       There will be a delay in returning, as specified by frame rate.
+      */
+    virtual PBoolean GetFrameData(
+      BYTE * buffer,                 /// Buffer to receive frame
+      PINDEX * bytesReturned = NULL  /// Optional bytes returned.
+    );
+
+    /**Grab a frame.
+
+       Do not delay according to the current frame rate.
+      */
+    virtual PBoolean GetFrameDataNoDelay(
+      BYTE * buffer,                 /// Buffer to receive frame
+      PINDEX * bytesReturned = NULL  /// OPtional bytes returned.
+    );
+
+
+    /**Set the colour format to be used.
+
+       Default behaviour sets the value of the colourFormat variable and then
+       returns the IsOpen() status.
+    */
+    virtual PBoolean SetColourFormat(
+      const PString & colourFormat   // New colour format for device.
+    );
+    
+    enum {
+      Channel_PlayAndClose,
+      Channel_PlayAndRepeat,
+      Channel_PlayAndKeepLast,
+      Channel_PlayAndShowBlack,
+      Channel_PlayAndShowWhite,
+      ChannelCount
+    };
+
+    /**Get the number of video channels available on the device.
+        0 (default) = play file and close device
+        1           = play file and repeat
+        2           = play file and replay last frame
+        3           = play file and display black frame
+
+       Default behaviour returns 4.
+    */
+    virtual int GetNumChannels();
+
+    /**Get the names of video channels available on the device.
+    */
+    virtual PStringArray GetChannelNames();
+
+    /**Get the minimum & maximum size of a frame on the device.
+
+       Default behaviour returns the value 1 to UINT_MAX for both and returns
+       false.
+    */
+    virtual PBoolean GetFrameSizeLimits(
+      unsigned & minWidth,   /// Variable to receive minimum width
+      unsigned & minHeight,  /// Variable to receive minimum height
+      unsigned & maxWidth,   /// Variable to receive maximum width
+      unsigned & maxHeight   /// Variable to receive maximum height
+    ) ;
+
+    /**Set the video frame rate to be used on the device.
+
+       Default behaviour sets the value of the frameRate variable and then
+       return the IsOpen() status.
+    */
+    virtual PBoolean SetFrameRate(
+      unsigned rate  /// Frames per second
+    );
+         
+    /**Set the frame size to be used.
+
+       Default behaviour sets the frameWidth and frameHeight variables and
+       returns the IsOpen() status.
+    */
+    virtual PBoolean SetFrameSize(
+      unsigned width,   /// New width of frame
+      unsigned height   /// New height of frame
+    );
+
+  protected:
+    virtual bool InternalGetFrameData(BYTE * frame) = 0;
+
+    PAdaptiveDelay m_pacing;
+    unsigned       m_fixedFrameRate;
+    unsigned       m_frameRateAdjust;
+    unsigned       m_frameNumber;
+};
+
 ////////////////////////////////////////////////////////
 //
 // declare macros and structures needed for video input plugins
@@ -1246,7 +1363,7 @@ PCREATE_PLUGIN_DEVICE(PVideoInputDevice);
 #define PCREATE_VIDINPUT_PLUGIN_EX(name, extra) \
     PCREATE_PLUGIN(name, PVideoInputDevice, PVideoInputDevice_##name, PPlugin_PVideoInputDevice, \
       virtual PStringArray GetDeviceNames(P_INT_PTR /*userData*/) const { return PVideoInputDevice_##name::GetInputDeviceNames(); } \
-      virtual bool GetDeviceCapabilities(const PString & deviceName, void * caps) const { return PVideoInputDevice_##name::GetDeviceCapabilities(deviceName, (PVideoInputDevice::Capabilities *)caps); } \
+      virtual bool GetDeviceCapabilities(const PString & deviceName, void * caps) const { return PVideoInputDevice_##name::GetInputDeviceCapabilities(deviceName, (PVideoInputDevice::Capabilities *)caps); } \
       extra)
 
 #define PCREATE_VIDINPUT_PLUGIN(name) PCREATE_VIDINPUT_PLUGIN_EX(name, )
