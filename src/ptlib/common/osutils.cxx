@@ -243,6 +243,10 @@ PTHREAD_MUTEX_RECURSIVE_NP
     if (optEnv == NULL)
       optEnv = getenv("PTLIB_TRACE_OPTIONS");
 
+    const char * mutEnv = getenv("PTLIB_MUTEX_CTOR_DTOR_LOG");
+    if (mutEnv != NULL)
+      PTimedMutex::CtorDtorLogLevel = atoi(mutEnv);
+
     if (levelEnv != NULL || fileEnv != NULL || optEnv != NULL)
       InternalInitialise(levelEnv != NULL ? atoi(levelEnv) : m_thresholdLevel.load(),
                          fileEnv,
@@ -1103,6 +1107,8 @@ PTraceSaveContextIdentifier::~PTraceSaveContextIdentifier()
 }
 
 #endif // PTRACING==2
+
+static struct PMutexLeakCheck : PCriticalSection, std::set<const PObject *> { } * s_MutexLeakCheck;
 
 #endif // PTRACING
 
@@ -2440,6 +2446,11 @@ void PProcess::Startup()
       PTRACE(1, "Could not create startup factory " << *it);
     }
   }
+
+#if PTRACING
+  if (!s_MutexLeakCheck)
+    s_MutexLeakCheck = new PMutexLeakCheck();
+#endif
 }
 
 
@@ -2529,7 +2540,7 @@ PProcess::~PProcess()
 
   // Clean up factories
   PProcessStartupFactory::KeyList_T list = PProcessStartupFactory::GetKeyList();
-  for (PProcessStartupFactory::KeyList_T::const_iterator it = list.begin(); it != list.end(); ++it)
+  for (PProcessStartupFactory::KeyList_T::const_reverse_iterator it = list.rbegin(); it != list.rend(); ++it)
     PProcessStartupFactory::CreateInstance(*it)->OnShutdown();
 
   Sleep(100);  // Give threads time to die a natural death
@@ -2575,17 +2586,34 @@ PProcess::~PProcess()
 
   PlatformDestruct();
 
+  PFactoryBase::GetFactories().DestroySingletons();
+
+  PIPSocket::ClearNameCache();
+
+#if PTRACING
+  if (s_MutexLeakCheck && PTrace::CanTrace(PTimedMutex::CtorDtorLogLevel)) {
+    ostream & trace = PTRACE_BEGIN(PTimedMutex::CtorDtorLogLevel, NULL, "Mutex");
+    if (s_MutexLeakCheck->empty())
+      trace << "No mutex leaks.";
+    else {
+      trace << "Mutex Leaks:\n";
+      for (PMutexLeakCheck::iterator it = s_MutexLeakCheck->begin(); it != s_MutexLeakCheck->end(); ++it)
+        trace << "  " << **it << '\n';
+    }
+    trace << PTrace::End;
+  }
+#endif
+
   // Last chance to log anything ...
   PTRACE(4, PProcessInstance, "Completed process destruction.");
-
-  PFactoryBase::GetFactories().DestroySingletons();
-  PProcessInstance = NULL;
 
   // Can't do any more tracing after this ...
 #if PTRACING
   PTrace::SetStream(NULL);
   PTrace::SetLevel(0);
 #endif
+
+  PProcessInstance = NULL;
 }
 
 
@@ -2816,7 +2844,7 @@ void PProcess::HandleRunTimeSignal(int signal)
 const char * PProcess::GetRunTimeSignalName(int signal)
 {
   for (POrdinalToString::Initialiser const * name = InternalSigNames; name->key != 0; ++name) {
-    if (name->key == signal)
+    if ((int)name->key == signal)
       return name->value;
   }
 
@@ -3509,6 +3537,9 @@ static PTimedMutex::DeadlockStackWalkModes InitialiseDeadlockStackWalkMode()
 PTimedMutex::DeadlockStackWalkModes PTimedMutex::DeadlockStackWalkMode = InitialiseDeadlockStackWalkMode();
 
 #if PTRACING
+
+unsigned PTimedMutex::CtorDtorLogLevel = 6;
+
 static void OutputThreadInfo(ostream & strm, PThreadIdentifier tid, PUniqueThreadIdentifier uid)
 {
   strm << " id=" << PThread::GetIdentifiersAsString(tid, uid) << " name=\"" << PThread::GetThreadName(tid) << '"';
@@ -3523,7 +3554,8 @@ static void OutputThreadInfo(ostream & strm, PThreadIdentifier tid, PUniqueThrea
     break;
   }
 }
-#endif
+
+#endif // PTRACING
 
 
 unsigned PTimedMutex::ExcessiveLockWaitTime;
@@ -3566,6 +3598,34 @@ PMutexExcessiveLockInfo::PMutexExcessiveLockInfo(const PMutexExcessiveLockInfo &
   , m_startHeldSamplePoint(0)
 {
 }
+
+
+#if PTRACING
+void PMutexExcessiveLockInfo::Constructed(const PObject & mutex) const
+{
+  if (s_MutexLeakCheck == NULL)
+    return;
+
+  s_MutexLeakCheck->Wait();
+  bool ok = s_MutexLeakCheck->insert(&mutex).second;
+  s_MutexLeakCheck->Signal();
+
+  PTRACE(PTimedMutex::CtorDtorLogLevel, (ok ? "Constructed " : "Second construction of ") << mutex);
+}
+
+
+void PMutexExcessiveLockInfo::Destroyed(const PObject & mutex) const
+{
+  if (s_MutexLeakCheck == NULL)
+    return;
+
+  s_MutexLeakCheck->Wait();
+  bool ok = s_MutexLeakCheck->erase(&mutex) == 1; // If not there, probably constructed before s_MutexLeakCheck created
+  s_MutexLeakCheck->Signal();
+
+  PTRACE_IF(PTimedMutex::CtorDtorLogLevel, ok, "Destroyed " << mutex);
+}
+#endif // PTRACING
 
 
 void PMutexExcessiveLockInfo::PrintOn(ostream &strm) const
@@ -3668,6 +3728,7 @@ void PTimedMutex::Construct()
   m_lastUniqueId = 0;
   m_lockCount = 0;
   PlatformConstruct();
+  PMUTEX_CONSTRUCTED();
 }
 
 
@@ -3772,13 +3833,6 @@ bool PTimedMutex::InternalSignal(const PDebugLocation * location)
   ReleasedLock(*this, m_startHeldSamplePoint, false, location);
   m_lockerId = PNullThreadIdentifier;
   return false;
-}
-
-
-void PTimedMutex::PrintOn(ostream &strm) const
-{
-  strm << "mutex " << this;
-  PMutexExcessiveLockInfo::PrintOn(strm);
 }
 
 
@@ -3978,7 +4032,7 @@ PReadWriteMutex::PReadWriteMutex()
   , m_writerCount(0)
 #endif
 {
-  PTRACE(5, "Created read/write mutex " << *this);
+  PMUTEX_CONSTRUCTED();
 }
 
 PReadWriteMutex::PReadWriteMutex(const PDebugLocation & location, unsigned timeout)
@@ -4000,14 +4054,12 @@ PReadWriteMutex::PReadWriteMutex(const PDebugLocation & location, unsigned timeo
   , m_writerCount(0)
 #endif
 {
-  PTRACE(5, "Created read/write mutex " << *this);
+  PMUTEX_CONSTRUCTED();
 }
 
 
 PReadWriteMutex::~PReadWriteMutex()
 {
-  PTRACE(5, "Destroying read/write mutex " << *this);
-
   EndNest(); // Destruction while current thread has a lock is OK
 
   /* There is a small window during destruction where another thread is on the
@@ -4025,6 +4077,8 @@ PReadWriteMutex::~PReadWriteMutex()
    */
   while (!m_nestedThreads.empty())
     PThread::Sleep(10);
+
+  PMUTEX_DESTROYED();
 }
 
 

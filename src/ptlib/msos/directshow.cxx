@@ -77,7 +77,7 @@
       virtual HRESULT ShouldDrawSampleNow(IMediaSample *sample, REFERENCE_TIME *start, REFERENCE_TIME *stop);
       virtual HRESULT DoRenderSample(IMediaSample *sample);
 
-      PMutex m_sampleMutex;
+      PDECLARE_MUTEX(m_sampleMutex);
       long   m_sampleSize;
       BYTE * m_sampleData;
   };
@@ -161,7 +161,7 @@
       PBYTEArray m_buffer;
       bool       m_stopped;
       PINDEX     m_actualSize;
-      PMutex     m_mutex;
+      PDECLARE_MUTEX(m_mutex);
       PSyncPoint m_frameReady;
       PINDEX     m_skipInitialGrabs;
 #if PTRACING
@@ -218,7 +218,7 @@ class PVideoInputDevice_DirectShow : public PVideoInputDevice
 
     static PStringArray GetInputDeviceNames();
     virtual PStringArray GetDeviceNames() const;
-    static PBoolean GetDeviceCapabilities(const PString & deviceName, Capabilities * capabilities);
+    static PBoolean GetInputDeviceCapabilities(const PString & deviceName, Capabilities * capabilities);
     virtual bool GetDeviceCapabilities(Capabilities * capabilities) const;
 #ifndef _WIN32_WCE
     virtual bool SetControl(PVideoControlInfo::Types type, int value, ControlMode mode);
@@ -271,7 +271,7 @@ class PVideoInputDevice_DirectShow : public PVideoInputDevice
     PINDEX     m_maxFrameBytes;
     bool       m_fixedSizeFrames; // Not JPEG
     PBYTEArray m_tempFrame;
-    PMutex     m_lastFrameMutex;
+    PDECLARE_MUTEX(m_lastFrameMutex);
 };
 
 
@@ -393,7 +393,7 @@ PStringArray PVideoInputDevice_DirectShow::GetInputDeviceNames()
 }
 
 
-PBoolean PVideoInputDevice_DirectShow::GetDeviceCapabilities(const PString & deviceName,
+PBoolean PVideoInputDevice_DirectShow::GetInputDeviceCapabilities(const PString & deviceName,
                                                              Capabilities * capabilities)
 {
   PVideoInputDevice_DirectShow instance;
@@ -637,19 +637,6 @@ PBoolean PVideoInputDevice_DirectShow::Close()
 
   m_lastFrameMutex.Wait();
 
-  // Release filters
-#ifdef _WIN32_WCE
-  if (m_pSampleGrabber != NULL) {
-    m_pSampleGrabber->Release();
-    delete m_pSampleGrabber;
-  }
-#else
-  m_pNullRenderer.Release();
-  m_pSampleGrabberCB.Release();
-  m_pSampleGrabber.Release();
-  m_pCameraControls.Release();
-#endif
-
   // Release the Camera and interfaces
   m_pMediaControl.Release();
   m_pCameraOutPin.Release(); 
@@ -658,6 +645,19 @@ PBoolean PVideoInputDevice_DirectShow::Close()
 
   // Relase DirectShow Graph
   m_pGraphBuilder.Release(); 
+
+  // Release filters
+#ifdef _WIN32_WCE
+  if (m_pSampleGrabber != NULL) {
+    m_pSampleGrabber->Release();
+    delete m_pSampleGrabber;
+  }
+#else
+  m_pNullRenderer.Release();
+  m_pCameraControls.Release();
+  m_pSampleGrabber.Release();
+  delete m_pSampleGrabberCB.Detach();
+#endif
 
   m_lastFrameMutex.Signal();
 

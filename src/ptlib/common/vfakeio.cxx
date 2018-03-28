@@ -1344,13 +1344,6 @@ class PVideoInputDevice_FakeVideo : public PVideoInputDevice
     virtual PStringArray GetDeviceNames() const
       { return GetInputDeviceNames(); }
 
-    /**Retrieve a list of Device Capabilities
-      */
-    static bool GetDeviceCapabilities(
-      const PString & /*deviceName*/, ///< Name of device
-      Capabilities * /*caps*/         ///< List of supported capabilities
-    ) { return false; }
-
     /**Get the maximum frame size in bytes.
 
        Note a particular device may be able to provide variable length
@@ -2154,14 +2147,7 @@ class PVideoOutputDevice_NULLOutput : public PVideoOutputDevice
 
     /**Set a section of the output frame buffer.
       */
-    virtual PBoolean SetFrameData(
-      unsigned x,
-      unsigned y,
-      unsigned width,
-      unsigned height,
-      const BYTE * data,
-      PBoolean endFrame = true
-    );
+    virtual PBoolean SetFrameData(const FrameData & frameData);
 
     /**Indicate frame may be displayed.
       */
@@ -2218,10 +2204,7 @@ PStringArray PVideoOutputDevice_NULLOutput::GetOutputDeviceNames()
 }
 
 
-PBoolean PVideoOutputDevice_NULLOutput::SetFrameData(unsigned /*x*/, unsigned /*y*/,
-                                          unsigned /*width*/, unsigned /*height*/,
-                                          const BYTE * /*data*/,
-                                          PBoolean /*endFrame*/)
+PBoolean PVideoOutputDevice_NULLOutput::SetFrameData(const FrameData &)
 {
   return true;
 }

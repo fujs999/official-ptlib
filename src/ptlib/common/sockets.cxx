@@ -285,17 +285,12 @@ class PHostByName : PHostByName_private
     PBoolean GetHostAliases(const PString & name, PStringArray & aliases);
   private:
     PIPCacheData * GetHost(const PString & name);
-    PMutex mutex;
+    PDECLARE_MUTEX(mutex);
   friend void PIPSocket::ClearNameCache();
 };
 
-static PMutex creationMutex;
-static PHostByName & pHostByName()
-{
-  PWaitAndSignal m(creationMutex);
-  static PHostByName t;
-  return t;
-}
+static PHostByName s_HostByName;
+
 
 class PIPCacheKey : public PObject
 {
@@ -324,16 +319,11 @@ class PHostByAddr : PHostByAddr_private
     PBoolean GetHostAliases(const PIPSocket::Address & addr, PStringArray & aliases);
   private:
     PIPCacheData * GetHost(const PIPSocket::Address & addr);
-    PMutex mutex;
+    PDECLARE_MUTEX(mutex);
   friend void PIPSocket::ClearNameCache();
 };
 
-static PHostByAddr & pHostByAddr()
-{
-  PWaitAndSignal m(creationMutex);
-  static PHostByAddr t;
-  return t;
-}
+static PHostByAddr s_HostByAddr;
 
 #define new PNEW
 
@@ -1030,22 +1020,15 @@ PBoolean PSocket::ConvertOSError(P_INT_PTR libcReturnValue, ErrorGroup group)
 
 void PIPSocket::ClearNameCache()
 {
-  pHostByName().mutex.Wait();
-  pHostByName().RemoveAll();
-  pHostByName().mutex.Signal();
+  s_HostByName.mutex.Wait();
+  s_HostByName.RemoveAll();
+  s_HostByName.mutex.Signal();
 
-  pHostByAddr().mutex.Wait();
-  pHostByAddr().RemoveAll();
-  pHostByAddr().mutex.Signal();
+  s_HostByAddr.mutex.Wait();
+  s_HostByAddr.RemoveAll();
+  s_HostByAddr.mutex.Signal();
 
-#if (defined(_WIN32) || defined(WINDOWS)) && !defined(__NUCLEUS_MNT__) // Kludge to avoid strange NT bug
-  static PTimeInterval delay = GetConfigTime("NT Bug Delay", 0);
-  if (delay != 0) {
-    ::Sleep(delay.GetInterval());
-    ::gethostbyname("www.microsoft.com");
-  }
-#endif
-  PTRACE(4, &pHostByName(), "Cleared DNS cache.");
+  PTRACE(4, &s_HostByName, "Cleared DNS cache.");
 }
 
 
@@ -1110,7 +1093,7 @@ PString PIPSocket::GetHostName(const PString & hostname)
     return GetHostName(temp);
 
   PString canonicalname;
-  if (pHostByName().GetHostName(hostname, canonicalname))
+  if (s_HostByName.GetHostName(hostname, canonicalname))
     return canonicalname;
 
   return hostname;
@@ -1123,7 +1106,7 @@ PString PIPSocket::GetHostName(const Address & addr)
     return addr.AsString();
 
   PString hostname;
-  if (pHostByAddr().GetHostName(addr, hostname))
+  if (s_HostByAddr.GetHostName(addr, hostname))
     return hostname;
 
   return addr.AsString(true);
@@ -1132,7 +1115,7 @@ PString PIPSocket::GetHostName(const Address & addr)
 
 PBoolean PIPSocket::GetHostAddress(Address & addr)
 {
-  return pHostByName().GetHostAddress(GetHostName(), addr);
+  return s_HostByName.GetHostAddress(GetHostName(), addr);
 }
 
 
@@ -1146,7 +1129,7 @@ PBoolean PIPSocket::GetHostAddress(const PString & hostname, Address & addr)
     return true;
 
   // otherwise lookup the name as a host name
-  return pHostByName().GetHostAddress(hostname, addr);
+  return s_HostByName.GetHostAddress(hostname, addr);
 }
 
 
@@ -1157,9 +1140,9 @@ PStringArray PIPSocket::GetHostAliases(const PString & hostname)
   // lookup the host address using inet_addr, assuming it is a "." address
   Address addr(hostname);
   if (addr.IsValid())
-    pHostByAddr().GetHostAliases(addr, aliases);
+    s_HostByAddr.GetHostAliases(addr, aliases);
   else
-    pHostByName().GetHostAliases(hostname, aliases);
+    s_HostByName.GetHostAliases(hostname, aliases);
 
   return aliases;
 }
@@ -1169,7 +1152,7 @@ PStringArray PIPSocket::GetHostAliases(const Address & addr)
 {
   PStringArray aliases;
 
-  pHostByAddr().GetHostAliases(addr, aliases);
+  s_HostByAddr.GetHostAliases(addr, aliases);
 
   return aliases;
 }
@@ -2709,11 +2692,16 @@ bool PUDPSocket::InternalSetSendAddress(const PIPSocketAddressAndPort & addr, in
   if (mtuDiscovery < 0)
     return true;
 
+#ifdef IP_MTU_DISCOVER
   if (!SetOption(IP_MTU_DISCOVER, mtuDiscovery, IPPROTO_IP))
     return false;
 
   PIPSocket::sockaddr_wrapper sa(addr);
   return os_connect(sa, sa.GetSize());
+#else
+  PTRACE(2, "IP_MTU_DISCOVER is not supported!");
+  return false;
+#endif
 }
 
 

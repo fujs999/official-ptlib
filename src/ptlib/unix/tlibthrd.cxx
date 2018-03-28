@@ -1265,6 +1265,15 @@ PTimedMutex::~PTimedMutex()
 #ifdef _DEBUG
   PAssert(result == 0, "Error destroying mutex");
 #endif
+
+  Destroyed(*this);
+}
+
+
+void PTimedMutex::PrintOn(ostream &strm) const
+{
+  strm << "timed mutex " << this;
+  PMutexExcessiveLockInfo::PrintOn(strm);
 }
 
 

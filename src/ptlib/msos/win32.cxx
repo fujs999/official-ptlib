@@ -1747,6 +1747,19 @@ void PSemaphore::Signal()
 ///////////////////////////////////////////////////////////////////////////////
 // PTimedMutex
 
+PTimedMutex::~PTimedMutex()
+{
+  PMUTEX_DESTROYED();
+}
+
+
+void PTimedMutex::PrintOn(ostream &strm) const
+{
+  strm << "timed mutex " << this << '[' << GetHandle() << ']';
+  PMutexExcessiveLockInfo::PrintOn(strm);
+}
+
+
 void PTimedMutex::PlatformConstruct()
 {
   m_handle = ::CreateMutex(NULL, FALSE, NULL);
@@ -1859,10 +1872,10 @@ bool PWin32Handle::Wait(DWORD timeout) const
 }
 
 
-bool PWin32Handle::Duplicate(HANDLE h, DWORD flags)
+bool PWin32Handle::Duplicate(HANDLE h, DWORD flags, DWORD access)
 {
   Close();
-  return DuplicateHandle(GetCurrentProcess(), h, GetCurrentProcess(), &m_handle, 0, 0, flags);
+  return DuplicateHandle(GetCurrentProcess(), h, GetCurrentProcess(), &m_handle, access, 0, flags);
 }
 
 

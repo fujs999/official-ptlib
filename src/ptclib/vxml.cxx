@@ -35,10 +35,12 @@
 #include <ptclib/vxml.h>
 
 #include <ptlib/pprocess.h>
+#include <ptlib/vconvert.h>
 #include <ptclib/memfile.h>
 #include <ptclib/random.h>
 #include <ptclib/http.h>
 #include <ptclib/mediafile.h>
+#include <ptclib/SignLanguageAnalyser.h>
 
 
 #define PTraceModule() "VXML"
@@ -177,6 +179,218 @@ static PConstString PropertyScope("property");
 
 //////////////////////////////////////////////////////////
 
+#if P_VXML_VIDEO
+
+#define SIGN_LANGUAGE_PREVIEW_SCRIPT_FUNCTION "SignLanguageAnalyserPreview"
+
+class PVXMLSession::SignLanguageAnalyser : public PObject
+{
+  PDECLARE_READ_WRITE_MUTEX(m_mutex);
+  PString      m_colourFormat;
+  vector<bool> m_instancesInUse;
+
+
+  struct Library : PDynaLink
+  {
+    EntryPoint<SLInitialiseFn> SLInitialise;
+    EntryPoint<SLAnalyseFn>    SLAnalyse;
+    EntryPoint<SLPreviewFn>    SLPreview;
+
+    Library(const PFilePath & dllName)
+      : PDynaLink(dllName)
+      , P_DYNALINK_ENTRY_POINT(SLInitialise)
+      , P_DYNALINK_ENTRY_POINT(SLAnalyse)
+      , P_DYNALINK_OPTIONAL_ENTRY_POINT(SLPreview)
+    {
+    }
+  } *m_library;
+
+public:
+  bool SetAnalyser(const PFilePath & dllName)
+  {
+    PWriteWaitAndSignal lock(m_mutex);
+
+    delete m_library;
+    m_library = new Library(dllName);
+
+    if (!m_library->IsLoaded())
+      PTRACE(2, NULL, PTraceModule(), "Could not open Sign Language Analyser dynamic library \"" << dllName << '"');
+    else {
+      SLAnalyserInit init;
+      memset(&init, 0, sizeof(init));
+      init.m_apiVersion = SL_API_VERSION;
+      int error = m_library->SLInitialise(&init);
+      if (error < 0)
+        PTRACE(2, "Error " << error << " initialising Sign Language Analyser dynamic library \"" << dllName << '"');
+      else {
+        switch (init.m_videoFormat) {
+          case SL_GreyScale:
+            m_colourFormat = "Grey";
+            break;
+          case SL_RGB24:
+            m_colourFormat = "RGB24";
+            break;
+          case SL_BGR24:
+            m_colourFormat = "BGR24";
+            break;
+          case SL_RGB32:
+            m_colourFormat = "RGB32";
+            break;
+          case SL_BGR32:
+            m_colourFormat = "BGR32";
+            break;
+          default:
+            break;
+        }
+
+        m_instancesInUse.resize(init.m_maxInstances);
+
+        PTRACE(3, "Loaded Sign Language Analyser dynamic library \"" << dllName << '"');
+        return true;
+      }
+    }
+
+    delete m_library;
+    m_library = NULL;
+    return false;
+  }
+
+
+  SignLanguageAnalyser()
+    : m_library(NULL)
+  {
+  }
+
+
+  ~SignLanguageAnalyser()
+  {
+    delete m_library;
+  }
+
+
+  const PString & GetColourFormat() const
+  {
+    return m_colourFormat;
+  }
+
+
+  int AllocateInstance()
+  {
+    PWriteWaitAndSignal lock(m_mutex);
+    if (m_library == NULL)
+      return INT_MAX;
+
+    for (size_t i = 0; i < m_instancesInUse.size(); ++i) {
+      if (!m_instancesInUse[i]) {
+        m_instancesInUse[i] = true;
+        return i;
+      }
+    }
+
+    return INT_MAX;
+  }
+
+
+  bool ReleaseInstance(int instance)
+  {
+    PWriteWaitAndSignal lock(m_mutex);
+    if (instance >= (int)m_instancesInUse.size())
+      return false;
+
+    m_instancesInUse[instance] = false;
+    return true;
+  }
+
+
+  int Analyse(int instance, unsigned width, unsigned height, int64_t timestamp, const void * pixels)
+  {
+    PReadWaitAndSignal lock(m_mutex);
+    if (m_library == NULL || instance >= (int)m_instancesInUse.size())
+      return 0;
+
+    SLAnalyserData data;
+    memset(&data, 0, sizeof(data));
+    data.m_instance = instance;
+    data.m_width = width;
+    data.m_height = height;
+    data.m_timestamp = static_cast<unsigned>(timestamp);
+    data.m_pixels = pixels;
+
+    return m_library->SLAnalyse(&data);
+  }
+
+
+  class PreviewVideoDevice;
+
+  int Preview(int instance, unsigned width, unsigned height, uint8_t * pixels)
+  {
+    PReadWaitAndSignal lock(m_mutex);
+    if (m_library == NULL || instance >= (int)m_instancesInUse.size())
+      return 0;
+
+    SLPreviewData data;
+    memset(&data, 0, sizeof(data));
+    data.m_instance = instance;
+    data.m_width = width;
+    data.m_height = height;
+    data.m_pixels = pixels;
+
+    return m_library->SLPreview(&data);
+  }
+} s_SignLanguageAnalyser;
+
+
+class PVXMLSession::SignLanguageAnalyser::PreviewVideoDevice : public PVideoInputEmulatedDevice
+{
+  int m_instance;
+
+public:
+  PreviewVideoDevice(const VideoReceiverDevice & analyser)
+    : m_instance(analyser.GetAnalayserInstance())
+  {
+    unsigned width, height;
+    analyser.GetFrameSize(width, height);
+    SetFrameSize(width, height);
+    SetColourFormat(s_SignLanguageAnalyser.GetColourFormat());
+  }
+
+  virtual PStringArray GetDeviceNames() const
+  {
+    return SIGN_LANGUAGE_PREVIEW_SCRIPT_FUNCTION;
+  }
+
+  virtual PBoolean Open(const PString &, PBoolean)
+  {
+    return IsOpen();
+  }
+
+  virtual PBoolean IsOpen()
+  {
+    return m_instance >= 0;
+  }
+
+  virtual PBoolean Close()
+  {
+    m_instance = -1;
+    return true;
+  }
+
+protected:
+  virtual bool InternalGetFrameData(BYTE * buffer)
+  {
+    int result = s_SignLanguageAnalyser.Preview(m_instance, m_frameWidth, m_frameHeight, buffer);
+    if (result >= 0)
+      return true;
+
+    PTRACE(2, "SignLanguageAnalyser preview failed with code: " << result);
+    return false;
+  }
+};
+#endif // P_VXML_VIDEO
+
+
+//////////////////////////////////////////////////////////
+
 PVXMLPlayable::PVXMLPlayable()
   : m_vxmlChannel(NULL)
   , m_subChannel(NULL)
@@ -186,6 +400,14 @@ PVXMLPlayable::PVXMLPlayable()
   , m_autoDelete(false)
   , m_delayDone(false)
 {
+  PTRACE(4, "Constructed PVXMLPlayable " << this);
+}
+
+
+PVXMLPlayable::~PVXMLPlayable()
+{
+  OnStop();
+  PTRACE(4, "Destroyed PVXMLPlayable " << this);
 }
 
 
@@ -238,6 +460,7 @@ void PVXMLPlayable::OnStop()
     m_vxmlChannel->SetReadChannel(NULL, false, true);
 
   delete m_subChannel;
+  m_subChannel = NULL;
 }
 
 
@@ -748,6 +971,9 @@ PVXMLSession::PVXMLSession(PTextToSpeech * tts, PBoolean autoDelete)
     m_scriptContext->CreateComposite("session.connection");
     m_scriptContext->CreateComposite("session.connection.local");
     m_scriptContext->CreateComposite("session.connection.remote");
+#if P_VXML_VIDEO
+    m_scriptContext->SetFunction(SIGN_LANGUAGE_PREVIEW_SCRIPT_FUNCTION, PCREATE_NOTIFIER(SignLanguagePreviewFunction));
+#endif
   }
 #endif
 
@@ -1013,11 +1239,10 @@ bool PVXMLSession::SetCurrentForm(const PString & searchId, bool fullURI)
           if (m_currentNode != NULL) {
             PXMLElement * element = m_currentNode->GetParent();
             while (element != NULL) {
-              PCaselessString nodeType = element->GetName();
-              PVXMLNodeHandler * handler = PVXMLNodeFactory::CreateInstance(nodeType);
+              PVXMLNodeHandler * handler = PVXMLNodeFactory::CreateInstance(element->GetName());
               if (handler != NULL) {
                 handler->Finish(*this, *element);
-                PTRACE(4, "Processed VoiceXML element: <" << nodeType << '>');
+                PTRACE(4, "Processed VoiceXML element: " << element->PrintTrace());
               }
               element = element->GetParent();
             }
@@ -1092,6 +1317,11 @@ PBoolean PVXMLSession::Close()
   m_abortVXML = true;
   Trigger();
   PThread::WaitAndDelete(m_vxmlThread, 10000, &m_sessionMutex, false);
+
+#if P_VXML_VIDEO
+  m_videoReceiver.Close();
+  m_videoSender.Close();
+#endif // P_VXML_VIDEO
 
   return PIndirectChannel::Close();
 }
@@ -1264,21 +1494,20 @@ bool PVXMLSession::NextNode(bool processChildren)
 
   // No children, move to sibling
   do {
-    PCaselessString nodeType = element->GetName();
-    PVXMLNodeHandler * handler = PVXMLNodeFactory::CreateInstance(nodeType);
+    PVXMLNodeHandler * handler = PVXMLNodeFactory::CreateInstance(element->GetName());
     if (handler != NULL) {
       if (!handler->Finish(*this, *element)) {
         if (m_currentNode != NULL) {
-          PTRACE_IF(4, (element = dynamic_cast<PXMLElement *>(m_currentNode)) != NULL,
-                    "Exception handling <" << element->GetName() << "> for VoiceXML element: <" << nodeType << '>');
+          PTRACE(4, "Exception handling via element: " << dynamic_cast<PXMLElement *>(m_currentNode)->PrintTrace()
+                 << ", for VoiceXML element: " << element->PrintTrace());
           return false;
         }
 
-        PTRACE(4, "Continue processing VoiceXML element: <" << nodeType << '>');
+        PTRACE(4, "Continue processing VoiceXML element: " << element->PrintTrace());
         m_currentNode = element;
         return true;
       }
-      PTRACE(4, "Processed VoiceXML element: <" << nodeType << '>');
+      PTRACE(4, "Processed VoiceXML element: " << element->PrintTrace());
     }
 
     if ((m_currentNode = element->GetNextObject()) != NULL)
@@ -1306,7 +1535,7 @@ void PVXMLSession::FlushInput()
 }
 
 
-bool PVXMLSession::ProcessGrammar()
+bool PVXMLSession::ProcessGrammar(PXMLElement & PTRACE_PARAM(element))
 {
   if (m_grammar == NULL) {
     PTRACE(4, "No grammar was created!");
@@ -1328,8 +1557,10 @@ bool PVXMLSession::ProcessGrammar()
 
       PVXMLGrammar * grammar = m_grammar;
       m_grammar = NULL;
-      PTRACE(2, "Processing grammar " << *grammar);
       bool nextNode = grammar->Process();
+      PTRACE(2, "Processed grammar: " << *grammar << ", "
+                 "nextNode=" << std::boolalpha << nextNode << ", "
+                 "element=" << element.PrintTrace());
       delete grammar;
       return nextNode;
   }
@@ -1358,16 +1589,15 @@ bool PVXMLSession::ProcessNode()
   m_speakNodeData = true;
 
   PXMLElement * element = (PXMLElement*)m_currentNode;
-  PCaselessString nodeType = element->GetName();
-  PVXMLNodeHandler * handler = PVXMLNodeFactory::CreateInstance(nodeType);
+  PVXMLNodeHandler * handler = PVXMLNodeFactory::CreateInstance(element->GetName());
   if (handler == NULL) {
-    PTRACE(2, "Unknown/unimplemented VoiceXML element: <" << nodeType << '>');
+    PTRACE(2, "Unknown/unimplemented VoiceXML element: " << element->PrintTrace());
     return false;
   }
 
-  PTRACE(3, "Processing VoiceXML element: <" << nodeType << '>');
+  PTRACE(3, "Processing VoiceXML element: " << element->PrintTrace());
   bool started = handler->Start(*this, *element);
-  PTRACE_IF(4, !started, "Skipping VoiceXML element: <" << nodeType << '>');
+  PTRACE_IF(4, !started, "Skipping VoiceXML element: " << element->PrintTrace());
   return started;
 }
 
@@ -1497,15 +1727,12 @@ PBoolean PVXMLSession::TraverseScript(PXMLElement & element)
     PString data = element.GetData();
     PString script = src.IsEmpty() ? data : src;
 
-    PTRACE(4, "Traverse script> " << script);
+    PTRACE(4, "Traverse <script> " << script.ToLiteral());
   
-    if (m_scriptContext->Run(PSTRSTRM(script)))
-    {
+    if (m_scriptContext->Run(script))
       PTRACE(4, "script executed properly!");
-      return true;
-    }
-
-    PTRACE(2, "Could not evaluate script \"" << script << "\" with script language " << m_scriptContext->GetLanguageName());
+    else
+      PTRACE(2, "Could not evaluate script \"" << script << "\" with script language " << m_scriptContext->GetLanguageName());
   }
 #else
   PTRACE(2, "Unsupported <script> element");
@@ -1527,10 +1754,17 @@ PString PVXMLSession::EvaluateExpr(const PString & expr)
   }
 #endif
 
-  // Should be full ECMAScript but ...
-  // We only support expressions of the form 'literal'+variable or all digits
+  /* If we don't have full ECMAScript, or any other script engine for that matter ...
+     We only support extremeley limited expressions, generally of the form
+     'literal' or all numeric digits, with + signs allow concatenation of
+     those elements. */
 
   PString result;
+
+#if P_VXML_VIDEO
+  if (expr == SIGN_LANGUAGE_PREVIEW_SCRIPT_FUNCTION "()")
+    SetRealVideoSender(new SignLanguageAnalyser::PreviewVideoDevice(m_videoReceiver));
+#endif
 
   PINDEX pos = 0;
   while (pos < expr.GetLength()) {
@@ -1642,6 +1876,10 @@ PBoolean PVXMLSession::PlayElement(PXMLElement & element)
 {
   if (m_bargingIn)
     return false;
+
+#if P_VXML_VIDEO
+  SetRealVideoSender(NULL);
+#endif // P_VXML_VIDEO
 
   PString str = element.GetAttribute("src").Trim();
   if (str.IsEmpty()) {
@@ -1919,13 +2157,13 @@ PBoolean PVXMLSession::TraverseGrammar(PXMLElement & element)
   }
 
   PTRACE(4, "Loading new grammar");
-  PStringToString tokens;
+  PStringOptions tokens;
   PURL::SplitVars(element.GetData(), tokens, ';', '=');
   return LoadGrammar(new PVXMLDigitsGrammar(*this,
                                             *element.GetParent(),
-                                            tokens("minDigits", "1").AsUnsigned(),
-                                            tokens("maxDigits", "10").AsUnsigned(),
-                                            tokens("terminators", "#")));
+                                            tokens.GetInteger("minDigits", 1),
+                                            tokens.GetInteger("maxDigits", 10),
+                                            tokens.GetString("terminators", "#")));
 }
 
 
@@ -1965,7 +2203,7 @@ bool PVXMLSession::GoToEventHandler(PXMLElement & element, const PString & event
 gotHandler:
   handler->SetAttribute("fired", "true");
   m_currentNode = handler;
-  PTRACE(4, "Setting event handler to node " << handler << " for \"" << eventName << '"');
+  PTRACE(4, "Setting event handler to node " << handler->PrintTrace() << " for \"" << eventName << '"');
   return false;
 }
 
@@ -2309,9 +2547,9 @@ PBoolean PVXMLSession::TraverseMenu(PXMLElement & element)
 }
 
 
-PBoolean PVXMLSession::TraversedMenu(PXMLElement &)
+PBoolean PVXMLSession::TraversedMenu(PXMLElement & element)
 {
-  return ProcessGrammar();
+  return ProcessGrammar(element);
 }
 
 
@@ -2392,9 +2630,9 @@ PBoolean PVXMLSession::TraverseField(PXMLElement &)
 }
 
 
-PBoolean PVXMLSession::TraversedField(PXMLElement &)
+PBoolean PVXMLSession::TraversedField(PXMLElement & element)
 {
-  return ProcessGrammar();
+  return ProcessGrammar(element);
 }
 
 
@@ -2419,27 +2657,11 @@ void PVXMLSession::Trigger()
 
 
 #if P_VXML_VIDEO
-bool PVXMLSession::SetVideoRecogniser(const PString & dllName)
+
+bool PVXMLSession::SetSignLanguageAnalyser(const PString & dllName)
 {
-  if (!m_videoRecogniserLibrary.Open(dllName)) {
-    PTRACE(2, "Could not open dynamic library \"" << dllName << '"');
-    return false;
-  }
-
-  PDynaLink::Function initialise;
-  if (!m_videoRecogniserLibrary.GetFunction("Initialise", initialise, true) ||
-      !m_videoRecogniserLibrary.GetFunction("Process", m_videoRecogniserFunction, true)) {
-    PTRACE(2, "Incorrect functions in dynamic library \"" << dllName << '"');
-    return false;
-  }
-
-  if (reinterpret_cast<bool (*)(void)>(initialise)())
-    return true;
-
-  m_videoRecogniserLibrary.Close();
-  return false;
+  return s_SignLanguageAnalyser.SetAnalyser(dllName);
 }
-
 
 void PVXMLSession::SetRealVideoSender(PVideoInputDevice * device)
 {
@@ -2454,38 +2676,75 @@ void PVXMLSession::SetRealVideoSender(PVideoInputDevice * device)
 }
 
 
+void PVXMLSession::SignLanguagePreviewFunction(PScriptLanguage &, PScriptLanguage::Signature &)
+{
+  SetRealVideoSender(new SignLanguageAnalyser::PreviewVideoDevice(m_videoReceiver));
+}
+
+
 PVXMLSession::VideoReceiverDevice::VideoReceiverDevice(PVXMLSession & vxmlSession)
   : m_vxmlSession(vxmlSession)
+  , m_analayserInstance(s_SignLanguageAnalyser.AllocateInstance())
 {
 }
 
 
 PStringArray PVXMLSession::VideoReceiverDevice::GetDeviceNames() const
 {
-  return PStringArray();
+  return "SignLanguageAnalyser";
 }
 
 
 PBoolean PVXMLSession::VideoReceiverDevice::Open(const PString &, PBoolean)
 {
-  return true;
+  return IsOpen();
 }
 
 
 PBoolean PVXMLSession::VideoReceiverDevice::IsOpen()
 {
+  return m_analayserInstance >= 0;
+}
+
+
+PBoolean PVXMLSession::VideoReceiverDevice::Close()
+{
+  if (!IsOpen())
+    return false;
+
+  if (s_SignLanguageAnalyser.ReleaseInstance(m_analayserInstance)) {
+    PTRACE(3, "Closing SignLanguageAnalyser instance " << m_analayserInstance);
+  }
+
+  m_analayserInstance = -1;
   return true;
 }
 
 
-PBoolean PVXMLSession::VideoReceiverDevice::FrameComplete()
+PBoolean PVXMLSession::VideoReceiverDevice::SetColourFormat(const PString & colourFormat)
 {
-  if (m_vxmlSession.m_videoRecogniserLibrary.IsLoaded()) {
-    int result = reinterpret_cast<int(*)(unsigned, unsigned, void *)>(m_vxmlSession.m_videoRecogniserFunction)
-                                                      (m_frameWidth, m_frameHeight, m_frameStore.GetPointer());
-    if (result > 0)
-      m_vxmlSession.OnUserInput((char)result);
+  return colourFormat == s_SignLanguageAnalyser.GetColourFormat();
+}
+
+
+PBoolean PVXMLSession::VideoReceiverDevice::SetFrameData(const FrameData & frameData)
+{
+  if (m_analayserInstance < 0 || frameData.partialFrame || frameData.x != 0 || frameData.y != 0)
+    return false;
+
+  const void * pixels;
+  if (m_converter != NULL) {
+    BYTE * storePtr = m_frameStore.GetPointer(m_converter->GetMaxDstFrameBytes());
+    if (!m_converter->Convert(frameData.pixels, storePtr))
+      return false;
+    pixels = storePtr;
   }
+  else
+    pixels = frameData.pixels;
+
+  int result = s_SignLanguageAnalyser.Analyse(m_analayserInstance, frameData.width, frameData.height, frameData.timestamp, pixels);
+  if (result >= ' ')
+    m_vxmlSession.OnUserInput((char)result);
 
   return true;
 }
@@ -2514,7 +2773,8 @@ void PVXMLGrammar::SetTimeout(const PTimeInterval & timeout)
 {
   if (timeout > 0) {
     m_timeout = timeout;
-    if (m_timer.IsRunning())
+    PTRACE(4, "Set timeout on " << *this << ", timeout=" << m_timeout << ", state=" << m_state);
+    if (m_state != Idle)
       m_timer = timeout;
   }
 }
@@ -2578,6 +2838,7 @@ void PVXMLMenuGrammar::OnUserInput(const char ch)
   m_mutex.Wait();
 
   m_value = ch;
+  PTRACE(4, "Menu grammar filled with '" << ch << '\'');
   m_state = PVXMLGrammar::Filled;
 
   m_mutex.Signal();
@@ -2592,7 +2853,7 @@ bool PVXMLMenuGrammar::Process()
     while ((choice = m_field.GetElement("choice", index++)) != NULL) {
       // Check if DTMF value for grammarResult matches the DTMF value for the choice
       if (choice->GetAttribute("dtmf") == m_value) {
-        PTRACE(3, "Matched menu choice: " << m_value);
+        PTRACE(3, "Matched menu choice: " << m_value << " to " << choice->PrintTrace());
         PString next = choice->GetAttribute("next");
         if (next.IsEmpty())
           next = m_session.EvaluateExpr(choice->GetAttribute("expr"));
@@ -2603,6 +2864,7 @@ bool PVXMLMenuGrammar::Process()
       }
     }
 
+    PTRACE(3, "No match on menu choice: " << m_value.ToLiteral() << " on " << m_field.PrintTrace());
     m_state = NoMatch;
   }
 
@@ -2643,12 +2905,10 @@ void PVXMLDigitsGrammar::OnUserInput(const char ch)
     return;
   }
 
-  // Otherwise add to the grammar and check to see if we're done
-  PINDEX len = m_value.GetLength();
+  m_value += ch; // Add to collected digits string
 
-  m_value += ch;
-  if (++len >= m_maxDigits)
-    m_state = PVXMLGrammar::Filled;   // the grammar is filled!
+  if (IsFilled())
+    m_state = PVXMLGrammar::Filled;
 }
 
 bool PVXMLDigitsGrammar::IsFilled()
@@ -2674,6 +2934,7 @@ PVXMLChannel::PVXMLChannel(unsigned frameDelay, PINDEX frameSize)
   , m_recordable(NULL)
   , m_currentPlayItem(NULL)
 {
+  PTRACE(4, "Constructed channel " << this);
 }
 
 
@@ -2690,6 +2951,7 @@ PBoolean PVXMLChannel::Open(PVXMLSession * session)
 PVXMLChannel::~PVXMLChannel()
 {
   Close();
+  PTRACE(4, "Destroyed channel " << this);
 }
 
 
@@ -2818,13 +3080,13 @@ PBoolean PVXMLChannel::Write(const void * buf, PINDEX len)
   if (m_closed)
     return false;
 
-  m_channelWriteMutex.Wait();
+  m_recordingMutex.Wait();
 
   // let the recordable do silence detection
   if (m_recordable != NULL && m_recordable->OnFrame(IsSilenceFrame(buf, len)))
     EndRecording(true);
 
-  m_channelWriteMutex.Signal();
+  m_recordingMutex.Signal();
 
   // write the data and do the correct delay
   if (WriteFrame(buf, len))
@@ -2847,7 +3109,7 @@ PBoolean PVXMLChannel::QueueRecordable(PVXMLRecordable * newItem)
   EndRecording(true);
 
   // insert the new recordable
-  PWaitAndSignal mutex(m_channelWriteMutex);
+  PWaitAndSignal mutex(m_recordingMutex);
   m_recordable = newItem;
   m_totalData = 0;
   SetReadTimeout(frameDelay);
@@ -2857,7 +3119,7 @@ PBoolean PVXMLChannel::QueueRecordable(PVXMLRecordable * newItem)
 
 PBoolean PVXMLChannel::EndRecording(bool timedOut)
 {
-  PWaitAndSignal mutex(m_channelWriteMutex);
+  PWaitAndSignal mutex(m_recordingMutex);
 
   if (m_recordable == NULL)
     return false;
@@ -2893,7 +3155,7 @@ PBoolean PVXMLChannel::Read(void * buffer, PINDEX amount)
       break;
 
     // Other errors mean end of the playable
-    PWaitAndSignal mutex(m_channelReadMutex);
+    PWaitAndSignal mutex(m_playQueueMutex);
 
     // if current item still active, check for trailing actions
     if (m_currentPlayItem != NULL) {
@@ -2980,9 +3242,9 @@ PBoolean PVXMLChannel::QueuePlayable(PVXMLPlayable * newItem)
   }
 
   newItem->SetSampleFrequency(GetSampleFrequency());
-  m_channelReadMutex.Wait();
+  m_playQueueMutex.Wait();
   m_playQueue.Enqueue(newItem);
-  m_channelReadMutex.Signal();
+  m_playQueueMutex.Signal();
   return true;
 }
 
@@ -3022,7 +3284,7 @@ void PVXMLChannel::FlushQueue()
 {
   PTRACE(4, "Flushing playable queue");
 
-  PWaitAndSignal mutex(m_channelReadMutex);
+  PWaitAndSignal mutex(m_playQueueMutex);
 
   PVXMLPlayable * qItem;
   while ((qItem = m_playQueue.Dequeue()) != NULL) {

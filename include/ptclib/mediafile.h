@@ -46,7 +46,7 @@
   */
 class PMediaFile : public PSmartObject
 {
-  PCLASSINFO(PMediaFile, PSmartObject);
+    PCLASSINFO(PMediaFile, PSmartObject);
   protected:
     PMediaFile();
 
@@ -62,6 +62,8 @@ class PMediaFile : public PSmartObject
     bool SetErrorText(const PString & error);
 
   public:
+    ~PMediaFile();
+
     typedef PFactory<PMediaFile, PFilePathString> Factory;
 
     typedef PSmartPtr<PMediaFile> Ptr;
@@ -146,43 +148,23 @@ class PMediaFile : public PSmartObject
     };
 
 #if P_VIDEO
-    class VideoInputDevice : public PVideoInputDevice
+    class VideoInputDevice : public PVideoInputEmulatedDevice
     {
-      PCLASSINFO(VideoInputDevice, PVideoInputDevice);
+      PCLASSINFO(VideoInputDevice, PVideoInputEmulatedDevice);
       public:
         explicit VideoInputDevice(const Ptr & mediaFile = Ptr(), unsigned track = 0);
         ~VideoInputDevice();
-
-        enum {
-          Channel_PlayAndClose     = 0,
-          Channel_PlayAndRepeat    = 1,
-          Channel_PlayAndKeepLast  = 2,
-          Channel_PlayAndShowBlack = 3,
-          ChannelCount             = 4
-        };
 
         virtual PStringArray GetDeviceNames() const;
         virtual PBoolean Open(const PString & deviceName, PBoolean startImmediate = true);
         virtual PBoolean IsOpen();
         virtual PBoolean Close();
-        virtual PBoolean Start();
-        virtual PBoolean Stop();
-        virtual PBoolean IsCapturing();
-        virtual PBoolean GetFrameData(BYTE * buffer, PINDEX * bytesReturned = NULL);
-        virtual PBoolean GetFrameDataNoDelay(BYTE * buffer, PINDEX * bytesReturned = NULL);
-        virtual PINDEX GetMaxFrameBytes();
-        virtual int GetNumChannels();
-        virtual PStringArray GetChannelNames();
-        virtual PBoolean SetColourFormat(const PString & colourFormat);
-        virtual PBoolean SetFrameRate(unsigned rate);
-        virtual PBoolean GetFrameSizeLimits(unsigned & minWidth, unsigned & minHeight, unsigned & maxWidth, unsigned & maxHeight);
-        virtual PBoolean SetFrameSize(unsigned width, unsigned height);
 
       protected:
+        virtual bool InternalGetFrameData(BYTE * frame);
+
         Ptr            m_mediaFile;
         unsigned       m_track;
-        PAdaptiveDelay m_pacing;
-        unsigned       m_frameRateAdjust;
     };
 #endif // P_VIDEO
 };
@@ -252,14 +234,7 @@ class PVideoOutputDevice_MediaFile : public PVideoOutputDevice
     
     /**Set a section of the output frame buffer.
       */
-    virtual PBoolean SetFrameData(
-      unsigned x,
-      unsigned y,
-      unsigned width,
-      unsigned height,
-      const BYTE * data,
-      PBoolean endFrame = true
-    );
+    virtual PBoolean SetFrameData(const FrameData & frameData);
 
   protected:  
    PMediaFile * m_file;
