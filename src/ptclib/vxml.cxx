@@ -183,7 +183,7 @@ static PConstString PropertyScope("property");
 
 #define SIGN_LANGUAGE_PREVIEW_SCRIPT_FUNCTION "SignLanguageAnalyserPreview"
 
-class PVXMLSession::SignLanguageAnalyser : public PObject
+class PVXMLSignLanguageAnalyser : public PProcessStartup
 {
   PDECLARE_READ_WRITE_MUTEX(m_mutex);
   PString      m_colourFormat;
@@ -193,78 +193,101 @@ class PVXMLSession::SignLanguageAnalyser : public PObject
   struct Library : PDynaLink
   {
     EntryPoint<SLInitialiseFn> SLInitialise;
+    EntryPoint<SLReleaseFn>    SLRelease;
     EntryPoint<SLAnalyseFn>    SLAnalyse;
     EntryPoint<SLPreviewFn>    SLPreview;
 
     Library(const PFilePath & dllName)
       : PDynaLink(dllName)
       , P_DYNALINK_ENTRY_POINT(SLInitialise)
+      , P_DYNALINK_OPTIONAL_ENTRY_POINT(SLRelease)
       , P_DYNALINK_ENTRY_POINT(SLAnalyse)
       , P_DYNALINK_OPTIONAL_ENTRY_POINT(SLPreview)
     {
     }
+
+    ~Library()
+    {
+      if (SLRelease.IsPresent()) {
+        int result = SLRelease();
+        PTRACE(result < 0 ? 2 : 3, "Released Sign Language Analyser dynamic library"
+                                  " \"" << GetName(true) << "\", result=" << result);
+      }
+    }
   } *m_library;
 
 public:
+  PVXMLSignLanguageAnalyser()
+    : m_library(NULL)
+  {
+  }
+
+
+  ~PVXMLSignLanguageAnalyser()
+  {
+    delete m_library; // Should always be NULL
+  }
+
+
+  PFACTORY_GET_SINGLETON(PProcessStartupFactory, PVXMLSignLanguageAnalyser);
+
+
+  virtual void OnShutdown()
+  {
+    delete m_library;
+    m_library = NULL;
+  }
+
+
   bool SetAnalyser(const PFilePath & dllName)
   {
     PWriteWaitAndSignal lock(m_mutex);
 
-    delete m_library;
-    m_library = new Library(dllName);
+    if (!dllName.IsEmpty()) {
+      delete m_library;
+      m_library = new Library(dllName);
 
-    if (!m_library->IsLoaded())
-      PTRACE(2, NULL, PTraceModule(), "Could not open Sign Language Analyser dynamic library \"" << dllName << '"');
-    else {
-      SLAnalyserInit init;
-      memset(&init, 0, sizeof(init));
-      init.m_apiVersion = SL_API_VERSION;
-      int error = m_library->SLInitialise(&init);
-      if (error < 0)
-        PTRACE(2, "Error " << error << " initialising Sign Language Analyser dynamic library \"" << dllName << '"');
+      if (!m_library->IsLoaded())
+        PTRACE(2, NULL, PTraceModule(), "Could not open Sign Language Analyser dynamic library \"" << dllName << '"');
       else {
-        switch (init.m_videoFormat) {
-          case SL_GreyScale:
-            m_colourFormat = "Grey";
-            break;
-          case SL_RGB24:
-            m_colourFormat = "RGB24";
-            break;
-          case SL_BGR24:
-            m_colourFormat = "BGR24";
-            break;
-          case SL_RGB32:
-            m_colourFormat = "RGB32";
-            break;
-          case SL_BGR32:
-            m_colourFormat = "BGR32";
-            break;
-          default:
-            break;
+        SLAnalyserInit init;
+        memset(&init, 0, sizeof(init));
+        init.m_apiVersion = SL_API_VERSION;
+        int error = m_library->SLInitialise(&init);
+        if (error < 0)
+          PTRACE(2, "Error " << error << " initialising Sign Language Analyser dynamic library \"" << m_library->GetName(true) << '"');
+        else {
+          switch (init.m_videoFormat) {
+            case SL_GreyScale:
+              m_colourFormat = "Grey";
+              break;
+            case SL_RGB24:
+              m_colourFormat = "RGB24";
+              break;
+            case SL_BGR24:
+              m_colourFormat = "BGR24";
+              break;
+            case SL_RGB32:
+              m_colourFormat = "RGB32";
+              break;
+            case SL_BGR32:
+              m_colourFormat = "BGR32";
+              break;
+            default:
+              break;
+          }
+
+          m_instancesInUse.resize(init.m_maxInstances);
+
+          PTRACE(3, "Loaded Sign Language Analyser dynamic library \"" << m_library->GetName(true) << '"');
+          return true;
         }
-
-        m_instancesInUse.resize(init.m_maxInstances);
-
-        PTRACE(3, "Loaded Sign Language Analyser dynamic library \"" << dllName << '"');
-        return true;
       }
     }
 
     delete m_library;
     m_library = NULL;
     return false;
-  }
-
-
-  SignLanguageAnalyser()
-    : m_library(NULL)
-  {
-  }
-
-
-  ~SignLanguageAnalyser()
-  {
-    delete m_library;
   }
 
 
@@ -322,11 +345,20 @@ public:
 
   class PreviewVideoDevice;
 
+  bool CanPreview(int instance) const
+  {
+    PReadWaitAndSignal lock(m_mutex);
+    return m_library != NULL &&
+           m_library->SLPreview.IsPresent() &&
+           instance >= 0 &&
+           instance < (int)m_instancesInUse.size();
+  }
+
   int Preview(int instance, unsigned width, unsigned height, uint8_t * pixels)
   {
     PReadWaitAndSignal lock(m_mutex);
-    if (m_library == NULL || instance >= (int)m_instancesInUse.size())
-      return 0;
+    if (!CanPreview(instance))
+      return -1000;
 
     SLPreviewData data;
     memset(&data, 0, sizeof(data));
@@ -337,21 +369,23 @@ public:
 
     return m_library->SLPreview(&data);
   }
-} s_SignLanguageAnalyser;
+};
+
+PFACTORY_CREATE_SINGLETON(PProcessStartupFactory, PVXMLSignLanguageAnalyser);
 
 
-class PVXMLSession::SignLanguageAnalyser::PreviewVideoDevice : public PVideoInputEmulatedDevice
+class PVXMLSignLanguageAnalyser::PreviewVideoDevice : public PVideoInputEmulatedDevice
 {
   int m_instance;
 
 public:
-  PreviewVideoDevice(const VideoReceiverDevice & analyser)
+  PreviewVideoDevice(const PVXMLSession::VideoReceiverDevice & analyser)
     : m_instance(analyser.GetAnalayserInstance())
   {
     unsigned width, height;
     analyser.GetFrameSize(width, height);
     SetFrameSize(width, height);
-    SetColourFormat(s_SignLanguageAnalyser.GetColourFormat());
+    SetColourFormat(GetInstance().GetColourFormat());
   }
 
   virtual PStringArray GetDeviceNames() const
@@ -366,7 +400,7 @@ public:
 
   virtual PBoolean IsOpen()
   {
-    return m_instance >= 0;
+    return PVXMLSignLanguageAnalyser::GetInstance().CanPreview(m_instance);
   }
 
   virtual PBoolean Close()
@@ -378,7 +412,10 @@ public:
 protected:
   virtual bool InternalGetFrameData(BYTE * buffer)
   {
-    int result = s_SignLanguageAnalyser.Preview(m_instance, m_frameWidth, m_frameHeight, buffer);
+    if (!IsOpen())
+      return false;
+
+    int result = PVXMLSignLanguageAnalyser::GetInstance().Preview(m_instance, m_frameWidth, m_frameHeight, buffer);
     if (result >= 0)
       return true;
 
@@ -1763,7 +1800,7 @@ PString PVXMLSession::EvaluateExpr(const PString & expr)
 
 #if P_VXML_VIDEO
   if (expr == SIGN_LANGUAGE_PREVIEW_SCRIPT_FUNCTION "()")
-    SetRealVideoSender(new SignLanguageAnalyser::PreviewVideoDevice(m_videoReceiver));
+    SetRealVideoSender(new PVXMLSignLanguageAnalyser::PreviewVideoDevice(m_videoReceiver));
 #endif
 
   PINDEX pos = 0;
@@ -2660,11 +2697,17 @@ void PVXMLSession::Trigger()
 
 bool PVXMLSession::SetSignLanguageAnalyser(const PString & dllName)
 {
-  return s_SignLanguageAnalyser.SetAnalyser(dllName);
+  return PVXMLSignLanguageAnalyser::GetInstance().SetAnalyser(dllName);
 }
+
 
 void PVXMLSession::SetRealVideoSender(PVideoInputDevice * device)
 {
+  if (device != NULL && !device->IsOpen()) {
+    delete device;
+    device = NULL;
+  }
+
   if (device == NULL) {
     PVideoInputDevice::OpenArgs videoArgs;
     videoArgs.driverName = P_FAKE_VIDEO_DRIVER;
@@ -2678,13 +2721,13 @@ void PVXMLSession::SetRealVideoSender(PVideoInputDevice * device)
 
 void PVXMLSession::SignLanguagePreviewFunction(PScriptLanguage &, PScriptLanguage::Signature &)
 {
-  SetRealVideoSender(new SignLanguageAnalyser::PreviewVideoDevice(m_videoReceiver));
+  SetRealVideoSender(new PVXMLSignLanguageAnalyser::PreviewVideoDevice(m_videoReceiver));
 }
 
 
 PVXMLSession::VideoReceiverDevice::VideoReceiverDevice(PVXMLSession & vxmlSession)
   : m_vxmlSession(vxmlSession)
-  , m_analayserInstance(s_SignLanguageAnalyser.AllocateInstance())
+  , m_analayserInstance(PVXMLSignLanguageAnalyser::GetInstance().AllocateInstance())
 {
 }
 
@@ -2712,7 +2755,7 @@ PBoolean PVXMLSession::VideoReceiverDevice::Close()
   if (!IsOpen())
     return false;
 
-  if (s_SignLanguageAnalyser.ReleaseInstance(m_analayserInstance)) {
+  if (PVXMLSignLanguageAnalyser::GetInstance().ReleaseInstance(m_analayserInstance)) {
     PTRACE(3, "Closing SignLanguageAnalyser instance " << m_analayserInstance);
   }
 
@@ -2723,7 +2766,7 @@ PBoolean PVXMLSession::VideoReceiverDevice::Close()
 
 PBoolean PVXMLSession::VideoReceiverDevice::SetColourFormat(const PString & colourFormat)
 {
-  return colourFormat == s_SignLanguageAnalyser.GetColourFormat();
+  return colourFormat == PVXMLSignLanguageAnalyser::GetInstance().GetColourFormat();
 }
 
 
@@ -2742,7 +2785,7 @@ PBoolean PVXMLSession::VideoReceiverDevice::SetFrameData(const FrameData & frame
   else
     pixels = frameData.pixels;
 
-  int result = s_SignLanguageAnalyser.Analyse(m_analayserInstance, frameData.width, frameData.height, frameData.timestamp, pixels);
+  int result = PVXMLSignLanguageAnalyser::GetInstance().Analyse(m_analayserInstance, frameData.width, frameData.height, frameData.timestamp, pixels);
   if (result >= ' ')
     m_vxmlSession.OnUserInput((char)result);
 
@@ -2907,9 +2950,12 @@ void PVXMLDigitsGrammar::OnUserInput(const char ch)
 
   m_value += ch; // Add to collected digits string
 
-  if (IsFilled())
+  if (m_value.GetLength() >= m_maxDigits) {
+    PTRACE(4, " Grammar " << *this << " has been FILLED, max=" << m_maxDigits);
     m_state = PVXMLGrammar::Filled;
+  }
 }
+
 
 bool PVXMLDigitsGrammar::IsFilled()
 {
