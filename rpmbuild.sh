@@ -32,6 +32,9 @@ fi
 rpmdev-setuptree
 rpmdev-wipetree
 
+# Update the git commit in revision.h (tarball excludes git repo)
+make $(pwd)/revision.h
+
 # Create the source tarball
 tar -czf $(rpm --eval "%{_sourcedir}")/$TARBALL --exclude-vcs --exclude=rpmbuild .
 
