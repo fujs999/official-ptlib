@@ -58,6 +58,88 @@ class PVXMLSession;
 #define VXML_G729          "G.729"
 
 
+/*! \page pageVXML Voice XML support
+
+\section secOverview Overview 
+The VXML implementation here is highly piecemeal. It is not even close to
+complete and while roughly following the VXML 2.0 standard there are many
+incompatibilities. Below is a list of what is available.
+\section secSupported Elements & Attributes Supported
+<TABLE>
+<TR><TH>Supported tag   <TH>Supported attributes<TH>Notes
+<TR><TD>&lt;menu&gt;    <TD>dtmf
+                        <TD>property.timeout is supported
+<TR><TD>&lt;choice&gt;  <TD>dtmf, next, expr, event
+<TR><TD>&lt;form&gt;    <TD>id
+                        <TD>property.timeout is supported
+<TR><TD>&lt;field&gt;   <TD>name
+<TR><TD>&lt;prompt&gt;  <TD>bargein
+                        <TD>property.bargein is supported
+<TR><TD>&lt;grammar&gt; <TD>mode, type
+                        <TD>Only "dtmf" is supported for "mode"<BR>
+                            Only "X-OPAL/digits" is supported for "type"<BR>
+                            The "X-OPAL/digits" grammar consists of three parameters
+                            of the form: minDigits=1; maxDigits=5; terminators=#
+<TR><TD>&lt;filled&gt;  <TD>count
+<TR><TD>&lt;noinput&gt; <TD>count
+<TR><TD>&lt;nomatch&gt; <TD>count
+<TR><TD>&lt;error&gt;   <TD>count
+<TR><TD>&lt;catch&gt;   <TD>count, event
+<TR><TD>&lt;goto&gt;    <TD>nextitem, expritem, expr
+<TR><TD>&lt;exit&gt;    <TD>No attributes supported
+<TR><TD>&lt;submit&gt;  <TD>next, expr, enctype, method, fetchtimeout, namelist
+<TR><TD>&lt;disconnect&gt;<TD>No attributes specified
+<TR><TD>&lt;audio&gt;   <TD>src, expr
+<TR><TD>&lt;break&gt;   <TD>msecs, time, size
+<TR><TD>&lt;value&gt;   <TD>expr, class, voice
+                        <TD>class & voice are VXMKL 1.0 attributes and will be
+                            removed when &lt;say-as;&gt; is implemented.
+<TR><TD>&lt;script&gt;  <TD>src
+<TR><TD>&lt;var&gt;     <TD>name, expr
+<TR><TD>&lt;property&gt;<TD>name", value
+<TR><TD>&lt;if&gt;      <TD>cond
+<TR><TD>&lt;transfer&gt;<TD>name, dest, destexpr, bridge
+<TR><TD>&lt;record&gt;  <TD>name, type, beep, dtmfterm, maxtime, finalsilence
+</TABLE>
+\section secScripting Scripting support
+Depending on how the system was built there are three possibilities:
+<TABLE>
+<TR><TD>Ultra-primitive<TD>Here, all variables are string types, the only expressions
+    possible are string concatenation using '+' operator. Literals using single
+    quotes are allowed. For &lt;if&gt; only the == and != operator may be used.
+<TR><TD>Lua<TD>While a full scripting language, this is not ECMA
+    compatible, so is not compliant to standards. However it can be on option if
+    compiling V* proves too dificult.
+<TR><TD>Google V8<TD>THis is the most compliant to ECMA, and the default scripting
+    language, if available.
+</TABLE>
+
+Default variables:
+<TABLE>
+<TR><TD colspan=2>On VXML load
+<TR><TD>document.uri                    <TD>URI for currently loaded VXML document
+<TR><TD>document.path                   <TD>Root of URI
+<TR><TD colspan=2>Recoding element
+<TR><TD>{name}$.type                    <TD>MIME type for recording output
+<TR><TD>{name}$.uri                     <TD>URI for recording output
+<TR><TD>{name}$.maxtime                 <TD>Boolean flag for recording hit maximum time
+<TR><TD>{name}$.termchar                <TD>Value used if recording ended by termination character
+<TR><TD>{name}$.duration                <TD>Duration of the recording
+<TR><TD>{name}$.size                    <TD>Size in bytes of the recording
+<TR><TD colspan=2>Transfer element
+<TR><TD>{name}$.duration                <TD>Duration of transfer operation
+<TR><TD colspan=2>When executed from OPAL call
+<TR><TD>session.time                    <TD>Wall clock time of call start
+<TR><TD>session.connection.local.uri    <TD>Local party URI
+<TR><TD>session.connection.local.dnis   <TD>Called party number
+<TR><TD>session.connection.remote.ani   <TD>Calling party number
+<TR><TD>session.connection.remote.uri   <TD>Remote party URI
+<TR><TD>session.connection.remote.ip    <TD>Remote party media IP address
+<TR><TD>session.connection.remote.port  <TD>REmote party media port numner
+<TR><TD>session.connection.calltoken    <TD>Call token (OPAL internal)
+</TABLE>
+*/
+
 //////////////////////////////////////////////////////////////////
 
 class PVXMLGrammar : public PObject
@@ -304,7 +386,7 @@ class PVXMLSession : public PIndirectChannel
 
     virtual bool ProcessNode();
     virtual bool ProcessEvents();
-    virtual bool ProcessGrammar(PXMLElement & element);
+    virtual bool ProcessGrammar();
     virtual bool NextNode(bool processChildren);
     void ClearBargeIn();
     void FlushInput();
