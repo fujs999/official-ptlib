@@ -4,7 +4,7 @@
 
 # Branch ID should be 0 for local builds/PRs
 # Jenkins builds should use 1 for develop, 2 for master (release builds)
-%{!?branch_id: %global branch_id 0}
+%{!?branch_id: %global branch_id 2}
 
 # Disable the separate debug package and automatic stripping, as detailed here:
 # http://fedoraproject.org/wiki/How_to_create_an_RPM_package
@@ -26,8 +26,8 @@ Source0:        zsdk-ptlib.src.tgz
 # http://wiki.opalvoip.org/index.php?n=Main.BuildingPTLibUnix
 # Optional build dependencies not needed for the MCU are commented-out
 BuildRequires:  %__sed
-BuildRequires:  bbcollab-gcc = 5.1.0
-BuildRequires:  bbcollab-openssl-devel >= 1.0.2c, bbcollab-openssl-devel < 1.0.3
+BuildRequires:  bbcollab-gcc = 5.1.0-2.7.el6
+BuildRequires:  bbcollab-openssl-devel = 1.0.2l-2.10.el6
 #BuildRequires:  cyrus-sasl-devel
 BuildRequires:  expat-devel
 BuildRequires:  gperftools
@@ -42,7 +42,7 @@ BuildRequires:  ncurses-devel
 #BuildRequires:  SDL-devel
 #BuildRequires:  unixODBC-devel
 #BuildRequires:  v8-devel
-BuildRequires:  ImageMagick-devel >= 6.7
+BuildRequires:  ImageMagick-devel = 6.7.2.7-6.el6
 
 %description
 PTLib: Portable Tools Library
@@ -51,11 +51,11 @@ PTLib: Portable Tools Library
 Summary:        Development files for %{name}
 Group:          Development/Libraries
 Requires:       %{name} = %{version}-%{release}
-Requires:       bbcollab-openssl-devel >= 1.0.2c, bbcollab-openssl-devel < 1.0.3
+Requires:       bbcollab-openssl-devel = 1.0.2l-2.10.el6
 Requires:       expat-devel
 Requires:       libpcap-devel
 Requires:       ncurses-devel
-Requires:       ImageMagick-devel >= 6.7
+Requires:       ImageMagick-devel = 6.7.2.7-6.el6
 
 %description    devel
 The %{name}-devel package contains libraries and header files for
