@@ -106,7 +106,7 @@ PKG_CONFIG_PATH=/opt/bbcollab/lib64/pkgconfig:/opt/bbcollab/lib/pkgconfig
         PTLIB_MAJOR=%{version_major} \
         PTLIB_MINOR=%{version_minor} \
         PTLIB_BUILD=%{version_patch}
-make %{?_smp_mflags} all
+make %{?_smp_mflags} REVISION_FILE= all
 
 
 %install
