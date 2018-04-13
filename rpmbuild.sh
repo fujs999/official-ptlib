@@ -14,7 +14,7 @@ fi
 
 if [[ "$BRANCH_NAME" == "develop" ]]; then
     BUILD_ARGS+=(--define="branch_id 1")
-elif [[ "$BRANCH_NAME" == "master" ]]; then
+elif [[ "$BRANCH_NAME" == release/* ]]; then
     BUILD_ARGS+=(--define="branch_id 2")
 fi
 
