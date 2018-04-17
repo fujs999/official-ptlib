@@ -573,6 +573,34 @@ void PMessageDigest::Result::PrintOn(ostream & strm) const
 }
 
 
+bool PMessageDigest::Result::ConstantTimeCompare(const Result & other) const
+{
+  const BYTE * leftPtr = *this;
+  size_t leftCount = size();
+
+  const BYTE * rightPtr = other;
+  size_t rightCount = other.size();
+
+  unsigned check = 0;
+
+  while (leftCount-- > 0) {
+    check |= *leftPtr++ ^ *rightPtr;
+
+    if (rightCount > 0) {
+      --rightCount;
+      ++rightPtr;
+    }
+    else {
+      // Dummy code so executes at the same speed.
+      --rightCount;
+      ++rightCount; // Assuming incrementing a size_t is same speed as a pointer.
+    }
+  }
+
+  return check == 0;
+}
+
+
 PString PMessageDigest::Result::AsHex() const
 {
   PStringStream strm;
@@ -1180,7 +1208,7 @@ void PHMAC::Process(const PString & str, PHMAC::Result & result)             { I
 
 void PHMAC_MD5::InitKey(const void * key, PINDEX len)
 {
-  // ensure the key is at least one block long and pad out if necessary
+  // Ensure the key is no longer than a block, if so, do a digest of it.
   if (len <= BlockSize)
     memcpy(m_key.GetPointer(len), key,  len);
   else {
