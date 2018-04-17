@@ -727,7 +727,7 @@ void PSTUNMessage::AddMessageIntegrity(const BYTE * credentialsHashPtr, PINDEX c
   if (    mi != NULL ||
          (mi = FindAttributeAs<PSTUNMessageIntegrity>(PSTUNAttribute::MESSAGE_INTEGRITY)) != NULL ||
          (mi = (PSTUNMessageIntegrity *)AddAttribute(PSTUNMessageIntegrity())) != NULL)
-    CalculateMessageIntegrity(credentialsHashPtr, credentialsHashLen, mi, mi->m_hmac);
+    CalculateMessageIntegrity(credentialsHashPtr, credentialsHashLen, mi, mi->m_hmac, sizeof(mi->m_hmac));
 }
 
 
@@ -742,9 +742,9 @@ unsigned PSTUNMessage::CheckMessageIntegrity(const BYTE * credentialsHashPtr, PI
     return 401;
 
 #if P_SSL
-  BYTE hmac[PHMAC::KeyLength];
-  CalculateMessageIntegrity(credentialsHashPtr, credentialsHashLen, mi, hmac);
-  return memcmp(hmac, mi->m_hmac, PHMAC::KeyLength) == 0 ? 0 : 431;
+  BYTE hmac[sizeof(mi->m_hmac)];
+  CalculateMessageIntegrity(credentialsHashPtr, credentialsHashLen, mi, hmac, sizeof(hmac));
+  return memcmp(hmac, mi->m_hmac, sizeof(hmac)) == 0 ? 0 : 431;
 #else
   return 0;
 #endif
@@ -752,7 +752,8 @@ unsigned PSTUNMessage::CheckMessageIntegrity(const BYTE * credentialsHashPtr, PI
 
 
 #if P_SSL
-void PSTUNMessage::CalculateMessageIntegrity(const BYTE * credentialsHashPtr, PINDEX credentialsHashLen, PSTUNMessageIntegrity * mi, BYTE * checkHmac) const
+void PSTUNMessage::CalculateMessageIntegrity(const BYTE * credentialsHashPtr, PINDEX credentialsHashLen,
+                                             PSTUNMessageIntegrity * mi, BYTE * hmacPtr, PINDEX hmacSize) const
 {
   // calculate hash up to, but not including, MESSAGE_INTEGRITY attribute itself
   // Note the value used for msgLength is prior to things like FINGERPRINT, so need to
@@ -762,20 +763,21 @@ void PSTUNMessage::CalculateMessageIntegrity(const BYTE * credentialsHashPtr, PI
   WORD oldLength = hdr->msgLength;
   hdr->msgLength = checkLength - sizeof(PSTUNMessageHeader) + sizeof(PSTUNMessageIntegrity);
 
-  PHMAC_SHA1 hmac(credentialsHashPtr, credentialsHashLen);
+  PHMAC_SHA1 hmac;
+  hmac.SetKey(credentialsHashPtr, credentialsHashLen);
   PHMAC_SHA1::Result result;
   hmac.Process((BYTE *)theArray, checkLength, result);
 
   hdr->msgLength = oldLength;
 
   // copy the hash to the returned buffer
-  memcpy(checkHmac, result.GetPointer(), PHMAC::KeyLength);
+  memcpy(hmacPtr, result.GetPointer(), std::min(hmacSize, result.GetSize()));
 }
 #else
-void PSTUNMessage::CalculateMessageIntegrity(const BYTE *, PINDEX, PSTUNMessageIntegrity *, BYTE * checkHmac) const
+void PSTUNMessage::CalculateMessageIntegrity(const BYTE *, PINDEX, PSTUNMessageIntegrity *, BYTE * hmacPtr, PINDEX hmacSize) const
 {
   PTRACE(2, "Cannot calculate HMAC-SHA1 for MESSAGE-INTEGRITY");
-  memset(checkHmac, 0, PHMAC::KeyLength);
+  memset(hmacPtr, 0, hmacSize);
 }
 #endif
 

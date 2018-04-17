@@ -312,7 +312,7 @@ class PSTUNChangeRequest : public PSTUNAttribute
 class PSTUNMessageIntegrity : public PSTUNAttribute
 {
   public:
-    BYTE m_hmac[PHMAC::KeyLength];
+    BYTE m_hmac[PMessageDigestSHA1::DigestLength];
 
     PSTUNMessageIntegrity(const BYTE * hmac = NULL)
       : PSTUNAttribute(MESSAGE_INTEGRITY, sizeof(m_hmac))
@@ -539,7 +539,8 @@ class PSTUNMessage : public PBYTEArray
 
   protected:
     PSTUNAttribute * GetFirstAttribute() const;
-    void CalculateMessageIntegrity(const BYTE * credentialsHash, PINDEX credentialsHashLen, PSTUNMessageIntegrity * mi, BYTE * hmac) const;
+    void CalculateMessageIntegrity(const BYTE * credentialsHash, PINDEX credentialsHashLen,
+                                   PSTUNMessageIntegrity * mi, BYTE * hmacPtr, PINDEX hmacSize) const;
     DWORD CalculateFingerprint(PSTUNFingerprint * fp) const;
 
     PIPSocketAddressAndPort m_sourceAddressAndPort;

@@ -244,4 +244,69 @@ class PJSON : public PObject
 };
 
 
+#if P_SSL
+
+/** Encode/Decode JSON payload as a JSON Web Token.
+    The JSON is always of Object type.
+  */
+class PJWT : public PJSON
+{
+    PCLASSINFO(PJWT, PJSON);
+  public:
+    /// Construct empty Object type JSON
+    PJWT();
+
+    /** Create and decode the JWT.
+        Use IsValid() afterward to cerify if decode was successful.
+     */
+    explicit PJWT(
+      const PString & str,
+      const PString & secret = PString::Empty(),
+      const PTime & verifyTime = PTime(0)
+    );
+
+    /// Available token algorithms 
+    P_DECLARE_STREAMABLE_ENUM(Algorithm,
+      none,
+      HS256,  // HMAC SHA-256
+      HS384,  // HMAC SHA-384
+      HS512   // HMAC SHA-512
+    );
+
+    /**Encode the JWT using the shared secret and algorithm.
+      */
+    PString Encode(
+      const PString & secret = PString::Empty(),  ///< Shared secret
+      const Algorithm algorithm = HS256           ///< Algorithm
+    );
+
+    /**Decode the JWT using the shared secret and algorithm.
+      */
+    bool Decode(
+      const PString & str,                        ///< Encoded JWT string
+      const PString & secret = PString::Empty(),  ///< Shared secret
+      const PTime & verifyTime = PTime(0)         ///< Optional time to use for verification
+    );
+
+    void SetIssuer(const PString & str);
+    PString GetIssuer() const;
+    void SetSubject(const PString & str);
+    PString GetSubject() const;
+    void SetAudience(const PString & str);
+    PString GetAudience() const;
+    void SetExpiration(const PTime & when);
+    PTime GetExpiration() const;
+    void SetNotBefore(const PTime & when);
+    PTime GetNotBefore() const;
+    void SetIssuedAt(const PTime & when);
+    PTime GetIssuedAt() const;
+    void SetTokenId(const PString & str);
+    PString GetTokenId() const;
+
+    void SetPrivate(const PString & key, const PString & str);
+    PString GetPrivate(const PString & key) const;
+};
+
+#endif // P_SSL
+
 #endif  // PTLIB_PJSON_H
