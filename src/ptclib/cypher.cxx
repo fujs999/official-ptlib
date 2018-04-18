@@ -182,6 +182,11 @@ void PBase64::StartEncoding(Options options, PINDEX width)
       m_endOfLine = "\n";
       m_maxLineLength = width;
       break;
+    case e_NoLF:
+      m_alphabet = Alphabet;
+      m_endOfLine = "";
+      m_maxLineLength = UINT_MAX;
+      break;
     case e_URL:
       m_alphabet = AlphabetURL;
       m_endOfLine = "";
@@ -863,7 +868,7 @@ template <
   CtxType m_ctx;
   virtual bool Init() { return InitFn(&m_ctx) != 0; }
   virtual bool Update(const void * dataPtr, PINDEX length) { return UpdateFn(&m_ctx, dataPtr, length) != 0; }
-  virtual bool Final(PBYTEArray & digest) { return FinalFn(digest.GetPointer(DigestSize), &m_ctx) != 0; }
+  virtual bool Final(PBYTEArray & digest) { return digest.SetSize(DigestSize) && FinalFn(digest.GetPointer(), &m_ctx) != 0; }
 };
 
 
@@ -920,7 +925,7 @@ void PMessageDigestSHA::InternalCompleteDigest(Result & result)
 
 
 PMessageDigestSHA1::PMessageDigestSHA1()
-  : PMessageDigestSHA(new PMessageDigestContextTemplate<SHA_CTX, SHA_DIGEST_LENGTH, SHA_Init, SHA_Update, SHA_Final>())
+  : PMessageDigestSHA(new PMessageDigestContextTemplate<SHA_CTX, SHA_DIGEST_LENGTH, SHA1_Init, SHA1_Update, SHA1_Final>())
 {
 }
 
@@ -1197,9 +1202,9 @@ void PHMAC::InitKey(const void * key, PINDEX len)
 }
 
 
-PString PHMAC::Encode(const void * data, PINDEX len) { Result result; InternalProcess(data, len, result); return result.AsBase64(); }
-PString PHMAC::Encode(const PBYTEArray & data)       { Result result; InternalProcess(data, data.GetSize(), result); return result.AsBase64(); }
-PString PHMAC::Encode(const PString & str)           { Result result; InternalProcess(str.GetPointer(), str.GetLength(), result); return result.AsBase64(); }
+PString PHMAC::Encode(const void * data, PINDEX len, PBase64::Options options) { Result result; InternalProcess(data, len, result); return result.AsBase64(options); }
+PString PHMAC::Encode(const PBYTEArray & data, PBase64::Options options)       { Result result; InternalProcess(data, data.GetSize(), result); return result.AsBase64(options); }
+PString PHMAC::Encode(const PString & str, PBase64::Options options)           { Result result; InternalProcess(str.GetPointer(), str.GetLength(), result); return result.AsBase64(options); }
 
 void PHMAC::Process(const void * data, PINDEX len, PHMAC::Result & result)   { InternalProcess(data, len, result); }
 void PHMAC::Process(const PBYTEArray & data, PHMAC::Result & result)         { InternalProcess(data, data.GetSize(), result); }
