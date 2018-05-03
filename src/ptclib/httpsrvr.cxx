@@ -1205,11 +1205,12 @@ bool PWebSocket::Connect(const PURL & url, const PStringArray & protocols, PStri
     http->SetWriteChannel(Detach(ShutdownWrite));
     http->SetReadTimeout(GetReadTimeout()); // Set timeouts, as Open() copies form subchannel
     http->SetWriteTimeout(GetWriteTimeout());
-    http->SetSSLCredentials(m_authority, m_certificate, m_privateKey);
     Open(http);
   }
 
   channelPointerMutex.EndWrite();
+
+  http->SetSSLCredentials(m_authority, m_certificate, m_privateKey);
 
   // Before starting up, make sure underlying socket is closed, so reconnects
   PChannel * base = http->GetBaseReadChannel();
