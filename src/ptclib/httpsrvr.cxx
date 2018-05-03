@@ -1185,6 +1185,14 @@ bool PWebSocket::WriteMasked(const uint32_t * data, PINDEX len, uint32_t mask)
 }
 
 
+void PWebSocket::SetSSLCredentials(const PString & authority, const PString & certificate, const PString & privateKey)
+{
+  m_authority = authority;
+  m_certificate = certificate;
+  m_privateKey = privateKey;
+}
+
+
 bool PWebSocket::Connect(const PURL & url, const PStringArray & protocols, PString * selectedProtocol)
 {
   channelPointerMutex.StartWrite();
@@ -1197,6 +1205,7 @@ bool PWebSocket::Connect(const PURL & url, const PStringArray & protocols, PStri
     http->SetWriteChannel(Detach(ShutdownWrite));
     http->SetReadTimeout(GetReadTimeout()); // Set timeouts, as Open() copies form subchannel
     http->SetWriteTimeout(GetWriteTimeout());
+    http->SetSSLCredentials(m_authority, m_certificate, m_privateKey);
     Open(http);
   }
 
