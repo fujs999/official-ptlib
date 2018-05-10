@@ -46,6 +46,23 @@
 #define PTraceModule() "VXML"
 
 
+static PConstString const ApplicationScope("application");
+static PConstString const DialogScope("dialog");
+static PConstString const PropertyScope("property");
+
+static PConstString const FormElement("form");
+static PConstString const MenuElement("menu");
+static PConstString const PromptElement("prompt");
+static PConstString const FilledElement("filled");
+static PConstString const NameAttribute("name");
+static PConstString const IdAttribute("id");
+static PConstString const ExprAttribute("expr");
+static PConstString const SrcAttribute("src");
+static PConstString const NextAttribute("next");
+static PConstString const DtmfAttribute("dtmf");
+static PConstString const DestAttribute("dest");
+
+
 class PVXMLChannelPCM : public PVXMLChannel
 {
   PCLASSINFO(PVXMLChannelPCM, PVXMLChannel);
@@ -91,8 +108,6 @@ class PVXMLChannelG729 : public PVXMLChannel
 };
 
 
-PFACTORY_CREATE(PVXMLNodeFactory, PVXMLNodeHandler, "Block", true);
-
 #define TRAVERSE_NODE(name) \
   class PVXMLTraverse##name : public PVXMLNodeHandler { \
     virtual bool Start(PVXMLSession & session, PXMLElement & element) const \
@@ -100,6 +115,7 @@ PFACTORY_CREATE(PVXMLNodeFactory, PVXMLNodeHandler, "Block", true);
   }; \
   PFACTORY_CREATE(PVXMLNodeFactory, PVXMLTraverse##name, #name, true)
 
+TRAVERSE_NODE(Block);
 TRAVERSE_NODE(Audio);
 TRAVERSE_NODE(Break);
 TRAVERSE_NODE(Value);
@@ -133,17 +149,24 @@ TRAVERSE_NODE2(Record);
 TRAVERSE_NODE2(Prompt);
 TRAVERSE_NODE2(If);
 
+
+static PConstString const InternalEventStateAttribute("PTLibInternalEventState");
+
 class PVXMLTraverseEvent : public PVXMLNodeHandler
 {
   virtual bool Start(PVXMLSession &, PXMLElement & element) const
   {
-    return element.GetAttribute("fired") == "true";
+    return element.GetAttribute(InternalEventStateAttribute) == "true";
   }
 
-  virtual bool Finish(PVXMLSession &, PXMLElement & element) const
+  virtual bool Finish(PVXMLSession & session, PXMLElement & element) const
   {
-    element.SetAttribute("fired", "false");
-    return true;
+    if (element.GetAttribute(InternalEventStateAttribute) != "true")
+      return true;
+
+    element.SetAttribute(InternalEventStateAttribute, "false");
+    session.m_currentNode = element.GetParent();
+    return false;
   }
 };
 PFACTORY_CREATE(PVXMLNodeFactory, PVXMLTraverseEvent, "Filled", true);
@@ -159,7 +182,7 @@ class PVXMLTraverseLog : public PVXMLNodeHandler {
     unsigned level = node.GetAttribute("level").AsUnsigned();
     if (level == 0)
       level = 3;
-    PTRACE(level, "VXML-Log\t" + session.EvaluateExpr(node.GetAttribute("expr")));
+    PTRACE(level, "VXML-Log\t" + session.EvaluateExpr(node.GetAttribute(ExprAttribute)));
     return true;
   }
 };
@@ -173,10 +196,6 @@ PFACTORY_CREATE(PVXMLNodeFactory, PVXMLTraverseLog, "Log", true);
 #define SMALL_BREAK_MSECS   1000
 #define MEDIUM_BREAK_MSECS  2500
 #define LARGE_BREAK_MSECS   5000
-
-static PConstString ApplicationScope("application");
-static PConstString DialogScope("dialog");
-static PConstString PropertyScope("property");
 
 
 //////////////////////////////////////////////////////////
@@ -986,10 +1005,10 @@ PVXMLSession::PVXMLSession(PTextToSpeech * tts, PBoolean autoDelete)
   , m_vxmlThread(NULL)
   , m_abortVXML(false)
   , m_currentNode(NULL)
-  , m_xmlChanged(false)
   , m_speakNodeData(true)
   , m_bargeIn(true)
   , m_bargingIn(false)
+  , m_promptCount(0)
   , m_grammar(NULL)
   , m_defaultMenuDTMF('N') /// Disabled
   , m_recordingStatus(NotRecording)
@@ -1155,57 +1174,66 @@ PBoolean PVXMLSession::LoadVXML(const PString & xmlText, const PString & firstFo
 
 bool PVXMLSession::InternalLoadVXML(const PString & xmlText, const PString & firstForm)
 {
-  {
-    PWaitAndSignal mutex(m_sessionMutex);
+  PWaitAndSignal mutex(m_sessionMutex);
 
-    m_xmlChanged = true;
-    m_speakNodeData = true;
-    m_bargeIn = true;
-    m_bargingIn = false;
-    m_recordingStatus = NotRecording;
-    m_transferStatus = NotTransfering;
-    m_currentNode = NULL;
+  m_speakNodeData = true;
+  m_bargeIn = true;
+  m_bargingIn = false;
+  m_recordingStatus = NotRecording;
+  m_transferStatus = NotTransfering;
+  m_currentNode = NULL;
 
-    FlushInput();
+  FlushInput();
 
-    // parse the XML
-    m_xml.RemoveAll();
-    if (!m_xml.Load(xmlText)) {
-      PTRACE(1, "Cannot parse root document: " << GetXMLError());
+  // parse the XML
+  auto_ptr<PXML> xml(new PXML);
+  if (!xml->Load(xmlText)) {
+    m_lastXMLError = PSTRSTRM(m_rootURL <<
+                              '(' << xml->GetErrorLine() <<
+                              ':' << xml->GetErrorColumn() << ")"
+                              " " << xml->GetErrorString());
+    PTRACE(1, "Cannot parse root document: " << m_lastXMLError);
+    return false;
+  }
+
+  PXMLElement * root = xml->GetRootElement();
+  if (root == NULL) {
+    PTRACE(1, "No root element");
+    return false;
+  }
+
+  if (root->GetName() != "vxml") {
+    PTRACE(1, "Invalid root element: " << root->PrintTrace());
+    return false;
+  }
+
+  if (firstForm.IsEmpty()) {
+    if (root->GetElement(FormElement) == NULL && root->GetElement(MenuElement) == NULL) {
+      PTRACE(1, "No form or menu element.");
       return false;
     }
-
-    PXMLElement * root = m_xml.GetRootElement();
-    if (root == NULL) {
-      PTRACE(1, "No root element");
-      return false;
-    }
-
-    m_variableScope = m_variableScope.IsEmpty() ? ApplicationScope : "document";
-
-    PURL pathURL = m_rootURL;
-    pathURL.ChangePath(PString::Empty()); // Remove last element of root URL
-    SetVar("path", pathURL);
-    SetVar("uri", m_rootURL);
-
-    // traverse global elements
-    m_currentNode = root->GetElement(0);
-    do {
-      bool processChildren = ProcessNode(true);
-      while (NextNode(processChildren))
-        ;
-    }  while (m_currentNode != NULL);
-
-    // find the first form
-    if (!SetCurrentForm(firstForm, false)) {
-      PTRACE(1, "No form element");
-      m_xml.RemoveAll();
+  }
+  else {
+    if (root->GetElement(FormElement, IdAttribute, firstForm) == NULL) {
+      PTRACE(1, "No form or menu element with id=\"" << firstForm << '"');
       return false;
     }
   }
 
-  PTRACE(4, "Starting with variables:\n" << m_variables);
-  return Execute();
+  m_variableScope = m_variableScope.IsEmpty() ? ApplicationScope : "document";
+
+  PURL pathURL = m_rootURL;
+  pathURL.ChangePath(PString::Empty()); // Remove last element of root URL
+  SetVar("path", pathURL);
+  SetVar("uri", m_rootURL);
+
+  if (m_currentXML.get() == NULL)
+    m_currentXML = xml;
+  else
+    m_newXML = xml;
+  m_newFormName = firstForm;
+  InternalStartThread();
+  return true;
 }
 
 
@@ -1240,6 +1268,8 @@ PURL PVXMLSession::NormaliseResourceName(const PString & src)
 bool PVXMLSession::SetCurrentForm(const PString & searchId, bool fullURI)
 {
   ClearBargeIn();
+  m_eventCount.clear();
+  m_promptCount = 0;
 
   PString id = searchId;
 
@@ -1259,17 +1289,17 @@ bool PVXMLSession::SetCurrentForm(const PString & searchId, bool fullURI)
 
   // Only handle search of top level nodes for <form>/<menu> element
   // NOTE: should have some flag to know if it is loaded
-  PXMLElement * root = m_xml.GetRootElement();
+  PXMLElement * root = m_currentXML->GetRootElement();
   if (root != NULL) {
     for (PINDEX i = 0; i < root->GetSize(); i++) {
       PXMLObject * xmlObject = root->GetElement(i);
       if (xmlObject->IsElement()) {
         PXMLElement * xmlElement = (PXMLElement*)xmlObject;
         if (
-              (xmlElement->GetName() == "form" || xmlElement->GetName() == "menu") &&
-              (id.IsEmpty() || (xmlElement->GetAttribute("id") *= id))
+              (xmlElement->GetName() == FormElement || xmlElement->GetName() == MenuElement) &&
+              (id.IsEmpty() || (xmlElement->GetAttribute(IdAttribute) *= id))
            ) {
-          PTRACE(3, "Found <" << xmlElement->GetName() << " id=\"" << xmlElement->GetAttribute("id") << "\">");
+          PTRACE(3, "Found <" << xmlElement->GetName() << " id=\"" << xmlElement->GetAttribute(IdAttribute) << "\">");
 
           if (m_currentNode != NULL) {
             PXMLElement * element = m_currentNode->GetParent();
@@ -1323,22 +1353,21 @@ PBoolean PVXMLSession::Open(const PString & mediaFormat)
   if (!PIndirectChannel::Open(chan, chan))
     return false;
 
-  return Execute();
+  InternalStartThread();
+  return true;
 }
 
 
-PBoolean PVXMLSession::Execute()
+void PVXMLSession::InternalStartThread()
 {
   PWaitAndSignal mutex(m_sessionMutex);
 
-  if (IsLoaded()) {
+  if (IsOpen() && IsLoaded()) {
     if (m_vxmlThread == NULL)
-      m_vxmlThread = PThread::Create(PCREATE_NOTIFIER(VXMLExecute), "VXML");
+      m_vxmlThread = new PThreadObj<PVXMLSession>(*this, &PVXMLSession::InternalThreadMain, false, "VXML");
     else
       Trigger();
   }
-
-  return true;
 }
 
 
@@ -1362,15 +1391,17 @@ PBoolean PVXMLSession::Close()
 }
 
 
-void PVXMLSession::VXMLExecute(PThread &, P_INT_PTR)
+void PVXMLSession::InternalThreadMain()
 {
-  PTRACE(4, "Execution thread started");
+  PTRACE(4, "Execution thread started with variables:\n" << m_variables);
 
   m_sessionMutex.Wait();
 
+  InternalStartVXML();
+
   while (!m_abortVXML) {
     // process current node in the VXML script
-    bool processChildren = ProcessNode(false);
+    bool processChildren = ProcessNode();
 
     /* wait for something to happen, usually output of some audio. But under
         some circumstances we want to abort the script, but we  have to make
@@ -1381,6 +1412,13 @@ void PVXMLSession::VXMLExecute(PThread &, P_INT_PTR)
       while (ProcessEvents())
         ;
     } while (NextNode(processChildren));
+
+    if (m_newXML.get() != NULL) {
+      /* Replace old XML with new, now it is safe to do so and no XML elements
+         pointers are being referenced by the code any more */
+      m_currentXML = m_newXML;
+      InternalStartVXML();
+    }
 
     // Determine if we should quit
     if (m_currentNode != NULL)
@@ -1395,6 +1433,12 @@ void PVXMLSession::VXMLExecute(PThread &, P_INT_PTR)
     // Wait for anything OnEndDialog plays to complete.
     while (ProcessEvents())
       ;
+
+    if (m_newXML.get() != NULL) {
+      // OnEndDialog() loaded some more XML to do.
+      m_currentXML = m_newXML;
+      InternalStartVXML();
+    }
 
     if (m_currentNode == NULL)
       m_abortVXML = true;
@@ -1481,7 +1525,7 @@ bool PVXMLSession::ProcessEvents()
   m_waitForEvent.Wait();
   m_sessionMutex.Wait();
 
-  if (!m_xmlChanged)
+  if (m_newXML.get() == NULL)
     return true;
 
   PTRACE(4, "XML changed, flushing queue");
@@ -1491,6 +1535,28 @@ bool PVXMLSession::ProcessEvents()
     GetVXMLChannel()->FlushQueue();
 
   return false;
+}
+
+
+void PVXMLSession::InternalStartVXML()
+{
+  LoadGrammar(NULL);
+
+  PTRACE(4, "Processing global elements.");
+  m_currentNode = m_currentXML->GetRootElement()->GetElement(0);
+  do {
+    PXMLElement * element;
+    while ((element = dynamic_cast<PXMLElement *>(m_currentNode)) != NULL &&
+           (element->GetName() == MenuElement || element->GetName() == FormElement))
+      m_currentNode = m_currentNode->GetNextObject();
+
+    bool processGlobalChildren = ProcessNode();
+    while (NextNode(processGlobalChildren))
+      ;
+  } while (m_currentNode != NULL);
+
+  PTRACE(4, "Setting initial form \"" << m_newFormName << '"');
+  SetCurrentForm(m_newFormName, false);
 }
 
 
@@ -1505,7 +1571,8 @@ bool PVXMLSession::NextNode(bool processChildren)
   if (m_currentNode == NULL)
     return false;
 
-  if (m_xmlChanged)
+  // Check for new XML to replace current
+  if (m_newXML.get() != NULL)
     return false;
 
   PXMLElement * element = dynamic_cast<PXMLElement *>(m_currentNode);
@@ -1534,7 +1601,7 @@ bool PVXMLSession::NextNode(bool processChildren)
       PTRACE(4, "Finish processing VoiceXML element: " << element->PrintTrace());
       if (!handler->Finish(*this, *element)) {
         if (m_currentNode != NULL) {
-          PTRACE(4, "Exception handling via element: " << dynamic_cast<PXMLElement *>(m_currentNode)->PrintTrace());
+          PTRACE(4, "Moved node after processing VoiceXML element: from=" << element->PrintTrace());
           return false;
         }
 
@@ -1603,7 +1670,7 @@ bool PVXMLSession::ProcessGrammar()
 }
 
 
-bool PVXMLSession::ProcessNode(bool skipDialogs)
+bool PVXMLSession::ProcessNode()
 {
   // m_sessionMutex already locked
 
@@ -1613,11 +1680,9 @@ bool PVXMLSession::ProcessNode(bool skipDialogs)
   if (m_currentNode == NULL)
     return false;
 
-  m_xmlChanged = false;
-
   PXMLData * nodeData = dynamic_cast<PXMLData *>(m_currentNode);
   if (nodeData != NULL) {
-    if (m_speakNodeData && !skipDialogs)
+    if (m_speakNodeData)
       PlayText(nodeData->GetString().Trim());
     return true;
   }
@@ -1625,9 +1690,6 @@ bool PVXMLSession::ProcessNode(bool skipDialogs)
   m_speakNodeData = true;
 
   PXMLElement * element = dynamic_cast<PXMLElement *>(m_currentNode);
-  if (skipDialogs && (element->GetName() == "menu" || element->GetName() == "form"))
-    return false;
-
   PVXMLNodeHandler * handler = PVXMLNodeFactory::CreateInstance(element->GetName());
   if (handler == NULL) {
     PTRACE(2, "Unknown/unimplemented VoiceXML element: " << element->PrintTrace());
@@ -1652,8 +1714,11 @@ void PVXMLSession::OnUserInput(const PString & str)
 }
 
 
-PBoolean PVXMLSession::TraverseRecord(PXMLElement &)
+PBoolean PVXMLSession::TraverseRecord(PXMLElement & element)
 {
+  if (!ExecuteCondition(element))
+    return false;
+
   m_recordingStatus = NotRecording;
   return true;
 }
@@ -1669,7 +1734,7 @@ PBoolean PVXMLSession::TraversedRecord(PXMLElement & element)
       return false;
 
     case RecordingComplete :
-      return GoToEventHandler(element, "filled");
+      return GoToEventHandler(element, FilledElement);
 
     default :
       break;
@@ -1693,14 +1758,14 @@ PBoolean PVXMLSession::TraversedRecord(PXMLElement & element)
       PlayData(beepData);
   }
 
-  m_recordingName = element.GetAttribute("name");
+  m_recordingName = element.GetAttribute(NameAttribute);
 
   PFilePath destination;
 
   // Get the destination filename (dest) which is a private extension, not standard VXML
-  if (element.HasAttribute("dest")) {
+  if (element.HasAttribute(DestAttribute)) {
     PURL uri;
-    if (uri.Parse(element.GetAttribute("dest"), "file"))
+    if (uri.Parse(element.GetAttribute(DestAttribute), "file"))
       destination = uri.AsFilePath();
   }
 
@@ -1751,25 +1816,18 @@ PBoolean PVXMLSession::TraversedRecord(PXMLElement & element)
 }
 
 
-PString PVXMLSession::GetXMLError() const
-{
-  return psprintf("(%i:%i) ", m_xml.GetErrorLine(), m_xml.GetErrorColumn()) + m_xml.GetErrorString();
-}
-
-
-
 PBoolean PVXMLSession::TraverseScript(PXMLElement & element)
 {
 #if P_SCRIPTS
   if (m_scriptContext != NULL) {
-    PString src = element.GetAttribute("src");
+    PString src = element.GetAttribute(SrcAttribute);
     PString data = element.GetData();
     PString script = src.IsEmpty() ? data : src;
 
     PTRACE(4, "Traverse <script> " << script.ToLiteral());
   
     if (m_scriptContext->Run(script))
-      PTRACE(4, "script executed properly!");
+      PTRACE(4, m_scriptContext->GetLanguageName() << " executed properly!");
     else
       PTRACE(2, "Could not evaluate script \"" << script << "\" with script language " << m_scriptContext->GetLanguageName());
   }
@@ -1920,9 +1978,9 @@ PBoolean PVXMLSession::PlayElement(PXMLElement & element)
   SetRealVideoSender(NULL);
 #endif // P_VXML_VIDEO
 
-  PString str = element.GetAttribute("src").Trim();
+  PString str = element.GetAttribute(SrcAttribute).Trim();
   if (str.IsEmpty()) {
-    str = EvaluateExpr(element.GetAttribute("expr"));
+    str = EvaluateExpr(element.GetAttribute(ExprAttribute));
     if (str.IsEmpty()) {
       PTRACE(2, "No src attribute to play element.");
       return false;
@@ -2088,6 +2146,12 @@ void PVXMLSession::SetPause(PBoolean pause)
 }
 
 
+PBoolean PVXMLSession::TraverseBlock(PXMLElement & element)
+{
+  return ExecuteCondition(element);
+}
+
+
 PBoolean PVXMLSession::TraverseAudio(PXMLElement & element)
 {
   return !PlayElement(element);
@@ -2123,7 +2187,7 @@ PBoolean PVXMLSession::TraverseBreak(PXMLElement & element)
 PBoolean PVXMLSession::TraverseValue(PXMLElement & element)
 {
   PString className = element.GetAttribute("class");
-  PString value = EvaluateExpr(element.GetAttribute("expr"));
+  PString value = EvaluateExpr(element.GetAttribute(ExprAttribute));
   PString voice = element.GetAttribute("voice");
   if (voice.IsEmpty())
     voice = GetVar("voice");
@@ -2148,17 +2212,17 @@ PBoolean PVXMLSession::TraverseGoto(PXMLElement & element)
     target = element.GetAttribute("nextitem");
   else if (element.HasAttribute("expritem"))
     target = EvaluateExpr(element.GetAttribute("expritem"));
-  else if (element.HasAttribute("expr")) {
+  else if (element.HasAttribute(ExprAttribute)) {
     fullURI = true;
-    target = EvaluateExpr(element.GetAttribute("expr"));
+    target = EvaluateExpr(element.GetAttribute(ExprAttribute));
   }
-  else if (element.HasAttribute("next")) {
+  else if (element.HasAttribute(NextAttribute)) {
     fullURI = true;
-    target = element.GetAttribute("next");
+    target = element.GetAttribute(NextAttribute);
   }
 
   if (SetCurrentForm(target, fullURI))
-    return ProcessNode(false);
+    return ProcessNode();
 
   // LATER: throw "error.semantic" or "error.badfetch" -- lookup which
   return false;
@@ -2184,7 +2248,7 @@ PBoolean PVXMLSession::TraverseGrammar(PXMLElement & element)
   m_speakNodeData = false;
 
   PCaselessString attrib = element.GetAttribute("mode");
-  if (!attrib.IsEmpty() && attrib != "dtmf") {
+  if (!attrib.IsEmpty() && attrib != DtmfAttribute) {
     PTRACE(2, "Only DTMF mode supported for grammar");
     return false;
   }
@@ -2213,25 +2277,10 @@ bool PVXMLSession::GoToEventHandler(PXMLElement & element, const PString & event
   PXMLElement * level = &element;
   PXMLElement * handler = NULL;
 
-  int actualCount = 1; // Need to increment this with state stored ... somewhere
+  unsigned actualCount = ++m_eventCount[eventName];
 
   // Look in all the way up the tree for a handler either explicitly or in a catch
-  for (;;) {
-    for (int testCount = actualCount; testCount >= 0; --testCount) {
-      // Check for an explicit hander - i.e. <error>, <filled>, <noinput>, <nomatch>, <help>
-      if ((handler = level->GetElement(eventName)) != NULL &&
-              handler->GetAttribute("count").AsInteger() == testCount)
-        goto gotHandler;
-
-      // Check for a <catch>
-      PINDEX index = 0;
-      while ((handler = level->GetElement("catch", index++)) != NULL) {
-        if ((handler->GetAttribute("event") *= eventName) &&
-                handler->GetAttribute("count").AsInteger() == testCount)
-          goto gotHandler;
-      }
-    }
-
+  while ((handler = FindElementWithCount(*level, eventName, actualCount)) == NULL) {
     level = level->GetParent();
     if (level == NULL) {
       PTRACE(4, "No event handler found for \"" << eventName << '"');
@@ -2239,11 +2288,50 @@ bool PVXMLSession::GoToEventHandler(PXMLElement & element, const PString & event
     }
   }
 
-gotHandler:
-  handler->SetAttribute("fired", "true");
+  handler->SetAttribute(InternalEventStateAttribute, "true");
   m_currentNode = handler;
   PTRACE(4, "Setting event handler to node " << handler->PrintTrace() << " for \"" << eventName << '"');
   return false;
+}
+
+
+static unsigned GetCountAttribute(PXMLElement & element)
+{
+  PString str = element.GetAttribute("count");
+  return str.IsEmpty() ? 1 : str.AsUnsigned();
+}
+
+
+PXMLElement * PVXMLSession::FindElementWithCount(PXMLElement & parent, const PString & name, unsigned count)
+{
+  std::map<unsigned, PXMLElement *> elements;
+  PXMLElement * element;
+  PINDEX idx = 0;
+  while ((element = parent.GetElement(idx++)) != NULL) {
+    if (element->GetName() == name)
+      elements[GetCountAttribute(*element)] = element;
+    else if (element->GetName() == "catch") {
+      PStringArray events = element->GetAttribute("event").Tokenise(" ", false);
+      for (size_t i = 0; i < events.size(); ++i) {
+        if (events[i] *= name) {
+          elements[GetCountAttribute(*element)] = element;
+          break;
+        }
+      }
+    }
+  }
+
+  if (elements.empty())
+    return NULL;
+
+  while (count > 0) {
+    std::map<unsigned, PXMLElement *>::iterator it = elements.find(count);
+    if (it != elements.end() && ExecuteCondition(*it->second))
+      return it->second;
+    --count;
+  }
+
+  return NULL;
 }
 
 
@@ -2314,6 +2402,8 @@ PTimeInterval PVXMLSession::StringToTime(const PString & str, int dflt)
 bool PVXMLSession::ExecuteCondition(PXMLElement & element)
 {
   PString condition = element.GetAttribute("cond");
+  if (condition.IsEmpty())
+    return true;
 
   bool result;
 
@@ -2443,10 +2533,10 @@ PBoolean PVXMLSession::TraverseSubmit(PXMLElement & element)
 {
   PURL url;
 
-  if (element.HasAttribute("expr"))
-    url.Parse(EvaluateExpr(element.GetAttribute("expr")));
-  else if (element.HasAttribute("next"))
-    url.Parse(element.GetAttribute("next"));
+  if (element.HasAttribute(ExprAttribute))
+    url.Parse(EvaluateExpr(element.GetAttribute(ExprAttribute)));
+  else if (element.HasAttribute(NextAttribute))
+    url.Parse(element.GetAttribute(NextAttribute));
   else {
     PTRACE(1, "<submit> does not contain \"next\" or \"expr\" attribute.");
     return false;
@@ -2598,15 +2688,18 @@ PBoolean PVXMLSession::TraverseSubmit(PXMLElement & element)
 
 PBoolean PVXMLSession::TraverseProperty(PXMLElement & element)
 {
-  if (element.HasAttribute("name"))
-    SetVar("property." + element.GetAttribute("name"), element.GetAttribute("value"));
+  if (element.HasAttribute(NameAttribute))
+    SetVar("property." + element.GetAttribute(NameAttribute), element.GetAttribute("value"));
 
   return true;
 }
 
 
-PBoolean PVXMLSession::TraverseTransfer(PXMLElement &)
+PBoolean PVXMLSession::TraverseTransfer(PXMLElement & element)
 {
+  if (!ExecuteCondition(element))
+    return false;
+
   m_transferStatus = NotTransfering;
   return true;
 }
@@ -2636,8 +2729,8 @@ PBoolean PVXMLSession::TraversedTransfer(PXMLElement & element)
       m_transferStartTime.SetCurrentTime();
 
       bool started = false;
-      if (element.HasAttribute("dest"))
-        started = OnTransfer(element.GetAttribute("dest"), type);
+      if (element.HasAttribute(DestAttribute))
+        started = OnTransfer(element.GetAttribute(DestAttribute), type);
       else if (element.HasAttribute("destexpr"))
         started = OnTransfer(EvaluateExpr(element.GetAttribute("destexpr")), type);
 
@@ -2649,11 +2742,11 @@ PBoolean PVXMLSession::TraversedTransfer(PXMLElement & element)
     }
 
     case TransferSuccessful :
-      eventName = "filled";
+      eventName = FilledElement;
       // Do default case
 
     default :
-      PString name = element.GetAttribute("name");
+      PString name = element.GetAttribute(NameAttribute);
       if (!name.IsEmpty())
         SetVar(name + "$.duration", PString(PString::Unsigned, (PTime() - m_transferStartTime).GetSeconds()));
   }
@@ -2675,7 +2768,8 @@ void PVXMLSession::SetTransferComplete(bool state)
 PBoolean PVXMLSession::TraverseMenu(PXMLElement & element)
 {
   LoadGrammar(new PVXMLMenuGrammar(*this, element));
-  m_defaultMenuDTMF = (element.GetAttribute("dtmf") *= "true") ? '1' : 'N';
+  m_defaultMenuDTMF = (element.GetAttribute(DtmfAttribute) *= "true") ? '1' : 'N';
+  ++m_promptCount;
   return true;
 }
 
@@ -2688,8 +2782,8 @@ PBoolean PVXMLSession::TraversedMenu(PXMLElement &)
 
 PBoolean PVXMLSession::TraverseChoice(PXMLElement & element)
 {
-  if (!element.HasAttribute("dtmf") && m_defaultMenuDTMF <= '9')
-    element.SetAttribute("dtmf", PString(m_defaultMenuDTMF++));
+  if (!element.HasAttribute(DtmfAttribute) && m_defaultMenuDTMF <= '9')
+    element.SetAttribute(DtmfAttribute, PString(m_defaultMenuDTMF++));
 
   return true;
 }
@@ -2697,8 +2791,8 @@ PBoolean PVXMLSession::TraverseChoice(PXMLElement & element)
 
 PBoolean PVXMLSession::TraverseVar(PXMLElement & element)
 {
-  PString name = element.GetAttribute("name");
-  PString expr = element.GetAttribute("expr");
+  PString name = element.GetAttribute(NameAttribute);
+  PString expr = element.GetAttribute(ExprAttribute);
 
   if (name.IsEmpty() || expr.IsEmpty()) {
     PTRACE(1, "<var> must have both \"name=\" and \"expr=\" attributes." );
@@ -2720,6 +2814,7 @@ PBoolean PVXMLSession::TraverseDisconnect(PXMLElement &)
 PBoolean PVXMLSession::TraverseForm(PXMLElement &)
 {
   m_variableScope = DialogScope;
+  ++m_promptCount;
   return true;
 }
 
@@ -2733,9 +2828,11 @@ PBoolean PVXMLSession::TraversedForm(PXMLElement &)
 
 PBoolean PVXMLSession::TraversePrompt(PXMLElement & element)
 {
-  // LATER:
-  // check 'cond' attribute to see if the children of this node should be processed
-  // check 'count' attribute to see if this node should be processed
+  PXMLElement * validPrompt = FindElementWithCount(*element.GetParent(), PromptElement, m_promptCount);
+  if (validPrompt == NULL || GetCountAttribute(*validPrompt) != GetCountAttribute(element)) {
+    PTRACE(3, "Prompt count/cond attribute preventing execution: " << element.PrintTrace());
+    return false;
+  }
 
   // Update timeout of current recognition (if 'timeout' attribute is set)
   if (m_grammar != NULL)
@@ -2757,9 +2854,9 @@ PBoolean PVXMLSession::TraversedPrompt(PXMLElement &)
 }
 
 
-PBoolean PVXMLSession::TraverseField(PXMLElement &)
+PBoolean PVXMLSession::TraverseField(PXMLElement & element)
 {
-  return true;
+  return ExecuteCondition(element);
 }
 
 
@@ -2946,9 +3043,9 @@ bool PVXMLGrammar::Process()
   // Figure out what happened
   switch (m_state) {
     case Filled:
-      if (m_field.HasAttribute("name"))
-        m_session.SetVar(m_field.GetAttribute("name"), m_value);
-      return m_session.GoToEventHandler(m_field, "filled");
+      if (m_field.HasAttribute(NameAttribute))
+        m_session.SetVar(m_field.GetAttribute(NameAttribute), m_value);
+      return m_session.GoToEventHandler(m_field, FilledElement);
 
     case PVXMLGrammar::NoInput:
       return m_session.GoToEventHandler(m_field, "noinput");
@@ -2991,11 +3088,13 @@ bool PVXMLMenuGrammar::Process()
     PINDEX index = 0;
     while ((choice = m_field.GetElement("choice", index++)) != NULL) {
       // Check if DTMF value for grammarResult matches the DTMF value for the choice
-      if (choice->GetAttribute("dtmf") == m_value) {
+      if (choice->GetAttribute(DtmfAttribute) == m_value) {
         PTRACE(3, "Matched menu choice: " << m_value << " to " << choice->PrintTrace());
-        PString next = choice->GetAttribute("next");
+
+        PString next = choice->GetAttribute(NextAttribute);
         if (next.IsEmpty())
-          next = m_session.EvaluateExpr(choice->GetAttribute("expr"));
+          next = m_session.EvaluateExpr(choice->GetAttribute(ExprAttribute));
+
         if (m_session.SetCurrentForm(next, true))
           return false;
 

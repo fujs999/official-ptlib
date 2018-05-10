@@ -2796,23 +2796,26 @@ void PProcess::InternalHandleRunTimeSignal(const RunTimeSignalInfo & signalInfo)
                    2;
   if (PTrace::CanTrace(level)) {
     ostream & trace = PTRACE_BEGIN(level);
-    trace << "Received signal " << GetRunTimeSignalName(signalInfo.m_signal) << " from ";
-    if (signalInfo.m_source == GetCurrentProcessID())
-      trace << "self";
-    else if (signalInfo.m_source != 0) {
-      PFile proc(PSTRSTRM("/proc/" << signalInfo.m_source << "/cmdline"), PFile::ReadOnly);
-      if (!proc.IsOpen())
-        trace << "source=" << signalInfo.m_source;
+    trace << "Received signal " << GetRunTimeSignalName(signalInfo.m_signal);
+    if (signalInfo.m_source != 0) {
+      trace << " from ";
+      if (signalInfo.m_source == GetCurrentProcessID())
+        trace << "self";
       else {
-        PString cmdline;
-        int c;
-        while ((c = proc.ReadChar()) >= 0) {
-          if (c == '\0')
-            cmdline += ' ';
-          else
-            cmdline += (char)c;
+        PFile proc(PSTRSTRM("/proc/" << signalInfo.m_source << "/cmdline"), PFile::ReadOnly);
+        if (!proc.IsOpen())
+          trace << "source=" << signalInfo.m_source;
+        else {
+          PString cmdline;
+          int c;
+          while ((c = proc.ReadChar()) >= 0) {
+            if (c == '\0')
+              cmdline += ' ';
+            else
+              cmdline += (char)c;
+          }
+          trace << "pid=" << signalInfo.m_source << ", cmdline=\"" << cmdline.RightTrim() << '"';
         }
-        trace << "pid=" << signalInfo.m_source << ", cmdline=\"" << cmdline.RightTrim() << '"';
       }
     }
     trace << PTrace::End;
@@ -3428,8 +3431,38 @@ bool PThread::WaitAndDelete(PThread * & threadToDelete, const PTimeInterval & ma
 
 #define RELEASE_THREAD_LOCAL_STORAGE 1
 #if RELEASE_THREAD_LOCAL_STORAGE
-static std::set<PThread::LocalStorageBase*> s_ThreadLocalStorage;
-static PCriticalSection s_ThreadLocalStorageMutex;
+class PThreadLocalStorageData : private std::set<PThread::LocalStorageBase*>
+{
+  PCriticalSection m_mutex;
+
+public:
+  void Construct(PThread::LocalStorageBase * data)
+  {
+    m_mutex.Wait();
+    insert(data);
+    m_mutex.Signal();
+  }
+
+  void Destroy(PThread::LocalStorageBase * data)
+  {
+    m_mutex.Wait();
+    erase(data);
+    m_mutex.Signal();
+  }
+
+  void Destroy(PThread & thread)
+  {
+    m_mutex.Wait();
+    for (iterator it = begin(); it != end(); ++it)
+      (*it)->ThreadDestroyed(thread);
+    m_mutex.Signal();
+  }
+};
+
+static PThreadLocalStorageData & GetThreadLocalStorageData()
+{
+  static PThreadLocalStorageData tls; return tls;
+}
 #endif
 
 PThread::~PThread()
@@ -3442,10 +3475,7 @@ PThread::~PThread()
   PTRACE(5, "Destroying thread " << this << ' ' << m_threadName << ", id=" << m_threadId);
 
 #if RELEASE_THREAD_LOCAL_STORAGE
-  s_ThreadLocalStorageMutex.Wait();
-  for (std::set<PThread::LocalStorageBase*>::iterator it = s_ThreadLocalStorage.begin(); it != s_ThreadLocalStorage.end(); ++it)
-    (*it)->ThreadDestroyed(*this);
-  s_ThreadLocalStorageMutex.Signal();
+  GetThreadLocalStorageData().Destroy(*this);
 #endif
 
   InternalDestroy();
@@ -3458,9 +3488,7 @@ PThread::~PThread()
 PThread::LocalStorageBase::LocalStorageBase()
 {
 #if RELEASE_THREAD_LOCAL_STORAGE
-  s_ThreadLocalStorageMutex.Wait();
-  s_ThreadLocalStorage.insert(this);
-  s_ThreadLocalStorageMutex.Signal();
+  GetThreadLocalStorageData().Construct(this);
 #endif
 }
 
@@ -3468,9 +3496,7 @@ PThread::LocalStorageBase::LocalStorageBase()
 void PThread::LocalStorageBase::StorageDestroyed()
 {
 #if RELEASE_THREAD_LOCAL_STORAGE
-  s_ThreadLocalStorageMutex.Wait();
-  s_ThreadLocalStorage.erase(this);
-  s_ThreadLocalStorageMutex.Signal();
+  GetThreadLocalStorageData().Destroy(this);
 #endif
 
   m_mutex.Wait();
