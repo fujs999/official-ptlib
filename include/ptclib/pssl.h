@@ -938,9 +938,10 @@ class PSSLChannel : public PIndirectChannel
 
     struct VerifyInfo
     {
-      VerifyInfo(bool ok, const PSSLCertificate & cert) : m_ok(ok), m_peerCertificate(cert) { }
+      VerifyInfo(bool ok, const PSSLCertificate & cert, int err) : m_ok(ok), m_peerCertificate(cert), m_errorCode(err) { }
       bool m_ok;
       PSSLCertificate m_peerCertificate;
+      int m_errorCode;
     };
     typedef PNotifierTemplate<VerifyInfo &> VerifyNotifier;
     #define PDECLARE_SSLVerifyNotifier(cls, fn) PDECLARE_NOTIFIER2(PSSLChannel, cls, fn, PSSLChannel::VerifyInfo &)
@@ -956,9 +957,8 @@ class PSSLChannel : public PIndirectChannel
     /** Call back for certificate verification.
         Default calls m_verifyNotifier if not NULL.
       */
-    virtual bool OnVerify(
-      bool ok,
-      const PSSLCertificate & peerCertificate
+    virtual void OnVerify(
+      VerifyInfo & info
     );
 
     /**Get the peer certificate, if there is one.
@@ -970,6 +970,12 @@ class PSSLChannel : public PIndirectChannel
     bool GetPeerCertificate(
       PSSLCertificate & certificate,
       PString * error = NULL
+    );
+
+    /**Set the Server Name Indication TLS extension.
+      */
+    bool SetServerNameIndication(
+      const PString & name   ///< For client, this is the server we are conneting to
     );
 
     PSSLContext * GetContext() const { return m_context; }
@@ -1003,6 +1009,7 @@ class PSSLChannel : public PIndirectChannel
     PDECLARE_MUTEX(m_writeMutex);
 
     P_REMOVE_VIRTUAL(PBoolean,RawSSLRead(void *, PINDEX &),false);
+    P_REMOVE_VIRTUAL(bool,OnVerify(bool,const PSSLCertificate&),false);
 };
 
 

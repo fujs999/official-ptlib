@@ -298,6 +298,7 @@ public:
               m_colourFormat = "BGR32";
               break;
             default:
+              m_colourFormat = PVideoFrameInfo::YUV420P();
               break;
           }
 
@@ -447,7 +448,7 @@ public:
 
 
 protected:
-  virtual bool InternalGetFrameData(BYTE * buffer)
+  virtual bool InternalReadFrameData(BYTE * buffer)
   {
     if (!IsOpen())
       return false;
