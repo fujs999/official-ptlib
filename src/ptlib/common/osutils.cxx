@@ -309,7 +309,7 @@ PTHREAD_MUTEX_RECURSIVE_NP
 
   bool HasOption(unsigned options) const { return (m_options & options) != 0; }
 
-  void OpenTraceFile(const char * newFilename, bool outputFirstLog)
+  void OpenTraceFile(const char * newFilename, bool outputFirstLog, const PTime & now = PTime())
   {
     PMEMORY_IGNORE_ALLOCATIONS_FOR_SCOPE;
 
@@ -364,7 +364,7 @@ PTHREAD_MUTEX_RECURSIVE_NP
 
       PString rollover;
       if ((m_options & RotateLogMask) != 0)
-        rollover = PTime().AsString(m_rolloverPattern, ((m_options&GMTTime) ? PTime::GMT : PTime::Local));
+        rollover = now.AsString(m_rolloverPattern, ((m_options&GMTTime) ? PTime::GMT : PTime::Local));
 
       fn.Replace("%D", rollover, true);
       fn.Replace("%N", PProcess::Current().GetName(), true);
@@ -420,7 +420,7 @@ PTHREAD_MUTEX_RECURSIVE_NP
       log << PProcess::GetOSClass() << ' ' << PProcess::GetOSName()
           << " (" << PProcess::GetOSVersion() << '-' << PProcess::GetOSHardware() << ")"
              " with PTLib (v" << PProcess::GetLibVersion() << ")"
-             " at " << PTime().AsString("yyyy/M/d h:mm:ss.uuu") << ","
+             " at " << now.AsString("yyyy/M/d h:mm:ss.uuu") << ","
              " level=" << m_thresholdLevel << ", to ";
       if ((m_options & RotateLogMask) == 0)
         log << '"' << m_filename;
@@ -4638,16 +4638,23 @@ void PFile::SetFilePath(const PString & newName)
 #define PTraceModule() "FileRotate"
 
 
-PFile::RotateInfo::RotateInfo(const PDirectory & dir)
+const PString & PFile::RotateInfo::DefaultTimestamp() { static PConstString s("_yyyy_MM_dd_hh_mm"); return s; }
+
+
+PFile::RotateInfo::RotateInfo(const PDirectory & dir,
+                              const PString & prefix,
+                              const PString & suffix,
+                              const PString & timestamp)
   : m_directory(dir)
-  , m_prefix(PProcess::Current().GetName())
-  , m_timestamp("_yyyy_MM_dd_hh_mm")
+  , m_prefix(prefix.IsEmpty() ? PProcess::Current().GetName() : prefix)
+  , m_suffix(suffix)
+  , m_timestamp(timestamp)
 #if PTRACING
   , m_timeZone((PTrace::GetOptions()&PTrace::GMTTime) ? PTime::GMT : PTime::Local)
 #else
   , m_timeZone(PTime::Local)
 #endif
-  , m_maxSize(0)
+  , m_maxSize(1000000000) // A gigabyte
   , m_period(SizeOnly)
   , m_maxFileCount(0)
   , m_lastTime(0)
@@ -4728,7 +4735,7 @@ bool PFile::RotateInfo::Rotate(PFile & file, bool force, const PTime & now)
   m_lastTime = now;
 
   PFilePath rotatedFile;
-  PString timestamp = PTime().AsString(m_timestamp, m_timeZone);
+  PString timestamp = now.AsString(m_timestamp, m_timeZone);
   PString tiebreak;
   do {
       rotatedFile = PSTRSTRM(m_directory << m_prefix << timestamp << tiebreak << m_suffix);
@@ -4754,12 +4761,13 @@ bool PFile::RotateInfo::Rotate(PFile & file, bool force, const PTime & now)
     std::multimap<PTime, PFilePath> rotatedFiles;
     PDirectory dir(m_directory);
     if (dir.Open(PFileInfo::RegularFile)) {
+      PFileInfo info;
       int failsafe = 10000;
       do {
-        PString name = dir.GetEntryName();
-        PFileInfo info;
-        if (  m_prefix == name.Left(m_prefix.GetLength()) &&
-              m_suffix == name.Right(m_suffix.GetLength()) &&
+        PFilePathString name = dir.GetEntryName();
+        if (  name != file.GetFilePath().GetFileName() &&
+              name.NumCompare(m_prefix, m_prefix.GetLength()) == EqualTo &&
+              name.NumCompare(m_suffix, m_suffix.GetLength(), name.GetLength() - m_suffix.GetLength()) == EqualTo &&
               dir.GetInfo(info))
           rotatedFiles.insert(std::multimap<PTime, PFilePath>::value_type(info.modified, dir + name));
       } while (dir.Next() && --failsafe > 0);
@@ -4777,7 +4785,7 @@ bool PFile::RotateInfo::Rotate(PFile & file, bool force, const PTime & now)
     }
 
     if (m_maxFileAge > 0) {
-      PTime then = PTime() - m_maxFileAge;
+      PTime then = now - m_maxFileAge;
       while (!rotatedFiles.empty() && rotatedFiles.begin()->first < then) {
         PFilePath filePath = rotatedFiles.begin()->second;
         if (PFile::Remove(filePath))
