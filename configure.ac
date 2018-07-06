@@ -1485,22 +1485,42 @@ dnl ########################################################################
 dnl check for ImageMagick
 
 dnl MSWIN_DISPLAY    imagemagick,ImageMagick support
-dnl MSWIN_CHECK_FILE imagemagick,include\MagickWand\MagickWand.h,P_IMAGEMAGICK=2
+dnl MSWIN_CHECK_FILE imagemagick,include\MagickWand\MagickWand.h,P_IMAGEMAGICK=7
 dnl MSWIN_DIR_SYMBOL imagemagick,IMAGEMAGICK_DIR
 dnl MSWIN_CHECK_DIR  imagemagick,%IMAGEMAGICKDIR%\ImageMagick*
 dnl MSWIN_CHECK_DIR  imagemagick,..\external\ImageMagick*
 dnl MSWIN_CHECK_DIR  imagemagick,%ProgramFiles%\ImageMagick*
 dnl MSWIN_CHECK_DIR  imagemagick,%ProgramW6432%\ImageMagick*
 
-PTLIB_MODULE_OPTION(
+MY_MODULE_OPTION(
    [IMAGEMAGICK],
    [imagemagick],
-   [ImageMagick support],
+   [ImageMagick v6 support],
    [MagickWand],
    [],
    [],
    [#include <wand/MagickWand.h>],
-   [MagickWandGenesis()]
+   [MagickWandGenesis()],
+   [
+      AC_SUBST(HAS_IMAGEMAGICK,1)
+      AC_DEFINE(P_IMAGEMAGICK,6)
+      PTLIB_IMAGEMAGICK="yes (before v7)"
+   ],
+   [MY_MODULE_OPTION(
+      [IMAGEMAGICK],
+      [imagemagick],
+      [ImageMagick v7 support],
+      [MagickWand],
+      [],
+      [],
+      [#include <MagickWand/MagickWand.h>],
+      [MagickWandGenesis()],
+      [
+         AC_SUBST(HAS_IMAGEMAGICK,1)
+         AC_DEFINE(P_IMAGEMAGICK,7)
+         PTLIB_IMAGEMAGICK="yes (after v7)"
+      ]
+   )]
 )
 
 
@@ -1913,12 +1933,26 @@ PTLIB_MODULE_OPTION(
    [V8 Javascript script support],
    [v8],
    [],
-   [-lv8],
+   [-lv8_base -lv8_libbase -lv8_libplatform -lv8_snapshot],
    [#include <v8.h>],
    [
-      v8::Isolate * isolate;
-      isolate->SetEventLogger(NULL);
-   ]
+      int ver = V8_MAJOR_VERSION;
+      v8::V8::Initialize();
+   ],
+   [],
+   [PTLIB_MODULE_OPTION(
+      [V8],
+      [v8],
+      [V8 Javascript script support],
+      [v8],
+      [],
+      [-lv8],
+      [#include <v8.h>],
+      [
+         int ver = V8_MAJOR_VERSION;
+         v8::V8::Initialize();
+      ]
+   )]
 )
 
 
