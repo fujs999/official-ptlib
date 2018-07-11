@@ -89,6 +89,11 @@ They are usually in the output directory of the build, e.g. out.gn\x64.release
 #include <iomanip>
 
 #include <v8.h>
+
+#ifndef V8_MAJOR_VERSION
+  #error "Unsupported V8 version!"
+#endif
+
 #include <libplatform/libplatform.h>
 
 
@@ -150,9 +155,6 @@ They are usually in the output directory of the build, e.g. out.gn\x64.release
 static PConstString const JavaName("JavaScript");
 PFACTORY_CREATE(PFactory<PScriptLanguage>, PJavaScript, JavaName, false);
 
-#ifndef V8_MAJOR_VERSION
-  #define V8_MAJOR_VERSION 3
-#endif
 
 #if PTRACING
     static void LogEventCallback(const char * PTRACE_PARAM(name), int PTRACE_PARAM(event))
@@ -221,6 +223,7 @@ PINDEX ParseKey(const PString & name, PStringArray & tokens)
 }
 
 
+#ifdef V8_BLOBS_DIR
 static bool MyInitializeExternalStartupData(const PDirectory dir)
 {
   /* For some exceptionally stupid reason, the initialisation function for the
@@ -234,6 +237,7 @@ static bool MyInitializeExternalStartupData(const PDirectory dir)
   v8::V8::InitializeExternalStartupData(dir);
   return true;
 }
+#endif // V8_BLOBS_DIR
 
 
 struct PJavaScript::Private : PObject
@@ -242,9 +246,7 @@ struct PJavaScript::Private : PObject
 
   PJavaScript & m_owner;
 
-#if V8_MAJOR_VERSION > 3
   v8::Isolate::CreateParams m_isolateParams;
-#endif
   v8::Isolate * m_isolate;
   v8::Persistent<v8::Context> m_context;
 
@@ -254,7 +256,6 @@ struct PJavaScript::Private : PObject
 
   struct Intialisation
   {
-#if V8_MAJOR_VERSION > 3
     v8::Platform * m_platform;
     bool           m_initialised;
 
@@ -264,19 +265,25 @@ struct PJavaScript::Private : PObject
     {
       PDirectory exeDir = PProcess::Current().GetFile().GetDirectory();
 
+#ifdef V8_BLOBS_DIR
       // Initialise some basics
       if (!MyInitializeExternalStartupData(exeDir)) {
         const char * dir = getenv("V8_BLOBS_DIR");
         if (dir == NULL || !MyInitializeExternalStartupData(dir)) {
           if (!MyInitializeExternalStartupData(V8_BLOBS_DIR)) {
-            PTRACE(2, NULL, PTraceModule(), "v8::V8::InitializeExternalStartupData() failed.");
+            PTRACE(1, NULL, PTraceModule(), "v8::V8::InitializeExternalStartupData() failed, not loaded.");
             return;
           }
         }
       }
+#endif // V8_BLOBS_DIR
 
+#if V8_MAJOR_VERSION < 6
+      if (!v8::V8::InitializeICU(exeDir)) {
+#else
       if (!v8::V8::InitializeICUDefaultLocation(exeDir)) {
-        PTRACE(2, NULL, PTraceModule(), "v8::V8::InitializeICUDefaultLocation() failed.");
+#endif
+        PTRACE(2, NULL, PTraceModule(), "v8::V8::InitializeICUDefaultLocation() failed, continuing.");
       }
 
       // Start it up!
@@ -284,7 +291,7 @@ struct PJavaScript::Private : PObject
       v8::V8::InitializePlatform(m_platform);
 
       if (!v8::V8::Initialize()) {
-        PTRACE(2, NULL, PTraceModule(), "v8::V8::Initialize() failed.");
+        PTRACE(1, NULL, PTraceModule(), "v8::V8::Initialize() failed, not loaded.");
         return;
       }
 
@@ -297,13 +304,21 @@ struct PJavaScript::Private : PObject
       v8::V8::ShutdownPlatform();
       delete m_platform;
     }
-#else
-    Intialisation()
-    {
-      v8::V8::InitializeICU();
-    }
-#endif
   };
+
+#if V8_MAJOR_VERSION < 6
+  class ArrayBufferAllocator : public v8::ArrayBuffer::Allocator
+  {
+  public:
+      virtual void* Allocate(size_t length) { return calloc(length, 1); }
+    virtual void* AllocateUninitialized(size_t length) { return malloc(length); }
+    virtual void Free(void* data, size_t length) { free(data); }
+  };
+  __inline v8::ArrayBuffer::Allocator * NewDefaultAllocator() { return new ArrayBufferAllocator; }
+#else
+  __inline v8::ArrayBuffer::Allocator * NewDefaultAllocator() { return v8::ArrayBuffer::Allocator::NewDefaultAllocator(); }
+#endif // V8_MAJOR_VERSION < 6
+
 
 public:
   Private(PJavaScript & owner)
@@ -313,12 +328,8 @@ public:
     if (!PSafeSingleton<Intialisation>()->m_initialised)
       return;
 
-    #if V8_MAJOR_VERSION > 3
-      m_isolateParams.array_buffer_allocator = v8::ArrayBuffer::Allocator::NewDefaultAllocator();
-      m_isolate = v8::Isolate::New(m_isolateParams);
-    #else
-      m_isolate = v8::Isolate::New();
-    #endif
+    m_isolateParams.array_buffer_allocator = NewDefaultAllocator();
+    m_isolate = v8::Isolate::New(m_isolateParams);
 
     v8::Isolate::Scope isolateScope(m_isolate);
     v8::HandleScope handleScope(m_isolate);
@@ -342,9 +353,7 @@ public:
     if (m_isolate != NULL)
       m_isolate->Dispose();
 
-#if V8_MAJOR_VERSION > 3
     delete m_isolateParams.array_buffer_allocator;
-#endif
   }
 
   v8::Handle<v8::Value> GetMember(v8::Handle<v8::Object> object, const PString & name)

@@ -74,15 +74,16 @@ class PSTUN {
       PIPSocketAddressAndPort & externalAddressAndPort
     );
 
+    virtual bool GetFromBindingResponse(
+      const PSTUNMessage & response,
+      PIPSocketAddressAndPort & externalAddress
+    );
+
+#if P_SSL
     virtual int MakeAuthenticatedRequest(
       PSTUNUDPSocket * socket, 
       PSTUNMessage & request, 
       PSTUNMessage & response
-    );
-
-    virtual bool GetFromBindingResponse(
-      const PSTUNMessage & response,
-      PIPSocketAddressAndPort & externalAddress
     );
 
     virtual void AppendMessageIntegrity(
@@ -92,6 +93,7 @@ class PSTUN {
     virtual bool ValidateMessageIntegrity(
       const PSTUNMessage & message
     );
+#endif // P_SSL
 
     virtual void SetCredentials(
       const PString & username, 
@@ -309,6 +311,7 @@ class PSTUNChangeRequest : public PSTUNAttribute
 };
 
 
+#if P_SSL
 class PSTUNMessageIntegrity : public PSTUNAttribute
 {
   public:
@@ -325,6 +328,7 @@ class PSTUNMessageIntegrity : public PSTUNAttribute
 
     bool IsValid() const { return type == MESSAGE_INTEGRITY && length == sizeof(m_hmac); }
 };
+#endif // P_SSL
 
 
 struct PSTUNFingerprintCRC {
@@ -446,6 +450,8 @@ class PSTUNMessage : public PBYTEArray
     enum MsgType {
       InvalidMessage,
 
+      BindingRequestRFC3489 = 0x10001,
+
       BindingRequest        = 0x0001,
       BindingResponse       = 0x0101,
       BindingError          = 0x0111,
@@ -528,19 +534,23 @@ class PSTUNMessage : public PBYTEArray
 
     const PIPSocketAddressAndPort GetSourceAddressAndPort() const { return m_sourceAddressAndPort; }
 
+#if P_SSL
     void AddMessageIntegrity(const PBYTEArray & credentialsHash) { AddMessageIntegrity(credentialsHash, credentialsHash.GetSize()); }
     void AddMessageIntegrity(const BYTE * credentialsHashPtr, PINDEX credentialsHashLen, PSTUNMessageIntegrity * mi = NULL);
 
     unsigned CheckMessageIntegrity(const PBYTEArray & credentialsHash) const { return CheckMessageIntegrity(credentialsHash, credentialsHash.GetSize()); }
     unsigned CheckMessageIntegrity(const BYTE * credentialsHashPtr, PINDEX credentialsHashLen) const;
+#endif // P_SSL
 
     void AddFingerprint(PSTUNFingerprint * fp = NULL);
     bool CheckFingerprint(bool required) const;
 
   protected:
     PSTUNAttribute * GetFirstAttribute() const;
+#if P_SSL
     void CalculateMessageIntegrity(const BYTE * credentialsHash, PINDEX credentialsHashLen,
                                    PSTUNMessageIntegrity * mi, BYTE * hmacPtr, PINDEX hmacSize) const;
+#endif // P_SSL
     DWORD CalculateFingerprint(PSTUNFingerprint * fp) const;
 
     PIPSocketAddressAndPort m_sourceAddressAndPort;
@@ -669,6 +679,8 @@ class PSTUNClient : public PNatMethod, public PSTUN
 
 
 ////////////////////////////////////////////////////////////////////////////////
+
+#if P_TURN
 
 /**TURN client.
   */
@@ -824,6 +836,8 @@ class PTURNClient : public PSTUNClient
     virtual bool RefreshAllocation(DWORD lifetime = 600);
 };
 
+
+#endif // P_TURN
 
 #endif // P_STUN
 

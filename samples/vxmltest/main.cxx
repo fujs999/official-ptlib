@@ -193,12 +193,17 @@ void VxmlTest::CopyVideoSender()
   PBYTEArray frame;
   PVideoOutputDevice::FrameData frameData;
   PVideoInputDevice & sender = m_vxml->GetVideoSender();
+  sender.SetColourFormatConverter(PVideoFrameInfo::YUV420P());
+  m_viewer->SetColourFormatConverter(PVideoFrameInfo::YUV420P());
 
   while (m_viewer != NULL) {
     if (!sender.GetFrame(frame, frameData.width, frameData.height)) {
       PTRACE(2, "Grab video failed");
       break;
     }
+
+    if (frame.IsEmpty())
+      continue;
 
     m_viewer->SetFrameSize(frameData.width, frameData.height);
     frameData.pixels = frame;
@@ -224,8 +229,12 @@ void VxmlTest::CopyVideoReceiver()
       break;
     }
 
+    if (frame.IsEmpty())
+      continue;
+
     receiver.SetFrameSize(frameData.width, frameData.height);
     frameData.pixels = frame;
+    frameData.timestamp = PTime().GetTimestamp();
 
     if (!receiver.SetFrameData(frameData)) {
       PTRACE(2, "Output video failed");

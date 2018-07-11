@@ -804,7 +804,7 @@ class PVideoOutputDevice : public PVideoDevice
       unsigned     height;          ///< Height of area in frame where data is put
       unsigned     sarWidth;        ///< Aspect ratio width of area in frame where data is put
       unsigned     sarHeight;       ///< Aspect ratio height of area in frame where data is put
-      int64_t      timestamp;       ///< Display time for the frame
+      int64_t      timestamp;       ///< Display time for the frame (microseconds)
       const BYTE * pixels;          ///< Data to put into the video frame store
       bool         partialFrame;    ///< Indicate partial video frame
       bool *       keyFrameNeeded;  ///< Indicates bad video and a new key frame is required
@@ -1086,7 +1086,16 @@ class PVideoInputDevice : public PVideoDevice
     );
 
     /**Grab a frame.
+       If \p wait is false, and no frame is available, then the function
+       still returns true, but the \p bytesReturned will be zero.
       */
+    bool GetFrame(
+      BYTE * buffer,          ///< Buffer to receive frame
+      PINDEX & bytesReturned, ///< Bytes returned.
+      bool & keyFrame,        /**< On input, forces generation of key frame,
+                                   On return indicates key frame generated */
+      bool wait = true        ///< Wait for frame to become available
+    );
     virtual PBoolean GetFrame(
       PBYTEArray & frame
     );
@@ -1096,31 +1105,32 @@ class PVideoInputDevice : public PVideoDevice
       unsigned & height
     );
 
-    /**Grab a frame, after a delay as specified by the frame rate.
-      */
-    virtual PBoolean GetFrameData(
+    /// For backward compatibility
+    bool GetFrameData(
       BYTE * buffer,                 ///< Buffer to receive frame
       PINDEX * bytesReturned,        ///< Optional bytes returned.
       bool & keyFrame         /**< On input, forces generation of key frame,
                                    On return indicates key frame generated */
     );
-    virtual PBoolean GetFrameData(
+    /// For backward compatibility
+    bool GetFrameData(
       BYTE * buffer,                 ///< Buffer to receive frame
       PINDEX * bytesReturned = NULL  ///< Optional bytes returned.
-    ) = 0;
+    );
 
-    /**Grab a frame. Do not delay according to the current frame rate parameter.
-      */
-    virtual PBoolean GetFrameDataNoDelay(
+    /// For backward compatibility
+    bool GetFrameDataNoDelay(
       BYTE * buffer,                 ///< Buffer to receive frame
       PINDEX * bytesReturned,       ///< Optional bytes returned.
       bool & keyFrame         /**< On input, forces generation of key frame,
                                    On return indicates key frame generated */
     );
-    virtual PBoolean GetFrameDataNoDelay(
+
+    /// For backward compatibility
+    bool GetFrameDataNoDelay(
       BYTE * buffer,                 ///< Buffer to receive frame
       PINDEX * bytesReturned = NULL  ///< Optional bytes returned.
-    ) = 0;
+    );
 
     /**Pass data to the inputdevice for flowControl determination.
       */
@@ -1156,6 +1166,14 @@ class PVideoInputDevice : public PVideoDevice
     virtual const PVideoControlInfo & GetControlInfo(PVideoControlInfo::Types type) const { return m_controlInfo[type]; }
 
   protected:
+    virtual bool InternalGetFrameData(
+      BYTE * buffer,          ///< Buffer to receive frame
+      PINDEX & bytesReturned, ///< Bytes returned.
+      bool & keyFrame,        /**< On input, forces generation of key frame,
+                                   On return indicates key frame generated */
+      bool wait
+    ) = 0;
+
     PVideoControlInfo m_controlInfo[PVideoControlInfo::NumTypes];
 
   private:
@@ -1181,19 +1199,10 @@ class PVideoInputDeviceIndirect : public PVideoInputDevice
     virtual Comparison Compare(const PObject & obj) const;
     virtual void PrintOn(ostream & strm) const;
     virtual PBoolean SetFrameSize(unsigned width, unsigned height);
-    virtual PBoolean GetFrameSize(unsigned & width, unsigned & height) const;
-    virtual unsigned GetFrameWidth() const;
-    virtual unsigned GetFrameHeight() const;
     virtual PBoolean SetFrameSar(unsigned width, unsigned height);
-    virtual PBoolean GetSarSize(unsigned & width, unsigned & height) const;
-    virtual unsigned GetSarWidth() const;
-    virtual unsigned GetSarHeight() const;
     virtual PBoolean SetFrameRate(unsigned rate);
-    virtual unsigned GetFrameRate() const;
     virtual PBoolean SetColourFormat(const PString & colourFormat);
-    virtual PString GetColourFormat() const;
     virtual void SetResizeMode(ResizeMode mode);
-    virtual ResizeMode GetResizeMode() const;
     virtual PINDEX CalculateFrameBytes() const;
     virtual bool Parse(const PString & str);
     virtual PString GetDeviceName() const;
@@ -1205,38 +1214,29 @@ class PVideoInputDeviceIndirect : public PVideoInputDevice
     virtual PBoolean Start();
     virtual PBoolean Stop();
     virtual PBoolean SetVideoFormat(VideoFormat videoFormat);
-    virtual VideoFormat GetVideoFormat() const;
     virtual int GetNumChannels();
     virtual PStringArray GetChannelNames();
     virtual PBoolean SetChannel(int channelNumber);
     virtual int GetChannel() const;
-    virtual bool SetFrameInfoConverter(const PVideoFrameInfo & info);
-    virtual PBoolean SetColourFormatConverter(const PString & colourFormat);
-    virtual PBoolean GetVFlipState();
     virtual PBoolean SetVFlipState(PBoolean newVFlipState);
     virtual PBoolean GetFrameSizeLimits(unsigned & minWidth, unsigned & minHeight, unsigned & maxWidth, unsigned & maxHeight);
-    virtual PBoolean SetFrameSizeConverter(unsigned width, unsigned height, ResizeMode resizeMode = eMaxResizeMode);
     virtual PBoolean SetNearestFrameSize(unsigned width, unsigned height);
-    virtual PINDEX GetMaxFrameBytes();
+    virtual bool SetFrameInfoConverter(const PVideoFrameInfo & info);
+    virtual PBoolean SetColourFormatConverter(const PString & colourFormat);
+    virtual PBoolean SetFrameSizeConverter(unsigned width, unsigned height, ResizeMode resizeMode = eMaxResizeMode);
     virtual int GetLastError() const;
-    virtual PBoolean CanCaptureVideo() const; 
     virtual bool GetAttributes(Attributes & attributes);
     virtual bool SetAttributes(const Attributes & attributes);
     virtual PBoolean SetVideoChannelFormat(int channelNumber, VideoFormat videoFormat);
     virtual bool GetDeviceCapabilities(Capabilities * capabilities) const;
     virtual PBoolean IsCapturing();
-    virtual PBoolean GetFrame(PBYTEArray & frame);
-    virtual PBoolean GetFrame(PBYTEArray & frame, unsigned & width, unsigned & height);
-    virtual PBoolean GetFrameData(BYTE * buffer, PINDEX * bytesReturned, bool & keyFrame);
-    virtual PBoolean GetFrameData(BYTE * buffer, PINDEX * bytesReturned = NULL);
-    virtual PBoolean GetFrameDataNoDelay(BYTE * buffer, PINDEX * bytesReturned, bool & keyFrame);
-    virtual PBoolean GetFrameDataNoDelay(BYTE * buffer, PINDEX * bytesReturned = NULL);
     virtual bool FlowControl(const void * flowData);
     virtual bool SetCaptureMode(unsigned mode);
     virtual int GetCaptureMode() const;
     virtual bool SetControl(PVideoControlInfo::Types type, int value, ControlMode mode);
 
   protected:
+    virtual bool InternalGetFrameData(BYTE * buffer, PINDEX & bytesReturned, bool & keyFrame, bool wait);
     PDECLARE_MUTEX(     m_actualDeviceMutex);
     PVideoInputDevice * m_actualDevice;
     bool                m_autoDeleteActualDevice;
@@ -1261,25 +1261,6 @@ class PVideoInputEmulatedDevice : public PVideoInputDevice
     /**Determine if the video device I/O capture is in progress.
       */
     PBoolean IsCapturing();
-
-    /**Grab a frame. 
-
-       There will be a delay in returning, as specified by frame rate.
-      */
-    virtual PBoolean GetFrameData(
-      BYTE * buffer,                 /// Buffer to receive frame
-      PINDEX * bytesReturned = NULL  /// Optional bytes returned.
-    );
-
-    /**Grab a frame.
-
-       Do not delay according to the current frame rate.
-      */
-    virtual PBoolean GetFrameDataNoDelay(
-      BYTE * buffer,                 /// Buffer to receive frame
-      PINDEX * bytesReturned = NULL  /// OPtional bytes returned.
-    );
-
 
     /**Set the colour format to be used.
 
@@ -1345,7 +1326,8 @@ class PVideoInputEmulatedDevice : public PVideoInputDevice
     );
 
   protected:
-    virtual bool InternalGetFrameData(BYTE * frame) = 0;
+    virtual bool InternalGetFrameData(BYTE * buffer, PINDEX & bytesReturned, bool & keyFrame, bool wait);
+    virtual bool InternalReadFrameData(BYTE * frame) = 0;
 
     PAdaptiveDelay m_pacing;
     unsigned       m_fixedFrameRate;

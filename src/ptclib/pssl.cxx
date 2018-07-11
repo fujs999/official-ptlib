@@ -2573,9 +2573,13 @@ int PSSLChannel::BioWrite(const char * buf, int len)
 }
 
 
-PBoolean PSSLChannel::Shutdown(ShutdownValue)
+PBoolean PSSLChannel::Shutdown(ShutdownValue value)
 {
-  return PAssertNULL(m_ssl) != NULL && SSL_shutdown(m_ssl);
+  if (value != ShutdownReadAndWrite)
+    return SetErrorValues(BadParameter, EINVAL);
+
+  bool ok = PAssertNULL(m_ssl) != NULL && SSL_shutdown(m_ssl);
+  return PIndirectChannel::Shutdown(value) && ok;
 }
 
 
@@ -2627,7 +2631,7 @@ PBoolean PSSLChannel::ConvertOSError(P_INT_PTR libcReturnValue, ErrorGroup group
 
 PString PSSLChannel::GetErrorText(ErrorGroup group) const
 {
-  int err = GetErrorNumber(group);
+  unsigned err = GetErrorNumber(group);
   if ((err&0x80000000) == 0)
     return PIndirectChannel::GetErrorText(group);
 
