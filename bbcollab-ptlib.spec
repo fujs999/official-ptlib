@@ -13,7 +13,7 @@
 %global __os_install_post /usr/lib/rpm/brp-compress %{nil}
 
 Name:           bbcollab-ptlib
-Version:        %{version_major}.%{version_minor}.%{version_patch}.47
+Version:        %{version_major}.%{version_minor}.%{version_patch}.48
 Release:        %{branch_id}%{?jenkins_release}%{?dist}
 Summary:        PTLib: Portable Tools Library
 
