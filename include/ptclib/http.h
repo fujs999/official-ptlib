@@ -1264,6 +1264,9 @@ class PHTTPServer : public PHTTP
 
   protected:
     void Construct();
+#if P_SSL
+    void SwitchToWebSocket(const PString & protocol, const PString & key);
+#endif
 
     PTime               m_serviceStartTime;
     PHTTPSpace          m_urlSpace;
@@ -1295,6 +1298,9 @@ public:
   PHTTPListener(
     unsigned maxWorkers = 10
   );
+
+  /// Shut down all listeners on destruction.
+  ~PHTTPListener();
 
   /** Start listening for HTTP connections.
     */
@@ -1356,12 +1362,14 @@ public:
 protected:
   void ListenMain();
 
-  PHTTPSpace  m_httpNameSpace;
-  PString     m_listenerInterfaces;
-  WORD        m_listenerPort;
-  PThread   * m_listenerThread;
-  PSocketList m_httpListeningSockets;
-  ThreadPool  m_threadPool;
+  PHTTPSpace     m_httpNameSpace;
+  PString        m_listenerInterfaces;
+  WORD           m_listenerPort;
+  PThread      * m_listenerThread;
+  PSocketList    m_httpListeningSockets;
+  PSocketList    m_httpServerSockets;
+  PDECLARE_MUTEX(m_serverSocketsMutex);
+  ThreadPool     m_threadPool;
 };
 
 
@@ -1711,6 +1719,12 @@ class PHTTPResource : public PObject
 
     /// Clear the hit count for the resource.
     void ClearHitCount() { m_hitCount = 0; }
+
+    /**Indicate that the web socket protocol is supported by this resource.
+      */
+    virtual bool SupportsWebSocketProtocol(
+      const PString & protocol    ///< Protocol for web socket
+    ) const;
 
     /**Called when a request indicates a swtch to WebSocket protocol.
        This will handle a WebScoket protocol change.
