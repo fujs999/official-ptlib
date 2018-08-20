@@ -72,12 +72,10 @@ PSTUN::PSTUN()
 {
 }
 
-PNatMethod::NatTypes PSTUN::DoRFC3489Discovery(
-  PSTUNUDPSocket * socket, 
-  const PIPSocketAddressAndPort & serverAddress,
-  PIPSocketAddressAndPort & baseAddressAndPort, 
-  PIPSocketAddressAndPort & externalAddressAndPort
-)
+PNatMethod::NatTypes PSTUN::DoRFC3489Discovery(PSTUNUDPSocket * socket,
+                                               const PIPSocketAddressAndPort & serverAddress,
+                                               PIPSocketAddressAndPort & baseAddressAndPort,
+                                               PIPSocket::Address & externalAddress)
 {  
   socket->SetReadTimeout(m_replyTimeout);
 
@@ -98,14 +96,13 @@ PNatMethod::NatTypes PSTUN::DoRFC3489Discovery(
     return PNatMethod::UnknownNat;
   }
 
-  return FinishRFC3489Discovery(responseI, socket, externalAddressAndPort);
+  return FinishRFC3489Discovery(responseI, socket, externalAddress);
 }
 
-PNatMethod::NatTypes PSTUN::FinishRFC3489Discovery(
-  PSTUNMessage & responseI,
-  PSTUNUDPSocket * socket, 
-  PIPSocketAddressAndPort & externalAddressAndPort
-)
+
+PNatMethod::NatTypes PSTUN::FinishRFC3489Discovery(PSTUNMessage & responseI,
+                                                   PSTUNUDPSocket * socket,
+                                                   PIPSocket::Address & externalAddress)
 {
   // check if server returned "420 Unknown Attribute" - that probably means it cannot do CHANGE_REQUEST even with no changes
   bool cannotDoChangeRequest = false;
@@ -159,7 +156,9 @@ PNatMethod::NatTypes PSTUN::FinishRFC3489Discovery(
     }
   }
 
+  PIPSocketAddressAndPort externalAddressAndPort;
   mappedAddress->GetIPAndPort(externalAddressAndPort);
+  externalAddress = externalAddressAndPort.GetAddress();
 
   bool notNAT = (socket->GetPort() == externalAddressAndPort.GetPort()) && PIPSocket::IsLocalHost(externalAddressAndPort.GetAddress());
 
@@ -698,12 +697,11 @@ bool PSTUNMessage::Write(PUDPSocket & socket, const PIPSocketAddressAndPort & ap
   int len = sizeof(PSTUNMessageHeader) + ((PSTUNMessageHeader *)theArray)->msgLength;
   PUDPSocket::Slice slice(theArray, len);
   if (socket.PUDPSocket::InternalWriteTo(&slice, 1, ap)) {
-    PTRACE(5, "Writing " << *this << ", dst=" << ap << " if=" << socket.PUDPSocket::GetLocalAddress());
+    PTRACE(5, "Writing " << *this << " to " << ap << " on " << socket);
     return true;
   }
 
-  PTRACE(2, "Error writing to " << socket.GetSendAddress()
-         << " - " << socket.GetErrorText(PChannel::LastWriteError));
+  PTRACE(2, "Error writing to " << ap << " - " << socket.GetErrorText(PChannel::LastWriteError));
   return false;
 }
 

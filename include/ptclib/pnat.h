@@ -350,10 +350,10 @@ class PNatMethod  : public PObject
     PIPSocket::PortRange m_singlePortRange;
     PIPSocket::PortRange m_pairedPortRange;
 
-    PNatMethod::NatTypes    m_natType;
-    PIPSocketAddressAndPort m_externalAddress;
-    PTime                   m_updateTime;
-    PDECLARE_MUTEX(         m_mutex);
+    PNatMethod::NatTypes m_natType;
+    PIPSocket::Address   m_externalAddress;
+    PTime                m_updateTime;
+    PDECLARE_MUTEX(      m_mutex);
 
   private:
     unsigned m_priority;
@@ -510,7 +510,11 @@ class PNatMethod_AWS : public PNatMethod_Fixed
 
     virtual PString GetServer() const;
     virtual bool SetServer(const PString & str);
+    virtual bool GetServerAddress(PIPSocketAddressAndPort & externalAddressAndPort) const;
     virtual bool Open(const PIPSocket::Address & ifaceAddr);
+
+  protected:
+    void InternalUpdate();
 };
 
 /////////////////////////////////////////////////////////////

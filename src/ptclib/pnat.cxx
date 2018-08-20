@@ -260,7 +260,7 @@ bool PNatMethod::GetExternalAddress(PIPSocket::Address & externalAddress) const
   if (!m_externalAddress.IsValid())
     return false;
 
-  externalAddress = m_externalAddress.GetAddress();
+  externalAddress = m_externalAddress;
   return true;
 }
 
@@ -584,7 +584,7 @@ bool PNatMethod_Fixed::SetServer(const PString & str)
   PString addr, type;
   if (!str.Split('/', addr, type)) {
     m_natType = ConeNat;
-    return m_externalAddress.Parse(str, 1);
+    return m_externalAddress.FromString(str);
   }
 
   if (isdigit(type[0]))
@@ -592,13 +592,13 @@ bool PNatMethod_Fixed::SetServer(const PString & str)
   else
     m_natType = NatTypesFromString(type);
 
-  return m_natType != EndNatTypes && m_externalAddress.Parse(addr);
+  return m_natType != EndNatTypes && m_externalAddress.FromString(addr);
 }
 
 
 PNATUDPSocket * PNatMethod_Fixed::InternalCreateSocket(Component component, PObject *)
 {
-  return new Socket(component, m_externalAddress.GetAddress());
+  return new Socket(component, m_externalAddress);
 }
 
 
@@ -688,10 +688,30 @@ PString PNatMethod_AWS::GetServer() const
 
 bool PNatMethod_AWS::SetServer(const PString &)
 {
+  InternalUpdate();
+  return m_externalAddress.IsValid();
+}
+
+
+bool PNatMethod_AWS::GetServerAddress(PIPSocketAddressAndPort & externalAddressAndPort) const
+{
+  externalAddressAndPort.SetAddress(PIPAddress(169,254,169,254), 80);
+  return true;
+}
+
+
+void PNatMethod_AWS::InternalUpdate()
+{
+  m_externalAddress = PIPSocket::GetInvalidAddress();
+
   PString extAddr;
   static PURL const api(GetServer());
   static PURL::LoadParams const params(PMIMEInfo::TextPlain(), 500);
-  return api.LoadResource(extAddr, params) && m_externalAddress.Parse(extAddr);
+
+  if (!api.LoadResource(extAddr, params))
+    PTRACE(2, "Failed to load " << api);
+  else if (!m_externalAddress.FromString(extAddr))
+    PTRACE(2, "Invalid IP \"" << extAddr << "\" loaded from " << api);
 }
 
 
