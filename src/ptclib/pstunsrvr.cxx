@@ -290,10 +290,17 @@ bool PSTUNServer::OnBindingRequest(const PSTUNMessage & request, const PSTUNServ
     }
 
     if (userAttr->GetString() != m_userName) {
-      PTRACE(2, "Incorrect USERNAME attribute in " << request << " on interface " << socketInfo.m_socketAddress
-             << ", got \"" << userAttr->GetString() << "\", expected \"" << m_userName << '"');
-      response.SetErrorType(436, request.GetTransactionID());
-      goto sendResponse;
+      PString theirLeft, theirRight, ourLeft, ourRight;
+      if (!userAttr->GetString().Split(':', theirLeft, theirRight) ||
+          !m_userName.Split(':', ourLeft, ourRight) ||
+          theirLeft != ourLeft ||
+          (!ourRight.IsEmpty() && theirRight != ourRight))
+      {
+        PTRACE(2, "Incorrect USERNAME attribute in " << request << " on interface " << socketInfo.m_socketAddress
+               << ", got \"" << userAttr->GetString() << "\", expected \"" << m_userName << '"');
+        response.SetErrorType(436, request.GetTransactionID());
+        goto sendResponse;
+      }
     }
 
 #if P_SSL
