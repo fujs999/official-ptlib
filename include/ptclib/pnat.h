@@ -193,11 +193,11 @@ class PNatMethod  : public PObject
 
     /**Get the current server address and port being used.
       */
-    virtual bool GetServerAddress(
+    bool GetServerAddress(
       PIPSocket::Address & address,   ///< Address of server
       WORD & port                     ///< Port server is using.
     ) const;
-    virtual bool GetServerAddress(
+    bool GetServerAddress(
       PIPSocketAddressAndPort & externalAddressAndPort 
     ) const;
 
@@ -344,16 +344,17 @@ class PNatMethod  : public PObject
   protected:
     virtual PNATUDPSocket * InternalCreateSocket(Component component, PObject * context) = 0;
     virtual void InternalUpdate() = 0;
+    virtual bool InternalGetServerAddress(PIPSocketAddressAndPort & externalAddressAndPort) const = 0;
 
     bool m_active;
 
     PIPSocket::PortRange m_singlePortRange;
     PIPSocket::PortRange m_pairedPortRange;
 
-    PNatMethod::NatTypes    m_natType;
-    PIPSocketAddressAndPort m_externalAddress;
-    PTime                   m_updateTime;
-    PDECLARE_MUTEX(         m_mutex);
+    PNatMethod::NatTypes m_natType;
+    PIPSocket::Address   m_externalAddress;
+    PTime                m_updateTime;
+    PDECLARE_MUTEX(      m_mutex);
 
   private:
     unsigned m_priority;
@@ -486,6 +487,7 @@ class PNatMethod_Fixed  : public PNatMethod
         PIPSocket::Address m_externalAddress;
     };
   protected:
+    virtual bool InternalGetServerAddress(PIPSocketAddressAndPort & externalAddressAndPort) const;
     virtual PNATUDPSocket * InternalCreateSocket(Component component, PObject * context);
     virtual void InternalUpdate();
 
@@ -511,6 +513,10 @@ class PNatMethod_AWS : public PNatMethod_Fixed
     virtual PString GetServer() const;
     virtual bool SetServer(const PString & str);
     virtual bool Open(const PIPSocket::Address & ifaceAddr);
+
+  protected:
+    virtual bool InternalGetServerAddress(PIPSocketAddressAndPort & externalAddressAndPort) const;
+    void InternalUpdate();
 };
 
 /////////////////////////////////////////////////////////////

@@ -1026,16 +1026,25 @@ void PIPSocket::ClearNameCache()
 
 PString PIPSocket::GetName() const
 {
-  PStringStream str;
+  return PSTRSTRM(*this);
+}
+
+
+void PIPSocket::PrintOn(ostream & str) const
+{
   str << GetProtocolName() << ':';
 
-  AddressAndPort ap;
-  if (GetLocalAddress(ap))
-    str << " local=" << ap;
-  if (GetPeerAddress(ap))
-    str << " peer= " << ap;
+  AddressAndPort peer;
+  if (GetPeerAddress(peer))
+    str << " peer=" << peer;
 
-  return str;
+  AddressAndPort local, iface;
+  if (GetLocalAddress(local) && const_cast<PIPSocket *>(this)->PIPSocket::InternalGetLocalAddress(iface)) {
+    if (local != iface)
+      str << " rflx=" << local << " if=" << iface;
+    else
+      str << " local=" << local;
+  }
 }
 
 
