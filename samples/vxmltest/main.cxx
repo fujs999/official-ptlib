@@ -21,6 +21,13 @@ PCREATE_PROCESS(VxmlTest);
 #define PTraceModule() "VXMLTest"
 
 
+#ifdef _WIN32
+  #define PREVIEW_WINDOW_DEVICE "MSWIN"
+#else
+  #define PREVIEW_WINDOW_DEVICE "SDL"
+#endif
+
+
 VxmlTest::VxmlTest()
   : PProcess("Equivalence", "vxmltest", 1, 0, AlphaCode, 1)
 {
@@ -34,12 +41,14 @@ void VxmlTest::Main()
   if (!args.Parse("-sound-driver: Output to sound driver\n"
                   "S-sound-device: Output to sound device\n"
                   "T-tts: Text to speech method\n"
+                  "c-cache: Text to speech cache directory\n"
 #if P_VXML_VIDEO
                   "V-video. Enabled video support\n"
                   "L-sign-language: Set sign language analyser library (implicit -V)\n"
                   "-input-driver: Video input driver\n"
                   "I-input-device: Video input device\n"
                   "C-input-channel: Video input channel\n"
+                  "P-preview. Show preview window for video input\n"
                   "-output-driver: Video output driver\n"
                   "O-output-device: Video output device\n"
                   "-output-channel: Video output channel\n"
@@ -59,11 +68,10 @@ void VxmlTest::Main()
     cout << "Using sign language analyser." << endl;
   }
 
-  std::list<TestInstance> tests;
   do {
-    tests.push_back(TestInstance());
-    if (!tests.back().Initialise(tests.size(), args))
-      tests.pop_back();
+    m_tests.push_back(TestInstance());
+    if (!m_tests.back().Initialise(m_tests.size(), args))
+      m_tests.pop_back();
   } while (args.Parse("-sound-driver:S-sound-device:T-tts:"
 #if P_VXML_VIDEO
                       "V-video."
@@ -73,20 +81,31 @@ void VxmlTest::Main()
   ));
 
   PCLIStandard cli("VXML-Test> ");
-  cli.SetCommand("input", PCREATE_NOTIFIER(SimulateInput), "Simulate input for VXML instance (1..n)", "<n> <digit>");
+  cli.SetCommand("input", PCREATE_NOTIFIER(SimulateInput), "Simulate input for VXML instance (1..n)", "<digit> [ <n> ]");
   cli.Start(false);
+  m_tests.clear();
 }
 
 
 void VxmlTest::SimulateInput(PCLI::Arguments & args, P_INT_PTR)
 {
   unsigned num;
+  if (args.GetCount() < 1) {
+    args.WriteUsage();
+    return;
+  }
+
   if (args.GetCount() < 2)
-    args.Usage();
-  else if ((num = args[0].AsUnsigned()) == 0 || num > m_tests.size())
+    num = 1;
+  else if ((num = args[0].AsUnsigned()) == 0) {
     args.WriteError("Invalid instance number");
+    return;
+  }
+
+  if (num > m_tests.size())
+    args.WriteError("No such instance");
   else
-    m_tests[num-1].SendInput(args[1][0]);
+    m_tests[num - 1].SendInput(args[0]);
 }
 
 
@@ -95,6 +114,7 @@ TestInstance::TestInstance()
   : m_instance(0)
   , m_player(NULL)
   , m_grabber(NULL)
+  , m_preview(NULL)
   , m_viewer(NULL)
   , m_vxml(NULL)
   , m_audioThread(NULL)
@@ -158,6 +178,9 @@ bool TestInstance::Initialise(unsigned instance, const PArgList & args)
     }
     cout << "Instance " << m_instance << " using input video device \"" << m_grabber->GetDeviceName() << "\"" << endl;
 
+    if (args.HasOption("preview"))
+      m_preview = PVideoOutputDevice::CreateOpenedDevice(PREVIEW_WINDOW_DEVICE "TITLE=Preview");
+
     videoArgs.driverName = args.GetOptionString("output-driver");
     videoArgs.deviceName = args.GetOptionString("output-device");
     videoArgs.channelNumber = args.GetOptionString("output-channel", "-1").AsInteger();
@@ -186,11 +209,14 @@ bool TestInstance::Initialise(unsigned instance, const PArgList & args)
   }
   cout << "Instance " << m_instance << " using text to speech \"" << tts->GetVoiceList() << "\"" << endl;
 
-  m_vxml = new PVXMLSession(tts);
+  m_vxml = new PVXMLSession(tts, true);
   if (!m_vxml->Load(args[0])) {
     cerr << "Instance " << m_instance << " error: cannot loading VXML document \"" << args[0] << "\" - " << m_vxml->GetXMLError() << endl;
     return false;
   }
+
+  if (args.HasOption('C'))
+    m_vxml->GetCache().SetDirectory(args.GetOptionString('C'));
 
   if (!m_vxml->Open(VXML_PCM16)) {
     cerr << "Instance " << m_instance << " error: cannot open VXML device in PCM mode" << endl;
@@ -209,10 +235,10 @@ bool TestInstance::Initialise(unsigned instance, const PArgList & args)
 }
 
 
-void TestInstance::SendInput(char c)
+void TestInstance::SendInput(const PString & digits)
 {
   if (m_vxml != NULL)
-    m_vxml->OnUserInput(c);
+    m_vxml->OnUserInput(digits);
 }
 
 
@@ -271,6 +297,8 @@ void TestInstance::CopyVideoReceiver()
   PVideoOutputDevice & receiver = m_vxml->GetVideoReceiver();
 
   receiver.SetColourFormatConverter(m_grabber->GetColourFormat());
+  if (m_preview)
+    m_preview->SetColourFormatConverter(m_grabber->GetColourFormat());
 
   while (m_grabber != NULL) {
     if (!m_grabber->GetFrame(frame, frameData.width, frameData.height)) {
@@ -284,6 +312,9 @@ void TestInstance::CopyVideoReceiver()
     receiver.SetFrameSize(frameData.width, frameData.height);
     frameData.pixels = frame;
     frameData.timestamp = PTime().GetTimestamp();
+
+    if (m_preview)
+      m_preview->SetFrameData(frameData);
 
     if (!receiver.SetFrameData(frameData)) {
       PTRACE(2, "Instance " << m_instance << " vxml video feed failed");
