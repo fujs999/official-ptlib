@@ -202,7 +202,7 @@ fi
 if test "x$INTERNAL_PTLIBDIR" != "x"; then
    libdir+=_$target
    datarootdir="\${exec_prefix}"
-   makedir="\${exec_prefix}/make"
+   makedir="\${datarootdir}/make"
    VERSION_DIR="$INTERNAL_PTLIBDIR"
 else
    makedir="\${datarootdir}/ptlib/make"
@@ -1818,18 +1818,19 @@ dnl MSWIN_CHECK_DIR  expat,C:\Work\external\Expat\expat\
 dnl MSWIN_CHECK_DIR  expat,c:\Expat\expat\
 dnl MSWIN_CHECK_DIR  expat,\libs\Expat\expat\
 
-dnl MSWIN_DISPLAY    expat32,Expat XML (precompiled)
+dnl MSWIN_DISPLAY    expat32,Expat XML (32 bit)
 dnl MSWIN_CHECK_FILE expat32,Source\lib\expat.h,P_EXPAT_WIN32=1
 dnl MSWIN_DIR_SYMBOL expat32,EXPAT_WIN32_DIR
 dnl MSWIN_FIND_FILE  expat32,P_EXPAT_LIBRARY,libexpatMT.lib,bin
 dnl MSWIN_CHECK_DIR  expat32,%ProgramFiles%\Expat 2.*
 dnl MSWIN_CHECK_DIR  expat32,%ProgramW6432%\Expat 2.*
 
-dnl MSWIN_DISPLAY    expat64,Expat XML (Win-Builds)
-dnl MSWIN_CHECK_FILE expat64,include\expat.h,P_EXPAT_WIN64=1
+dnl MSWIN_DISPLAY    expat64,Expat XML (64 bit)
+dnl MSWIN_CHECK_FILE expat64,Source\lib\expat.h,P_EXPAT_WIN64=1
 dnl MSWIN_DIR_SYMBOL expat64,EXPAT_WIN64_DIR
-dnl MSWIN_FIND_FILE  expat64,P_EXPAT_LIBRARY,libexpat.dll.a,lib64
-dnl MSWIN_CHECK_DIR  expat64,%WINBUILDSDIR%\
+dnl MSWIN_FIND_FILE  expat64,P_EXPAT_LIBRARY,libexpatMT.lib,bin
+dnl MSWIN_CHECK_DIR  expat64,%ProgramFiles%\Expat 2.*
+dnl MSWIN_CHECK_DIR  expat64,%ProgramW6432%\Expat 2.*
 
 PTLIB_MODULE_OPTION(
    [EXPAT],
