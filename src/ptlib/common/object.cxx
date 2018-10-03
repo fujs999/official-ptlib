@@ -212,8 +212,10 @@ static void InternalAssertFunc(const PDebugLocation & location, const char * msg
     env = ::getenv("PTLIB_ASSERT_ACTION");
   if (env == NULL)
     env = ::getenv("PWLIB_ASSERT_ACTION");
+  if (env == NULL)
+    env = PProcess::Current().IsServiceProcess() ? "i" : "";
 
-  PPlatformAssertFunc(location, str.c_str(), env != NULL ? *env : '\0');
+  PPlatformAssertFunc(location, str.c_str(), *env);
 
   s_RecursiveAssert = false;
 }
