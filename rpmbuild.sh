@@ -2,7 +2,7 @@
 # Build script using standard tools (should be done within a clean VM or
 # container to ensure reproducibility, and avoid polluting development environment)
 
-set -e
+set -ex
 
 SPECFILE=bbcollab-ptlib.spec
 TARBALL=zsdk-ptlib.src.tgz
@@ -18,21 +18,12 @@ elif [[ "$BRANCH_NAME" == release/* ]]; then
     BUILD_ARGS+=(--define="branch_id 2")
 fi
 
-if ! which spectool > /dev/null; then
-    echo You must install spectool first: sudo yum install -y rpmdevtools
-    exit 1
-fi
-
-if ! which yum-builddep > /dev/null; then
-    echo You must install yum-builddep first: sudo yum install -y yum-utils
-    exit 1
-fi
-
 # Create/clean the rpmbuild directory tree
 rpmdev-setuptree
 rpmdev-wipetree
 
 # Update the git commit in revision.h (tarball excludes git repo)
+make clean
 make $(pwd)/revision.h
 
 # Create the source tarball
