@@ -12,6 +12,10 @@
 %global debug_package %{nil}
 %global __os_install_post /usr/lib/rpm/brp-compress %{nil}
 
+%if 0%{?rhel} <= 6
+    %global _prefix /opt/bbcollab
+%endif
+
 Name:           bbcollab-ptlib
 Version:        %{version_major}.%{version_minor}.%{version_patch}.65
 Release:        %{branch_id}%{?jenkins_release}%{?dist}
@@ -26,8 +30,14 @@ Source0:        zsdk-ptlib.src.tgz
 # http://wiki.opalvoip.org/index.php?n=Main.BuildingPTLibUnix
 # Optional build dependencies not needed for the MCU are commented-out
 BuildRequires:  %__sed
+BuildRequires:  which
+%if 0%{?rhel} <= 6
 BuildRequires:  bbcollab-gcc = 5.1.0
 BuildRequires:  bbcollab-openssl-devel >= 1.0.2c, bbcollab-openssl-devel < 1.0.3
+%else
+BuildRequires:  devtoolset-7-gcc-c++
+BuildRequires:  openssl-devel
+%endif
 #BuildRequires:  cyrus-sasl-devel
 BuildRequires:  expat-devel
 BuildRequires:  gperftools
@@ -51,7 +61,11 @@ PTLib: Portable Tools Library
 Summary:        Development files for %{name}
 Group:          Development/Libraries
 Requires:       %{name} = %{version}-%{release}
+%if 0%{?rhel} <= 6
 Requires:       bbcollab-openssl-devel >= 1.0.2c, bbcollab-openssl-devel < 1.0.3
+%else
+Requires:       openssl-devel
+%endif
 Requires:       expat-devel
 Requires:       libpcap-devel
 Requires:       ncurses-devel
@@ -77,21 +91,12 @@ developing applications that use %{name}.
 
 
 %build
+%if 0%{?rhel} <= 6
 PKG_CONFIG_PATH=/opt/bbcollab/lib64/pkgconfig:/opt/bbcollab/lib/pkgconfig
-%configure --prefix=/opt/bbcollab \
-        --exec-prefix=/opt/bbcollab \
-        --bindir=/opt/bbcollab/bin \
-        --sbindir=/opt/bbcollab/sbin \
-        --sysconfdir=/opt/bbcollab/etc \
-        --datadir=/opt/bbcollab/share \
-        --includedir=/opt/bbcollab/include \
-        --libdir=/opt/bbcollab/lib64 \
-        --libexecdir=/opt/bbcollab/libexec \
-        --localstatedir=/opt/bbcollab/var \
-        --sharedstatedir=/opt/bbcollab/var/lib \
-        --mandir=/opt/bbcollab/share/man \
-        --infodir=/opt/bbcollab/share/info \
-        --enable-exceptions \
+%else
+source /opt/rh/devtoolset-7/enable
+%endif
+%configure --enable-exceptions \
         --with-profiling=manual \
         --disable-pthread_kill \
         --disable-vxml \
@@ -100,9 +105,11 @@ PKG_CONFIG_PATH=/opt/bbcollab/lib64/pkgconfig:/opt/bbcollab/lib/pkgconfig
         --disable-openldap \
         --disable-plugins \
         --enable-cpp14 \
+%if 0%{?rhel} <= 6
         CC=/opt/bbcollab/bin/gcc \
         CXX=/opt/bbcollab/bin/g++ \
         LD=/opt/bbcollab/bin/g++ \
+%endif
         PTLIB_MAJOR=%{version_major} \
         PTLIB_MINOR=%{version_minor} \
         PTLIB_BUILD=%{version_patch}
@@ -111,6 +118,9 @@ make %{?_smp_mflags} REVISION_FILE= all
 
 %install
 rm -rf $RPM_BUILD_ROOT
+%if 0%{?rhel} >= 7
+source /opt/rh/devtoolset-7/enable
+%endif
 make install DESTDIR=$RPM_BUILD_ROOT
 find $RPM_BUILD_ROOT -name '*.la' -exec rm -f {} ';'
 
@@ -119,27 +129,26 @@ find $RPM_BUILD_ROOT -name '*.la' -exec rm -f {} ';'
 rm -rf $RPM_BUILD_ROOT
 
 
-# No need to call ldconfig, as we're not installing to the default dynamic linker path
-#%post -p /sbin/ldconfig
+%post -p /sbin/ldconfig
 
-#%postun -p /sbin/ldconfig
+%postun -p /sbin/ldconfig
 
 
 %files
 %defattr(-,root,root,-)
 %doc ReadMe.txt History.txt
-/opt/bbcollab/lib64/*.so.*
+%{_libdir}/*.so.*
 
 %files devel
 %defattr(-,root,root,-)
-/opt/bbcollab/include/*
-/opt/bbcollab/lib64/*.so
-/opt/bbcollab/lib64/pkgconfig/*.pc
-/opt/bbcollab/share/ptlib
+%{_includedir}/*
+%{_libdir}/*.so
+%{_libdir}/pkgconfig/*.pc
+%{_datadir}/ptlib
 
 %files static
 %defattr(-,root,root,-)
-/opt/bbcollab/lib64/*.a
+%{_libdir}/*.a
 
 
 %changelog

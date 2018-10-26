@@ -15,30 +15,6 @@ used by Jenkins.  If Docker is set up, all you should need to do is run:
 
     ./rpmbuild-docker.sh
 
-#### Mock
-
-A local build performed using `mock` ensures a consistent build
-environment by setting up a chroot. It uses `yum` to install essential packages
-within the chroot, plus any packages listed as build dependencies in the spec
-file.
-
-    ./rpmbuild-mock.sh
-
-The provided mock config file, `mcu-epel-6-x86_64.cfg`, adds MCU yum
-repository definitions. If you need to build against an RPM that is not
-available from Nexus, use the following steps to set up an `mcu-local` repo:
-
-    mkdir /tmp/mcu-local
-    cp some.rpm /tmp/mcu-local
-    createrepo /tmp/mcu-local
-    ./rpmbuild-mock.sh --enablerepo=mcu-local
-
-If any of your RPMs in mcu-local are older versions of ones available from
-Nexus, you will either need to specify explicit versions in the spec file, or
-disable the Nexus repos and provide all MCU RPMs in the local repo:
-
-    ./rpmbuild-mock.sh --enablerepo=mcu-local --disablerepo=mcu-release --disablerepo=mcu-develop
-
 ### Jenkins build
 
 The [Jenkins build][1] uses Docker to ensure a consistent build environment. The
