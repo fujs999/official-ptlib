@@ -2,6 +2,9 @@
 %global version_minor  17
 %global version_patch  4
 
+%global imagemagick_ver_el6 6.7.2.7-6.el6
+%global openssl_ver_el6 1.0.2l-3.2.el6
+
 # Branch ID should be 0 for local builds/PRs
 # Jenkins builds should use 1 for develop, 2 for master (release builds)
 %{!?branch_id: %global branch_id 0}
@@ -30,14 +33,17 @@ Source0:        zsdk-ptlib.src.tgz
 # http://wiki.opalvoip.org/index.php?n=Main.BuildingPTLibUnix
 # Optional build dependencies not needed for the MCU are commented-out
 BuildRequires:  %__sed
-BuildRequires:  which
+
 %if 0%{?rhel} <= 6
-BuildRequires:  bbcollab-gcc = 5.1.0
-BuildRequires:  bbcollab-openssl-devel >= 1.0.2c, bbcollab-openssl-devel < 1.0.3
+BuildRequires:  bbcollab-gcc = 5.1.0-3.2.el6
+BuildRequires:  bbcollab-openssl-devel = %{openssl_ver_el6}
+BuildRequires:  ImageMagick-devel = %{imagemagick_ver_el6}
 %else
 BuildRequires:  devtoolset-7-gcc-c++
 BuildRequires:  openssl-devel
+BuildRequires:  ImageMagick-devel
 %endif
+
 #BuildRequires:  cyrus-sasl-devel
 BuildRequires:  expat-devel
 BuildRequires:  gperftools
@@ -52,7 +58,7 @@ BuildRequires:  ncurses-devel
 #BuildRequires:  SDL-devel
 #BuildRequires:  unixODBC-devel
 #BuildRequires:  v8-devel
-BuildRequires:  ImageMagick-devel >= 6.7
+BuildRequires:  which
 
 %description
 PTLib: Portable Tools Library
@@ -61,15 +67,18 @@ PTLib: Portable Tools Library
 Summary:        Development files for %{name}
 Group:          Development/Libraries
 Requires:       %{name} = %{version}-%{release}
+
 %if 0%{?rhel} <= 6
-Requires:       bbcollab-openssl-devel >= 1.0.2c, bbcollab-openssl-devel < 1.0.3
+Requires:       bbcollab-openssl-devel = %{openssl_ver_el6}
+Requires:       ImageMagick-devel = %{imagemagick_ver_el6}
 %else
 Requires:       openssl-devel
+Requires:       ImageMagick-devel
 %endif
+
 Requires:       expat-devel
 Requires:       libpcap-devel
 Requires:       ncurses-devel
-Requires:       ImageMagick-devel >= 6.7
 
 %description    devel
 The %{name}-devel package contains libraries and header files for
