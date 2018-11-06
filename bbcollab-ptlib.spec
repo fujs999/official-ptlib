@@ -122,7 +122,7 @@ source /opt/rh/devtoolset-7/enable
         PTLIB_MAJOR=%{version_major} \
         PTLIB_MINOR=%{version_minor} \
         PTLIB_BUILD=%{version_patch}
-make %{?_smp_mflags} REVISION_FILE= all
+make %{?_smp_mflags} REVISION_FILE= PTLIB_FILE_VERSION=%{version} all
 
 
 %install
@@ -130,7 +130,7 @@ rm -rf $RPM_BUILD_ROOT
 %if 0%{?rhel} >= 7
 source /opt/rh/devtoolset-7/enable
 %endif
-make install DESTDIR=$RPM_BUILD_ROOT
+make install DESTDIR=$RPM_BUILD_ROOT PTLIB_FILE_VERSION=%{version}
 find $RPM_BUILD_ROOT -name '*.la' -exec rm -f {} ';'
 
 
