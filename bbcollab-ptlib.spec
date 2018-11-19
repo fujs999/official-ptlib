@@ -20,7 +20,7 @@
 %endif
 
 Name:           bbcollab-ptlib
-Version:        %{version_major}.%{version_minor}.%{version_patch}.66
+Version:        %{version_major}.%{version_minor}.%{version_patch}.67
 Release:        %{branch_id}%{?jenkins_release}%{?dist}
 Summary:        PTLib: Portable Tools Library
 
