@@ -236,7 +236,7 @@ PNatMethod::NatTypes PNatMethod::GetNatType(const PTimeInterval & maxAge)
   if (newAP == oldAP && m_updateTime.GetElapsed() < maxAge)
     return m_natType;
 
-  InternalUpdate();
+  InternalUpdate(false);
   m_updateTime.SetCurrentTime();
   return m_natType;
 }
@@ -246,8 +246,16 @@ bool PNatMethod::GetExternalAddress(PIPSocket::Address & externalAddress, const 
 {
   PWaitAndSignal mutex(m_mutex);
 
-  if (GetNatType(maxAge) == UnknownNat)
-    return false;
+  if (m_natType == UnknownNat) {
+    if (GetNatType(maxAge) == UnknownNat)
+      return false;
+  }
+  else {
+    if (m_updateTime.GetElapsed() >= maxAge) {
+      InternalUpdate(true);
+      m_updateTime.SetCurrentTime();
+    }
+  }
 
   return static_cast<const PNatMethod *>(this)->GetExternalAddress(externalAddress);
 }
@@ -582,30 +590,19 @@ bool PNatMethod_Fixed::SetServer(const PString & str)
 {
   PWaitAndSignal mutex(m_mutex);
 
-  if (str.IsEmpty()) {
-    m_natType = OpenNat;
-    m_externalAddress = PIPSocket::GetInvalidAddress();
-    return true;
-  }
-
-  PString addr, type;
-  if (!str.Split('/', addr, type)) {
-    m_natType = ConeNat;
-    return m_externalAddress.FromString(str);
-  }
-
-  if (isdigit(type[0]))
-    m_natType = NatTypesFromInt(type.AsInteger());
-  else
-    m_natType = NatTypesFromString(type);
-
-  return m_natType != EndNatTypes && m_externalAddress.FromString(addr);
+  m_serverString = str;
+  InternalUpdate(false);
+  return m_natType != EndNatTypes && m_externalAddress.IsValid();
 }
 
 
 PNATUDPSocket * PNatMethod_Fixed::InternalCreateSocket(Component component, PObject *)
 {
-  return new Socket(component, m_externalAddress);
+  PIPAddress ip;
+  if (!GetExternalAddress(ip)) // So refreshes regularly
+    return NULL;
+
+  return new Socket(component, ip);
 }
 
 
@@ -628,8 +625,27 @@ bool PNatMethod_Fixed::Socket::InternalGetLocalAddress(PIPSocketAddressAndPort &
 }
 
 
-void PNatMethod_Fixed::InternalUpdate()
+void PNatMethod_Fixed::InternalUpdate(bool)
 {
+  m_externalAddress = PIPSocket::GetInvalidAddress();
+
+  if (m_serverString.IsEmpty()) {
+    m_natType = OpenNat;
+    return;
+  }
+
+  PString addr, type;
+  if (!m_serverString.Split('/', addr, type)) {
+    m_natType = ConeNat;
+    PIPSocket::GetHostAddress(m_serverString, m_externalAddress);
+    return;
+  }
+
+  if (isdigit(type[0]))
+    m_natType = NatTypesFromInt(type.AsInteger());
+  else
+    m_natType = NatTypesFromString(type);
+  PIPSocket::GetHostAddress(addr, m_externalAddress);
 }
 
 
@@ -638,7 +654,7 @@ bool PNatMethod_Fixed::GetInterfaceAddress(PIPSocket::Address & ifaceAddr) const
   PWaitAndSignal mutex(m_mutex);
 
   ifaceAddr = m_interfaceAddress;
-  return true;
+  return ifaceAddr.IsValid();
 }
 
 
@@ -647,7 +663,17 @@ bool PNatMethod_Fixed::Open(const PIPSocket::Address & ifaceAddr)
   PWaitAndSignal mutex(m_mutex);
 
   m_interfaceAddress = ifaceAddr;
-  return m_interfaceAddress.IsValid();
+  if (!m_interfaceAddress.IsValid())
+    return false;
+
+  InternalUpdate(false);
+  return true;
+}
+
+
+void PNatMethod_Fixed::Close()
+{
+  m_interfaceAddress = PIPSocket::GetInvalidAddress();
 }
 
 
@@ -695,7 +721,7 @@ PString PNatMethod_AWS::GetServer() const
 
 bool PNatMethod_AWS::SetServer(const PString &)
 {
-  InternalUpdate();
+  InternalUpdate(false);
   return m_externalAddress.IsValid();
 }
 
@@ -707,7 +733,7 @@ bool PNatMethod_AWS::InternalGetServerAddress(PIPSocketAddressAndPort & external
 }
 
 
-void PNatMethod_AWS::InternalUpdate()
+void PNatMethod_AWS::InternalUpdate(bool)
 {
   m_externalAddress = PIPSocket::GetInvalidAddress();
 
@@ -720,12 +746,6 @@ void PNatMethod_AWS::InternalUpdate()
   else if (!m_externalAddress.FromString(extAddr)) {
     PTRACE(2, "Invalid IP \"" << extAddr << "\" loaded from " << api);
   }
-}
-
-
-bool PNatMethod_AWS::Open(const PIPSocket::Address & ifaceAddr)
-{
-  return PNatMethod_Fixed::Open(ifaceAddr) && SetServer(PString::Empty());
 }
 
 

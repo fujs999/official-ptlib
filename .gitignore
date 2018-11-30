@@ -28,3 +28,4 @@ private/
 /samples/vxmltest/cache/
 /rpmbuild/
 
+/tools/configure/Release

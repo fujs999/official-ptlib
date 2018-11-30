@@ -362,6 +362,7 @@ public:
     for (size_t i = 0; i < m_instancesInUse.size(); ++i) {
       if (!m_instancesInUse[i]) {
         m_instancesInUse[i] = true;
+        Control(i, "Instance Allocated");
         return i;
       }
     }
@@ -376,6 +377,7 @@ public:
     if (instance >= (int)m_instancesInUse.size())
       return false;
 
+    Control(instance, "Instance Released");
     m_instancesInUse[instance] = false;
     return true;
   }
@@ -435,7 +437,7 @@ public:
   int Control(unsigned instance, const PString & ctrl)
   {
     PReadWaitAndSignal lock(m_mutex);
-    if (!m_library->SLControl.IsPresent())
+    if (m_library == NULL || !m_library->SLControl.IsPresent())
       return INT_MIN;
 
     SLControlData data;
@@ -1181,24 +1183,18 @@ PVXMLCache & PVXMLSession::GetCache()
 
 PBoolean PVXMLSession::Load(const PString & source)
 {
-  // Lets try and guess what was passed, if file exists then is file
+  // See if we have been given a file
   PFilePath file = source;
   if (PFile::Exists(file))
     return LoadFile(file);
 
-  // see if looks like URL
-  PINDEX pos = source.Find(':');
-  if (pos != P_MAX_INDEX) {
-    PString scheme = source.Left(pos);
-    if ((scheme *= "http") || (scheme *= "https") || (scheme *= "file"))
-      return LoadURL(source);
-  }
+  // see if a URL
+  PURL url(source, NULL);
+  if (!url.IsEmpty())
+    return LoadURL(url);
 
-  // See if is actual VXML
-  if (PCaselessString(source).Find("<vxml") != P_MAX_INDEX)
-    return LoadVXML(source);
-
-  return false;
+  // Try and parse it as direct VXML
+  return LoadVXML(source);
 }
 
 
@@ -3548,8 +3544,10 @@ PBoolean PVXMLChannel::Read(void * buffer, PINDEX amount)
     // if the read succeeds, we are done
     if (ReadFrame(buffer, amount)) {
       m_totalData += GetLastReadCount();
+#if P_VXML_VIDEO
       if (m_vxmlSession->m_videoSender.IsRunning())
         return true; // Already done real time delay
+#endif
     }
 
     // if a timeout, send silence, try again in a bit

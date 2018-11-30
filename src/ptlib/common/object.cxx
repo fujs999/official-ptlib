@@ -1165,34 +1165,6 @@ void PMemoryHeap::SetAllocationBreakpoint(alloc_t objectNumber)
 }
 
 
-#else // defined(_MSC_VER) && defined(_DEBUG)
-
-#if !defined(P_VXWORKS) && !defined(P_ANDROID)
-
-#if (__cplusplus >= 201103L)
-void * operator new[](size_t nSize)
-#elif (__GNUC__ >= 3) || ((__GNUC__ == 2)&&(__GNUC_MINOR__ >= 95)) //2.95.X & 3.X
-void * operator new[](size_t nSize) throw (std::bad_alloc)
-#else
-void * operator new[](size_t nSize)
-#endif
-{
-  return malloc(nSize);
-}
-
-#if (__cplusplus >= 201103L)
-void operator delete[](void * ptr) noexcept
-#elif (__GNUC__ >= 3) || ((__GNUC__ == 2)&&(__GNUC_MINOR__ >= 95)) //2.95.X & 3.X
-void operator delete[](void * ptr) throw ()
-#else
-void operator delete[](void * ptr)
-#endif
-{
-  free(ptr);
-}
-
-#endif // !P_VXWORKS
-
 #endif // defined(_MSC_VER) && defined(_DEBUG)
 
 #endif // PMEMORY_CHECK
