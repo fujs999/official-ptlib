@@ -122,7 +122,8 @@ source /opt/rh/devtoolset-7/enable
 %endif
         PTLIB_MAJOR=%{version_major} \
         PTLIB_MINOR=%{version_minor} \
-        PTLIB_BUILD=%{version_patch}
+        PTLIB_PATCH=%{version_patch} \
+        PTLIB_OEM=%{version_oem}
 make %{?_smp_mflags} REVISION_FILE= PTLIB_FILE_VERSION=%{version} all
 
 
