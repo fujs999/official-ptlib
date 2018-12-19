@@ -1,7 +1,7 @@
 %global version_major  2
 %global version_minor  19
 %global version_patch  1
-%global version_oem    2
+%global version_oem    3
 
 %global imagemagick_ver_el6 6.7.2.7-6.el6
 %global openssl_ver_el6 1.0.2l-3.2.el6
