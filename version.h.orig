@@ -37,8 +37,13 @@
 #define MAJOR_VERSION 2
 #define MINOR_VERSION 19
 #define BUILD_TYPE AlphaCode
-#define PATCH_VERSION 2
+<<<<<<< HEAD
+#define PATCH_VERSION 1
 #define OEM_VERSION 1
+=======
+#define PATCH_VERSION 2
+#define OEM_VERSION 0
+>>>>>>> trunk
 
 
 #endif  // _PTLib_VERSION_H
