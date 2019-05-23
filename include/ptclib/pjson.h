@@ -132,7 +132,9 @@ class PJSON : public PObject
 
         PString GetString(size_t index) const;
         int GetInteger(size_t index) const;
+        int64_t GetInteger64(size_t index) const;
         unsigned GetUnsigned(size_t index) const;
+        uint64_t GetUnsigned64(size_t index) const;
         double GetNumber(size_t index) const;
         bool GetBoolean(size_t index) const;
 

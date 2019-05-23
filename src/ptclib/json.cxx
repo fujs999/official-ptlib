@@ -629,14 +629,28 @@ PString PJSON::Array::GetString(size_t index) const
 int PJSON::Array::GetInteger(size_t index) const
 {
   const Number * num = Get<Number>(index);
-  return num != NULL ? (int)num->GetValue() : 0;
+  return num != NULL ? lrintl(num->GetValue()) : 0;
+}
+
+
+int64_t PJSON::Array::GetInteger64(size_t index) const
+{
+  const Number * num = Get<Number>(index);
+  return num != NULL ? llrintl(num->GetValue()) : 0;
 }
 
 
 unsigned PJSON::Array::GetUnsigned(size_t index) const
 {
   const Number * num = Get<Number>(index);
-  return num != NULL ? (unsigned)num->GetValue() : 0;
+  return num != NULL ? lrintl(num->GetValue()) : 0;
+}
+
+
+uint64_t PJSON::Array::GetUnsigned64(size_t index) const
+{
+  const Number * num = Get<Number>(index);
+  return num != NULL ? llrintl(num->GetValue()) : 0;
 }
 
 
