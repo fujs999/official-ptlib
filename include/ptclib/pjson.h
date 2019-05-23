@@ -91,7 +91,9 @@ class PJSON : public PObject
 
         PString GetString(const PString & name) const;
         int GetInteger(const PString & name) const;
+        int64_t GetInteger64(const PString & name) const;
         unsigned GetUnsigned(const PString & name) const;
+        uint64_t GetUnsigned64(const PString & name) const;
         double GetNumber(const PString & name) const;
         bool GetBoolean(const PString & name) const;
 

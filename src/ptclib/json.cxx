@@ -421,10 +421,24 @@ int PJSON::Object::GetInteger(const PString & name) const
 }
 
 
+int64_t PJSON::Object::GetInteger64(const PString & name) const
+{
+  const Number * num = Get<Number>(name);
+  return num != NULL ? (int64_t)num->GetValue() : 0;
+}
+
+
 unsigned PJSON::Object::GetUnsigned(const PString & name) const
 {
   const Number * num = Get<Number>(name);
   return num != NULL ? (unsigned)num->GetValue() : 0;
+}
+
+
+uint64_t PJSON::Object::GetUnsigned64(const PString & name) const
+{
+  const Number * num = Get<Number>(name);
+  return num != NULL ? (uint64_t)num->GetValue() : 0;
 }
 
 
