@@ -34,6 +34,7 @@
 #include <ptclib/pjson.h>
 #include <ptclib/cypher.h>
 
+#include <tgmath.h>
 
 #define new PNEW
 #define PTraceModule() "JSON"
@@ -417,28 +418,28 @@ PString PJSON::Object::GetString(const PString & name) const
 int PJSON::Object::GetInteger(const PString & name) const
 {
   const Number * num = Get<Number>(name);
-  return num != NULL ? (int)num->GetValue() : 0;
+  return num != NULL ? lrintl(num->GetValue()) : 0;
 }
 
 
 int64_t PJSON::Object::GetInteger64(const PString & name) const
 {
   const Number * num = Get<Number>(name);
-  return num != NULL ? (int64_t)num->GetValue() : 0;
+  return num != NULL ? llrintl(num->GetValue()) : 0;
 }
 
 
 unsigned PJSON::Object::GetUnsigned(const PString & name) const
 {
   const Number * num = Get<Number>(name);
-  return num != NULL ? (unsigned)num->GetValue() : 0;
+  return num != NULL ? lrintl(num->GetValue()) : 0;
 }
 
 
 uint64_t PJSON::Object::GetUnsigned64(const PString & name) const
 {
   const Number * num = Get<Number>(name);
-  return num != NULL ? (uint64_t)num->GetValue() : 0;
+  return num != NULL ? llrintl(num->GetValue()) : 0;
 }
 
 
