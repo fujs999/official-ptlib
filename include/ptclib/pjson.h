@@ -165,16 +165,16 @@ class PJSON : public PObject
     class Number : public Base
     {
       protected:
-        double m_value;
+        long double m_value;
       public:
-        explicit Number(double value = 0);
+        explicit Number(long double value = 0);
         virtual bool IsType(Types type) const;
         virtual void ReadFrom(istream & strm);
         virtual void PrintOn(ostream & strm) const;
         virtual Base * DeepClone() const;
-        Number & operator=(double value) { m_value = value; return *this; }
-        void SetValue(double value) { m_value = value; }
-        double GetValue() const { return m_value; }
+        Number & operator=(long double value) { m_value = value; return *this; }
+        void SetValue(long double value) { m_value = value; }
+        long double GetValue() const { return m_value; }
     };
 
     class Boolean : public Base

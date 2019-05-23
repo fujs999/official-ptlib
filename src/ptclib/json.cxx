@@ -732,7 +732,7 @@ PJSON::Base * PJSON::String::DeepClone() const
 }
 
 
-PJSON::Number::Number(double value)
+PJSON::Number::Number(long double value)
   : m_value(value)
 {
 }
