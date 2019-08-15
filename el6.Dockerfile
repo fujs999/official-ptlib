@@ -14,8 +14,8 @@ ARG SPECFILE
 COPY ${SPECFILE} .
 # Invalidate Docker cache if yum repo metadata has changed
 ADD http://nexus.bbcollab.net/yum/mcu-develop/repodata/repomd.xml /tmp/
-RUN yum-builddep -y --downloadonly --downloaddir=/tmp/build-deps ${SPECFILE}; \
-    if [ -n "$(ls -A /tmp/build-deps/*.rpm)" ]; then yum install -y /tmp/build-deps/*.rpm; fi; \
+RUN yum-builddep -y --downloadonly --downloaddir=/tmp/build-deps ${SPECFILE} && \
+    ([ -z "$(ls -A /tmp/build-deps/*.rpm)" ] || yum install -y /tmp/build-deps/*.rpm) && \
     yum clean all
 
 USER rpmbuild
