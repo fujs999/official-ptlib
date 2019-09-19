@@ -12,7 +12,9 @@ RUN groupadd -g ${USERID} rpmbuild && useradd -u ${USERID} -g ${GROUPID} rpmbuil
 WORKDIR /home/rpmbuild
 
 # Install devtoolset-7
+# (with workaround for https://bugs.centos.org/view.php?id=16423)
 RUN yum install -y centos-release-scl-rh && \
+    sed -i 's|centos/7/|centos/7.6.1810/|' /etc/yum.repos.d/CentOS-SCLo-*.repo && \
     yum install -y --setopt=tsflags=nodocs devtoolset-7-gcc devtoolset-7-gcc-c++ devtoolset-7-gcc-gfortran devtoolset-7-gdb && \
     yum clean all
 
