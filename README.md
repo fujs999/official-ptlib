@@ -47,12 +47,12 @@ the build number component should be missing.
 
 For example:
 
-    bbcollab-ptlib-2.17.4.13-2.55.el6.x86_64.rpm
+    bbcollab-ptlib-2.17.4.13-2.55.el7.x86_64.rpm
     package        ver       rel      arch
 
 * Package: bbcollab-ptlib
 * Version: 2.17.4.13 (Open source 2.17.4, plus 13 patches)
-* Release: 2.55.el6 (Release branch build, Jenkins build number: 55, Dist tag: el6)
+* Release: 2.55.el7 (Release branch build, Jenkins build number: 55, Dist tag: el7)
 * Arch: x86_64
 
 ## Branching
