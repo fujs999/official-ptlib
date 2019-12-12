@@ -3,9 +3,6 @@
 %global version_patch  3
 %global version_oem    15
 
-%global imagemagick_ver_el6 6.7.2.7-6.el6
-%global openssl_ver_el6 1.0.2l-3.2.el6
-
 # Branch ID should be 0 for local builds/PRs
 # Jenkins builds should use 1 for develop, 2 for master (release builds)
 %{!?branch_id: %global branch_id 0}
@@ -15,10 +12,6 @@
 %global _enable_debug_package 0
 %global debug_package %{nil}
 %global __os_install_post /usr/lib/rpm/brp-compress %{nil}
-
-%if 0%{?rhel} <= 6
-    %global _prefix /opt/bbcollab
-%endif
 
 Name:           bbcollab-ptlib
 Version:        %{version_major}.%{version_minor}.%{version_patch}.%{version_oem}
@@ -35,15 +28,9 @@ Source0:        zsdk-ptlib.src.tgz
 # Optional build dependencies not needed for the MCU are commented-out
 BuildRequires:  %__sed
 
-%if 0%{?rhel} <= 6
-BuildRequires:  bbcollab-gcc = 5.1.0-3.2.el6
-BuildRequires:  bbcollab-openssl-devel = %{openssl_ver_el6}
-BuildRequires:  ImageMagick-devel = %{imagemagick_ver_el6}
-%else
 BuildRequires:  devtoolset-7-gcc-c++
 BuildRequires:  openssl-devel
 BuildRequires:  ImageMagick-devel
-%endif
 
 #BuildRequires:  cyrus-sasl-devel
 BuildRequires:  expat-devel
@@ -69,13 +56,8 @@ Summary:        Development files for %{name}
 Group:          Development/Libraries
 Requires:       %{name} = %{version}-%{release}
 
-%if 0%{?rhel} <= 6
-Requires:       bbcollab-openssl-devel = %{openssl_ver_el6}
-Requires:       ImageMagick-devel = %{imagemagick_ver_el6}
-%else
 Requires:       openssl-devel
 Requires:       ImageMagick-devel
-%endif
 
 Requires:       expat-devel
 Requires:       libpcap-devel
@@ -101,11 +83,7 @@ developing applications that use %{name}.
 
 
 %build
-%if 0%{?rhel} <= 6
-PKG_CONFIG_PATH=/opt/bbcollab/lib64/pkgconfig:/opt/bbcollab/lib/pkgconfig
-%else
 source /opt/rh/devtoolset-7/enable
-%endif
 %configure --enable-exceptions \
         --with-profiling=manual \
         --disable-pthread_kill \
@@ -115,11 +93,6 @@ source /opt/rh/devtoolset-7/enable
         --disable-openldap \
         --disable-plugins \
         --enable-cpp14 \
-%if 0%{?rhel} <= 6
-        CC=/opt/bbcollab/bin/gcc \
-        CXX=/opt/bbcollab/bin/g++ \
-        LD=/opt/bbcollab/bin/g++ \
-%endif
         PTLIB_MAJOR=%{version_major} \
         PTLIB_MINOR=%{version_minor} \
         PTLIB_PATCH=%{version_patch} \
@@ -129,9 +102,7 @@ make %{?_smp_mflags} REVISION_FILE= PTLIB_FILE_VERSION=%{version} all
 
 %install
 rm -rf $RPM_BUILD_ROOT
-%if 0%{?rhel} >= 7
 source /opt/rh/devtoolset-7/enable
-%endif
 make install DESTDIR=$RPM_BUILD_ROOT PTLIB_FILE_VERSION=%{version}
 find $RPM_BUILD_ROOT -name '*.la' -exec rm -f {} ';'
 

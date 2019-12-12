@@ -6,28 +6,6 @@ pipeline {
   }
 
   stages {
-    stage('package-el6') {
-      // Build environment is defined by the Dockerfile
-      agent {
-        dockerfile {
-          filename 'el6.Dockerfile'
-          additionalBuildArgs  '--build-arg SPECFILE=bbcollab-ptlib.spec'
-          customWorkspace "${JOB_NAME.replaceAll('%2F', '_')}"
-        }
-      }
-      steps {
-        // Copy RPM dependencies to the workspace for fingerprinting (see Dockerfile)
-        sh 'cp -r /tmp/build-deps .'
-        sh './rpmbuild.sh'
-      }
-      post {
-        success {
-          fingerprint 'build-deps/*.rpm'
-          archiveArtifacts artifacts: 'rpmbuild/**/*', fingerprint: true
-          stash name: 'el6_rpms', includes: 'rpmbuild/RPMS/**/*'
-        }
-      }
-    }
     stage('package-el7') {
       // Build environment is defined by the Dockerfile
       agent {
@@ -65,13 +43,9 @@ pipeline {
       }
       steps {
         script {
-          def dists = ['el6', 'el7']
+          def dists = ['el7']
           for (int i = 0; i < dists.size(); ++i) {
-            if (dists[i] == 'el6') {
-              env.REPO = ''
-            } else {
-              env.REPO = "${dists[i]}/"
-            }
+            env.REPO = "${dists[i]}/"
 
             if (env.BRANCH_NAME == 'develop') {
               env.REPO += 'mcu-develop'
