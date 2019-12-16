@@ -39,10 +39,14 @@ extern "C" int vsprintf(char *, const char *, va_list);
 #endif
 
 #if P_REGEX
-#include <regex.h>
+  #include <regex.h>
 #else
-#include "regex/regex.h"
+  #include "regex/regex.h"
 #endif
+
+#if P_HAS_ICONV
+  #include <iconv.h>
+#endif // P_HAS_ICONV
 
 
 #if !P_USE_INLINES
@@ -745,12 +749,12 @@ PString::PString(const wchar_t * wstr)
   if (wstr == NULL)
     MakeEmpty();
   else
-    InternalFromUCS2(wstr, wcslen(wstr));
+    InternalFromWChar(wstr, wcslen(wstr));
 }
 
 PString::PString(const wchar_t * wstr, PINDEX len)
 {
-  InternalFromUCS2(wstr, len);
+  InternalFromWChar(wstr, len);
 }
 
 
@@ -759,7 +763,7 @@ PString::PString(const PWCharArray & wstr)
   PINDEX size = wstr.GetSize();
   if (size > 0 && wstr[size-1] == 0) // Stip off trailing NULL if present
     size--;
-  InternalFromUCS2(wstr, size);
+  InternalFromWChar(wstr, size);
 }
 
 #endif // P_HAS_WCHAR
@@ -2080,66 +2084,124 @@ double PString::AsReal() const
 }
 
 
-#ifdef P_HAS_WCHAR
+#if P_HAS_WCHAR
 
-PWCharArray PString::AsUCS2() const
+#if P_HAS_ICONV
+  namespace {
+    struct PCharsetConverter : PObject
+    {
+      iconv_t m_cd;
+      char  * m_inPtr;
+      size_t  m_inLen;
+      char  * m_outPtr;
+      size_t  m_outLen;
+
+      PCharsetConverter(
+        const char * from,
+        const char * to,
+        const void * inPtr,
+        size_t inLen,
+        void * outPtr,
+        size_t outLen
+      )
+        : m_inPtr((char *)inPtr)
+        , m_inLen(inLen)
+        , m_outPtr((char *)outPtr)
+        , m_outLen(outLen)
+      {
+        m_cd = iconv_open(to, from);
+        PAssert(m_cd != (iconv_t)-1, PInvalidParameter);
+      }
+
+      ~PCharsetConverter()
+      {
+        if (m_cd != (iconv_t)-1)
+          iconv_close(m_cd);
+      }
+
+      int Convert()
+      {
+        return iconv(m_cd, &m_inPtr, &m_inLen, &m_outPtr, &m_outLen) != (size_t)-1 ? 0 : errno;
+      }
+
+      void EmitOutput(const void * data, size_t len)
+      {
+        if (len <= m_outLen) {
+          memcpy(m_outPtr, data, len);
+          m_outPtr += len;
+          m_outLen -= len;
+        }
+      }
+    };
+  };
+#endif // P_HAS_ICONV
+
+
+PWCharArray PString::AsWide() const
 {
-  PWCharArray ucs2(1); // Null terminated empty string
+  PWCharArray wide(1); // Null terminated empty string
 
   if (IsEmpty())
-    return ucs2;
+    return wide;
 
-#if defined(_WIN32)
+#if P_HAS_ICONV
 
-  // Note that MB_ERR_INVALID_CHARS is the only dwFlags value supported by Code page 65001 (UTF-8). Windows XP and later.
-  PINDEX len = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, theArray, GetLength(), NULL, 0);
-  if (len > 0 && ucs2.SetSize(len+1)) { // Allow for trailing NULL
-    MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, theArray, GetLength(), ucs2.GetPointer(), ucs2.GetSize());
-    return ucs2;
+  if (!PAssert(wide.SetSize(GetLength()), POutOfMemory))
+    return wide;
+
+  static const wchar_t BadChar = 0xFFFD;
+  PCharsetConverter cvt("UTF-8", "WCHAR_T", GetPointer(), GetLength(), wide.GetPointer(), wide.GetSize()*sizeof(wchar_t));
+  for (;;) {
+    int err = cvt.Convert();
+    switch (err) {
+      case EILSEQ :
+        do {
+          ++cvt.m_inPtr;
+          --cvt.m_inLen;
+        } while (cvt.m_inLen > 0 && (*cvt.m_inPtr & 0xc0) == 0x80);
+        cvt.EmitOutput(&BadChar, sizeof(BadChar));
+        break;
+
+      case EINVAL :
+        cvt.EmitOutput(&BadChar, sizeof(BadChar));
+        // Do next case
+
+      case 0 :
+        wide.SetSize(wide.GetSize() - cvt.m_outLen/sizeof(wchar_t) + 1);
+        return wide;
+
+      default :
+        PAssertAlways(PSTRSTRM("Could not convert UTF-8 to wchar_t string: error=" << err << " - " << strerror(err)));
+        return PWCharArray(1);
+    }
   }
 
-#if PTRACING
-  if (GetLastError() == ERROR_NO_UNICODE_TRANSLATION)
-    PTRACE(1, "PTLib", "MultiByteToWideChar failed on non legal UTF-8 \"" << Left(50) << '"');
-  else
-    PTRACE(1, "PTLib", "MultiByteToWideChar failed with error " << ::GetLastError());
-#endif
+#elif defined(_WIN32)
 
-#else
+  PINDEX len = MultiByteToWideChar(CP_UTF8, 0, theArray, GetLength(), NULL, 0);
+  if (PAssert(len > 0, PSTRSTRM("MultiByteToWideChar failed with error " << ::GetLastError())) &&
+      PAssert(wide.SetSize(len+1), POutOfMemory))
+    MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, theArray, GetLength(), wide.GetPointer(), wide.GetSize());
 
-  mbstate_t mb;
-  memset(&mb, 0, sizeof(mb));
-  const char * src = theArray;
-  size_t outLen = mbsrtowcs(ucs2.GetPointer(m_length), &src, m_length, &mb);
-  if (outLen != (size_t)-1) {
-    ucs2.SetSize(outLen+1);
-    return ucs2;
-  }
+#else // _WIN32 || _POSIX_VERSION
 
-  PTRACE(1, "PTLib", "Could not convert from UTF-8 to UCS-2:"
-                     " value=0x" << hex << (unsigned)(*src&0xff) << dec << ","
-                     " errno=" << errno << ' ' << strerror(errno));
-
-#endif // _WIN32
-
-
-  if (ucs2.SetSize(GetSize())) { // Will be at least this big
+  if (PAssert(wide.SetSize(GetSize()), POutOfMemory)) { // Will be at least this big
     PINDEX count = 0;
     PINDEX i = 0;
     PINDEX length = GetLength()+1; // Include the trailing '\0'
     while (i < length) {
       int c = theArray[i];
       if ((c&0x80) == 0)
-        ucs2[count++] = (BYTE)theArray[i++];
+        wide[count++] = (BYTE)theArray[i++];
       else if ((c&0xe0) == 0xc0) {
         if (i < length-1)
-          ucs2[count++] = (WORD)(((theArray[i  ]&0x1f)<<6)|
+          wide[count++] = (WORD)(((theArray[i  ]&0x1f)<<6)|
                                   (theArray[i+1]&0x3f));
         i += 2;
       }
       else if ((c&0xf0) == 0xe0) {
         if (i < length-2)
-          ucs2[count++] = (WORD)(((theArray[i  ]&0x0f)<<12)|
+          wide[count++] = (WORD)(((theArray[i  ]&0x0f)<<12)|
                                  ((theArray[i+1]&0x3f)<< 6)|
                                   (theArray[i+2]&0x3f));
         i += 3;
@@ -2152,81 +2214,132 @@ PWCharArray PString::AsUCS2() const
         else
           i += 6;
         if (i <= length)
-          ucs2[count++] = 0xffff;
+          wide[count++] = 0xfffd;
       }
     }
 
-    ucs2.SetSize(count+1);  // Final size
+    wide.SetSize(count+1);  // Final size
   }
+#endif // _WIN32 || _POSIX_VERSION
 
-  return ucs2;
+  return wide;
 }
 
 
-void PString::InternalFromUCS2(const wchar_t * ptr, PINDEX len)
+void PString::InternalFromWChar(const wchar_t * wstr, PINDEX len)
 {
-  if (ptr == NULL || len <= 0) {
+  if (wstr == NULL || len <= 0) {
     MakeEmpty();
     return;
   }
 
-#if defined(_WIN32)
+#if P_HAS_ICONV
 
-  int outLen = WideCharToMultiByte(CP_UTF8, 0, ptr, len, NULL, 0, NULL, NULL);
-  if (outLen > 0 && SetSize(outLen+1)) {
-    WideCharToMultiByte(CP_UTF8, 0, ptr, len, GetPointerAndSetLength(outLen), GetSize(), NULL, NULL);
-    return;
-  }
-  PTRACE(1, "PTLib", "Could not convert UCS-2 to UTF-8: errno=" << ::GetLastError());
-
-#else
-
-  mbstate_t mb;
-  memset(&mb, 0, sizeof(mb));
-  const wchar_t * src = ptr;
-  size_t outLen = wcsnrtombs(NULL, &src, len, 0, &mb);
-  if (outLen != (size_t)-1 && outLen > 0) {
-    memset(&mb, 0, sizeof(mb));
-    wcsnrtombs(GetPointerAndSetLength(outLen), &ptr, len, outLen, &mb);
+  if (!PAssert(SetSize(len*6+1), POutOfMemory)) {
+    MakeEmpty();
     return;
   }
 
-  PTRACE(1, "PTLib", "Could not convert UCS-2 to UTF-8:"
-                     " value=0x" << hex << (*src&0xffff) << dec << ","
-                     " errno=" << errno << ' ' << strerror(errno));
+  static const char BadChar[] = { '\xef', '\xbf', '\xbd' }; // 0xFFFD
+  PCharsetConverter cvt("WCHAR_T", "UTF-8", wstr, len*sizeof(wchar_t), theArray, GetSize());
+  for (;;) {
+    int err = cvt.Convert();
+    switch (err) {
+      case EILSEQ :
+        cvt.m_inPtr += sizeof(wchar_t);
+        cvt.m_inLen -= sizeof(wchar_t);
+        cvt.EmitOutput(BadChar, sizeof(BadChar));
+        break;
 
-#endif // _WIN32
+      case EINVAL :
+        cvt.EmitOutput(BadChar, sizeof(BadChar));
+        // Do next case
 
-  PINDEX i;
-  PINDEX count = 0;
-  for (i = 0; i < len; i++) {
-    unsigned v = *ptr++;
-    if (v < 0x80)
-      count++;
-    else if (v < 0x800)
-      count += 2;
-    else
-      count += 3;
-  }
+      case 0 :
+        m_length = GetSize() - cvt.m_outLen;
+        SetSize(m_length+1);
+        return;
 
-  m_length = count;
-  if (SetSize(m_length+1)) {
-    count = 0;
-    for (i = 0; i < len; i++) {
-      unsigned v = *ptr++;
-      if (v < 0x80)
-        theArray[count++] = (char)v;
-      else if (v < 0x800) {
-        theArray[count++] = (char)(0xc0+(v>>6));
-        theArray[count++] = (char)(0x80+(v&0x3f));
-      }
-      else {
-        theArray[count++] = (char)(0xe0+(v>>12));
-        theArray[count++] = (char)(0x80+((v>>6)&0x3f));
-        theArray[count++] = (char)(0x80+(v&0x3f));
-      }
+      default :
+        PAssertAlways(PSTRSTRM("Could not convert wchar_t string to UTF-8: error=" << err << " - " << strerror(err)));
+        MakeEmpty();
+        return;
     }
   }
+
+#elif defined(_WIN32)
+
+  int outLen = WideCharToMultiByte(CP_UTF8, 0, wstr, len, NULL, 0, NULL, NULL);
+  if (PAssert(outLen > 0, PSTRSTRM("Could not convert wchar_t to UTF-8: errno=" << ::GetLastError())) &&
+      PAssert(SetSize((PINDEX)outLen + 1), POutOfMemory))
+    WideCharToMultiByte(CP_UTF8, 0, wstr, len, GetPointerAndSetLength(outLen), GetSize(), NULL, NULL);
+
+#else // _WIN32 || _POSIX_VERSION
+
+  PINDEX i;
+  m_length = 0;
+  const wchar_t * ptr;
+  for (ptr = wstr, i = 0; i < len; i++) {
+    unsigned v = *ptr++;
+    if (v < 0x80)
+      m_length++;
+    else if (v < 0x800)
+      m_length += 2;
+    else if (v < 0x10000)
+      m_length += 3;
+    else if (v < 0x200000)
+      m_length += 4;
+    else if (v < 0x4000000)
+      m_length += 5;
+    else if (v < 0x80000000)
+      m_length += 6;
+  }
+
+  if (!PAssert(SetSize(m_length+1), POutOfMemory)) {
+    MakeEmpty();
+    return;
+  }
+
+  char * out = theArray;
+  for (ptr = wstr, i = 0; i < len; i++) {
+    unsigned v = *ptr++;
+    if (v > 0 && v < 0x80) // Allow for an embedded zero
+      *out++ = (char)v;
+    else if (v < 0x800) {
+      *out++ = (char)(0xc0|(v>>6  ));
+      *out++ = (char)(0x80|(v&0x3f));
+    }
+    else if (v < 0x10000) {
+      *out++ = (char)(0xe0|( v>>12     ));
+      *out++ = (char)(0x80|((v>>6)&0x3f));
+      *out++ = (char)(0x80|( v    &0x3f));
+    }
+    else if (v < 0x200000) {
+      *out++ = (char)(0xf0|( v>>18      ));
+      *out++ = (char)(0x80|((v>>12)&0x3f));
+      *out++ = (char)(0x80|((v>> 6)&0x3f));
+      *out++ = (char)(0x80|( v     &0x3f));
+    }
+    else if (v < 0x4000000) {
+      *out++ = (char)(0xf8|( v>>24      ));
+      *out++ = (char)(0x80|((v>>18)&0x3f));
+      *out++ = (char)(0x80|((v>>12)&0x3f));
+      *out++ = (char)(0x80|((v>> 6)&0x3f));
+      *out++ = (char)(0x80|( v     &0x3f));
+    }
+    else if (v < 0x80000000) {
+      *out++ = (char)(0xfc+( v>>30)      );
+      *out++ = (char)(0x80+((v>>24)&0x3f));
+      *out++ = (char)(0x80+((v>>18)&0x3f));
+      *out++ = (char)(0x80+((v>>12)&0x3f));
+      *out++ = (char)(0x80+((v>> 6)&0x3f));
+      *out++ = (char)(0x80+( v     &0x3f));
+    }
+    // Ignore
+  }
+
+  *out = '\0';
+#endif // _WIN32 || _POSIX_VERSION
 }
 
 #endif // P_HAS_WCHAR
