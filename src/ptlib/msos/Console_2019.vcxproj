@@ -146,15 +146,14 @@
       <PrecompiledHeaderFile>ptlib.h</PrecompiledHeaderFile>
       <BrowseInformation>true</BrowseInformation>
       <WarningLevel>Level4</WarningLevel>
-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <DisableSpecificWarnings>
       </DisableSpecificWarnings>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <PrecompiledHeaderOutputFile>$(VS_PCH_DIR)$(IntDir)$(TargetName).pch</PrecompiledHeaderOutputFile>
-      <ProgramDataBaseFileName>$(OutDir)$(TargetName).pdb</ProgramDataBaseFileName>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
     </ClCompile>
     <ResourceCompile>
       <Culture>0x0c09</Culture>
@@ -172,13 +171,13 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>ptlib.h</PrecompiledHeaderFile>
       <WarningLevel>Level4</WarningLevel>
-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <DisableSpecificWarnings>
       </DisableSpecificWarnings>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
     </ClCompile>
     <ResourceCompile>
       <Culture>0x0c09</Culture>
@@ -262,7 +261,7 @@
       <StringPooling>true</StringPooling>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
-      <ProgramDataBaseFileName>$(OutDir)$(TargetName).pdb</ProgramDataBaseFileName>
+      <DebugInformationFormat>None</DebugInformationFormat>
     </ClCompile>
     <ResourceCompile>
       <Culture>0x0c09</Culture>
@@ -288,6 +287,7 @@
       <OpenMPSupport>true</OpenMPSupport>
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
       <StringPooling>true</StringPooling>
+      <DebugInformationFormat>None</DebugInformationFormat>
     </ClCompile>
     <ResourceCompile>
       <Culture>0x0c09</Culture>
@@ -305,9 +305,9 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\..\..\..\external\ffmpeg-win64-dev\include;$(FFMPEG64DIR)\include</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">..\..\..\..\external\ffmpeg-win64-dev\include;$(FFMPEG64DIR)\include</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\..\..\..\external\ffmpeg-win64-dev\include;$(FFMPEG64DIR)\include</AdditionalIncludeDirectories>
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\..\..\external\ffmpeg-win32-dev\include;$(FFMPEGDIR)\include</AdditionalIncludeDirectories>
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">..\..\..\..\external\ffmpeg-win32-dev\include;$(FFMPEGDIR)\include</AdditionalIncludeDirectories>
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\..\..\external\ffmpeg-win32-dev\include;$(FFMPEGDIR)\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\..\..\external\ffmpeg-win32-dev\include;$(FFMPEG32DIR)\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">..\..\..\..\external\ffmpeg-win32-dev\include;$(FFMPEG32DIR)\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\..\..\external\ffmpeg-win32-dev\include;$(FFMPEG32DIR)\include</AdditionalIncludeDirectories>
     </ClCompile>
     <ClCompile Include="..\..\ptclib\textdata.cxx" />
     <ClCompile Include="..\..\ptclib\tonedev.cxx" />
