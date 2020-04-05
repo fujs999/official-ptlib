@@ -1535,22 +1535,6 @@ PObject::Comparison PString::NumCompare(const char * cstr, PINDEX count, PINDEX 
 }
 
 
-PObject::Comparison PString::InternalCompare(PINDEX offset, char c) const
-{
-#if PINDEX_SIGNED
-  if (offset < 0)
-    return LessThan;
-#endif
-
-  const int ch = theArray[offset] & 0xff;
-  if (ch < (c & 0xff))
-    return LessThan;
-  if (ch > (c & 0xff))
-    return GreaterThan;
-  return EqualTo;
-}
-
-
 PObject::Comparison PString::InternalCompare(PINDEX offset, PINDEX length, const char * cstr) const
 {
 #if PINDEX_SIGNED
@@ -1561,22 +1545,21 @@ PObject::Comparison PString::InternalCompare(PINDEX offset, PINDEX length, const
   if (offset == 0 && theArray == cstr)
     return EqualTo;
 
-  if (cstr == NULL)
-    return IsEmpty() ? EqualTo : LessThan;
+  const char * s1 = theArray+offset;
+  const char * s2 = cstr != NULL ? cstr : "";
+  return Compare2(length != P_MAX_INDEX ? internal_strncmp(s1, s2, length) : internal_strcmp(s1, s2), 0);
+}
 
-  int retval;
-  if (length == P_MAX_INDEX)
-    retval = strcmp(theArray+offset, cstr);
-  else
-    retval = strncmp(theArray+offset, cstr, length);
 
-  if (retval < 0)
-    return LessThan;
+int PString::internal_strcmp(const char * s1, const char *s2) const
+{
+  return strcmp(s1, s2);
+}
 
-  if (retval > 0)
-    return GreaterThan;
 
-  return EqualTo;
+int PString::internal_strncmp(const char * s1, const char *s2, size_t n) const
+{
+  return strncmp(s1, s2, n);
 }
 
 
@@ -1589,7 +1572,7 @@ PINDEX PString::Find(char ch, PINDEX offset) const
 
   PINDEX len = GetLength();
   while (offset < len) {
-    if (InternalCompare(offset, ch) == EqualTo)
+    if (InternalCompare(offset, 1, &ch) == EqualTo)
       return offset;
     offset++;
   }
@@ -1658,7 +1641,7 @@ PINDEX PString::FindLast(char ch, PINDEX offset) const
   if (offset >= len)
     offset = len-1;
 
-  while (InternalCompare(offset, ch) != EqualTo) {
+  while (InternalCompare(offset, 1, &ch) != EqualTo) {
     if (offset == 0)
       return P_MAX_INDEX;
     offset--;
@@ -1720,7 +1703,7 @@ PINDEX PString::FindOneOf(const char * cset, PINDEX offset) const
   while (offset < len) {
     const char * p = cset;
     while (*p != '\0') {
-      if (InternalCompare(offset, *p) == EqualTo)
+      if (InternalCompare(offset, 1, p) == EqualTo)
         return offset;
       p++;
     }
@@ -1743,7 +1726,7 @@ PINDEX PString::FindSpan(const char * cset, PINDEX offset) const
   PINDEX len = GetLength();
   while (offset < len) {
     const char * p = cset;
-    while (InternalCompare(offset, *p) != EqualTo) {
+    while (InternalCompare(offset, 1, p) != EqualTo) {
       if (*++p == '\0')
         return offset;
     }
@@ -2478,42 +2461,16 @@ PObject * PCaselessString::Clone() const
 }
 
 
-PObject::Comparison PCaselessString::InternalCompare(PINDEX offset, char c) const
+int PCaselessString::internal_strcmp(const char * s1, const char *s2) const
 {
-#if PINDEX_SIGNED
-  if (offset < 0)
-    return LessThan;
-#endif
-
-  int c1 = toupper(theArray[offset] & 0xff);
-  int c2 = toupper(c & 0xff);
-  if (c1 < c2)
-    return LessThan;
-  if (c1 > c2)
-    return GreaterThan;
-  return EqualTo;
+  return strcasecmp(s1, s2);
 }
 
 
-PObject::Comparison PCaselessString::InternalCompare(
-                         PINDEX offset, PINDEX length, const char * cstr) const
+int PCaselessString::internal_strncmp(const char * s1, const char *s2, size_t n) const
 {
-#if PINDEX_SIGNED
-  if (offset < 0 || length < 0)
-    return LessThan;
-#endif
-
-  if (cstr == NULL)
-    return IsEmpty() ? EqualTo : LessThan;
-
-  while (length-- > 0 && (theArray[offset] != '\0' || *cstr != '\0')) {
-    Comparison c = PCaselessString::InternalCompare(offset++, *cstr++);
-    if (c != EqualTo)
-      return c;
-  }
-  return EqualTo;
+  return strncasecmp(s1, s2, n);
 }
-
 
 
 ///////////////////////////////////////////////////////////////////////////////

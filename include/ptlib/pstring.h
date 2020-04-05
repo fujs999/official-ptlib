@@ -1888,13 +1888,12 @@ class PString : public PCharArray
 #endif
     virtual Comparison InternalCompare(
       PINDEX offset,      // Offset into string to compare.
-      char c              // Character to compare against.
-    ) const;
-    virtual Comparison InternalCompare(
-      PINDEX offset,      // Offset into string to compare.
       PINDEX length,      // Number of characters to compare.
       const char * cstr   // C string to compare against.
     ) const;
+    virtual int internal_strcmp(const char * s1, const char *s2) const;
+    virtual int internal_strncmp(const char * s1, const char *s2, size_t n) const;
+
     bool InternalSplit(
       const PString & delimiter,  // Delimiter around which tom plit the substrings
       PString & before,           // Substring before delimiter
@@ -2066,15 +2065,9 @@ class PCaselessString : public PString
 
   protected:
   // Overrides from class PString
-    virtual Comparison InternalCompare(
-      PINDEX offset,      // Offset into string to compare.
-      char c              // Character to compare against.
-    ) const;
-    virtual Comparison InternalCompare(
-      PINDEX offset,      // Offset into string to compare.
-      PINDEX length,      // Number of characters to compare.
-      const char * cstr   // C string to compare against.
-    ) const;
+    virtual int internal_strcmp(const char * s1, const char *s2) const;
+    virtual int internal_strncmp(const char * s1, const char *s2, size_t n) const;
+
     /* Internal function to compare the current string value against the
        specified C string.
 

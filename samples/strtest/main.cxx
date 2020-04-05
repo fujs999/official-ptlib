@@ -45,6 +45,20 @@ void Test1()
     cout << boolalpha << (wide.GetSize() == PARRAYSIZE(widestr) && memcmp(wide, widestr, sizeof(widestr)) == 0) << endl;
   }
 #endif
+
+  {
+    PCaselessString caseless("hello world");
+    PString cased("Hello World");
+    cout << cased.ToLiteral() << " == \"Hello\" " << boolalpha << (cased == "Hello") << endl;
+    cout << cased.ToLiteral() << " == \"hello\" " << boolalpha << (cased == "hello") << endl;
+    cout << cased.ToLiteral() << " == \"Hello World\" " << boolalpha << (cased == "Hello World") << endl;
+    cout << cased.ToLiteral() << " == " << caseless.ToLiteral() << ' ' << boolalpha << (cased == caseless) << endl;
+    cout << cased.ToLiteral() << " == \"Hello\" " << boolalpha << (cased.NumCompare("Hello") == PObject::EqualTo) << endl;
+    cout << cased.ToLiteral() << " == \"hello\" " << boolalpha << (cased.NumCompare("hello") == PObject::EqualTo) << endl;
+    cout << caseless.ToLiteral() << " == " << cased.ToLiteral() << ' ' << boolalpha << (caseless == cased) << endl;
+    cout << caseless.ToLiteral() << " == \"Hello\" " << boolalpha << (caseless == "Hello") << endl;
+    cout << caseless.ToLiteral() << " == \"Hello\" " << boolalpha << (caseless.NumCompare("Hello") == PObject::EqualTo) << endl;
+  }
 }
 
 
