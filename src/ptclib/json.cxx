@@ -351,7 +351,7 @@ void PJSON::Object::ReadFrom(istream & strm)
     if (value == NULL)
       return;
 
-    insert(make_pair(name, value));
+    insert(make_pair(name.GetPointer(), value));
     value->ReadFrom(strm);
     if (strm.fail())
       return;
@@ -397,7 +397,7 @@ void PJSON::Object::PrintOn(ostream & strm) const
 PJSON::Base * PJSON::Object::DeepClone() const
 {
   PJSON::Object * obj = new Object();
-  for (std::map<PString, Base *>::const_iterator it = begin(); it != end(); ++it)
+  for (std::map<std::string, Base *>::const_iterator it = begin(); it != end(); ++it)
       obj->insert(make_pair(it->first, it->second->DeepClone()));
   return obj;
 }
@@ -468,7 +468,7 @@ bool PJSON::Object::Set(const PString & name, Types type)
   if (ptr == NULL)
     return false;
 
-  insert(make_pair(name, ptr));
+  insert(make_pair(name.GetPointer(), ptr));
   return true;
 }
 
@@ -478,7 +478,7 @@ bool PJSON::Object::Set(const PString & name, const Base & toInsert)
   if (find(name) != end())
     return false;
 
-  insert(make_pair(name, toInsert.DeepClone()));
+  insert(make_pair(name.GetPointer(), toInsert.DeepClone()));
   return true;
 }
 

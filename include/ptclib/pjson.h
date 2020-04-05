@@ -64,7 +64,7 @@ class PJSON : public PObject
 
     typedef long double NumberType;
 
-    class Object : public Base, public std::map<PString, Base *>
+    class Object : public Base, public std::map<std::string, Base *>
     {
       public:
         Object() { }
