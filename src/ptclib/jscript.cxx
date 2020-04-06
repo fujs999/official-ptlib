@@ -635,7 +635,8 @@ public:
       , m_key(key)
     { }
   };
-  std::map<PString, NotifierInfo> m_notifiers;
+  typedef std::map<std::string, NotifierInfo> NotifierMap;
+  NotifierMap m_notifiers;
 
   template <class ARGTYPE> v8::Local<v8::Value> FunctionCallback(const ARGTYPE & callbackInfo, NotifierInfo & notifierInfo)
   {
@@ -691,9 +692,9 @@ public:
     if (object.IsEmpty())
       return false;
 
-    std::map<PString, NotifierInfo>::iterator it = m_notifiers.find(key);
+    NotifierMap::iterator it = m_notifiers.find(key);
     if (it == m_notifiers.end())
-      it = m_notifiers.insert(make_pair(key, NotifierInfo(m_owner, key))).first;
+      it = m_notifiers.insert(make_pair(key.GetPointer(), NotifierInfo(m_owner, key))).first;
     NotifierInfo & info = it->second;
     info.m_notifiers.Add(notifier);
 

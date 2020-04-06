@@ -209,6 +209,7 @@ class PMIMEInfo : public PStringOptions
 
     static const PCaselessString & TextPlain();
     static const PCaselessString & TextHTML();
+    static const PCaselessString & ApplicationJSON();
 
 
     /** Set an association between a file type and a MIME content type. The
