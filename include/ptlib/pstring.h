@@ -1875,9 +1875,42 @@ class PString : public PCharArray
       This function overrides the ancestor function that returns a char *
       */
     virtual const char * GetPointer(PINDEX = 0) const { return (const char *)(*this); }
-
   //@}
 
+  /**@name std::string compatible functions */
+  //@{
+    __inline std::string::size_type size() const { return (std::string::size_type)GetLength(); }
+    __inline std::string::size_type length() const { return (std::string::size_type)GetLength(); }
+    __inline std::string::size_type capacity() const { return (std::string::size_type)(GetSize()-1); }
+    __inline bool empty() const { return IsEmpty(); }
+    __inline void clear() { MakeEmpty();  }
+    __inline const char * c_str() const { return GetPointer(); }
+    __inline char * data() { return PCharArray::GetPointer(); }
+    __inline void push_back(char ch) { *this += ch;  }
+    __inline PString & append(std::string::size_type count, char ch) { while (--count > 0) *this += ch; return *this; }
+    __inline PString & append(const char * s) { return *this += s; }
+    __inline PString & append(const std::string & s) { return *this += s.c_str();  }
+    __inline PString & insert(std::string::size_type index, std::string::size_type count, char ch) { while (--count > 0) Splice(&ch, index); return *this; }
+    __inline PString & insert(std::string::size_type index, const char * s) { return Splice(s, index); }
+    __inline PString & insert(std::string::size_type index, const std::string & s) { return Splice(s.c_str(), index);  }
+    __inline PString & erase(std::string::size_type index = 0, std::string::size_type count = std::string::npos) { return Delete(index, count != std::string::npos ? count : P_MAX_INDEX);  }
+    __inline PString & replace(std::string::size_type pos, std::string::size_type count, const char * s) { return Splice(s, pos, count); }
+    __inline PString & replace(std::string::size_type pos, std::string::size_type count, const std::string & s) { return Splice(s.c_str(), pos, count); }
+    __inline std::string substr(std::string::size_type pos = 0, std::string::size_type count = std::string::npos) const { return std::string(Mid(pos, count).GetPointer()); }
+    __inline std::string::size_type find(char c, std::string::size_type pos = 0) const { return StdStringPos(Find(c, pos)); }
+    __inline std::string::size_type find(const char * s, std::string::size_type pos = 0) const { return StdStringPos(Find(s, pos)); }
+    __inline std::string::size_type find(const std::string & s, std::string::size_type pos = 0) const { return StdStringPos(Find(s.c_str(), pos)); }
+    __inline std::string::size_type rfind(char c, std::string::size_type pos = 0) const { return StdStringPos(FindLast(c, pos)); }
+    __inline std::string::size_type rfind(const char * s, std::string::size_type pos = 0) const { return StdStringPos(FindLast(s, pos)); }
+    __inline std::string::size_type rfind(const std::string & s, std::string::size_type pos = 0) const { return StdStringPos(FindLast(s.c_str(), pos)); }
+    __inline std::string::size_type find_first_of(const char * s, std::string::size_type pos = 0) const { return StdStringPos(FindOneOf(s, pos)); }
+    __inline std::string::size_type find_first_of(const std::string & s, std::string::size_type pos = 0) const { return StdStringPos(FindOneOf(s.c_str(), pos)); }
+    __inline std::string::size_type find_first_not_of(const char * s, std::string::size_type pos = 0) const { return StdStringPos(FindSpan(s, pos)); }
+    __inline std::string::size_type find_first_not_of(const std::string & s, std::string::size_type pos = 0) const { return StdStringPos(FindSpan(s.c_str(), pos)); }
+    private:
+      __inline static std::string::size_type StdStringPos(PINDEX p) { return p != P_MAX_INDEX ? (std::string::size_type)p : std::string::npos; }
+    public:
+    //@}
 
   protected:
 #ifdef P_HAS_WCHAR
@@ -2258,7 +2291,10 @@ class PStringStream : public PString, public std::iostream
       char ch            ///< Character to assign.
     );
 
+    // Miscellanous fix ups
+    __inline void clear() { std::iostream::clear(); }
     virtual PINDEX GetLength() const;
+
 
   protected:
     virtual void AssignContents(const PContainer & cont);
