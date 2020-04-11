@@ -752,7 +752,7 @@ public:
       *(script = v8::Script::Compile(source)) == NULL
 #endif
       ) {
-      PTRACE(3, "Could not compile source " << text.Left(100).ToLiteral() << ' - ' << ToPString(exceptionHandler.Exception()));
+      PTRACE(3, "Could not compile source " << text.Left(100).ToLiteral() << " - " << ToPString(exceptionHandler.Exception()));
       return false;
     }
 
@@ -765,7 +765,7 @@ public:
       *(result = script->Run()) == NULL
 #endif
       ) {
-      PTRACE(3, "Could not run source " << text.Left(100).ToLiteral() << ' - ' << ToPString(exceptionHandler.Exception()));
+      PTRACE(3, "Could not run source " << text.Left(100).ToLiteral() << " - " << ToPString(exceptionHandler.Exception()));
       return false;
     }
 
