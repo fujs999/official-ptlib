@@ -231,6 +231,11 @@ struct PJavaScript::Private : PObject
     HandleScope(Private * prvt) : v8::HandleScope(prvt->m_isolate) { }
   };
 
+  struct TryCatch : v8::TryCatch
+  {
+    TryCatch(Private * prvt) : v8::TryCatch(prvt->m_isolate) { }
+  };
+
   v8::Local<v8::String> NewString(const char * str) const
   {
     v8::Local<v8::String> obj;
@@ -247,6 +252,10 @@ struct PJavaScript::Private : PObject
   struct HandleScope : v8::HandleScope
   {
     HandleScope(Private *) { }
+  };
+  struct TryCatch : v8::TryCatch
+  {
+    TryCatch(Private *) { }
   };
 
   inline v8::Local<v8::String> NewString(const char * str) const { return v8::String::New(str); }
@@ -732,6 +741,8 @@ public:
 
     v8::Local<v8::String> source = NewString(text);
 
+    TryCatch exceptionHandler(this);
+
     // compile the source 
     v8::Local<v8::Script> script;
     if (
@@ -741,7 +752,7 @@ public:
       *(script = v8::Script::Compile(source)) == NULL
 #endif
       ) {
-      PTRACE(3, "Could not compile source " << text.Left(100).ToLiteral());
+      PTRACE(3, "Could not compile source " << text.Left(100).ToLiteral() << ' - ' << ToPString(exceptionHandler.Exception()));
       return false;
     }
 
@@ -754,7 +765,7 @@ public:
       *(result = script->Run()) == NULL
 #endif
       ) {
-      PTRACE(3, "Script execution did not return a result.");
+      PTRACE(3, "Could not run source " << text.Left(100).ToLiteral() << ' - ' << ToPString(exceptionHandler.Exception()));
       return false;
     }
 
