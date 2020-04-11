@@ -416,7 +416,7 @@ public:
       : object->Set(context, name.Mid(1).AsUnsigned(), value);
     if (result.FromMaybe(false))
     {
-      PTRACE(5, "Set \"" << key << "\" to " << ToPString(value).Left(100).ToLiteral());
+      PTRACE(5, "Set \"" << key << "\" to " << ToPString(value).Ellipsis(100).ToLiteral());
       return true;
     }
 
@@ -536,7 +536,7 @@ public:
 #else
       var = PVarType(ToPString(value->ToString()));
 #endif
-      PTRACE(5, "Got String \"" << key << "\" = " << var.AsString().Left(100).ToLiteral());
+      PTRACE(5, "Got String \"" << key << "\" = " << var.AsString().Ellipsis(100).ToLiteral());
       return true;
     }
 
@@ -741,7 +741,7 @@ public:
       *(script = v8::Script::Compile(source)) == NULL
 #endif
       ) {
-      PTRACE(3, "Could not compile source " << text.Left(100).ToLiteral());
+      PTRACE(3, "Could not compile source " << text.Ellipsis(100).ToLiteral());
       return false;
     }
 
@@ -759,7 +759,7 @@ public:
     }
 
     resultText = ToPString(result);
-    PTRACE(4, "Script execution returned " << resultText.Left(100).ToLiteral());
+    PTRACE(4, "Script execution returned " << resultText.Ellipsis(100).ToLiteral());
 
     return true;
   }

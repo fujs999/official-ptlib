@@ -1468,6 +1468,12 @@ class PString : public PCharArray
       PINDEX len = P_MAX_INDEX  ///< Number of characters to extract.
     ) const;
 
+    /** Return a string up to a maximum length, substituting "..." to too long.
+      */
+    PString Ellipsis(
+      PINDEX maxLength,   ///< Maxmimum length of resulting string
+      PINDEX fromEnd = 0  ///< Number of characters at end of string adter "..."
+    ) const;
 
     /**Create a string consisting of all characters from the source string
        except all spaces at the beginning of the string. The original string
