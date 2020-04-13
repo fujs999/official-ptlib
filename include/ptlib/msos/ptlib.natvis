@@ -8,9 +8,9 @@
   </Type>
 
   <Type Name="PIPSocket::Address">
-    <DisplayString Condition="m_version==0">{{Invalid-IP}}</DisplayString>
     <DisplayString Condition="m_version==4">{{ipv4={(int)m_v.m_four.S_un.S_un_b.s_b1,u}.{(int)m_v.m_four.S_un.S_un_b.s_b2,u}.{(int)m_v.m_four.S_un.S_un_b.s_b3,u}.{(int)m_v.m_four.S_un.S_un_b.s_b4,u}}}</DisplayString>
     <DisplayString Condition="m_version==6">{{ipv6={m_v.m_six.u.Word[0],x}:{m_v.m_six.u.Word[1],x}:{m_v.m_six.u.Word[2],x}:{m_v.m_six.u.Word[3],x}:{m_v.m_six.u.Word[4],x}:{m_v.m_six.u.Word[5],x}:{m_v.m_six.u.Word[6],x}:{m_v.m_six.u.Word[7],x}}}</DisplayString>
+    <DisplayString>{{Invalid-IP}}</DisplayString>
   </Type>
 
   <Type Name="PTimeInterval">
