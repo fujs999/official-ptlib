@@ -913,10 +913,8 @@ ostream & PTraceInfo::InternalEnd(ostream & paramStream)
 #endif
     if (outputJSON)
       output << "\"ThreadName\":" << context->m_threadName.ToLiteral() << ',';
-    else if (context->m_threadName.GetLength() <= ThreadNameWidth)
-      output << setw(ThreadNameWidth) << context->m_threadName << '\t';
     else
-      output << context->m_threadName.Left(10) << "..." << context->m_threadName.Right(ThreadNameWidth-13) << '\t';
+      output << setw(ThreadNameWidth) << context->m_threadName.Ellipsis(ThreadNameWidth, ThreadNameWidth/2-2) << '\t';
   }
 
   if (HasOption(ThreadAddress)) {

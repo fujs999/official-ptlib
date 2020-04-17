@@ -103,10 +103,12 @@ void MyProcess::Main()
   jscript.CreateComposite("Top");
   jscript.CreateComposite("Top.Middle");
   jscript.CreateComposite("Top.Middle.Bottom");
+  jscript.CreateComposite("Top.Middle.Bottom");
   jscript.SetNumber("Top.Middle.Bottom.Number", myNumber);
   cout << "Top.Middle.Bottom.Number = " << jscript.GetNumber("Top.Middle.Bottom.Number") << " expected " << myNumber  << endl;
 
   jscript.Run("TestFunction('first', 2)");
+  jscript.Run("illegal JavaScript");
 
   for (PINDEX arg = 0; arg < args.GetCount(); ++arg) {
     if (jscript.Run(args[arg]))

@@ -231,6 +231,11 @@ struct PJavaScript::Private : PObject
     HandleScope(Private * prvt) : v8::HandleScope(prvt->m_isolate) { }
   };
 
+  struct TryCatch : v8::TryCatch
+  {
+    TryCatch(Private * prvt) : v8::TryCatch(prvt->m_isolate) { }
+  };
+
   v8::Local<v8::String> NewString(const char * str) const
   {
     v8::Local<v8::String> obj;
@@ -247,6 +252,10 @@ struct PJavaScript::Private : PObject
   struct HandleScope : v8::HandleScope
   {
     HandleScope(Private *) { }
+  };
+  struct TryCatch : v8::TryCatch
+  {
+    TryCatch(Private *) { }
   };
 
   inline v8::Local<v8::String> NewString(const char * str) const { return v8::String::New(str); }
@@ -396,34 +405,11 @@ public:
 
 #if V8_MAJOR_VERSION > 3
     v8::MaybeLocal<v8::Value> result = name[0] != '[' ? object->Get(context, NewString(name))
-      : object->Get(context, name.Mid(1).AsInteger());
+                                                      : object->Get(context, name.Mid(1).AsInteger());
     return result.FromMaybe(v8::Local<v8::Value>());
 #else
     return name[0] != '[' ? object->Get(NewString(name))
-      : object->Get(name.Mid(1).AsInteger());
-#endif
-  }
-
-
-  bool SetMember(v8::Local<v8::Context> context,
-                 v8::Local<v8::Object> object,
-                 const PString & name,
-                 v8::Local<v8::Value> value
-                 PTRACE_PARAM(, const PString & key))
-  {
-#if V8_MAJOR_VERSION > 3
-    v8::Maybe<bool> result = name[0] != '[' ? object->Set(context, NewString(name), value)
-      : object->Set(context, name.Mid(1).AsUnsigned(), value);
-    if (result.FromMaybe(false))
-    {
-      PTRACE(5, "Set \"" << key << "\" to " << ToPString(value).Left(100).ToLiteral());
-      return true;
-    }
-
-    PTRACE(3, "Could not set \"" << key << '"');
-    return false;
-#else
-    return name[0] != '[' ? object->Set(NewString(name), value) : object->Set(name.Mid(1).AsInteger(), value);
+                          : object->Get(name.Mid(1).AsInteger());
 #endif
   }
 
@@ -459,16 +445,14 @@ public:
       // get the member variable
       v8::Local<v8::Value> value = GetMember(context, object, tokens[i]);
       if (value.IsEmpty()) {
-        PTRACE(3, "Cannot get element \"" << tokens[i] << '"');
-        object.Clear();
-        break;
+        PTRACE(3, "Cannot get intermediate element \"" << tokens[i] << "\" of \"" << key << '"');
+        return v8::Local<v8::Object>();
       }
 
       // terminals must not be composites, internal nodes must be composites
       if (!value->IsObject()) {
-        PTRACE(3, "Intermediate element \"" << tokens[i] << "\" is not a composite");
-        object.Clear();
-        break;
+        PTRACE(3, "Non composite intermediate element \"" << tokens[i] << "\" of \"" << key << '"');
+        return v8::Local<v8::Object>();
       }
 
       // if path has ended, return error
@@ -479,9 +463,8 @@ public:
         *(object = value->ToObject()) == NULL || object->IsNull()
 #endif
         ) {
-        PTRACE(3, "Intermediate element \"" << tokens[i] << "\" not found");
-        object.Clear();
-        break;
+        PTRACE(3, "Cannot get value of intermediate element \"" << tokens[i] << "\" of \"" << key << '"');
+        return v8::Local<v8::Object>();
       }
     }
 
@@ -536,11 +519,11 @@ public:
 #else
       var = PVarType(ToPString(value->ToString()));
 #endif
-      PTRACE(5, "Got String \"" << key << "\" = " << var.AsString().Left(100).ToLiteral());
+      PTRACE(5, "Got String \"" << key << "\" = " << var.AsString().Ellipsis(100).ToLiteral());
       return true;
     }
 
-    PTRACE(3, "Unable to determine type of \"" << key << "\" = \"" << ToPString(value) << '"');
+    PTRACE(2, "Unable to determine type of \"" << key << "\" = \"" << ToPString(value) << '"');
     var.SetType(PVarType::VarNULL);
     return false;
   }
@@ -622,7 +605,24 @@ public:
 
     PString varName;
     v8::Local<v8::Object> object = GetObjectHandle(context, key, varName);
-    return !object.IsEmpty() && SetMember(context, object, varName, SetVarValue(var) PTRACE_PARAM(, key));
+    if (object.IsEmpty())
+      return false;
+
+    v8::Local<v8::Value> value = SetVarValue(var);
+#if V8_MAJOR_VERSION > 3
+    v8::Maybe<bool> result = varName[0] != '[' ? object->Set(context, NewString(varName), value)
+      : object->Set(context, varName.Mid(1).AsUnsigned(), value);
+    if (result.FromMaybe(false))
+#else
+    if (varName[0] != '[' ? object->Set(NewString(varName), value) : object->Set(varName.Mid(1).AsInteger(), value))
+#endif
+    {
+      PTRACE(4, "Set \"" << key << "\" to " << var.AsString().Left(100).ToLiteral());
+      return true;
+    }
+
+    PTRACE(2, "Could not set \"" << key << "\" to " << var.AsString().Left(100).ToLiteral());
+    return false;
   }
 
 
@@ -732,6 +732,8 @@ public:
 
     v8::Local<v8::String> source = NewString(text);
 
+    TryCatch exceptionHandler(this);
+
     // compile the source 
     v8::Local<v8::Script> script;
     if (
@@ -741,7 +743,7 @@ public:
       *(script = v8::Script::Compile(source)) == NULL
 #endif
       ) {
-      PTRACE(3, "Could not compile source " << text.Left(100).ToLiteral());
+      PTRACE(3, "Could not compile source " << text.Ellipsis(100).ToLiteral() << " - " << ToPString(exceptionHandler.Exception()));
       return false;
     }
 
@@ -754,12 +756,12 @@ public:
       *(result = script->Run()) == NULL
 #endif
       ) {
-      PTRACE(3, "Script execution did not return a result.");
+      PTRACE(3, "Could not run source " << text.Ellipsis(100).ToLiteral() << " - " << ToPString(exceptionHandler.Exception()));
       return false;
     }
 
     resultText = ToPString(result);
-    PTRACE(4, "Script execution returned " << resultText.Left(100).ToLiteral());
+    PTRACE(4, "Script execution returned " << resultText.Ellipsis(100).ToLiteral());
 
     return true;
   }

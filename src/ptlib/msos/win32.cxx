@@ -630,7 +630,7 @@ PString PChannel::GetErrorText(Errors lastError, int osError)
   PString str((LPCSTR)lpMsgBuf, count);
   LocalFree(lpMsgBuf);
 
-  return str.IsEmpty() ? psprintf("WIN32 error %u", osError & ~PWIN32ErrorFlag) : str;
+  return str.IsEmpty() ? psprintf("WIN32 error %u", osError & ~PWIN32ErrorFlag) : str.Trim();
 }
 
 

@@ -1490,6 +1490,18 @@ PString PString::Mid(PINDEX start, PINDEX len) const
     return operator()(start, start+len-1);
 }
 
+PString PString::Ellipsis(PINDEX maxLength, PINDEX fromEnd) const
+{
+  if (GetLength() <= maxLength)
+    return *this;
+
+  maxLength -= 3;
+  if (fromEnd > maxLength)
+    fromEnd = maxLength;
+
+  return Left(maxLength-fromEnd) + "..." + Right(fromEnd);
+}
+
 
 bool PString::operator*=(const char * cstr) const
 {
