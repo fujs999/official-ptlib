@@ -834,6 +834,10 @@ static const PStringToString::Initialiser DefaultContentTypes[] = {
   { ".html", "text/html" },
   { ".htm", "text/html" },
   { ".csv", "text/csv" },
+  { ".css", "text/css" },
+  { ".js", "application/javascript" },
+  { ".xml", "application/xml" },
+  { ".json", "application/json" },
   { ".aif", "audio/aiff" },
   { ".aiff", "audio/aiff" },
   { ".au", "audio/basic" },
@@ -893,6 +897,7 @@ const PCaselessString & PMIMEInfo::ContentIdTag()               { static const P
 
 const PCaselessString & PMIMEInfo::TextPlain()                  { static const PConstCaselessString s("text/plain");                return s; }
 const PCaselessString & PMIMEInfo::TextHTML()                   { static const PConstCaselessString s("text/html");                 return s; }
+const PCaselessString & PMIMEInfo::ApplicationJSON()            { static const PConstCaselessString s("application/json");          return s; }
 
 
 //////////////////////////////////////////////////////////////////////////////

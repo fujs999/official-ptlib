@@ -385,7 +385,7 @@ bool PHTTPServer::OnWebSocket(PHTTPConnectionInfo & connectInfo)
   PStringArray protocols = mime(WebSocketProtocolTag()).Tokenise(", \t\r\n", false);
   for (PINDEX i = 0; i < protocols.GetSize(); ++i) {
     PString protocol = protocols[i];
-    std::map<PString, WebSocketNotifier>::iterator notifier = m_webSocketNotifiers.find(protocol);
+    WebSocketNotifierMap::iterator notifier = m_webSocketNotifiers.find(protocol);
     if (notifier != m_webSocketNotifiers.end()) {
       if (notifier->second.IsNULL()) {
         supportedGlobally = protocol;
@@ -465,7 +465,7 @@ void PHTTPServer::SetWebSocketNotifier(const PString & protocol, const WebSocket
 
 void PHTTPServer::ClearWebSocketNotifier(const PString & protocol)
 {
-  std::map<PString, WebSocketNotifier>::iterator it = m_webSocketNotifiers.find(protocol);
+  WebSocketNotifierMap::iterator it = m_webSocketNotifiers.find(protocol);
   if (it != m_webSocketNotifiers.end())
     m_webSocketNotifiers.erase(it);
 }

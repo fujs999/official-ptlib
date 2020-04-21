@@ -630,7 +630,7 @@ PString PChannel::GetErrorText(Errors lastError, int osError)
   PString str((LPCSTR)lpMsgBuf, count);
   LocalFree(lpMsgBuf);
 
-  return str.IsEmpty() ? psprintf("WIN32 error %u", osError & ~PWIN32ErrorFlag) : str;
+  return str.IsEmpty() ? psprintf("WIN32 error %u", osError & ~PWIN32ErrorFlag) : str.Trim();
 }
 
 
@@ -1452,8 +1452,13 @@ static BOOL CALLBACK EnumWindowsProc(HWND hWnd, LPARAM thisProcess)
 
 PBoolean PProcess::IsGUIProcess() const
 {
-  if (!s_checkGUIProcess.exchange(true))
-    EnumWindows(EnumWindowsProc, GetCurrentProcessId());
+  if (!s_checkGUIProcess.exchange(true)) {
+    USEROBJECTFLAGS uof = { FALSE, FALSE, 0 };     
+    if (GetUserObjectInformation(GetProcessWindowStation(), UOI_FLAGS, &uof, sizeof(USEROBJECTFLAGS), NULL) && ((uof.dwFlags & WSF_VISIBLE) == 0))
+      s_IsGUIProcess = false;
+    else
+      EnumWindows(EnumWindowsProc, GetCurrentProcessId());
+  }
   return s_IsGUIProcess;
 }
 
