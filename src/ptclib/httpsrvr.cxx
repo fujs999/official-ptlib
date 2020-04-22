@@ -829,8 +829,8 @@ bool PHTTPListener::ListenForHTTP(const PString & interfaces, WORD port, PSocket
 
   bool atLeastOne = false;
   for (PINDEX i = 0; i < ifaces.GetSize(); ++i) {
-    PIPSocket::Address binding(ifaces[i]);
-    if (binding.IsValid()) {
+    PIPSocket::Address binding;
+    if (PIPSocket::GetHostAddress(ifaces[i], binding)) {
       PTCPSocket * listener = new PTCPSocket(m_listenerPort);
       if (listener->Listen(binding, queueSize, 0, reuse)) {
         m_listenerPort = listener->GetPort();
