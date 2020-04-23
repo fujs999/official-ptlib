@@ -192,9 +192,10 @@ class PHTTPServiceProcess : public PServiceProcess, public PHTTPListener
     PString    m_copyrightEmail;
 
     void BeginRestartSystem();
+    void EndRestartSystem();
     virtual void OnHTTPEnded(PHTTPServer & server);
 
-    PThread *  m_restartThread;
+    atomic<PThread *> m_restartThread;
 
   friend class PConfigPage;
   friend class PConfigSectionsPage;

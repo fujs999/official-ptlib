@@ -378,36 +378,26 @@ PBoolean PHTTPServiceProcess::ClearLogPage::Post(PHTTPRequest & request, const P
 
 void PHTTPServiceProcess::BeginRestartSystem()
 {
-  if (m_restartThread == NULL) {
-    m_restartThread = PThread::Current();
+  if (m_restartThread.exchange(PThread::Current()) == NULL)
     OnConfigChanged();
-  }
 }
 
 
 void PHTTPServiceProcess::OnHTTPEnded(PHTTPServer & /*server*/)
 {
-  if (m_restartThread == NULL)
-    return;
-  
-  if (m_restartThread != PThread::Current())
-    return;
+  PThread * restartThread = m_restartThread.exchange(NULL);
+  if (restartThread == PThread::Current() && IsListening())
+    new PThreadObj<PHTTPServiceProcess>(*this, &PHTTPServiceProcess::EndRestartSystem, true, "SvcCfgInit");
+}
 
-  if (!IsListening())
-    return;
 
-  bool initFailed = true;
-
+void PHTTPServiceProcess::EndRestartSystem()
+{
   m_httpNameSpace.StartWrite();
-
-  if (Initialise("Restart\tInitialisation")) {
-    m_restartThread = NULL;
-    initFailed = false;
-  }
-
+  bool initialised = Initialise("Restart\tInitialisation");
   m_httpNameSpace.EndWrite();
 
-  if (initFailed)
+  if (!initialised)
     OnStop();
 }
 
