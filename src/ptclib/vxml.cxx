@@ -2074,8 +2074,12 @@ void PVXMLSession::SetVar(const PString & varName, const PString & value)
 
 #if P_SCRIPTS
   if (m_scriptContext != NULL) {
-    m_scriptContext->CreateComposite(fullVarName.Left(fullVarName.Find('.')));
+    // Make sure all the composites exist before setting the variable
+    PINDEX dot = 0;
+    while ((dot = fullVarName.Find('.', dot+1)) != P_MAX_INDEX)
+      m_scriptContext->CreateComposite(fullVarName.Left(dot));
     m_scriptContext->SetString(fullVarName, value);
+
     m_variables.SetAt(fullVarName, PString::Empty()); // Just to remember what was set, value is always from script
     return;
   }
