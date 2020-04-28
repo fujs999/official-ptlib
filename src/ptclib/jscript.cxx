@@ -345,8 +345,10 @@ public:
     : m_owner(owner)
     , m_isolate(NULL)
   {
-    if (!PSafeSingleton<Intialisation>()->m_initialised)
+    if (!PSafeSingleton<Intialisation>()->m_initialised) {
+      PTRACE(1, "Could not intitalise V8.");
       return;
+    }
 
     PTRACE_CONTEXT_ID_FROM(owner);
 
@@ -373,19 +375,19 @@ public:
     global->Set(NewString("PTRACE"), v8::FunctionTemplate::New(m_isolate, TraceFunction));
 
     m_context.Reset(m_isolate, v8::Context::New(m_isolate, NULL, global));
-    PTRACE(5, "Created context.");
 #else
     m_context.Reset(m_isolate, v8::Context::New(m_isolate));
 #endif
 #else
     m_context = v8::Persistent<v8::Context>::New(v8::Context::New());
 #endif
+    PTRACE(4, "Created context " << this);
   }
 
 
   ~Private()
   {
-    PTRACE(5, "Destroying context.");
+    PTRACE(4, "Destroying context " << this);
 
     if (m_isolate != NULL)
       m_isolate->Dispose();
