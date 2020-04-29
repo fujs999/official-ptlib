@@ -44,6 +44,7 @@ class PJSON : public PObject
       e_Null
     };
 
+    ////////////////////////////////////////////////////////////////////////////////////////////
     class Base
     {
       public:
@@ -217,6 +218,222 @@ class PJSON : public PObject
         virtual Base * DeepClone() const;
     };
 
+    ////////////////////////////////////////////////////////////////////////////////////////////
+
+    class WrapMember;
+
+    class Record
+    {
+      friend class WrapMember;
+      protected:
+        std::map<PString, WrapMember *> m_jsonDataMembers;
+        bool FromJSON(const PJSON::Object & obj);
+        void AsJSON(PJSON::Object & obj) const;
+      public:
+        Record();
+        Record(const Record &);
+
+        virtual void ReadFrom(istream & strm);
+        virtual void PrintOn(ostream & strm) const;
+
+        bool FromString(
+          const PString & str
+        );
+
+        PString AsString(
+          std::streamsize initialIndent = 0,
+          std::streamsize subsequentIndent = 0
+        ) const;
+
+        bool FromJSON(
+          const PJSON & json
+        );
+
+        void AsJSON(
+          PJSON & json
+        ) const;
+    };
+
+    class WrapMember
+    {
+      public:
+        WrapMember(const char * memberName);
+        WrapMember(const WrapMember & other);
+        WrapMember & operator=(const WrapMember & other);
+        virtual ~WrapMember() { }
+
+        virtual PJSON::Types GetType() const = 0;
+        virtual bool FromJSON(const PJSON::Base & field) = 0;
+        virtual void AsJSON(PJSON::Base & field) const = 0;
+
+      protected:
+        PString m_memberName;
+        void EndRecordConstruction();
+    };
+
+    template <typename TYPE> class Member : public WrapMember
+    {
+      public:
+        Member(const char * name, const TYPE & value = TYPE())
+          : WrapMember(name)
+          , m_value(value)
+        {
+        }
+
+        Member & operator=(const Member & other) { WrapMember::operator=(other); m_value = other.m_value;  return *this; }
+        Member & operator=(const TYPE & value) { m_value = value; return *this; }
+        operator TYPE() const { return m_value; }
+
+        virtual PJSON::Types GetType() const { return PJSON::e_String; }
+        virtual bool FromJSON(const PJSON::Base & field) { PStringStream s(dynamic_cast<const PJSON::String &>(field)); s >> m_value; return s.good(); }
+        virtual void AsJSON(PJSON::Base & field) const { dynamic_cast<PJSON::String &>(field) = PSTRSTRM(m_value); }
+
+      protected:
+        TYPE m_value;
+    };
+
+    template <> class Member<PString> : public WrapMember
+    {
+      public:
+        Member(const char * name, const PString & value = PString::Empty()) : WrapMember(name), m_value(value) { }
+        Member & operator=(const Member & other) { WrapMember::operator=(other); m_value = other.m_value;  return *this; }
+        Member & operator=(const PString & value) { m_value = value; return *this; }
+        Member & operator=(const std::string & value) { m_value = value; return *this; }
+        Member & operator=(const char * value) { m_value = value; return *this; }
+        operator PString() const { return m_value; }
+        virtual PJSON::Types GetType() const { return PJSON::e_String; }
+        virtual bool FromJSON(const PJSON::Base & field) { m_value = dynamic_cast<const PJSON::String &>(field); return true; }
+        virtual void AsJSON(PJSON::Base & field) const { dynamic_cast<PJSON::String &>(field) = m_value; }
+      protected:
+        PString m_value;
+    };
+
+    template <> class Member<PTime> : public WrapMember
+    {
+      public:
+        Member(const char * name, const PTime & value = PTime(0)) : WrapMember(name), m_value(value) { }
+        Member & operator=(const Member & other) { WrapMember::operator=(other); m_value = other.m_value;  return *this; }
+        Member & operator=(const PTime & value) { m_value = value; return *this; }
+        operator PTime() const { return m_value; }
+        virtual PJSON::Types GetType() const { return PJSON::e_String; }
+        virtual bool FromJSON(const PJSON::Base & field) { return m_value.Parse(dynamic_cast<const PJSON::String &>(field)); }
+        virtual void AsJSON(PJSON::Base & field) const { dynamic_cast<PJSON::String &>(field) = m_value.AsString(PTime::LongISO8601); }
+      protected:
+        PTime m_value;
+    };
+
+    template <> class Member<bool> : public WrapMember
+    {
+      public:
+        Member(const char * name, const bool value = false) : WrapMember(name), m_value(value) { }
+        Member & operator=(const Member & other) { WrapMember::operator=(other); m_value = other.m_value;  return *this; }
+        Member & operator=(const bool value) { m_value = value; return *this; }
+        operator bool() const { return m_value; }
+        virtual PJSON::Types GetType() const { return PJSON::e_Boolean; }
+        virtual bool FromJSON(const PJSON::Base & field) { m_value = dynamic_cast<const PJSON::Boolean &>(field).GetValue(); return true; }
+        virtual void AsJSON(PJSON::Base & field) const { dynamic_cast<PJSON::Boolean &>(field).SetValue(m_value); }
+      protected:
+        bool m_value;
+    };
+
+    template <typename TYPE> class WrapNumericMember : public WrapMember
+    {
+      public:
+        WrapNumericMember(const char * name, TYPE value) : WrapMember(name), m_value(value) { }
+        operator TYPE() const { return m_value; }
+        virtual PJSON::Types GetType() const { return PJSON::e_Number; }
+        virtual bool FromJSON(const PJSON::Base & field) { m_value = static_cast<TYPE>(dynamic_cast<const PJSON::Number &>(field).GetValue()); return true; }
+        virtual void AsJSON(PJSON::Base & field) const { dynamic_cast<PJSON::Number &>(field).SetValue(static_cast<PJSON::NumberType>(m_value)); }
+      protected:
+        TYPE m_value;
+    };
+
+    #define P_JSON_DECLARE_NUMERIC_MEMBER(TYPE) \
+      template <> struct Member<TYPE> : public WrapNumericMember<TYPE> { \
+          Member(const char * name, TYPE value = 0) : WrapNumericMember<TYPE>(name, value) { } \
+          Member & operator=(const Member & other) { m_value = other.m_value; return *this; } \
+          Member & operator=(TYPE value) { m_value = value; return *this; } \
+      }
+    P_JSON_DECLARE_NUMERIC_MEMBER( int8_t );
+    P_JSON_DECLARE_NUMERIC_MEMBER(uint8_t );
+    P_JSON_DECLARE_NUMERIC_MEMBER( int16_t);
+    P_JSON_DECLARE_NUMERIC_MEMBER(uint16_t);
+    P_JSON_DECLARE_NUMERIC_MEMBER( int32_t);
+    P_JSON_DECLARE_NUMERIC_MEMBER(uint32_t);
+    P_JSON_DECLARE_NUMERIC_MEMBER( int64_t);
+    P_JSON_DECLARE_NUMERIC_MEMBER(uint64_t);
+    P_JSON_DECLARE_NUMERIC_MEMBER(long);
+    P_JSON_DECLARE_NUMERIC_MEMBER(unsigned long);
+    P_JSON_DECLARE_NUMERIC_MEMBER(float);
+    P_JSON_DECLARE_NUMERIC_MEMBER(double);
+    P_JSON_DECLARE_NUMERIC_MEMBER(long double);
+    #undef P_JSON_DECLARE_NUMERIC_MEMBER
+
+    template <typename TYPE> class MemberRecord : public WrapMember, public TYPE
+    {
+      public:
+        MemberRecord(const char * name) : WrapMember(name) { EndRecordConstruction(); }
+        MemberRecord(const char * name, const TYPE & init) : WrapMember(name), TYPE(init) { EndRecordConstruction(); }
+        MemberRecord(const MemberRecord & other) : WrapMember(other), TYPE(other) { EndRecordConstruction(); }
+        MemberRecord & operator=(const TYPE & other) { TYPE::operator=(other); return *this; }
+        virtual PJSON::Types GetType() const { return PJSON::e_Object; }
+        virtual bool FromJSON(const PJSON::Base & field) { return TYPE::FromJSON(dynamic_cast<const PJSON::Object &>(field)); }
+        virtual void AsJSON(PJSON::Base & field) const { TYPE::AsJSON(dynamic_cast<PJSON::Object &>(field)); }
+    };
+
+    template <typename TYPE, typename WRAP = Member<TYPE>> class MemberArray : public WrapMember, public std::vector<TYPE>
+    {
+      public:
+        MemberArray(const char * name) : WrapMember(name) { }
+        MemberArray(const char * name, const TYPE & init) : WrapMember(name), std::vector<TYPE>(1, init) { }
+        MemberArray & operator=(const TYPE & other) { resize(1); front() = other; return *this; }
+        virtual PJSON::Types GetType() const { return PJSON::e_Array; }
+        virtual bool FromJSON(const PJSON::Base & field)
+        {
+          const PJSON::Array & arr = dynamic_cast<const PJSON::Array &>(field);
+          resize(arr.size());
+          bool good = true;
+          for (size_t i = 0; i < size(); ++i) {
+            WRAP wrap(NULL, at(i));
+            if (wrap.FromJSON(*arr[i]))
+              at(i) = wrap;
+            else
+              good = false;
+          }
+          return good;
+        }
+        virtual void AsJSON(PJSON::Base & field) const
+        {
+          PJSON::Array & arr = dynamic_cast<PJSON::Array &>(field);
+          for (size_t i = 0; i < size(); ++i) {
+            WRAP const wrap(NULL, at(i));
+            arr.Append(wrap.GetType());
+            wrap.AsJSON(*arr.back());
+          }
+        }
+    };
+
+    template <typename TYPE> class MemberArrayRecord : public MemberArray<TYPE, MemberRecord<TYPE>>
+    {
+      public:
+        MemberArrayRecord(const char * name) : MemberArray<TYPE, MemberRecord<TYPE>>(name) { }
+        MemberArrayRecord(const char * name, const TYPE & init) : MemberArray<TYPE, MemberRecord<TYPE>>(name, init) { }
+        MemberArrayRecord & operator=(const TYPE & other) { resize(1); front() = other; return *this; }
+    };
+
+    #define P_JSON_MEMBER_ARG3(TYPE, member, BASE) \
+      struct PJSON_##member : BASE<TYPE> { \
+        PJSON_##member()           : BASE<TYPE>(#member) { } \
+        PJSON_##member(TYPE value) : BASE<TYPE>(#member, value) { } \
+        PJSON_##member & operator=(const TYPE other) { BASE<TYPE>::operator=(other); return *this; } \
+      } member
+    #define P_JSON_MEMBER_ARG2(TYPE, member) P_JSON_MEMBER_ARG3(TYPE, member, ::PJSON::Member)
+    #define P_JSON_MEMBER_PART2(narg, args) P_JSON_MEMBER_ARG##narg args
+    #define P_JSON_MEMBER_PART1(narg, args) P_JSON_MEMBER_PART2(narg, args)
+    #define P_JSON_MEMBER(...) P_JSON_MEMBER_PART1(PARG_COUNT(__VA_ARGS__), (__VA_ARGS__))
+
+
+    ////////////////////////////////////////////////////////////////////////////////////////////
     ///< Constructor
     PJSON();
     explicit PJSON(Types type);
@@ -235,7 +452,8 @@ class PJSON : public PObject
 
     PString AsString(
       std::streamsize initialIndent = 0,
-      std::streamsize subsequentIndent = 0) const;
+      std::streamsize subsequentIndent = 0
+    ) const;
 
     bool IsValid() const { return m_valid; }
 
