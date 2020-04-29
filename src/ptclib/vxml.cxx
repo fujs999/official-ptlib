@@ -2131,12 +2131,14 @@ PBoolean PVXMLSession::PlayElement(PXMLElement & element)
   if (str[0] == '|')
     return PlayCommand(str.Mid(1));
 
+  PINDEX repeat = std::max(DWORD(1), element.GetAttribute("repeat").AsUnsigned());
+
   // files on the local file system get loaded locally
   PURL url(str);
   if (url.GetScheme() == "file" && url.GetHostName().IsEmpty())
-    return PlayFile(url.AsFilePath());
+    return PlayFile(url.AsFilePath(), repeat);
 
-  // get a normalised name for the resource
+                                               // get a normalised name for the resource
   bool safe = GetVar("caching") == "safe" || (element.GetAttribute("caching") *= "safe");
 
   PString fileType;
@@ -2151,7 +2153,7 @@ PBoolean PVXMLSession::PlayElement(PXMLElement & element)
   if (!safe) {
     PFilePath filename;
     if (GetCache().Get("url", url.AsString(), fileType, filename))
-      return PlayFile(filename);
+      return PlayFile(filename, repeat);
   }
 
   PBYTEArray data;
@@ -2168,7 +2170,7 @@ PBoolean PVXMLSession::PlayElement(PXMLElement & element)
   cacheFile.Write(data.GetPointer(), data.GetSize());
 
   GetCache().UnlockReadWrite();
-  return PlayFile(cacheFile.GetFilePath(), 1, 0, safe);   // make sure we delete the file if not cacheing
+  return PlayFile(cacheFile.GetFilePath(), repeat, 0, safe); // make sure we delete the file if not cacheing
 }
 
 
