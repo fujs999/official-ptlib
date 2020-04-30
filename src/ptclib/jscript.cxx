@@ -486,8 +486,8 @@ public:
 
   bool GetVarValue(const v8::Local<v8::Context> & context,
                    v8::Local<v8::Value> value,
-                   PVarType & var
-                   PTRACE_PARAM(, const PString & key))
+                   PVarType & var,
+                   const PString & key)
   {
     if (value.IsEmpty())
       return false;
@@ -549,7 +549,7 @@ public:
     if (object.IsEmpty())
       return false;
 
-    return GetVarValue(context, GetMember(context, object, varName), var PTRACE_PARAM(, key));
+    return GetVarValue(context, GetMember(context, object, varName), var, key);
   }
 
 
@@ -656,7 +656,7 @@ public:
     int nargs = callbackInfo.Length();
     signature.m_arguments.resize(nargs);
     for (int arg = 0; arg < nargs; ++arg)
-      GetVarValue(context, callbackInfo[arg], signature.m_arguments[arg] PTRACE_PARAM(, notifierInfo.m_key));
+      GetVarValue(context, callbackInfo[arg], signature.m_arguments[arg], notifierInfo.m_key);
 
     notifierInfo.m_notifiers(notifierInfo.m_owner, signature);
 
