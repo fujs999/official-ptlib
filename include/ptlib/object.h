@@ -516,12 +516,12 @@ public:
   #define PTRACE_ARGLIST_OPT_HELP \
     "use +X or -X to add/remove option where X is one of:\r" \
     "  block    PTrace::Block constructs in output\r" \
-    "  time     time since prgram start\r" \
+    "  time     time since program start\r" \
     "  date     date and time\r" \
     "  gmt      Date/time is in UTC\r" \
     "  thread   thread name and identifier\r" \
     "  level    log level\r" \
-    "  file     source file name and line number\r" \
+    "  source   source file name and line number\r" \
     "  object   PObject pointer\r" \
     "  context  context identifier\r" \
     "  single   single line output\r" \
@@ -636,6 +636,35 @@ public:
      Default is 10k
     */
   static PINDEX GetMaxLength();
+
+  /** Set the trace options by name.
+      The parameter string consists of a series of keywords separated
+      by a + or -. Use +X or -X to add/remove option where X is one of:
+        block    PTrace::Block constructs in output
+        time     time since prgram start
+        date     date and time
+        gmt      Date/time is in UTC
+        thread   thread name and identifier
+        level    log level
+        file     source file name and line number
+        object   PObject pointer
+        context  context identifier
+        single   single line output
+        daily    rotate output file daily
+        hour     rotate output file hourly
+        minute   rotate output file every minute
+        append   append to output file, otherwise overwrites
+        <perm>   file permission similar to unix chmod, but starts
+                 with +/- and only has one combination at a time,
+                 e.g. +uw is user write, +or is other read, etc"
+  */
+  static void SetOptionsByName(
+    const char * options ///< New option bits for tracing
+  );
+
+  /** Get current trace options by name.
+  */
+  static std::string GetOptionsByName();
 
   /** Set the trace options.
       The PTRACE(), PTRACE_BLOCK() and PTRACE_LINE() macros output trace text that

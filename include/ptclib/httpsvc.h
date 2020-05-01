@@ -118,8 +118,9 @@ class PHTTPServiceProcess : public PServiceProcess, public PHTTPListener
 
       // Logging
       bool         m_forceRotate;
-      const char * m_levelKey;
-      const char * m_fileKey;
+      const char * m_logLevelKey;
+      const char * m_logFileKey;
+      const char * m_logOptionsKey;
       const char * m_rotateDirKey;
       const char * m_rotatePrefixKey;
       const char * m_rotateTemplateKey;
