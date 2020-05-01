@@ -114,7 +114,7 @@ void MyProcess::Main()
     if (jscript.Run(args[arg]))
       cout << "Executed '" << args[arg] << "'" << endl;
     else
-      cerr << jscript.GetLastErrorText() << " executing '" << args[arg] << "'" << endl;
+      cerr << "Error " << jscript.GetLastErrorText() << " executing '" << args[arg] << "'" << endl;
   }
 }
 
