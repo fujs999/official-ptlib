@@ -251,6 +251,8 @@ PTHREAD_MUTEX_RECURSIVE_NP
     {
       if (m_contextIdentifier == 0 && m_threadAddress != NULL)
         m_contextIdentifier = m_threadAddress->GetTraceContextIdentifier();
+      if (m_objectClass.NumCompare("class ") == PObject::EqualTo)
+        m_objectClass.Delete(0, 6);
     }
 
     unsigned      m_level;
@@ -971,18 +973,15 @@ ostream & PTraceInfo::InternalEnd(ostream & paramStream)
                 "\"ObjectAddress\":" << context->m_objectAddress << ',';
     else {
       static unsigned const ObjWidth = 23;
-      if (instance == NULL)
-        stream << setw(ObjWidth/2) << '-' << setw(ObjWidth/2+1) << ' ';
+      if (context->m_objectAddress == NULL)
+        output << setw(ObjWidth/2) << '-' << setw(ObjWidth/2+1) << ' ';
       else {
-        PString addr(PSTRSTRM(instance));
+        PString addr(PSTRSTRM(context->m_objectAddress));
         addr.Delete(0, addr.FindSpan("0"));
         unsigned width = ObjWidth - addr.GetLength() - 1;
-        PString cls(instance->GetClass());
-        if (cls.NumCompare("class ") == PObject::EqualTo)
-          cls.Delete(0, 6);
-        stream << setw(width) << cls.Ellipses(width) << ':' << addr;
+        output << setw(width) << context->m_objectClass.Ellipsis(width) << ':' << addr;
       }
-      stream << '\t';
+      output << '\t';
     }
   }
 

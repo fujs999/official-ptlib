@@ -771,7 +771,7 @@ public:
       *(result = script->Run()) == NULL
 #endif
       ) {
-      PTRACE(3, "Could not run source " << text.Ellipses(100).ToLiteral());
+      PTRACE(3, "Could not run source " << text.Ellipsis(100).ToLiteral());
       m_owner.OnError(121, ToPString(exceptionHandler.Exception()));
       return false;
     }
