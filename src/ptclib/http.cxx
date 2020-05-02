@@ -45,7 +45,7 @@ static char const * const HTTPCommands[PHTTP::NumCommands] = {
   "GET", "HEAD", "POST",
 
   // HTTP 1.1 commands
-  "PUT",  "DELETE", "TRACE", "OPTIONS",
+  "PUT",  "DELETE", "TRACE", "OPTIONS", "PATCH",
 
   // HTTPS command
   "CONNECT"
