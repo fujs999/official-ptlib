@@ -730,6 +730,24 @@ public:
   }
 
 
+  PString OnException(TryCatch & exceptionHandler)
+  {
+    PString err;
+
+    v8::Local<v8::Message> msg = exceptionHandler.Message();
+    if (*msg != NULL)
+      err = ToPString(msg->Get());
+
+    if (err.IsEmpty())
+      err = ToPString(exceptionHandler.Exception());
+
+    if (err.IsEmpty())
+      err = "Unknown";
+
+    return err;
+  }
+
+
   bool Run(const PString & text, PString & resultText)
   {
     if (m_isolate == NULL) {
@@ -758,7 +776,7 @@ public:
 #endif
     if (exceptionHandler.HasCaught()) {
       PTRACE(3, "Could not compile source " << text.Left(100).ToLiteral());
-      m_owner.OnError(120, ToPString(exceptionHandler.Exception()));
+      m_owner.OnError(120, OnException(exceptionHandler));
       return false;
     }
 
@@ -771,7 +789,7 @@ public:
 #endif
     if (exceptionHandler.HasCaught()) {
       PTRACE(3, "Could not run source " << text.Left(100).ToLiteral());
-      m_owner.OnError(121, ToPString(exceptionHandler.Exception()));
+      m_owner.OnError(121, OnException(exceptionHandler));
       return false;
     }
 
