@@ -721,7 +721,7 @@ public:
     if (*fnt != NULL && *(value = fnt->GetFunction()) != NULL && object->Set(NewString(varName), value))
 #endif // V8_MAJOR_VERSION > 3
     {
-      PTRACE(5, "Set function \"" << varName << '"');
+      PTRACE(4, "Set function \"" << key << '"');
       return true;
     }
 
@@ -751,13 +751,12 @@ public:
 
     // compile the source 
     v8::Local<v8::Script> script;
-    if (
 #if V8_MAJOR_VERSION > 3
-      !v8::Script::Compile(context, source).ToLocal(&script)
+    v8::Script::Compile(context, source).ToLocal(&script);
 #else
-      *(script = v8::Script::Compile(source)) == NULL
+    script = v8::Script::Compile(source);
 #endif
-      ) {
+    if (exceptionHandler.HasCaught()) {
       PTRACE(3, "Could not compile source " << text.Left(100).ToLiteral());
       m_owner.OnError(120, ToPString(exceptionHandler.Exception()));
       return false;
@@ -765,13 +764,12 @@ public:
 
     // run the code
     v8::Local<v8::Value> result;
-    if (
 #if V8_MAJOR_VERSION > 3
-      !script->Run(context).ToLocal(&result)
+    script->Run(context).ToLocal(&result);
 #else
-      *(result = script->Run()) == NULL
+    result = script->Run();
 #endif
-      ) {
+    if (exceptionHandler.HasCaught()) {
       PTRACE(3, "Could not run source " << text.Left(100).ToLiteral());
       m_owner.OnError(121, ToPString(exceptionHandler.Exception()));
       return false;
