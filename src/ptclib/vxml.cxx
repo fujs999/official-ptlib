@@ -1964,6 +1964,10 @@ PString PVXMLSession::EvaluateExpr(const PString & expr)
   if (expr.IsEmpty())
     return PString::Empty();
 
+  // Optimisation, if simple string - starts/ends with qute and no other quotes in expression
+  if (expr.GetLength() > 1 && expr[0] == '\'' && expr.Find('\'', 1) == (expr.GetLength()-1))
+    return expr(1, expr.GetLength()-2);
+
 #if P_SCRIPTS
   if (m_scriptContext != NULL) {
     static PConstString const EvalVarName("PTLibVXMLExpressionResult");
