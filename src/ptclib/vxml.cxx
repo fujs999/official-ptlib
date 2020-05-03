@@ -1966,11 +1966,11 @@ PString PVXMLSession::EvaluateExpr(const PString & expr)
 
 #if P_SCRIPTS
   if (m_scriptContext != NULL) {
-    static PConstString const EvalVarName("PTLibEvaluateExpressionResult");
-    if (m_scriptContext->Run(PSTRSTRM(EvalVarName<<'='<<expr)))
-      return m_scriptContext->GetString(EvalVarName);
-    PTRACE(2, "Could not evaluate expression \"" << expr << "\" with script language " << m_scriptContext->GetLanguageName());
-    return PString::Empty();
+    static PConstString const EvalVarName("PTLibVXMLExpressionResult");
+    m_scriptContext->SetString(EvalVarName, "");
+    if (!m_scriptContext->Run(PSTRSTRM(EvalVarName<<'='<<expr)))
+      PTRACE(2, "Could not evaluate expression \"" << expr << "\" with script language " << m_scriptContext->GetLanguageName());
+    return m_scriptContext->GetString(EvalVarName);
   }
 #endif
 
