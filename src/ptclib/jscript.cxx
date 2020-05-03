@@ -627,7 +627,8 @@ public:
     if (varName[0] != '[' ? object->Set(NewString(varName), value) : object->Set(varName.Mid(1).AsInteger(), value))
 #endif
     {
-      PTRACE(4, "Set \"" << key << "\" to " << var.AsString().Left(100).ToLiteral());
+      PTRACE(4, "Set \"" << key << "\" to " <<
+             (var.GetType() == PVarType::VarStaticBinary ? PConstString("composite") : var.AsString().Left(100).ToLiteral()));
       return true;
     }
 

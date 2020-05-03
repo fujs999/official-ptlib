@@ -2066,6 +2066,32 @@ PCaselessString PVXMLSession::GetVar(const PString & varName) const
 }
 
 
+#if P_SCRIPTS
+/* These functions will add in the owner composite structures in the scripting language,
+   so session.connection.redirect.ani = "1234" will work even if session.connection.redirect,
+   or session.connection, do not yet exist. */
+static bool SetScriptVariableOrComposite(PScriptLanguage & scriptContext, const PString & fullVarName, const char * value)
+{
+  return value != NULL ? scriptContext.SetString(fullVarName, value) : scriptContext.CreateComposite(fullVarName);
+}
+
+static bool SetScriptVariableRecursive(PScriptLanguage & scriptContext, const PString & fullVarName, const char * value)
+{
+  if (SetScriptVariableOrComposite(scriptContext, fullVarName, value))
+    return true;
+
+  PINDEX dot = fullVarName.FindLast('.');
+  if (dot == P_MAX_INDEX)
+    return false;
+
+  if (!SetScriptVariableRecursive(scriptContext, fullVarName.Left(dot), NULL))
+    return false;
+
+  return SetScriptVariableOrComposite(scriptContext, fullVarName, value);
+}
+#endif // P_SCRIPTS
+
+
 void PVXMLSession::SetVar(const PString & varName, const PString & value)
 {
   PString fullVarName = varName;
@@ -2074,12 +2100,7 @@ void PVXMLSession::SetVar(const PString & varName, const PString & value)
 
 #if P_SCRIPTS
   if (m_scriptContext != NULL) {
-    // Make sure all the composites exist before setting the variable
-    PINDEX dot = 0;
-    while ((dot = fullVarName.Find('.', dot+1)) != P_MAX_INDEX)
-      m_scriptContext->CreateComposite(fullVarName.Left(dot));
-    m_scriptContext->SetString(fullVarName, value);
-
+    SetScriptVariableRecursive(*m_scriptContext, fullVarName, value);
     m_variables.SetAt(fullVarName, PString::Empty()); // Just to remember what was set, value is always from script
     return;
   }
