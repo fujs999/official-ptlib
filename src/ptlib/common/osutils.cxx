@@ -926,12 +926,11 @@ ostream & PTraceInfo::InternalBegin(bool topLevel, unsigned level, const char * 
   }
 
   if (HasOption(ObjectInstance)) {
-    static unsigned const ObjWidth = 23;
+    static unsigned const ObjWidth = 31;
     if (instance == NULL)
       stream << setw(ObjWidth/2) << '-' << setw(ObjWidth/2+1) << ' ';
     else {
-      PString addr(PSTRSTRM(instance));
-      addr.Delete(0, addr.FindSpan("0"));
+      PString addr(PSTRSTRM(hex << (uintptr_t)instance));
       unsigned width = ObjWidth - addr.GetLength() - 1;
       PString cls(instance->GetClass());
       if (cls.NumCompare("class ") == PObject::EqualTo)
