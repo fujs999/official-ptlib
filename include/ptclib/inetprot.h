@@ -355,7 +355,8 @@ class PInternetProtocol : public PIndirectChannel
     PString GetLastResponseInfo() const
       { return m_lastResponseInfo; }
 
-
+    PINDEX GetCommandFromName(const PString & name) const { return commandNames.GetValuesIndex(name); }
+    PString GetNameFromCommand(PINDEX cmd) const { return commandNames[cmd]; }
 
   protected:
     /** Parse a response line string into a response code and any extra info

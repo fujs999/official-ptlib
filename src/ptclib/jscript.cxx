@@ -402,17 +402,20 @@ public:
                                  v8::Local<v8::Object> object,
                                  const PString & name)
   {
+    v8::Local<v8::Value> value;
     if (object.IsEmpty())
-      return v8::Local<v8::Value>();
+      return value;
 
 #if V8_MAJOR_VERSION > 3
     v8::MaybeLocal<v8::Value> result = name[0] != '[' ? object->Get(context, NewString(name))
                                                       : object->Get(context, name.Mid(1).AsInteger());
-    return result.FromMaybe(v8::Local<v8::Value>());
+    value = result.FromMaybe(v8::Local<v8::Value>());
 #else
-    return name[0] != '[' ? object->Get(NewString(name))
-                          : object->Get(name.Mid(1).AsInteger());
+    value = name[0] != '[' ? object->Get(NewString(name)) : object->Get(name.Mid(1).AsInteger());
 #endif
+    if (value.IsEmpty())
+      m_owner.OnError(101, PSTRSTRM("Cannot get memmber \"" << name << '"'));
+    return value;
   }
 
 
@@ -420,7 +423,7 @@ public:
   {
     PStringArray tokens = key.Tokenise('.', false);
     if (tokens.GetSize() < 1) {
-      PTRACE(3, "SetVar \"" << key << "\" is too short");
+      m_owner.OnError(102, PSTRSTRM('"' << key << "\" is too short"));
       return v8::Local<v8::Object>();
     }
 
@@ -447,13 +450,13 @@ public:
       // get the member variable
       v8::Local<v8::Value> value = GetMember(context, object, tokens[i]);
       if (value.IsEmpty()) {
-        PTRACE(3, "Cannot get intermediate element \"" << tokens[i] << "\" of \"" << key << '"');
+        m_owner.OnError(103, PSTRSTRM("Cannot get intermediate element \"" << tokens[i] << "\" of \"" << key << '"'));
         return v8::Local<v8::Object>();
       }
 
       // terminals must not be composites, internal nodes must be composites
       if (!value->IsObject()) {
-        PTRACE(3, "Non composite intermediate element \"" << tokens[i] << "\" of \"" << key << '"');
+        m_owner.OnError(104, PSTRSTRM("Non composite intermediate element \"" << tokens[i] << "\" of \"" << key << '"'));
         return v8::Local<v8::Object>();
       }
 
@@ -465,7 +468,7 @@ public:
         *(object = value->ToObject()) == NULL || object->IsNull()
 #endif
         ) {
-        PTRACE(3, "Cannot get value of intermediate element \"" << tokens[i] << "\" of \"" << key << '"');
+        m_owner.OnError(105, PSTRSTRM("Cannot get value of intermediate element \"" << tokens[i] << "\" of \"" << key << '"'));
         return v8::Local<v8::Object>();
       }
     }
@@ -483,13 +486,11 @@ public:
 
   bool GetVarValue(const v8::Local<v8::Context> & context,
                    v8::Local<v8::Value> value,
-                   PVarType & var
-                   PTRACE_PARAM(, const PString & key))
+                   PVarType & var,
+                   const PString & key)
   {
-    if (value.IsEmpty()) {
-      PTRACE(3, "Cannot get value for \"" << key << '"');
+    if (value.IsEmpty())
       return false;
-    }
 
     if (value->IsInt32()) {
       var = ToVarType(Int32Value, 0);
@@ -525,7 +526,7 @@ public:
       return true;
     }
 
-    PTRACE(2, "Unable to determine type of \"" << key << "\" = \"" << ToPString(value) << '"');
+    m_owner.OnError(106, PSTRSTRM("Unable to determine type of \"" << key << "\" = \"" << ToPString(value) << '"'));
     var.SetType(PVarType::VarNULL);
     return false;
   }
@@ -533,8 +534,10 @@ public:
 
   bool GetVar(const PString & key, PVarType & var)
   {
-    if (m_isolate == NULL)
+    if (m_isolate == NULL) {
+      m_owner.OnError(100, "Uninitialised");
       return false;
+    }
 
     v8::Isolate::Scope isolateScope(m_isolate);
     HandleScope handleScope(this);
@@ -543,7 +546,10 @@ public:
 
     PString varName;
     v8::Local<v8::Object> object = GetObjectHandle(context, key, varName);
-    return !object.IsEmpty() && GetVarValue(context, GetMember(context, object, varName), var PTRACE_PARAM(, key));
+    if (object.IsEmpty())
+      return false;
+
+    return GetVarValue(context, GetMember(context, object, varName), var, key);
   }
 
 
@@ -597,8 +603,10 @@ public:
 
   bool SetVar(const PString & key, const PVarType & var)
   {
-    if (m_isolate == NULL)
+    if (m_isolate == NULL) {
+      m_owner.OnError(100, "Uninitialised");
       return false;
+    }
 
     v8::Isolate::Scope isolateScope(m_isolate);
     HandleScope handleScope(this);
@@ -619,11 +627,12 @@ public:
     if (varName[0] != '[' ? object->Set(NewString(varName), value) : object->Set(varName.Mid(1).AsInteger(), value))
 #endif
     {
-      PTRACE(4, "Set \"" << key << "\" to " << var.AsString().Left(100).ToLiteral());
+      PTRACE(4, "Set \"" << key << "\" to " <<
+             (var.GetType() == PVarType::VarStaticBinary ? PConstString("composite") : var.AsString().Left(100).ToLiteral()));
       return true;
     }
 
-    PTRACE(2, "Could not set \"" << key << "\" to " << var.AsString().Left(100).ToLiteral());
+    m_owner.OnError(107, PSTRSTRM("Could not set \"" << key << "\" to " << var.AsString().Left(100).ToLiteral()));
     return false;
   }
 
@@ -648,7 +657,7 @@ public:
     int nargs = callbackInfo.Length();
     signature.m_arguments.resize(nargs);
     for (int arg = 0; arg < nargs; ++arg)
-      GetVarValue(context, callbackInfo[arg], signature.m_arguments[arg] PTRACE_PARAM(, notifierInfo.m_key));
+      GetVarValue(context, callbackInfo[arg], signature.m_arguments[arg], notifierInfo.m_key);
 
     notifierInfo.m_notifiers(notifierInfo.m_owner, signature);
 
@@ -681,8 +690,10 @@ public:
 
   bool SetFunction(const PString & key, const FunctionNotifier & notifier)
   {
-    if (m_isolate == NULL)
+    if (m_isolate == NULL) {
+      m_owner.OnError(100, "Uninitialised");
       return false;
+    }
 
     v8::Isolate::Scope isolateScope(m_isolate);
     HandleScope handleScope(this);
@@ -710,19 +721,39 @@ public:
     if (*fnt != NULL && *(value = fnt->GetFunction()) != NULL && object->Set(NewString(varName), value))
 #endif // V8_MAJOR_VERSION > 3
     {
-      PTRACE(5, "Set function \"" << varName << '"');
+      PTRACE(4, "Set function \"" << key << '"');
       return true;
     }
 
-    PTRACE(3, "Could not set function \"" << varName << '"');
+    m_owner.OnError(110, PSTRSTRM("Could not set function \"" << varName << '"'));
     return false;
+  }
+
+
+  PString OnException(TryCatch & exceptionHandler)
+  {
+    PString err;
+
+    v8::Local<v8::Message> msg = exceptionHandler.Message();
+    if (*msg != NULL)
+      err = ToPString(msg->Get());
+
+    if (err.IsEmpty())
+      err = ToPString(exceptionHandler.Exception());
+
+    if (err.IsEmpty())
+      err = "Unknown";
+
+    return err;
   }
 
 
   bool Run(const PString & text, PString & resultText)
   {
-    if (m_isolate == NULL)
+    if (m_isolate == NULL) {
+      m_owner.OnError(100, "Uninitialised");
       return false;
+    }
 
     // create a V8 scopes
     v8::Isolate::Scope isolateScope(m_isolate);
@@ -738,27 +769,27 @@ public:
 
     // compile the source 
     v8::Local<v8::Script> script;
-    if (
 #if V8_MAJOR_VERSION > 3
-      !v8::Script::Compile(context, source).ToLocal(&script)
+    v8::Script::Compile(context, source).ToLocal(&script);
 #else
-      *(script = v8::Script::Compile(source)) == NULL
+    script = v8::Script::Compile(source);
 #endif
-      ) {
-      PTRACE(3, "Could not compile source " << text.Ellipsis(100).ToLiteral() << " - " << ToPString(exceptionHandler.Exception()));
+    if (exceptionHandler.HasCaught()) {
+      PTRACE(3, "Could not compile source " << text. Ellipsis(100).ToLiteral());
+      m_owner.OnError(120, OnException(exceptionHandler));
       return false;
     }
 
     // run the code
     v8::Local<v8::Value> result;
-    if (
 #if V8_MAJOR_VERSION > 3
-      !script->Run(context).ToLocal(&result)
+    script->Run(context).ToLocal(&result);
 #else
-      *(result = script->Run()) == NULL
+    result = script->Run();
 #endif
-      ) {
-      PTRACE(3, "Could not run source " << text.Ellipsis(100).ToLiteral() << " - " << ToPString(exceptionHandler.Exception()));
+    if (exceptionHandler.HasCaught()) {
+      PTRACE(3, "Could not run source " << text. Ellipsis(100).ToLiteral());
+      m_owner.OnError(121, OnException(exceptionHandler));
       return false;
     }
 

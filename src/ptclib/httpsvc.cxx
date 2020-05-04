@@ -172,8 +172,9 @@ PHTTPServiceProcess::Params::Params(const char * configPageName, const char * se
   , m_passwordKey("Password")
   , m_authority(PProcess::Current().GetName(), PString::Empty(), PString::Empty())
   , m_forceRotate(false)
-  , m_levelKey("Log Level")
-  , m_fileKey("Log File")
+  , m_logLevelKey("Log Level")
+  , m_logFileKey("Log File")
+  , m_logOptionsKey("Log Options")
   , m_rotateDirKey("Log Rotate Directory")
   , m_rotatePrefixKey("Log Rotate Prefix")
   , m_rotateTemplateKey("Log Rotate Template")
@@ -213,6 +214,9 @@ bool PHTTPServiceProcess::InitialiseBase(Params & params)
 
 
   PSystemLog::Level level;
+#if PTRACING
+  PString newLogOptions;
+#endif
   PFilePath oldLogFileName, newLogFileName;
   PSystemLogToFile::RotateInfo info(GetHomeDirectory());
 
@@ -227,12 +231,17 @@ bool PHTTPServiceProcess::InitialiseBase(Params & params)
     params.m_configPage->Add(new PHTTPPasswordField(params.m_passwordKey, 20, params.m_authority.GetPassword()));
 
     level = PSystemLog::LevelFromInt(
-                params.m_configPage->AddIntegerField(params.m_levelKey,
+                params.m_configPage->AddIntegerField(params.m_logLevelKey,
                                                PSystemLog::Fatal, PSystemLog::NumLogLevels-1,
                                                GetLogLevel(),
                                                "0=Fatal only, 1=Errors, 2=Warnings, 3=Info, 4=Debug, 5=Detailed"));
-    newLogFileName = params.m_configPage->AddStringField(params.m_fileKey, 0, oldLogFileName,
+    newLogFileName = params.m_configPage->AddStringField(params.m_logFileKey, 0, oldLogFileName,
                                              "File for logging output, empty string disables logging", 1, 80);
+#if PTRACING
+    newLogOptions = params.m_configPage->AddStringField(params.m_logOptionsKey, 0, PTrace::GetOptionsByName().c_str(),
+                                                        PString("Logging options:\r" PTRACE_ARGLIST_OPT_HELP).Replace("\r", "<BR>"),
+                                                        1, 80);
+#endif
     info.m_directory = params.m_configPage->AddStringField(params.m_rotateDirKey, 0, info.m_directory,
                                                      "Directory path for log file rotation", 1, 80);
     info.m_prefix = params.m_configPage->AddStringField(params.m_rotatePrefixKey, 0, info.m_prefix,
@@ -255,8 +264,11 @@ bool PHTTPServiceProcess::InitialiseBase(Params & params)
                                                                  "Local network interface(s) for HTTP user interface for server.");
   }
   else {
-    level = cfg.GetEnum(params.m_levelKey, GetLogLevel());
-    newLogFileName = cfg.GetString(params.m_fileKey, oldLogFileName);
+    level = cfg.GetEnum(params.m_logLevelKey, GetLogLevel());
+    newLogFileName = cfg.GetString(params.m_logFileKey, oldLogFileName);
+#if PTRACING
+    newLogOptions = cfg.GetString(params.m_logOptionsKey, PTrace::GetOptionsByName());
+#endif
     info.m_directory = cfg.GetString(params.m_rotateDirKey, info.m_directory);
     info.m_prefix = cfg.GetString(params.m_rotatePrefixKey, info.m_prefix);
     info.m_timestamp = cfg.GetString(params.m_rotateTemplateKey, info.m_timestamp);
@@ -268,6 +280,9 @@ bool PHTTPServiceProcess::InitialiseBase(Params & params)
   }
 
   SetLogLevel(level);
+#if PTRACING
+  PTrace::SetOptionsByName(newLogOptions);
+#endif
 
   if (newLogFileName.IsEmpty()) {
     if (logFile != NULL) {

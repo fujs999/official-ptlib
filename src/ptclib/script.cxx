@@ -67,10 +67,9 @@ void PScriptLanguage::OnError(int code, const PString & str)
 {
   m_mutex.Wait();
   m_lastErrorCode = code;
-  m_lastErrorText = str;
+  m_lastErrorText = str.IsEmpty() && code != 0 ? psprintf("Unknown error %i", code) : str;
+  PTRACE(2, this, GetLanguageName(), "Error " << code << ": " << m_lastErrorText);
   m_mutex.Signal();
-
-  PTRACE(2, GetLanguageName(), "Error " << code << ": " << str);
 }
 
 

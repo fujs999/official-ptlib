@@ -263,11 +263,11 @@ class PScriptLanguage : public PObject
     virtual const PString & GetLastErrorText() const { return m_lastErrorText; }
   //@}
 
-  protected:
     /**Set m_lastErrorCode and m_lastErrorText members, with mutex.
       */
     virtual void OnError(int code, const PString & str);
 
+  protected:
     virtual bool InternalSetFunction(const PString & name, const FunctionNotifier & func);
     virtual void InternalRemoveFunction(const PString & prefix);
 

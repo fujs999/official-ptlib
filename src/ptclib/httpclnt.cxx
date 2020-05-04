@@ -241,6 +241,7 @@ struct PHTTPClient_FileWriter : public PHTTPContentProcessor
 PHTTPClient::PHTTPClient(const PString & userAgent)
   : m_userAgentName(userAgent)
   , m_persist(true)
+  , m_maxRedirects(10)
   , m_authentication(NULL)
 {
 }
@@ -252,33 +253,33 @@ PHTTPClient::~PHTTPClient()
 }
 
 
-int PHTTPClient::ExecuteCommand(Commands cmd,
-                                const PURL & url,
-                                PMIMEInfo & outMIME,
-                                const PString & dataBody,
-                                PMIMEInfo & replyMime)
+PHTTP::StatusCode PHTTPClient::ExecuteCommand(Commands cmd,
+                                              const PURL & url,
+                                              PMIMEInfo & outMIME,
+                                              const PString & dataBody,
+                                              PMIMEInfo & replyMime)
 {
   PHTTPClient_StringWriter processor(dataBody);
   return ExecuteCommand(cmd, url, outMIME, processor, replyMime);
 }
 
 
-int PHTTPClient::ExecuteCommand(Commands cmd,
-                                const PURL & url,
-                                PMIMEInfo & outMIME,
-                                const PBYTEArray & dataBody,
-                                PMIMEInfo & replyMIME)
+PHTTP::StatusCode PHTTPClient::ExecuteCommand(Commands cmd,
+                                              const PURL & url,
+                                              PMIMEInfo & outMIME,
+                                              const PBYTEArray & dataBody,
+                                              PMIMEInfo & replyMIME)
 {
   PHTTPClient_BinaryWriter processor(dataBody);
   return ExecuteCommand(cmd, url, outMIME, processor, replyMIME);
 }
 
 
-int PHTTPClient::ExecuteCommand(Commands cmd,
-                                const PURL & url,
-                                PMIMEInfo & outMIME,
-                                ContentProcessor & processor,
-                                PMIMEInfo & replyMIME)
+PHTTP::StatusCode PHTTPClient::ExecuteCommand(Commands cmd,
+                                              const PURL & url,
+                                              PMIMEInfo & outMIME,
+                                              ContentProcessor & processor,
+                                              PMIMEInfo & replyMIME)
 {
   if (!outMIME.Contains(DateTag()))
     outMIME.SetAt(DateTag(), PTime().AsString());
@@ -289,9 +290,10 @@ int PHTTPClient::ExecuteCommand(Commands cmd,
   if (m_persist && !outMIME.Contains(ConnectionTag()))
     outMIME.SetAt(ConnectionTag(), KeepAliveTag());
 
+  unsigned redirectCount = m_maxRedirects;
   bool needAuthentication = true;
   PURL adjustableURL = url;
-  for (int retry = 3; retry > 0; --retry) {
+  for (int retry = 0; retry < 3; ++retry) {
     if (!ConnectURL(adjustableURL))
       break;
 
@@ -315,14 +317,19 @@ int PHTTPClient::ExecuteCommand(Commands cmd,
     // Await a response, if all OK exit loop
     if (ReadResponse(replyMIME) && (m_lastResponseCode != Continue || ReadResponse(replyMIME))) {
       if (IsOK(m_lastResponseCode))
-        return m_lastResponseCode;
+        return (StatusCode)m_lastResponseCode;
 
       switch (m_lastResponseCode) {
         case MovedPermanently:
         case MovedTemporarily:
-          adjustableURL = replyMIME("Location");
-          if (adjustableURL.IsEmpty())
-            continue;
+          if (redirectCount-- > 0) {
+            PURL newLocation = replyMIME("Location");
+            if (!newLocation.IsEmpty() && adjustableURL != newLocation) {
+              adjustableURL = newLocation;
+              retry = 0;
+              continue;
+            }
+          }
           break;
 
         case UnAuthorised:
@@ -348,7 +355,7 @@ int PHTTPClient::ExecuteCommand(Commands cmd,
           break;
       }
 
-      retry = 0; // No more retries
+      retry = INT_MAX-1; // No more retries
     }
     else {
       // If not persisting, we have no oppurtunity to write again, just error out
@@ -361,7 +368,7 @@ int PHTTPClient::ExecuteCommand(Commands cmd,
   }
 
   PTRACE_IF(3, !IsOK(m_lastResponseCode), "Error " << m_lastResponseCode << ' ' << m_lastResponseInfo.Left(m_lastResponseInfo.FindOneOf("\r\n")));
-  return m_lastResponseCode;
+  return (StatusCode)m_lastResponseCode;
 }
 
 
@@ -1213,6 +1220,111 @@ PString PHTTPClientAuthenticator::GetMethod()
 {
   return m_method;
 }
+
+////////////////////////////////////////////////////////////////////////////////////
+
+#if P_SSL
+void PHTTPClientPool::SetSSLCredentials(const PString & authority, const PString & certificate, const PString & privateKey)
+{
+  m_authority = authority;
+  m_certificate = certificate;
+  m_privateKey = privateKey;
+}
+#endif
+
+
+void PHTTPClientPool::ShutDown()
+{
+  PWaitAndSignal lock(m_mutex);
+
+  for (ConnectionMap::iterator it = m_connections.begin(); it != m_connections.end(); ++it)
+    delete it->second;
+  m_connections.clear();
+}
+
+
+void PHTTPClientPool::QueueRequest(const Request & request)
+{
+  PString hostPort = request.m_url.GetHostPort();
+  if (hostPort.IsEmpty() || (unsigned)request.m_command >= PHTTP::NumCommands) {
+    PAssertAlways(PInvalidParameter);
+    return;
+  }
+
+  PWaitAndSignal lock(m_mutex);
+
+  for (;;) {
+    for (ConnectionMap::iterator it = m_connections.begin(); it != m_connections.end(); ) {
+      if (it->second->m_lastUse.GetElapsed() < m_timeToLive)
+        ++it;
+      else {
+        delete it->second;
+        it = m_connections.erase(it);
+      }
+    }
+
+    if (m_connections.size() < m_maxConnections)
+      break;
+
+    m_mutex.Signal();
+    PThread::Sleep(100);
+    m_mutex.Wait();
+  }
+
+  std::pair<ConnectionMap::iterator, ConnectionMap::iterator> range = m_connections.equal_range(hostPort);
+  if (range.first == m_connections.end() || std::distance(range.first, range.second) < m_maxParallel)
+    m_connections.insert(std::make_pair(hostPort, new Connection(*this, request)));
+  else {
+    ConnectionMap::iterator shortestQueue = range.first;
+    for (ConnectionMap::iterator it = range.first; it != range.second; ++it) {
+      if (it->second->m_requests.size() < shortestQueue->second->m_requests.size())
+        shortestQueue = it;
+    }
+    shortestQueue->second->m_requests.Enqueue(request);
+  }
+}
+
+
+void PHTTPClientPool::Get(const PURL & url, const Notifier & notifier, const PString & body, const PString & contentType)
+{
+  Request request(PHTTP::GET, url, notifier, body);
+  if (!contentType.IsEmpty())
+    request.m_headers.Set(PMIMEInfo::ContentTypeTag, contentType);
+  QueueRequest(request);
+}
+
+
+PHTTPClientPool::Connection::Connection(PHTTPClientPool & owner, const Request & request)
+  : m_owner(owner)
+{
+  m_http.SetReadTimeout(owner.m_connectTimeout);
+  m_http.SetReadLineTimeout(owner.m_readTimeout);
+  m_requests.Enqueue(request);
+  m_thread = new PThreadObj<Connection>(*this, &Connection::Main, false, "PHTTPClient");
+}
+
+
+PHTTPClientPool::Connection::~Connection()
+{
+  m_requests.Close(false);
+  m_http.CloseBaseReadChannel();
+  PThread::WaitAndDelete(m_thread, 60000);
+}
+
+
+void PHTTPClientPool::Connection::Main()
+{
+  Request request;
+  while (m_requests.Dequeue(request)) {
+    Response response;
+    response.m_code = m_http.ExecuteCommand(request.m_command, request.m_url, request.m_headers, response.m_body, response.m_headers);
+    if (response.m_code >= 200)
+      m_http.ReadContentBody(response.m_headers, response.m_body);
+    if (!request.m_notifier.IsNULL())
+      request.m_notifier(m_owner, response);
+  }
+}
+
 
 ////////////////////////////////////////////////////////////////////////////////////
 

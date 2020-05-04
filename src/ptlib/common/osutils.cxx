@@ -251,6 +251,8 @@ PTHREAD_MUTEX_RECURSIVE_NP
     {
       if (m_contextIdentifier == 0 && m_threadAddress != NULL)
         m_contextIdentifier = m_threadAddress->GetTraceContextIdentifier();
+      if (m_objectClass.NumCompare("class ") == PObject::EqualTo)
+        m_objectClass.Delete(0, 6);
     }
 
     unsigned      m_level;
@@ -537,6 +539,43 @@ int PTrace::GetTimeZone()
 }
 
 
+static inline char PlusMinus(unsigned options, unsigned bit)
+{
+  return (options&bit) == bit ? '+' : '-';
+}
+
+static std::string OptionsToString(unsigned options)
+{
+  std::ostringstream strm;
+  strm << PlusMinus(options, PTrace::Timestamp) << "time "
+       << PlusMinus(options, PTrace::DateAndTime) << "date "
+       << PlusMinus(options, PTrace::GMTTime) << "gmt "
+       << PlusMinus(options, PTrace::Thread) << "thread "
+       << PlusMinus(options, PTrace::FileAndLine) << "source "
+       << PlusMinus(options, PTrace::ObjectInstance) << "object "
+       << PlusMinus(options, PTrace::ContextIdentifier) << "context "
+       << PlusMinus(options, PTrace::TraceLevel) << "level "
+       << PlusMinus(options, PTrace::Blocks) << "block "
+       << PlusMinus(options, PTrace::AppendToFile) << "append "
+       << PlusMinus(options, PTrace::SingleLine) << "single "
+       << PlusMinus(options, PTrace::OutputJSON) << "json ";
+
+  switch (options&PTrace::RotateLogMask) {
+    case PTrace::RotateDaily :
+      strm << "+daily ";
+      break;
+    case PTrace::RotateHourly :
+      strm << "+hour ";
+      break;
+    case PTrace::RotateMinutely :
+      strm << "+minute ";
+      break;
+  }
+
+  return strm.str();
+}
+
+
 ostream & PTrace::PrintInfo(ostream & strm, bool crlf)
 {
   PTraceInfo & info = PTraceInfo::Instance();
@@ -566,41 +605,7 @@ ostream & PTrace::PrintInfo(ostream & strm, bool crlf)
   else
     strm << typeid(*info.m_stream).name();
 
-  strm << ", Options:";
-  if (info.m_options&Blocks)
-    strm << " blocks";
-  if (info.m_options&TraceLevel)
-    strm << " level";
-  if (info.m_options&DateAndTime)
-    strm << " date";
-  if (info.m_options&GMTTime)
-    strm << " GMT";
-  if (info.m_options&Timestamp)
-    strm << " timestamp";
-  if (info.m_options&Thread)
-    strm << " thread";
-  if (info.m_options&ThreadAddress)
-    strm << " thread-addr";
-  if (info.m_options&FileAndLine)
-    strm << " file/line";
-  if (info.m_options&AppendToFile)
-    strm << " append";
-  if (info.m_options&ObjectInstance)
-    strm << " object";
-  if (info.m_options&ContextIdentifier)
-    strm << " context";
-
-  switch (info.m_options&RotateLogMask) {
-    case RotateDaily :
-      strm << " daily " << info.m_rolloverPattern;
-      break;
-    case RotateHourly :
-      strm << " hourly " << info.m_rolloverPattern;
-      break;
-    case RotateMinutely :
-      strm << " minute " << info.m_rolloverPattern;
-      break;
-  }
+  strm << ", Options:" << OptionsToString(info.m_options) << info.m_rolloverPattern;
 
   if (crlf)
     strm << endl;
@@ -637,6 +642,75 @@ static PString GetOptionOrParameter(const PArgList & args, const char * opt, con
 }
 
 
+static unsigned OptionsFromString(const PCaselessString & optStr, unsigned options)
+{
+  PINDEX pos = 0;
+  while ((pos = optStr.FindOneOf("+-", pos)) != P_MAX_INDEX) {
+    void (*operation)(unsigned & options, unsigned option) = optStr[pos++] == '+' ? SetOptionBit : ClearOptionBit;
+    if (optStr.NumCompare("block", P_MAX_INDEX, pos) == PObject::EqualTo)
+      operation(options, PTrace::Blocks);
+    else if (optStr.NumCompare("date", P_MAX_INDEX, pos) == PObject::EqualTo)
+      operation(options, PTrace::DateAndTime);
+    else if (optStr.NumCompare("time", P_MAX_INDEX, pos) == PObject::EqualTo)
+      operation(options, PTrace::Timestamp);
+    else if (optStr.NumCompare("thread", P_MAX_INDEX, pos) == PObject::EqualTo)
+      operation(options, PTrace::Thread);
+    else if (optStr.NumCompare("level", P_MAX_INDEX, pos) == PObject::EqualTo)
+      operation(options, PTrace::TraceLevel);
+    else if (optStr.NumCompare("file", P_MAX_INDEX, pos) == PObject::EqualTo)
+      operation(options, PTrace::FileAndLine);
+    else if (optStr.NumCompare("source", P_MAX_INDEX, pos) == PObject::EqualTo)
+      operation(options, PTrace::FileAndLine);
+    else if (optStr.NumCompare("object", P_MAX_INDEX, pos) == PObject::EqualTo)
+      operation(options, PTrace::ObjectInstance);
+    else if (optStr.NumCompare("context", P_MAX_INDEX, pos) == PObject::EqualTo)
+      operation(options, PTrace::ContextIdentifier);
+    else if (optStr.NumCompare("single", P_MAX_INDEX, pos) == PObject::EqualTo)
+      operation(options, PTrace::SingleLine);
+    else if (optStr.NumCompare("json", P_MAX_INDEX, pos) == PObject::EqualTo)
+      operation(options, PTrace::OutputJSON);
+    else if (optStr.NumCompare("gmt", P_MAX_INDEX, pos) == PObject::EqualTo)
+      operation(options, PTrace::GMTTime);
+    else if (optStr.NumCompare("utc", P_MAX_INDEX, pos) == PObject::EqualTo)
+      operation(options, PTrace::GMTTime);
+    else if (optStr.NumCompare("daily", P_MAX_INDEX, pos) == PObject::EqualTo)
+      operation(options, PTrace::RotateDaily);
+    else if (optStr.NumCompare("hour", P_MAX_INDEX, pos) == PObject::EqualTo)
+      operation(options, PTrace::RotateHourly);
+    else if (optStr.NumCompare("minute", P_MAX_INDEX, pos) == PObject::EqualTo)
+      operation(options, PTrace::RotateMinutely);
+    else if (optStr.NumCompare("append", P_MAX_INDEX, pos) == PObject::EqualTo)
+      operation(options, PTrace::AppendToFile);
+    else if (optStr.NumCompare("ax", P_MAX_INDEX, pos) == PObject::EqualTo)
+      operation(options, (PFileInfo::WorldExecute|PFileInfo::GroupExecute|PFileInfo::UserExecute) << PTrace::FilePermissionShift);
+    else if (optStr.NumCompare("aw", P_MAX_INDEX, pos) == PObject::EqualTo)
+      operation(options, (PFileInfo::WorldWrite|PFileInfo::GroupWrite|PFileInfo::UserWrite) << PTrace::FilePermissionShift);
+    else if (optStr.NumCompare("ar", P_MAX_INDEX, pos) == PObject::EqualTo)
+      operation(options, (PFileInfo::WorldRead|PFileInfo::GroupRead|PFileInfo::UserRead) << PTrace::FilePermissionShift);
+    else if (optStr.NumCompare("ox", P_MAX_INDEX, pos) == PObject::EqualTo)
+      operation(options, PFileInfo::WorldExecute << PTrace::FilePermissionShift);
+    else if (optStr.NumCompare("ow", P_MAX_INDEX, pos) == PObject::EqualTo)
+      operation(options, PFileInfo::WorldWrite << PTrace::FilePermissionShift);
+    else if (optStr.NumCompare("or", P_MAX_INDEX, pos) == PObject::EqualTo)
+      operation(options, PFileInfo::WorldRead << PTrace::FilePermissionShift);
+    else if (optStr.NumCompare("gx", P_MAX_INDEX, pos) == PObject::EqualTo)
+      operation(options, PFileInfo::GroupExecute << PTrace::FilePermissionShift);
+    else if (optStr.NumCompare("gw", P_MAX_INDEX, pos) == PObject::EqualTo)
+      operation(options, PFileInfo::GroupWrite << PTrace::FilePermissionShift);
+    else if (optStr.NumCompare("gr", P_MAX_INDEX, pos) == PObject::EqualTo)
+      operation(options, PFileInfo::GroupRead << PTrace::FilePermissionShift);
+    else if (optStr.NumCompare("ux", P_MAX_INDEX, pos) == PObject::EqualTo)
+      operation(options, PFileInfo::UserExecute << PTrace::FilePermissionShift);
+    else if (optStr.NumCompare("uw", P_MAX_INDEX, pos) == PObject::EqualTo)
+      operation(options, PFileInfo::UserWrite << PTrace::FilePermissionShift);
+    else if (optStr.NumCompare("ur", P_MAX_INDEX, pos) == PObject::EqualTo)
+      operation(options, PFileInfo::UserRead << PTrace::FilePermissionShift);
+  }
+
+  return options;
+}
+
+
 void PTrace::Initialise(const PArgList & args,
                         unsigned options,
                         const char * traceCount,
@@ -653,65 +727,7 @@ void PTrace::Initialise(const PArgList & args,
   else {
     if ((options & HasFilePermissions) == 0)
       options |= HasFilePermissions | (PFileInfo::DefaultPerms << FilePermissionShift);
-
-    PINDEX pos = 0;
-    while ((pos = optStr.FindOneOf("+-", pos)) != P_MAX_INDEX) {
-      void (*operation)(unsigned & options, unsigned option) = optStr[pos++] == '+' ? SetOptionBit : ClearOptionBit;
-      if (optStr.NumCompare("block", P_MAX_INDEX, pos) == PObject::EqualTo)
-        operation(options, Blocks);
-      else if (optStr.NumCompare("date", P_MAX_INDEX, pos) == PObject::EqualTo)
-        operation(options, DateAndTime);
-      else if (optStr.NumCompare("time", P_MAX_INDEX, pos) == PObject::EqualTo)
-        operation(options, Timestamp);
-      else if (optStr.NumCompare("thread", P_MAX_INDEX, pos) == PObject::EqualTo)
-        operation(options, Thread);
-      else if (optStr.NumCompare("level", P_MAX_INDEX, pos) == PObject::EqualTo)
-        operation(options, TraceLevel);
-      else if (optStr.NumCompare("file", P_MAX_INDEX, pos) == PObject::EqualTo)
-        operation(options, FileAndLine);
-      else if (optStr.NumCompare("object", P_MAX_INDEX, pos) == PObject::EqualTo)
-        operation(options, ObjectInstance);
-      else if (optStr.NumCompare("context", P_MAX_INDEX, pos) == PObject::EqualTo)
-        operation(options, ContextIdentifier);
-      else if (optStr.NumCompare("single", P_MAX_INDEX, pos) == PObject::EqualTo)
-        operation(options, SingleLine);
-      else if (optStr.NumCompare("json", P_MAX_INDEX, pos) == PObject::EqualTo)
-        operation(options, OutputJSON);
-      else if (optStr.NumCompare("gmt", P_MAX_INDEX, pos) == PObject::EqualTo)
-        operation(options, GMTTime);
-      else if (optStr.NumCompare("daily", P_MAX_INDEX, pos) == PObject::EqualTo)
-        operation(options, RotateDaily);
-      else if (optStr.NumCompare("hour", P_MAX_INDEX, pos) == PObject::EqualTo)
-        operation(options, RotateHourly);
-      else if (optStr.NumCompare("minute", P_MAX_INDEX, pos) == PObject::EqualTo)
-        operation(options, RotateMinutely);
-      else if (optStr.NumCompare("append", P_MAX_INDEX, pos) == PObject::EqualTo)
-        operation(options, AppendToFile);
-      else if (optStr.NumCompare("ax", P_MAX_INDEX, pos) == PObject::EqualTo)
-        operation(options, (PFileInfo::WorldExecute|PFileInfo::GroupExecute|PFileInfo::UserExecute) << FilePermissionShift);
-      else if (optStr.NumCompare("aw", P_MAX_INDEX, pos) == PObject::EqualTo)
-        operation(options, (PFileInfo::WorldWrite|PFileInfo::GroupWrite|PFileInfo::UserWrite) << FilePermissionShift);
-      else if (optStr.NumCompare("ar", P_MAX_INDEX, pos) == PObject::EqualTo)
-        operation(options, (PFileInfo::WorldRead|PFileInfo::GroupRead|PFileInfo::UserRead) << FilePermissionShift);
-      else if (optStr.NumCompare("ox", P_MAX_INDEX, pos) == PObject::EqualTo)
-        operation(options, PFileInfo::WorldExecute << FilePermissionShift);
-      else if (optStr.NumCompare("ow", P_MAX_INDEX, pos) == PObject::EqualTo)
-        operation(options, PFileInfo::WorldWrite << FilePermissionShift);
-      else if (optStr.NumCompare("or", P_MAX_INDEX, pos) == PObject::EqualTo)
-        operation(options, PFileInfo::WorldRead << FilePermissionShift);
-      else if (optStr.NumCompare("gx", P_MAX_INDEX, pos) == PObject::EqualTo)
-        operation(options, PFileInfo::GroupExecute << FilePermissionShift);
-      else if (optStr.NumCompare("gw", P_MAX_INDEX, pos) == PObject::EqualTo)
-        operation(options, PFileInfo::GroupWrite << FilePermissionShift);
-      else if (optStr.NumCompare("gr", P_MAX_INDEX, pos) == PObject::EqualTo)
-        operation(options, PFileInfo::GroupRead << FilePermissionShift);
-      else if (optStr.NumCompare("ux", P_MAX_INDEX, pos) == PObject::EqualTo)
-        operation(options, PFileInfo::UserExecute << FilePermissionShift);
-      else if (optStr.NumCompare("uw", P_MAX_INDEX, pos) == PObject::EqualTo)
-        operation(options, PFileInfo::UserWrite << FilePermissionShift);
-      else if (optStr.NumCompare("ur", P_MAX_INDEX, pos) == PObject::EqualTo)
-        operation(options, PFileInfo::UserRead << FilePermissionShift);
-    }
+    options = OptionsFromString(optStr, options);
   }
 
   int level;
@@ -779,6 +795,18 @@ void PTrace::SetMaxLength(PINDEX length)
 PINDEX PTrace::GetMaxLength()
 {
   return PTraceInfo::Instance().m_maxLength;
+}
+
+
+void PTrace::SetOptionsByName(const char * options)
+{
+  SetOptions(OptionsFromString(options, GetOptions()));
+}
+
+
+std::string PTrace::GetOptionsByName()
+{
+  return OptionsToString(GetOptions());
 }
 
 
@@ -933,6 +961,8 @@ ostream & PTraceInfo::InternalEnd(ostream & paramStream)
       output << setw(FileWidth) << context->m_fileName.GetFileName().Left(FileWidth);
       if (context->m_lineNum > 0)
         output << '(' << context->m_lineNum << ')';
+      else
+        output << "       ";
       output << '\t';
     }
   }
@@ -942,10 +972,14 @@ ostream & PTraceInfo::InternalEnd(ostream & paramStream)
       output << "\"ObjectClass\":" << context->m_objectClass.ToLiteral() << ","
                 "\"ObjectAddress\":" << context->m_objectAddress << ',';
     else {
-      if (context->m_objectAddress != NULL)
-        output << context->m_objectClass << ':' << context->m_objectAddress;
-      else
-        output << '-';
+      static unsigned const ObjWidth = 31;
+      if (context->m_objectAddress == NULL)
+        output << setw(ObjWidth/2) << '-' << setw(ObjWidth/2+1) << ' ';
+      else {
+        PString addr(PSTRSTRM(hex << (uintptr_t)context->m_objectAddress));
+        unsigned width = ObjWidth - addr.GetLength() - 1;
+        output << setw(width) << context->m_objectClass.Ellipsis(width) << ':' << addr;
+      }
       output << '\t';
     }
   }
