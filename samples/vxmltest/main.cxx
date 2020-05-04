@@ -84,6 +84,8 @@ void VxmlTest::Main()
 
   PCLIStandard cli("VXML-Test> ");
   cli.SetCommand("input", PCREATE_NOTIFIER(SimulateInput), "Simulate input for VXML instance (1..n)", "<digit> [ <n> ]");
+  cli.SetCommand("set", PCREATE_NOTIFIER(SetVar), "Set variable for VXML instance (1..n)", "<var> <value> [ <n> ]");
+  cli.SetCommand("get", PCREATE_NOTIFIER(GetVar), "Get variable for VXML instance (1..n)", "<var> [ <n> ]");
   cli.Start(false);
   m_tests.clear();
 }
@@ -91,15 +93,15 @@ void VxmlTest::Main()
 
 void VxmlTest::SimulateInput(PCLI::Arguments & args, P_INT_PTR)
 {
-  unsigned num;
   if (args.GetCount() < 1) {
     args.WriteUsage();
     return;
   }
 
+  unsigned num;
   if (args.GetCount() < 2)
     num = 1;
-  else if ((num = args[0].AsUnsigned()) == 0) {
+  else if ((num = args[1].AsUnsigned()) == 0) {
     args.WriteError("Invalid instance number");
     return;
   }
@@ -108,6 +110,50 @@ void VxmlTest::SimulateInput(PCLI::Arguments & args, P_INT_PTR)
     args.WriteError("No such instance");
   else
     m_tests[num - 1].SendInput(args[0]);
+}
+
+
+void VxmlTest::SetVar(PCLI::Arguments & args, P_INT_PTR)
+{
+  if (args.GetCount() < 2) {
+    args.WriteUsage();
+    return;
+  }
+
+  unsigned num;
+  if (args.GetCount() < 3)
+    num = 1;
+  else if ((num = args[2].AsUnsigned()) == 0) {
+    args.WriteError("Invalid instance number");
+    return;
+  }
+
+  if (num > m_tests.size())
+    args.WriteError("No such instance");
+  else
+    m_tests[num - 1].SetVar(args[0], args[1]);
+}
+
+
+void VxmlTest::GetVar(PCLI::Arguments & args, P_INT_PTR)
+{
+  if (args.GetCount() < 1) {
+    args.WriteUsage();
+    return;
+  }
+
+  unsigned num;
+  if (args.GetCount() < 2)
+    num = 1;
+  else if ((num = args[1].AsUnsigned()) == 0) {
+    args.WriteError("Invalid instance number");
+    return;
+  }
+
+  if (num > m_tests.size())
+    args.WriteError("No such instance");
+  else
+    args.GetContext() << m_tests[num - 1].GetVar(args[0]) << endl;
 }
 
 

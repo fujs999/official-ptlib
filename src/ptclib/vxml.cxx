@@ -47,8 +47,10 @@
 
 
 static PConstString const ApplicationScope("application");
+static PConstString const DocumentScope("document");
 static PConstString const DialogScope("dialog");
 static PConstString const PropertyScope("property");
+static PConstString const SessionScope("session");
 
 static PConstString const FormElement("form");
 static PConstString const MenuElement("menu");
@@ -1091,37 +1093,15 @@ PVXMLSession::PVXMLSession(PTextToSpeech * tts, PBoolean autoDelete)
   , m_promptCount(0)
   , m_grammar(NULL)
   , m_defaultMenuDTMF('N') /// Disabled
+#if P_SCRIPTS
+  , m_scriptContext(NULL)
+#endif
   , m_recordingStatus(NotRecording)
   , m_recordStopOnDTMF(false)
   , m_recordingStartTime(0)
   , m_transferStatus(NotTransfering)
   , m_transferStartTime(0)
 {
-#if P_SCRIPTS
-  m_scriptContext = PScriptLanguage::Create("JavaScript");
-  if (m_scriptContext == NULL || !m_scriptContext->IsInitialised()) {
-    delete m_scriptContext;
-    m_scriptContext = PScriptLanguage::Create("Lua"); // Back up
-  }
-
-  if (m_scriptContext != NULL) {
-    m_scriptContext->CreateComposite(ApplicationScope);
-    m_scriptContext->CreateComposite(DialogScope);
-    m_scriptContext->CreateComposite(PropertyScope);
-    m_scriptContext->CreateComposite("session");
-    m_scriptContext->CreateComposite("session.connection");
-    m_scriptContext->CreateComposite("session.connection.local");
-    m_scriptContext->CreateComposite("session.connection.remote");
-#if P_VXML_VIDEO
-    m_scriptContext->SetFunction(SIGN_LANGUAGE_PREVIEW_SCRIPT_FUNCTION, PCREATE_NOTIFIER(SignLanguagePreviewFunction));
-    m_scriptContext->SetFunction(SIGN_LANGUAGE_CONTROL_SCRIPT_FUNCTION, PCREATE_NOTIFIER(SignLanguageControlFunction));
-#endif
-  }
-#endif
-
-  SetVar("property.timeout" , "10s");
-  SetVar("property.bargein", "true");
-
 #if P_VXML_VIDEO
   PVideoInputDevice::OpenArgs videoArgs;
   videoArgs.driverName = P_FAKE_VIDEO_DRIVER;
@@ -1302,7 +1282,7 @@ bool PVXMLSession::InternalLoadVXML(const PString & xmlText, const PString & fir
     }
   }
 
-  m_variableScope = m_variableScope.IsEmpty() ? ApplicationScope : "document";
+  m_variableScope = m_variableScope.IsEmpty() ? ApplicationScope : DocumentScope;
 
   PURL pathURL = m_rootURL;
   pathURL.ChangePath(PString::Empty()); // Remove last element of root URL
@@ -1480,10 +1460,37 @@ void PVXMLSession::InternalThreadMain()
   m_sessionMutex.Wait();
 
   {
+#if P_SCRIPTS
+    if (m_scriptContext == NULL)
+      m_scriptContext = PScriptLanguage::Create("JavaScript");
+    if (m_scriptContext == NULL || !m_scriptContext->IsInitialised()) {
+      delete m_scriptContext;
+      m_scriptContext = PScriptLanguage::Create("Lua"); // Back up
+    }
+
+    if (m_scriptContext != NULL) {
+      m_scriptContext->CreateComposite(ApplicationScope);
+      m_scriptContext->CreateComposite(DocumentScope);
+      m_scriptContext->CreateComposite(DialogScope);
+      m_scriptContext->CreateComposite(PropertyScope);
+      m_scriptContext->CreateComposite(SessionScope);
+      #if P_VXML_VIDEO
+        m_scriptContext->SetFunction(SIGN_LANGUAGE_PREVIEW_SCRIPT_FUNCTION, PCREATE_NOTIFIER(SignLanguagePreviewFunction));
+        m_scriptContext->SetFunction(SIGN_LANGUAGE_CONTROL_SCRIPT_FUNCTION, PCREATE_NOTIFIER(SignLanguageControlFunction));
+      #endif
+    }
+#endif
+
     PTime now;
-    SetVar("session.time", now.AsString());
-    SetVar("session.timeISO8601", now.AsString(PTime::ShortISO8601));
-    SetVar("session.timeEpoch", now.GetTimeInSeconds());
+    m_variableScope = SessionScope;
+    SetVar("time", now.AsString());
+    SetVar("timeISO8601", now.AsString(PTime::ShortISO8601));
+    SetVar("timeEpoch", now.GetTimeInSeconds());
+    m_variableScope = PropertyScope;
+    SetVar("timeout" , "10s");
+    SetVar("bargein", "true");
+    m_variableScope = ApplicationScope;
+    SetVar("caching", "safe");
   }
 
   InternalStartVXML();
@@ -2869,7 +2876,7 @@ PBoolean PVXMLSession::TraverseSubmit(PXMLElement & element)
 PBoolean PVXMLSession::TraverseProperty(PXMLElement & element)
 {
   if (element.HasAttribute(NameAttribute))
-    SetVar("property." + element.GetAttribute(NameAttribute), element.GetAttribute("value"));
+    SetVar(PSTRSTRM(PropertyScope << '.' << element.GetAttribute(NameAttribute), element.GetAttribute("value")));
 
   return true;
 }
