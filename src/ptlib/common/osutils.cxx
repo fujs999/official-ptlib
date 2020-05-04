@@ -972,12 +972,11 @@ ostream & PTraceInfo::InternalEnd(ostream & paramStream)
       output << "\"ObjectClass\":" << context->m_objectClass.ToLiteral() << ","
                 "\"ObjectAddress\":" << context->m_objectAddress << ',';
     else {
-      static unsigned const ObjWidth = 23;
+      static unsigned const ObjWidth = 31;
       if (context->m_objectAddress == NULL)
         output << setw(ObjWidth/2) << '-' << setw(ObjWidth/2+1) << ' ';
       else {
-        PString addr(PSTRSTRM(context->m_objectAddress));
-        addr.Delete(0, addr.FindSpan("0"));
+        PString addr(PSTRSTRM(hex << (uintptr_t)instance));
         unsigned width = ObjWidth - addr.GetLength() - 1;
         output << setw(width) << context->m_objectClass.Ellipsis(width) << ':' << addr;
       }

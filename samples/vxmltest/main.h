@@ -26,6 +26,8 @@ class TestInstance
 
     bool Initialise(unsigned instance, const PArgList & args);
     void SendInput(const PString & digits);
+    void SetVar(const PString & name, const PString & value) { m_vxml->SetVar(name, value); }
+    PString GetVar(const PString & name) { return m_vxml->GetVar(name); }
 
   protected:
     unsigned             m_instance;
@@ -59,6 +61,8 @@ class VxmlTest : public PProcess
 
   protected:
     PDECLARE_NOTIFIER(PCLI::Arguments, VxmlTest, SimulateInput);
+    PDECLARE_NOTIFIER(PCLI::Arguments, VxmlTest, SetVar);
+    PDECLARE_NOTIFIER(PCLI::Arguments, VxmlTest, GetVar);
     std::vector<TestInstance> m_tests;
 };
 

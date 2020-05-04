@@ -627,7 +627,8 @@ public:
     if (varName[0] != '[' ? object->Set(NewString(varName), value) : object->Set(varName.Mid(1).AsInteger(), value))
 #endif
     {
-      PTRACE(4, "Set \"" << key << "\" to " << var.AsString().Left(100).ToLiteral());
+      PTRACE(4, "Set \"" << key << "\" to " <<
+             (var.GetType() == PVarType::VarStaticBinary ? PConstString("composite") : var.AsString().Left(100).ToLiteral()));
       return true;
     }
 
@@ -720,12 +721,30 @@ public:
     if (*fnt != NULL && *(value = fnt->GetFunction()) != NULL && object->Set(NewString(varName), value))
 #endif // V8_MAJOR_VERSION > 3
     {
-      PTRACE(5, "Set function \"" << varName << '"');
+      PTRACE(4, "Set function \"" << key << '"');
       return true;
     }
 
     m_owner.OnError(110, PSTRSTRM("Could not set function \"" << varName << '"'));
     return false;
+  }
+
+
+  PString OnException(TryCatch & exceptionHandler)
+  {
+    PString err;
+
+    v8::Local<v8::Message> msg = exceptionHandler.Message();
+    if (*msg != NULL)
+      err = ToPString(msg->Get());
+
+    if (err.IsEmpty())
+      err = ToPString(exceptionHandler.Exception());
+
+    if (err.IsEmpty())
+      err = "Unknown";
+
+    return err;
   }
 
 
@@ -750,29 +769,27 @@ public:
 
     // compile the source 
     v8::Local<v8::Script> script;
-    if (
 #if V8_MAJOR_VERSION > 3
-      !v8::Script::Compile(context, source).ToLocal(&script)
+    v8::Script::Compile(context, source).ToLocal(&script);
 #else
-      *(script = v8::Script::Compile(source)) == NULL
+    script = v8::Script::Compile(source);
 #endif
-      ) {
+    if (exceptionHandler.HasCaught()) {
       PTRACE(3, "Could not compile source " << text. Ellipsis(100).ToLiteral());
-      m_owner.OnError(120, ToPString(exceptionHandler.Exception()));
+      m_owner.OnError(120, OnException(exceptionHandler));
       return false;
     }
 
     // run the code
     v8::Local<v8::Value> result;
-    if (
 #if V8_MAJOR_VERSION > 3
-      !script->Run(context).ToLocal(&result)
+    script->Run(context).ToLocal(&result);
 #else
-      *(result = script->Run()) == NULL
+    result = script->Run();
 #endif
-      ) {
-      PTRACE(3, "Could not run source " << text.Ellipsis(100).ToLiteral());
-      m_owner.OnError(121, ToPString(exceptionHandler.Exception()));
+    if (exceptionHandler.HasCaught()) {
+      PTRACE(3, "Could not run source " << text. Ellipsis(100).ToLiteral());
+      m_owner.OnError(121, OnException(exceptionHandler));
       return false;
     }
 
