@@ -2876,7 +2876,7 @@ PBoolean PVXMLSession::TraverseSubmit(PXMLElement & element)
 PBoolean PVXMLSession::TraverseProperty(PXMLElement & element)
 {
   if (element.HasAttribute(NameAttribute))
-    SetVar(PSTRSTRM(PropertyScope << '.' << element.GetAttribute(NameAttribute), element.GetAttribute("value")));
+    SetVar(PSTRSTRM(PropertyScope << '.' << element.GetAttribute(NameAttribute)), element.GetAttribute("value"));
 
   return true;
 }
