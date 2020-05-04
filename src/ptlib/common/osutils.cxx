@@ -976,7 +976,7 @@ ostream & PTraceInfo::InternalEnd(ostream & paramStream)
       if (context->m_objectAddress == NULL)
         output << setw(ObjWidth/2) << '-' << setw(ObjWidth/2+1) << ' ';
       else {
-        PString addr(PSTRSTRM(hex << (uintptr_t)instance));
+        PString addr(PSTRSTRM(hex << (uintptr_t)context->m_objectAddress));
         unsigned width = ObjWidth - addr.GetLength() - 1;
         output << setw(width) << context->m_objectClass.Ellipsis(width) << ':' << addr;
       }
