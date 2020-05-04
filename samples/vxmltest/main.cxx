@@ -191,7 +191,7 @@ bool TestInstance::Initialise(unsigned instance, const PArgList & args)
     videoArgs.deviceName = args.GetOptionString("output-device");
     videoArgs.channelNumber = args.GetOptionString("output-channel", "-1").AsInteger();
     m_viewer = PVideoOutputDevice::CreateOpenedDevice(videoArgs);
-    if (m_player == NULL) {
+    if (m_viewer == NULL) {
       cerr << "Instance " << m_instance << " error: cannot open video device \"" << videoArgs.deviceName << "\"" << endl;
       return false;
     }
@@ -230,8 +230,10 @@ bool TestInstance::Initialise(unsigned instance, const PArgList & args)
   }
 
 #if P_VXML_VIDEO
-  m_videoSenderThread = new PThreadObj<TestInstance>(*this, &TestInstance::CopyVideoSender, false, "CopyVideoSender");
-  m_videoReceiverThread = new PThreadObj<TestInstance>(*this, &TestInstance::CopyVideoReceiver, false, "CopyVideoReceiver");
+  if (m_viewer != NULL)
+    m_videoSenderThread = new PThreadObj<TestInstance>(*this, &TestInstance::CopyVideoSender, false, "CopyVideoSender");
+  if (m_grabber != NULL)
+    m_videoReceiverThread = new PThreadObj<TestInstance>(*this, &TestInstance::CopyVideoReceiver, false, "CopyVideoReceiver");
 #endif
 
   m_audioThread = new PThreadObj<TestInstance>(*this, &TestInstance::CopyAudio, false, "CopyAudio");
@@ -277,7 +279,7 @@ void TestInstance::CopyVideoSender()
   sender.SetColourFormatConverter(PVideoFrameInfo::YUV420P());
   m_viewer->SetColourFormatConverter(PVideoFrameInfo::YUV420P());
 
-  while (m_viewer != NULL) {
+  while (m_viewer->IsOpen()) {
     if (!sender.GetFrame(frame, frameData.width, frameData.height)) {
       PTRACE(2, "Instance " << m_instance << " vxml video preview failed");
       break;
