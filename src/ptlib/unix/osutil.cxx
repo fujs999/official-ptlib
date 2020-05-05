@@ -388,18 +388,6 @@ PTimeInterval PTimer::Tick()
 // PDirectory
 //
 
-void PDirectory::CopyContents(const PDirectory & d)
-{
-  if (d.entryInfo == NULL)
-    entryInfo = NULL;
-  else {
-    entryInfo  = new PFileInfo;
-    *entryInfo = *d.entryInfo;
-  }
-  directory   = NULL;
-  entryBuffer = NULL;
-}
-
 void PDirectory::Close()
 {
   if (directory != NULL) {

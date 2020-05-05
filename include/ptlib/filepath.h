@@ -309,9 +309,6 @@ class PFilePath : public PFilePathString
     // Internal function to take partial path and make a full canonical path from it.
     static PFilePathString Canonicalise(const PFilePathString & path, bool isDirectory);
 
-  protected:
-    virtual void AssignContents(const PContainer & cont);
-
 
 // Include platform dependent part of class
 #ifdef _WIN32
