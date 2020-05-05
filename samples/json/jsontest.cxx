@@ -14,7 +14,7 @@ class JSONTest : public PProcess
 PCREATE_PROCESS(JSONTest);
 
 
-struct MyJSON : PJSON::Record
+struct MyJSON : PJSONRecord
 {
   P_JSON_MEMBER(PString, m_a_string);
   P_JSON_MEMBER(PTime, m_a_time);
@@ -32,17 +32,17 @@ struct MyJSON : PJSON::Record
   P_JSON_MEMBER(double, m_a_double);
   P_JSON_MEMBER(long double, m_a_big_double);
 
-  struct MyNested : PJSON::Record
+  struct MyNested : PJSONRecord
   {
     P_JSON_MEMBER(PString, m_a_string);
     P_JSON_MEMBER(int, m_an_integer);
   };
-  P_JSON_MEMBER(MyNested, m_an_object, PJSON::MemberRecord);
+  P_JSON_MEMBER(MyNested, m_an_object, PJSONMemberRecord);
 
-  P_JSON_MEMBER(PString, m_a_string_array, PJSON::MemberArray);
-  P_JSON_MEMBER(bool, m_a_bool_array, PJSON::MemberArray);
+  P_JSON_MEMBER(PString, m_a_string_array, PJSONMemberArray);
+  P_JSON_MEMBER(bool, m_a_bool_array, PJSONMemberArray);
 
-  P_JSON_MEMBER(MyNested, m_an_object_array, PJSON::MemberArrayRecord);
+  P_JSON_MEMBER(MyNested, m_an_object_array, PJSONMemberArrayRecord);
 };
 
 

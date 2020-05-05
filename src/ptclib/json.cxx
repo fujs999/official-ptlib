@@ -952,21 +952,21 @@ PJSON::Base * PJSON::Null::DeepClone() const
 
 ///////////////////////////////////////////////////////////////////////////////
 
-static PThreadLocalStorage<std::stack<PJSON::Record*>> s_jsonDataInitialiser;
+static PThreadLocalStorage<std::stack<PJSONRecord*>> s_jsonDataInitialiser;
 
-PJSON::Record::Record()
+PJSONRecord::PJSONRecord()
 {
   s_jsonDataInitialiser->push(this);
 }
 
 
-PJSON::Record::Record(const Record &)
+PJSONRecord::PJSONRecord(const PJSONRecord &)
 {
   s_jsonDataInitialiser->push(this);
 }
 
 
-PJSON::WrapMember::WrapMember(const char * memberName)
+PJSONWrapMember::PJSONWrapMember(const char * memberName)
   : m_memberName(memberName)
 {
   if (m_memberName.IsEmpty())
@@ -981,7 +981,7 @@ PJSON::WrapMember::WrapMember(const char * memberName)
 }
 
 
-PJSON::WrapMember::WrapMember(const WrapMember & other)
+PJSONWrapMember::PJSONWrapMember(const PJSONWrapMember & other)
   : m_memberName(other.m_memberName)
 {
   if (!m_memberName.IsEmpty())
@@ -989,21 +989,21 @@ PJSON::WrapMember::WrapMember(const WrapMember & other)
 }
 
 
-PJSON::WrapMember & PJSON::WrapMember::operator=(const WrapMember & other)
+PJSONWrapMember & PJSONWrapMember::operator=(const PJSONWrapMember & other)
 {
-  PAssert(m_memberName == other.m_memberName, "Cannot assign from different type of enclosing PJSON::Record");
+  PAssert(m_memberName == other.m_memberName, "Cannot assign from different type of enclosing PJSONRecord");
   return *this;
 }
 
 
-void PJSON::WrapMember::EndRecordConstruction()
+void PJSONWrapMember::EndRecordConstruction()
 {
   if (!m_memberName.IsEmpty())
     s_jsonDataInitialiser->pop();
 }
 
 
-void PJSON::Record::ReadFrom(istream & strm)
+void PJSONRecord::ReadFrom(istream & strm)
 {
   PJSON json;
   json.ReadFrom(strm);
@@ -1015,7 +1015,7 @@ void PJSON::Record::ReadFrom(istream & strm)
 }
 
 
-void PJSON::Record::PrintOn(ostream & strm) const
+void PJSONRecord::PrintOn(ostream & strm) const
 {
   PJSON json;
   AsJSON(json);
@@ -1023,14 +1023,14 @@ void PJSON::Record::PrintOn(ostream & strm) const
 }
 
 
-bool PJSON::Record::FromString(const PString & str)
+bool PJSONRecord::FromString(const PString & str)
 {
   PJSON json;
   return json.FromString(str) && FromJSON(json);
 }
 
 
-PString PJSON::Record::AsString(std::streamsize initialIndent, std::streamsize subsequentIndent) const
+PString PJSONRecord::AsString(std::streamsize initialIndent, std::streamsize subsequentIndent) const
 {
   PJSON json;
   AsJSON(json);
@@ -1038,24 +1038,24 @@ PString PJSON::Record::AsString(std::streamsize initialIndent, std::streamsize s
 }
 
 
-bool PJSON::Record::FromJSON(const PJSON & json)
+bool PJSONRecord::FromJSON(const PJSON & json)
 {
   return json.IsType(PJSON::e_Object) && FromJSON(json.GetObject());
 }
 
 
-void PJSON::Record::AsJSON(PJSON & json) const
+void PJSONRecord::AsJSON(PJSON & json) const
 {
   json = PJSON(PJSON::e_Object);
   AsJSON(json.GetObject());
 }
 
 
-bool PJSON::Record::FromJSON(const PJSON::Object & obj)
+bool PJSONRecord::FromJSON(const PJSON::Object & obj)
 {
   bool good = true;
   for (PJSON::Object::const_iterator it = obj.begin(); it != obj.end(); ++it) {
-    std::map<PString, WrapMember *>::iterator member = m_jsonDataMembers.find(it->first);
+    std::map<PString, PJSONWrapMember *>::iterator member = m_jsonDataMembers.find(it->first);
     if (member != m_jsonDataMembers.end()) {
       if (!it->second->IsType(member->second->GetType()) || !member->second->FromJSON(*it->second)) {
         good = false;
@@ -1066,9 +1066,9 @@ bool PJSON::Record::FromJSON(const PJSON::Object & obj)
 }
 
 
-void PJSON::Record::AsJSON(PJSON::Object & obj) const
+void PJSONRecord::AsJSON(PJSON::Object & obj) const
 {
-  for (std::map<PString, WrapMember *>::const_iterator it = m_jsonDataMembers.begin(); it != m_jsonDataMembers.end(); ++it) {
+  for (std::map<PString, PJSONWrapMember *>::const_iterator it = m_jsonDataMembers.begin(); it != m_jsonDataMembers.end(); ++it) {
     if (obj.Set(it->first, it->second->GetType()))
       it->second->AsJSON(*obj.at(it->first));
   }
