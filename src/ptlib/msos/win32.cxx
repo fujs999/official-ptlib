@@ -261,14 +261,6 @@ void PDirectory::Construct()
 }
 
 
-void PDirectory::CopyContents(const PDirectory & dir)
-{
-  m_scanMask  = dir.m_scanMask;
-  hFindFile = INVALID_HANDLE_VALUE;
-  fileinfo  = dir.fileinfo;
-}
-
-
 bool PDirectory::Open(PFileInfo::FileTypes newScanMask)
 {
   m_scanMask = newScanMask;
@@ -378,7 +370,7 @@ bool PDirectory::GetVolumeSpace(PInt64 & total, PInt64 & free, DWORD & clusterSi
   PString root;
   if ((*this)[1] == ':')
     root = Left(3);
-  else if (theArray[0] == '\\' && theArray[1] == '\\') {
+  else if (GetAt(0) == '\\' && GetAt(1) == '\\') {
     PINDEX backslash = Find('\\', 2);
     if (backslash != P_MAX_INDEX) {
       backslash = Find('\\', backslash+1);

@@ -172,7 +172,7 @@ class PFileInfo : public PObject
  */
 class PDirectory : public PFilePathString
 {
-  PCONTAINERINFO(PDirectory, PFilePathString);
+  PCLASSINFO(PDirectory, PFilePathString);
 
   public:
   /**@name Construction */
@@ -207,6 +207,10 @@ class PDirectory : public PFilePathString
     PDirectory & operator=(
       const char * cpathname      ///< Directory path name for new object.
     );
+
+    PDirectory(const PDirectory &);
+    PDirectory & operator=(const PDirectory &);
+    ~PDirectory() { Close(); }
   //@}
 
   /**@name Access functions */
@@ -486,8 +490,6 @@ class PDirectory : public PFilePathString
   protected:
     // New functions for class
     void Construct();
-    void Destruct()
-    { Close(); PFilePathString::Destruct(); }
 
     // Member variables
     /// Mask of file types that the directory scan will return.

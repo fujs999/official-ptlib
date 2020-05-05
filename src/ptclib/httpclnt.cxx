@@ -146,7 +146,7 @@ struct PHTTPClient_StringWriter : public PHTTPContentProcessor
 
     m_written = true;
     size = m_body.GetLength();
-    return m_body.PCharArray::GetPointer();
+    return m_body.GetPointerAndSetLength(size);
   }
 
   virtual void Reset()

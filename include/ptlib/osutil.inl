@@ -329,15 +329,15 @@ PINLINE PChannel * PIndirectChannel::GetWriteChannel() const
 ///////////////////////////////////////////////////////////////////////////////
 // PDirectory
 
+PINLINE PDirectory & PDirectory::operator=(const PDirectory & str)
+  { Close(); PFilePathString::operator=(str); return *this; }
+
 PINLINE PDirectory & PDirectory::operator=(const PString & str)
-  { AssignContents(PDirectory(str)); return *this; }
+  { Close(); PFilePathString::operator=(PFilePath::Canonicalise(str, true)); return *this; }
 
 PINLINE PDirectory & PDirectory::operator=(const char * cstr)
-  { AssignContents(PDirectory(cstr)); return *this; }
+  { Close(); PFilePathString::operator=(PFilePath::Canonicalise(cstr, true)); return *this; }
 
-
-PINLINE void PDirectory::DestroyContents()
-  { Close(); PFilePathString::DestroyContents(); }
 
 PINLINE bool PDirectory::Exists() const
   { return Exists(*this); }
@@ -361,19 +361,19 @@ PINLINE PFilePath::PFilePath(const PFilePath & path)
   : PFilePathString(path) { }
 
 PINLINE PFilePath & PFilePath::operator=(const PFilePath & path)
-  { AssignContents(path); return *this; }
+  { PFilePathString::operator=(path); return *this; }
 
 PINLINE PFilePath & PFilePath::operator=(const PString & str)
-  { AssignContents(str); return *this; }
+  { PFilePathString::operator=(Canonicalise(str, false)); return *this; }
 
 PINLINE PFilePath & PFilePath::operator=(const char * cstr)
-  { AssignContents(PString(cstr)); return *this; }
+  { PFilePathString::operator=(Canonicalise(cstr, false)); return *this; }
 
 PINLINE PFilePath & PFilePath::operator+=(const PString & str)
-  { AssignContents(*this + str); return *this; }
+  { PFilePathString::operator=(Canonicalise(*this + str, false)); return *this; }
 
 PINLINE PFilePath & PFilePath::operator+=(const char * cstr)
-  { AssignContents(*this + cstr); return *this; }
+  { PFilePathString::operator=(Canonicalise(*this + cstr, false)); return *this; }
 
 
 ///////////////////////////////////////////////////////////////////////////////

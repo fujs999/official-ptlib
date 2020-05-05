@@ -603,8 +603,8 @@ PStringArray PConfig::GetSections() const
 
     case NumSources :
       {
-        PCharArray buffer = PGetPrivateProfileString(NULL, NULL, "", location);
-        char * ptr = buffer.GetPointer();
+        PString buffer = PGetPrivateProfileString(NULL, NULL, "", location);
+        const char * ptr = buffer.c_str();
         while (*ptr != '\0') {
           sections.AppendString(ptr);
           ptr += strlen(ptr)+1;
@@ -647,8 +647,8 @@ PStringArray PConfig::GetKeys(const PString & section) const
     case NumSources :
       PAssert(!section.IsEmpty(), PInvalidParameter);
       {
-        PCharArray buffer = PGetPrivateProfileString(section, NULL, "", location);
-        char * ptr = buffer.GetPointer();
+        PString buffer = PGetPrivateProfileString(section, NULL, "", location);
+        const char * ptr = buffer.c_str();
         while (*ptr != '\0') {
           keys.AppendString(ptr);
           ptr += strlen(ptr)+1;

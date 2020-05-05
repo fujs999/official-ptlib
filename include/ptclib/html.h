@@ -126,16 +126,16 @@ class PHTML : public PStringStream
      */
     PHTML & operator=(
       const PHTML & html     ///< HTML stream to make a copy of.
-    ) { AssignContents(html); return *this; }
+    ) { PStringStream::operator=(html); m_elementSet.assign(m_elementSet.size(), false); return *this; }
     PHTML & operator=(
       const PString & str    ///< String for title in restating HTML.
-    ) { AssignContents(str); return *this; }
+    ) { PStringStream::operator=(str); m_elementSet.assign(m_elementSet.size(), false); return *this; }
     PHTML & operator=(
       const char * cstr    ///< String for title in restating HTML.
-    ) { AssignContents(PString(cstr)); return *this; }
+    ) { PStringStream::operator=(cstr); m_elementSet.assign(m_elementSet.size(), false); return *this; }
     PHTML & operator=(
       char ch    ///< String for title in restating HTML.
-    ) { AssignContents(PString(ch)); return *this; }
+    ) { PStringStream::operator=(ch); m_elementSet.assign(m_elementSet.size(), false); return *this; }
 
 
   // New functions for class.
@@ -1068,14 +1068,11 @@ class PHTML : public PStringStream
     };
 
 
-  protected:
-    virtual void AssignContents(const PContainer & c);
-
   private:
-    ElementInSet m_initialElement;
-    BYTE         m_elementSet[NumElementsInSet/8+1];
-    PINDEX       m_tableNestLevel;
-    PINDEX       m_divisionNestLevel;
+    ElementInSet      m_initialElement;
+    std::vector<bool> m_elementSet;
+    PINDEX            m_tableNestLevel;
+    PINDEX            m_divisionNestLevel;
 };
 
 

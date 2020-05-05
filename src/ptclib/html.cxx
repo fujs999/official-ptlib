@@ -39,11 +39,10 @@
 
 PHTML::PHTML(ElementInSet initialState)
   : m_initialElement(initialState)
+  , m_elementSet(NumElementsInSet)
   , m_tableNestLevel(0)
   , m_divisionNestLevel(0)
 {
-  memset(m_elementSet, 0, sizeof(m_elementSet));
-
   switch (initialState) {
     case NumElementsInSet :
       break;
@@ -62,11 +61,10 @@ PHTML::PHTML(ElementInSet initialState)
 
 PHTML::PHTML(const char * cstr)
   : m_initialElement(NumElementsInSet)
+  , m_elementSet(NumElementsInSet)
   , m_tableNestLevel(0)
   , m_divisionNestLevel(0)
 {
-  memset(m_elementSet, 0, sizeof(m_elementSet));
-
   ostream & this_stream = *this;
   this_stream << Title(cstr) << Body() << Heading(1) << cstr << Heading(1);
 }
@@ -74,11 +72,10 @@ PHTML::PHTML(const char * cstr)
 
 PHTML::PHTML(const PString & str)
   : m_initialElement(NumElementsInSet)
+  , m_elementSet(NumElementsInSet)
   , m_tableNestLevel(0)
   , m_divisionNestLevel(0)
 {
-  memset(m_elementSet, 0, sizeof(m_elementSet));
-
   ostream & this_stream = *this;
   this_stream << Title(str) << Body() << Heading(1) << str << Heading(1);
 }
@@ -91,40 +88,34 @@ PHTML::~PHTML()
     Clr(m_initialElement);
     Clr(InBody);
   }
-  for (PINDEX i = 0; i < PARRAYSIZE(m_elementSet); i++)
-    PAssert(m_elementSet[i] == 0, psprintf("Failed to close element %u", i));
+
+  for (size_t i = 0; i < m_elementSet.size(); i++)
+    PAssert(!m_elementSet[i], psprintf("Failed to close element %u", i));
 #endif
-}
-
-
-void PHTML::AssignContents(const PContainer & cont)
-{
-  PStringStream::AssignContents(cont);
-  memset(m_elementSet, 0, sizeof(m_elementSet));
 }
 
 
 PBoolean PHTML::Is(ElementInSet elmt) const
 {
-  return (m_elementSet[elmt>>3]&(1<<(elmt&7))) != 0;
+  return m_elementSet[elmt];
 }
 
 
 void PHTML::Set(ElementInSet elmt)
 {
-  m_elementSet[elmt>>3] |= (1<<(elmt&7));
+  m_elementSet[elmt] = true;
 }
 
 
 void PHTML::Clr(ElementInSet elmt)
 {
-  m_elementSet[elmt>>3] &= ~(1<<(elmt&7));
+  m_elementSet[elmt] = false;
 }
 
 
 void PHTML::Toggle(ElementInSet elmt)
 {
-  m_elementSet[elmt>>3] ^= (1<<(elmt&7));
+  m_elementSet[elmt].flip();
 }
 
 

@@ -1223,9 +1223,10 @@ PDirectory::PDirectory(const PString & pathname)
 }
 
 
-void PDirectory::CloneContents(const PDirectory * d)
+PDirectory::PDirectory(const PDirectory & dir)
+  : PFilePathString(dir)
 {
-  CopyContents(*d);
+  Construct();
 }
 
 
@@ -4708,12 +4709,6 @@ PFilePath::PFilePath(const char * prefix, const char * dir, const char * suffix)
   }
 
   PAssertAlways("Could not generate a unique temporary file name, using base " + path);
-}
-
-void PFilePath::AssignContents(const PContainer & cont)
-{
-  PFilePathString::AssignContents(cont);
-  PFilePathString::AssignContents(Canonicalise(*this, false));
 }
 
 
