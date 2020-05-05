@@ -1272,7 +1272,7 @@ void PHTTPClientPool::QueueRequest(const Request & request)
   }
 
   std::pair<ConnectionMap::iterator, ConnectionMap::iterator> range = m_connections.equal_range(hostPort);
-  if (range.first == m_connections.end() || std::distance(range.first, range.second) < m_maxParallel)
+  if (range.first == m_connections.end() || std::distance(range.first, range.second) < (ptrdiff_t)m_maxParallel)
     m_connections.insert(std::make_pair(hostPort, new Connection(*this, request)));
   else {
     ConnectionMap::iterator shortestQueue = range.first;
