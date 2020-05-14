@@ -429,6 +429,7 @@ class PHTTPFieldArray : public PHTTPCompositeField
     void AddBlankField();
     void AddArrayControlBox(PHTML & html, PINDEX fld) const;
     void SetArrayFieldName(PINDEX idx) const;
+    PString GetFieldNameForJSON() const;
 
     PHTTPField * m_baseField;
     bool         m_orderedArray;
