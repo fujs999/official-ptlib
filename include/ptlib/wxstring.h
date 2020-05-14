@@ -103,10 +103,10 @@ class PwxString : public wxString
     inline friend wostream & operator<<(wostream & stream, const PwxString & string) { return stream << string.c_str(); }
 #endif
 
-#if !wxCHECK_VERSION(2,9,2)
-    PwxString & operator<<(const char    * str) { *this += wxString(              str, wxConvUTF8); return *this; }
-    PwxString & operator<<(const PString & str) { *this += wxString((const char *)str, wxConvUTF8); return *this; }
-#endif
+    PwxString & operator<<(const char      * str) { append(wxString(str, wxConvUTF8)); return *this; }
+    PwxString & operator<<(const PString   & str) { append(wxString(str.c_str(), wxConvUTF8)); return *this; }
+    PwxString & operator<<(const wxChar    * str) { append(str); return *this; }
+    PwxString & operator<<(const PwxString & str) { append(str); return *this; }
 };
 
 __inline bool wxFromString(wxString & s1, PwxString * & s2) { *s2 = s1; return true; }

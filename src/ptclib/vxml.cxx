@@ -47,8 +47,10 @@
 
 
 static PConstString const ApplicationScope("application");
+static PConstString const DocumentScope("document");
 static PConstString const DialogScope("dialog");
 static PConstString const PropertyScope("property");
+static PConstString const SessionScope("session");
 
 static PConstString const FormElement("form");
 static PConstString const MenuElement("menu");
@@ -1091,37 +1093,15 @@ PVXMLSession::PVXMLSession(PTextToSpeech * tts, PBoolean autoDelete)
   , m_promptCount(0)
   , m_grammar(NULL)
   , m_defaultMenuDTMF('N') /// Disabled
+#if P_SCRIPTS
+  , m_scriptContext(NULL)
+#endif
   , m_recordingStatus(NotRecording)
   , m_recordStopOnDTMF(false)
   , m_recordingStartTime(0)
   , m_transferStatus(NotTransfering)
   , m_transferStartTime(0)
 {
-#if P_SCRIPTS
-  m_scriptContext = PScriptLanguage::Create("JavaScript");
-  if (m_scriptContext == NULL || !m_scriptContext->IsInitialised()) {
-    delete m_scriptContext;
-    m_scriptContext = PScriptLanguage::Create("Lua"); // Back up
-  }
-
-  if (m_scriptContext != NULL) {
-    m_scriptContext->CreateComposite(ApplicationScope);
-    m_scriptContext->CreateComposite(DialogScope);
-    m_scriptContext->CreateComposite(PropertyScope);
-    m_scriptContext->CreateComposite("session");
-    m_scriptContext->CreateComposite("session.connection");
-    m_scriptContext->CreateComposite("session.connection.local");
-    m_scriptContext->CreateComposite("session.connection.remote");
-#if P_VXML_VIDEO
-    m_scriptContext->SetFunction(SIGN_LANGUAGE_PREVIEW_SCRIPT_FUNCTION, PCREATE_NOTIFIER(SignLanguagePreviewFunction));
-    m_scriptContext->SetFunction(SIGN_LANGUAGE_CONTROL_SCRIPT_FUNCTION, PCREATE_NOTIFIER(SignLanguageControlFunction));
-#endif
-  }
-#endif
-
-  SetVar("property.timeout" , "10s");
-  SetVar("property.bargein", "true");
-
 #if P_VXML_VIDEO
   PVideoInputDevice::OpenArgs videoArgs;
   videoArgs.driverName = P_FAKE_VIDEO_DRIVER;
@@ -1302,7 +1282,7 @@ bool PVXMLSession::InternalLoadVXML(const PString & xmlText, const PString & fir
     }
   }
 
-  m_variableScope = m_variableScope.IsEmpty() ? ApplicationScope : "document";
+  m_variableScope = m_variableScope.IsEmpty() ? ApplicationScope : DocumentScope;
 
   PURL pathURL = m_rootURL;
   pathURL.ChangePath(PString::Empty()); // Remove last element of root URL
@@ -1480,10 +1460,37 @@ void PVXMLSession::InternalThreadMain()
   m_sessionMutex.Wait();
 
   {
+#if P_SCRIPTS
+    if (m_scriptContext == NULL)
+      m_scriptContext = PScriptLanguage::Create("JavaScript");
+    if (m_scriptContext == NULL || !m_scriptContext->IsInitialised()) {
+      delete m_scriptContext;
+      m_scriptContext = PScriptLanguage::Create("Lua"); // Back up
+    }
+
+    if (m_scriptContext != NULL) {
+      m_scriptContext->CreateComposite(ApplicationScope);
+      m_scriptContext->CreateComposite(DocumentScope);
+      m_scriptContext->CreateComposite(DialogScope);
+      m_scriptContext->CreateComposite(PropertyScope);
+      m_scriptContext->CreateComposite(SessionScope);
+      #if P_VXML_VIDEO
+        m_scriptContext->SetFunction(SIGN_LANGUAGE_PREVIEW_SCRIPT_FUNCTION, PCREATE_NOTIFIER(SignLanguagePreviewFunction));
+        m_scriptContext->SetFunction(SIGN_LANGUAGE_CONTROL_SCRIPT_FUNCTION, PCREATE_NOTIFIER(SignLanguageControlFunction));
+      #endif
+    }
+#endif
+
     PTime now;
-    SetVar("session.time", now.AsString());
-    SetVar("session.timeISO8601", now.AsString(PTime::ShortISO8601));
-    SetVar("session.timeEpoch", now.GetTimeInSeconds());
+    m_variableScope = SessionScope;
+    SetVar("time", now.AsString());
+    SetVar("timeISO8601", now.AsString(PTime::ShortISO8601));
+    SetVar("timeEpoch", now.GetTimeInSeconds());
+    m_variableScope = PropertyScope;
+    SetVar("timeout" , "10s");
+    SetVar("bargein", "true");
+    m_variableScope = ApplicationScope;
+    SetVar("caching", "safe");
   }
 
   InternalStartVXML();
@@ -1964,13 +1971,17 @@ PString PVXMLSession::EvaluateExpr(const PString & expr)
   if (expr.IsEmpty())
     return PString::Empty();
 
+  // Optimisation, if simple string - starts/ends with qute and no other quotes in expression
+  if (expr.GetLength() > 1 && expr[0] == '\'' && expr.Find('\'', 1) == (expr.GetLength()-1))
+    return expr(1, expr.GetLength()-2);
+
 #if P_SCRIPTS
   if (m_scriptContext != NULL) {
-    static PConstString const EvalVarName("PTLibEvaluateExpressionResult");
-    if (m_scriptContext->Run(PSTRSTRM(EvalVarName<<'='<<expr)))
-      return m_scriptContext->GetString(EvalVarName);
-    PTRACE(2, "Could not evaluate expression \"" << expr << "\" with script language " << m_scriptContext->GetLanguageName());
-    return PString::Empty();
+    static PConstString const EvalVarName("PTLibVXMLExpressionResult");
+    m_scriptContext->SetString(EvalVarName, "");
+    if (!m_scriptContext->Run(PSTRSTRM(EvalVarName<<'='<<expr)))
+      PTRACE(2, "Could not evaluate expression \"" << expr << "\" with script language " << m_scriptContext->GetLanguageName());
+    return m_scriptContext->GetString(EvalVarName);
   }
 #endif
 
@@ -2066,6 +2077,32 @@ PCaselessString PVXMLSession::GetVar(const PString & varName) const
 }
 
 
+#if P_SCRIPTS
+/* These functions will add in the owner composite structures in the scripting language,
+   so session.connection.redirect.ani = "1234" will work even if session.connection.redirect,
+   or session.connection, do not yet exist. */
+static bool SetScriptVariableOrComposite(PScriptLanguage & scriptContext, const PString & fullVarName, const char * value)
+{
+  return value != NULL ? scriptContext.SetString(fullVarName, value) : scriptContext.CreateComposite(fullVarName);
+}
+
+static bool SetScriptVariableRecursive(PScriptLanguage & scriptContext, const PString & fullVarName, const char * value)
+{
+  if (SetScriptVariableOrComposite(scriptContext, fullVarName, value))
+    return true;
+
+  PINDEX dot = fullVarName.FindLast('.');
+  if (dot == P_MAX_INDEX)
+    return false;
+
+  if (!SetScriptVariableRecursive(scriptContext, fullVarName.Left(dot), NULL))
+    return false;
+
+  return SetScriptVariableOrComposite(scriptContext, fullVarName, value);
+}
+#endif // P_SCRIPTS
+
+
 void PVXMLSession::SetVar(const PString & varName, const PString & value)
 {
   PString fullVarName = varName;
@@ -2074,8 +2111,7 @@ void PVXMLSession::SetVar(const PString & varName, const PString & value)
 
 #if P_SCRIPTS
   if (m_scriptContext != NULL) {
-    m_scriptContext->CreateComposite(fullVarName.Left(fullVarName.Find('.')));
-    m_scriptContext->SetString(fullVarName, value);
+    SetScriptVariableRecursive(*m_scriptContext, fullVarName, value);
     m_variables.SetAt(fullVarName, PString::Empty()); // Just to remember what was set, value is always from script
     return;
   }
@@ -2127,12 +2163,14 @@ PBoolean PVXMLSession::PlayElement(PXMLElement & element)
   if (str[0] == '|')
     return PlayCommand(str.Mid(1));
 
+  PINDEX repeat = std::max(DWORD(1), element.GetAttribute("repeat").AsUnsigned());
+
   // files on the local file system get loaded locally
   PURL url(str);
   if (url.GetScheme() == "file" && url.GetHostName().IsEmpty())
-    return PlayFile(url.AsFilePath());
+    return PlayFile(url.AsFilePath(), repeat);
 
-  // get a normalised name for the resource
+                                               // get a normalised name for the resource
   bool safe = GetVar("caching") == "safe" || (element.GetAttribute("caching") *= "safe");
 
   PString fileType;
@@ -2147,7 +2185,7 @@ PBoolean PVXMLSession::PlayElement(PXMLElement & element)
   if (!safe) {
     PFilePath filename;
     if (GetCache().Get("url", url.AsString(), fileType, filename))
-      return PlayFile(filename);
+      return PlayFile(filename, repeat);
   }
 
   PBYTEArray data;
@@ -2164,7 +2202,7 @@ PBoolean PVXMLSession::PlayElement(PXMLElement & element)
   cacheFile.Write(data.GetPointer(), data.GetSize());
 
   GetCache().UnlockReadWrite();
-  return PlayFile(cacheFile.GetFilePath(), 1, 0, safe);   // make sure we delete the file if not cacheing
+  return PlayFile(cacheFile.GetFilePath(), repeat, 0, safe); // make sure we delete the file if not cacheing
 }
 
 
@@ -2838,7 +2876,7 @@ PBoolean PVXMLSession::TraverseSubmit(PXMLElement & element)
 PBoolean PVXMLSession::TraverseProperty(PXMLElement & element)
 {
   if (element.HasAttribute(NameAttribute))
-    SetVar("property." + element.GetAttribute(NameAttribute), element.GetAttribute("value"));
+    SetVar(PSTRSTRM(PropertyScope << '.' << element.GetAttribute(NameAttribute)), element.GetAttribute("value"));
 
   return true;
 }

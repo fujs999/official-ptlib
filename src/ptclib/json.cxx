@@ -34,6 +34,8 @@
 #include <ptclib/pjson.h>
 #include <ptclib/cypher.h>
 
+#include <stack>
+
 #ifndef _MSC_VER
   #include <tgmath.h>
 #endif
@@ -947,6 +949,133 @@ PJSON::Base * PJSON::Null::DeepClone() const
   return new Null();
 }
 
+
+///////////////////////////////////////////////////////////////////////////////
+
+static PThreadLocalStorage<std::stack<PJSONRecord*>> s_jsonDataInitialiser;
+
+PJSONRecord::PJSONRecord()
+{
+  s_jsonDataInitialiser->push(this);
+}
+
+
+PJSONRecord::PJSONRecord(const PJSONRecord &)
+{
+  s_jsonDataInitialiser->push(this);
+}
+
+
+PJSONWrapMember::PJSONWrapMember(const char * memberName)
+  : m_memberName(memberName)
+{
+  if (m_memberName.IsEmpty())
+    return;
+
+  if (m_memberName[0] == '_')
+    m_memberName.Delete(0, 1);
+  else if (m_memberName.NumCompare("m_") == PObject::EqualTo)
+    m_memberName.Delete(0, 2);
+
+  s_jsonDataInitialiser->top()->m_jsonDataMembers[m_memberName] = this;
+}
+
+
+PJSONWrapMember::PJSONWrapMember(const PJSONWrapMember & other)
+  : m_memberName(other.m_memberName)
+{
+  if (!m_memberName.IsEmpty())
+    s_jsonDataInitialiser->top()->m_jsonDataMembers[m_memberName] = this;
+}
+
+
+PJSONWrapMember & PJSONWrapMember::operator=(const PJSONWrapMember & other)
+{
+  PAssert(m_memberName == other.m_memberName, "Cannot assign from different type of enclosing PJSONRecord");
+  return *this;
+}
+
+
+void PJSONWrapMember::EndRecordConstruction()
+{
+  if (!m_memberName.IsEmpty())
+    s_jsonDataInitialiser->pop();
+}
+
+
+void PJSONRecord::ReadFrom(istream & strm)
+{
+  PJSON json;
+  json.ReadFrom(strm);
+  if (strm.bad() || strm.fail())
+    return;
+
+  if (!FromJSON(json))
+    strm.setstate(ios::failbit);
+}
+
+
+void PJSONRecord::PrintOn(ostream & strm) const
+{
+  PJSON json;
+  AsJSON(json);
+  strm << json;
+}
+
+
+bool PJSONRecord::FromString(const PString & str)
+{
+  PJSON json;
+  return json.FromString(str) && FromJSON(json);
+}
+
+
+PString PJSONRecord::AsString(std::streamsize initialIndent, std::streamsize subsequentIndent) const
+{
+  PJSON json;
+  AsJSON(json);
+  return json.AsString(initialIndent, subsequentIndent);
+}
+
+
+bool PJSONRecord::FromJSON(const PJSON & json)
+{
+  return json.IsType(PJSON::e_Object) && FromJSON(json.GetObject());
+}
+
+
+void PJSONRecord::AsJSON(PJSON & json) const
+{
+  json = PJSON(PJSON::e_Object);
+  AsJSON(json.GetObject());
+}
+
+
+bool PJSONRecord::FromJSON(const PJSON::Object & obj)
+{
+  bool good = true;
+  for (PJSON::Object::const_iterator it = obj.begin(); it != obj.end(); ++it) {
+    std::map<PString, PJSONWrapMember *>::iterator member = m_jsonDataMembers.find(it->first);
+    if (member != m_jsonDataMembers.end()) {
+      if (!it->second->IsType(member->second->GetType()) || !member->second->FromJSON(*it->second)) {
+        good = false;
+      }
+    }
+  }
+  return good;
+}
+
+
+void PJSONRecord::AsJSON(PJSON::Object & obj) const
+{
+  for (std::map<PString, PJSONWrapMember *>::const_iterator it = m_jsonDataMembers.begin(); it != m_jsonDataMembers.end(); ++it) {
+    if (obj.Set(it->first, it->second->GetType()))
+      it->second->AsJSON(*obj.at(it->first));
+  }
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
 
 #if P_SSL
 

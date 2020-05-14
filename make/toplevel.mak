@@ -90,7 +90,8 @@ ifeq (1, $(HAS_SAMPLES))
              $(PTLIB_TOP_LEVEL_DIR)/samples/netif \
              $(PTLIB_TOP_LEVEL_DIR)/samples/sockbundle \
              $(PTLIB_TOP_LEVEL_DIR)/samples/timing \
-             $(PTLIB_TOP_LEVEL_DIR)/samples/thread
+             $(PTLIB_TOP_LEVEL_DIR)/samples/thread \
+             $(PTLIB_TOP_LEVEL_DIR)/samples/json
   ifeq ($(HAS_IPV6),1)
     SUBDIRS += $(PTLIB_TOP_LEVEL_DIR)/samples/ipv6test
   endif

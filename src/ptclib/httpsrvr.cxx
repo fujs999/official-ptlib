@@ -250,12 +250,10 @@ PBoolean PHTTPServer::ProcessCommand()
   m_lastCommandTime = now;
 
   m_connectInfo.commandCode = (Commands)cmd;
-  if (cmd < NumCommands)
-    m_connectInfo.commandName = commandNames[cmd];
-  else {
-    PINDEX spacePos = args.Find(' ');
-    m_connectInfo.commandName = args.Left(spacePos);
-    args = args.Mid(spacePos);
+  if (cmd >= NumCommands) {
+    PTRACE(4, "Unknown command.");
+    OnError(BadRequest, args.ToLiteral(), m_connectInfo);
+    return false;
   }
 
   // if no tokens, error
@@ -829,8 +827,8 @@ bool PHTTPListener::ListenForHTTP(const PString & interfaces, WORD port, PSocket
 
   bool atLeastOne = false;
   for (PINDEX i = 0; i < ifaces.GetSize(); ++i) {
-    PIPSocket::Address binding(ifaces[i]);
-    if (binding.IsValid()) {
+    PIPSocket::Address binding;
+    if (PIPSocket::GetHostAddress(ifaces[i], binding)) {
       PTCPSocket * listener = new PTCPSocket(m_listenerPort);
       if (listener->Listen(binding, queueSize, 0, reuse)) {
         m_listenerPort = listener->GetPort();
@@ -869,14 +867,14 @@ void PHTTPListener::ShutdownListeners()
     m_listenerThread = NULL;
   }
 
-  m_httpListeningSockets.RemoveAll();
-
   m_httpServersMutex.Wait();
   for (PList<PHTTPServer>::iterator it = m_httpServers.begin(); it != m_httpServers.end(); ++it)
     it->CloseBaseReadChannel();
   m_httpServersMutex.Signal();
 
   m_threadPool.Shutdown();
+
+  m_httpListeningSockets.RemoveAll();
 }
 
 

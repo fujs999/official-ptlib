@@ -167,7 +167,7 @@ class PHTTP : public PInternetProtocol
       // HTTP/1.0 commands
       GET, HEAD, POST,
       // HTTP/1.1 commands
-      PUT, DELETE, TRACE, OPTIONS,
+      PUT, DELETE, TRACE, OPTIONS, PATCH,
       // HTTPS command
       CONNECT,
       NumCommands
@@ -494,21 +494,21 @@ class PHTTPClient : public PHTTP
        @return
        true if all of header returned and ready to receive body.
      */
-    int ExecuteCommand(
+    StatusCode ExecuteCommand(
       Commands cmd,
       const PURL & url,
       PMIMEInfo & outMIME,
       const PString & dataBody,
       PMIMEInfo & replyMime
     );
-    int ExecuteCommand(
+    StatusCode ExecuteCommand(
       Commands cmd,
       const PURL & url,
       PMIMEInfo & outMIME,
       const PBYTEArray & dataBody,
       PMIMEInfo & replyMime
     );
-    int ExecuteCommand(
+    StatusCode ExecuteCommand(
       Commands cmd,
       const PURL & url,
       PMIMEInfo & outMIME,
@@ -752,24 +752,145 @@ class PHTTPClient : public PHTTP
       bool persist = true
     ) { m_persist = persist; }
 
-    /// Get persistent connection mode
+    /// Get persistent connection mode. Zero disables following redirects.
     bool GetPersistent() const { return m_persist; }
+
+    /// Set max redirects on operation
+    void SetMaxRedirects(
+      unsigned maxRedirects
+    ) { m_maxRedirects = maxRedirects; }
+
+    /// Get max redirects on operation
+    unsigned GetMaxRedirects() const { return m_maxRedirects; }
 
 #if PTRACING
     static PINDEX MaxTraceContentSize;
 #endif
 
   protected:
-    PString m_userAgentName;
-    bool    m_persist;
-    PString m_userName;
-    PString m_password;
+    PString  m_userAgentName;
+    bool     m_persist;
+    unsigned m_maxRedirects;
+    PString  m_userName;
+    PString  m_password;
+#if P_SSL
+    PString  m_authority;    // Directory, file or data
+    PString  m_certificate;  // File or data
+    PString  m_privateKey;   // File or data
+#endif
+    PHTTPClientAuthentication * m_authentication;
+};
+
+
+//////////////////////////////////////////////////////////////////////////////
+// PClientPool
+
+/**A class for a pool of PHTTPClient instances/threads for efficient high
+   volume access. e.g. for REST API access.
+ */
+class PHTTPClientPool : public PObject
+{
+    PCLASSINFO(PHTTPClientPool, PObject);
+  public:
+    PHTTPClientPool(
+      unsigned maxConnections = 128,
+      unsigned maxParallel = 2,
+      const PTimeInterval & timeToLive = PTimeInterval(0, 0, 1),
+      const PTimeInterval & connectTimeout = PTimeInterval(0, 20),
+      const PTimeInterval & readTimeout = PTimeInterval(0, 5)
+      )
+      : m_maxConnections(maxConnections)
+      , m_maxParallel(maxParallel)
+      , m_timeToLive(timeToLive)
+      , m_connectTimeout(connectTimeout)
+      , m_readTimeout(readTimeout)
+    { }
+    ~PHTTPClientPool() { ShutDown(); }
+
+#if P_SSL
+    void SetSSLCredentials(
+      const PString & authority,
+      const PString & certificate,
+      const PString & privateKey
+    );
+#endif
+
+    void ShutDown();
+
+    struct Response
+    {
+      PHTTP::StatusCode m_code;
+      PMIMEInfo         m_headers;
+      PString           m_body;
+    };
+
+    typedef PNotifierTemplate<Response> Notifier;
+    #define PDECLARE_HttpPoolNotifier(cls, fn) PDECLARE_NOTIFIER2(PHTTPClientPool, cls, fn, PHTTPClientPool::Response)
+
+    struct Request
+    {
+      PHTTP::Commands m_command;
+      PURL            m_url;
+      PMIMEInfo       m_headers;
+      PString         m_body;
+      Notifier        m_notifier;
+
+      Request()
+        : m_command(PHTTP::NumCommands)
+      { }
+      Request(
+        PHTTP::Commands command,
+        const PURL & url,
+        const Notifier & notifier = Notifier(),
+        const PString body = PString::Empty()
+      )
+        : m_command(command)
+        , m_url(url)
+        , m_body(body)
+        , m_notifier(notifier)
+      { }
+    };
+
+    void QueueRequest(
+      const Request & request
+    );
+
+    void Get(
+      const PURL & url,
+      const Notifier & notifier,
+      const PString & body = PString::Empty(),
+      const PString & contentType = PString::Empty()
+    );
+
+  protected:
+    unsigned      m_maxConnections;
+    unsigned      m_maxParallel;
+    PTimeInterval m_timeToLive;
+    PTimeInterval m_connectTimeout;
+    PTimeInterval m_readTimeout;
 #if P_SSL
     PString m_authority;    // Directory, file or data
     PString m_certificate;  // File or data
     PString m_privateKey;   // File or data
 #endif
-    PHTTPClientAuthentication * m_authentication;
+
+    PDECLARE_MUTEX(m_mutex);
+
+    struct Connection
+    {
+      PHTTPClientPool   & m_owner;
+      PSyncQueue<Request> m_requests;
+      PHTTPClient         m_http;
+      PThread           * m_thread;
+      PTime               m_lastUse;
+
+      Connection(PHTTPClientPool & owner, const Request & request);
+      ~Connection();
+      void Main();
+    };
+    friend struct Connection;
+    typedef std::multimap<PString, Connection *> ConnectionMap;
+    ConnectionMap m_connections;
 };
 
 
