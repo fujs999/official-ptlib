@@ -1028,26 +1028,32 @@ void PHTTPFieldArray::SaveToConfig(PConfig & cfg) const
 }
 
 
+PString PHTTPFieldArray::GetFieldNameForJSON() const
+{
+  PINDEX pos = m_baseName.Find("%u");
+  if (pos == P_MAX_INDEX)
+    return m_baseName;
+
+  return m_baseName.Left(m_baseName.FindLast('\\', pos));
+}
+
+
 void PHTTPFieldArray::LoadFromJSON(const PJSON::Base & json)
 {
-  const PJSON::Array * data = dynamic_cast<const PJSON::Array *>(InternalLoadFromJSON(json, m_baseName, PJSON::e_Array));
+  const PJSON::Array * data = dynamic_cast<const PJSON::Array *>(InternalLoadFromJSON(json, GetFieldNameForJSON(), PJSON::e_Array));
   if (data == NULL)
     return;
 
-  SetSize(data->size());
-  for (PINDEX i = 0; i < GetSize(); i++)
+  PINDEX count = data->size();
+  SetSize(count);
+  for (PINDEX i = 0; i < count; i++)
     m_fields[i].LoadFromJSON(*data);
 }
 
 
 void PHTTPFieldArray::SaveToJSON(PJSON::Base & json) const
 {
-  PString adjustedName = m_baseName;
-  PINDEX pos = adjustedName.Find("%u");
-  if (pos != P_MAX_INDEX)
-    adjustedName.Delete(adjustedName.FindLast('\\', pos), P_MAX_INDEX);
-
-  PJSON::Base * data = InternalSaveToJSON(json, adjustedName, PJSON::e_Array);
+  PJSON::Base * data = InternalSaveToJSON(json, GetFieldNameForJSON(), PJSON::e_Array);
   if (data != NULL) {
     for (PINDEX i = 0; i < GetSize(); i++)
       m_fields[i].SaveToJSON(*data);
