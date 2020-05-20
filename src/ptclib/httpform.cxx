@@ -1047,7 +1047,7 @@ void PHTTPFieldArray::LoadFromJSON(const PJSON::Base & json)
   PINDEX count = data->size();
   SetSize(count);
   for (PINDEX i = 0; i < count; i++)
-    m_fields[i].LoadFromJSON(*data);
+    m_fields[i].LoadFromJSON(*data->at(i));
 }
 
 
