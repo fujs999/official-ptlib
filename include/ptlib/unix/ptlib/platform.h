@@ -513,11 +513,9 @@ typedef intptr_t      INT;
   typedef signed short    RETCODE;
   typedef void *          HWND;
 
-  #ifdef P_HAS_WCHAR
-    typedef wchar_t       WCHAR;
-    typedef WCHAR *       LPWSTR;
-    typedef const WCHAR * LPCWSTR;
-  #endif
+  typedef wchar_t       WCHAR;
+  typedef WCHAR *       LPWSTR;
+  typedef const WCHAR * LPCWSTR;
 
 #endif // P_ODBC_DEFINES_WINDOWS_TYPES
 

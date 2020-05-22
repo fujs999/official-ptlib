@@ -178,7 +178,7 @@ class PSNMP : public PIndirectChannel
                           PSNMPVarBindingList & varsOut);
 */
 
-    typedef list<pair<PString,PRFC1155_ObjectSyntax> > BindingList;
+    typedef list<std::pair<PString,PRFC1155_ObjectSyntax> > BindingList;
 };
 
 

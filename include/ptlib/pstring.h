@@ -67,10 +67,8 @@ PString pvsprintf(
 );
 
 
-#ifdef P_HAS_WCHAR
 /// Wide character array, based on standard wchar_t
 typedef PBaseArray<wchar_t> PWCharArray;
-#endif
 
 
 /**The character string class. It supports a wealth of additional functions
@@ -159,11 +157,9 @@ class PString : public PCharArray
        A new memory block is allocated of a size sufficient to take the length
        of the string and its terminating '\\0' character.
      */
-#ifdef P_HAS_WCHAR
     PString(
       const wchar_t * ustr ///< wchar_t null terminated string.
     );
-#endif
 
     /**Create a string from the array. A new memory block is allocated of
        a size equal to <code>len</code> plus one which is sufficient to take
@@ -180,7 +176,6 @@ class PString : public PCharArray
       PINDEX len          ///< Length of the string in bytes.
     );
 
-#ifdef P_HAS_WCHAR
     /**Create a UTF-8 string from the wchar_t array. A new memory block is
        allocated of a size sufficient to take the converted string and a
        terminating '\\0' character.
@@ -209,7 +204,6 @@ class PString : public PCharArray
     PString(
       const PWCharArray & ustr ///< wchar_t null terminated string.
     );
-#endif // P_HAS_WCHAR
 
     /**Create a string from the single character. This is most commonly used
        as a type conversion constructor when a literal character, eg 'A' is
@@ -1794,7 +1788,6 @@ class PString : public PCharArray
      */
     double AsReal() const;
      
-#ifdef P_HAS_WCHAR
     /**Convert UTF-8 string to native wide character string.
        Note the resultant PWCharArray will have the trailing null included.
        For Windows this is UTF-16, for GNU C (Linux) it is UCS-4.
@@ -1802,7 +1795,6 @@ class PString : public PCharArray
     PWCharArray AsWide() const;
 
     P_DEPRECATED PWCharArray AsUCS2() const { return AsWide(); }
-#endif
 
     /**Convert a standard null terminated string to a "pascal" style string.
        This consists of a songle byte for the length of the string and then
@@ -1919,12 +1911,10 @@ class PString : public PCharArray
     //@}
 
   protected:
-#ifdef P_HAS_WCHAR
     void InternalFromWChar(
       const wchar_t * ptr,
       PINDEX len
     );
-#endif
     virtual Comparison InternalCompare(
       PINDEX offset,      // Offset into string to compare.
       PINDEX length,      // Number of characters to compare.
@@ -1965,42 +1955,33 @@ inline ostream & operator<<(ostream & stream, const PString & string)
   return stream;
 }
 
-#ifdef P_HAS_WOSTREAM
-inline wostream & operator<<(wostream & stream, const PString & string)
-{
-  return stream << (const char *)string;
-}
-#endif
 
+class PWideString : public PWCharArray {
+  PCLASSINFO(PWideString, PWCharArray);
 
-#ifdef _WIN32
-  class PWideString : public PWCharArray {
-    PCLASSINFO(PWideString, PWCharArray);
+  public:
+  typedef const wchar_t * Initialiser;
 
-    public:
-    typedef const wchar_t * Initialiser;
+    PWideString() { }
+    PWideString(const PWCharArray & arr) : PWCharArray(arr) { }
+    PWideString(const PString     & str) : PWCharArray(str.AsWide()) { }
+    PWideString(const char        * str);
+    PWideString & operator=(const PWideString & str) { PWCharArray::operator=(str); return *this; }
+    PWideString & operator=(const PString     & str) { PWCharArray::operator=(str.AsWide()); return *this; }
+    PWideString & operator=(const std::string & str);
+    PWideString & operator=(const char        * str);
+    friend inline ostream & operator<<(ostream & stream, const PWideString & string) { return stream << PString(string); }
 
-      PWideString() { }
-      PWideString(const PWCharArray & arr) : PWCharArray(arr) { }
-      PWideString(const PString     & str) : PWCharArray(str.AsWide()) { }
-      PWideString(const char        * str);
-      PWideString & operator=(const PWideString & str) { PWCharArray::operator=(str); return *this; }
-      PWideString & operator=(const PString     & str) { PWCharArray::operator=(str.AsWide()); return *this; }
-      PWideString & operator=(const std::string & str);
-      PWideString & operator=(const char        * str);
-      friend inline ostream & operator<<(ostream & stream, const PWideString & string) { return stream << PString(string); }
+    PINDEX GetLength() const { return GetSize() - 1; }
 
-      PINDEX GetLength() const { return GetSize() - 1; }
+  protected:
+    PWideString(PContainerReference & reference_) : PWCharArray(reference_) { }
+};
 
-    protected:
-      PWideString(PContainerReference & reference_) : PWCharArray(reference_) { }
-  };
-
-  #ifdef UNICODE
-    typedef PWideString PVarString;
-  #else
-    typedef PString PVarString;
-  #endif
+#ifdef UNICODE
+  typedef PWideString PVarString;
+#else
+  typedef PString PVarString;
 #endif
 
 
@@ -2311,7 +2292,7 @@ class PStringStream : public PString, public std::iostream
     {
     }
 
-    class Buffer : public streambuf {
+    class Buffer : public std::streambuf {
       public:
         Buffer(PStringStream & str, PINDEX size);
         Buffer(const Buffer & sbuf);
@@ -2319,8 +2300,8 @@ class PStringStream : public PString, public std::iostream
         virtual int_type overflow(int_type = EOF);
         virtual int_type underflow();
         virtual int sync();
-        virtual pos_type seekoff(std::streamoff, ios_base::seekdir, ios_base::openmode = ios_base::in | ios_base::out);
-        virtual pos_type seekpos(pos_type, ios_base::openmode = ios_base::in | ios_base::out);
+        virtual pos_type seekoff(std::streamoff, ios::seekdir, ios::openmode = ios::in | ios::out);
+        virtual pos_type seekpos(pos_type, ios::openmode = ios::in | ios::out);
         PCharArray & string;
         PBoolean     fixedBufferSize;
     };

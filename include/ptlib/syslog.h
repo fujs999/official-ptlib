@@ -98,7 +98,7 @@ class PSystemLog : public PObject, public std::ostream
     PSystemLog(const PSystemLog & other);
     PSystemLog & operator=(const PSystemLog &);
 
-    class Buffer : public streambuf {
+    class Buffer : public std::streambuf {
       public:
         Buffer();
         virtual int_type overflow(int_type=EOF);

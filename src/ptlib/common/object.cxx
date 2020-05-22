@@ -192,7 +192,7 @@ static void InternalAssertFunc(const PDebugLocation & location, const char * msg
       PPlatformWalkStack(strm, PNullThreadIdentifier, 0, 2, // 2 means skip reporting InternalAssertFunc & PAssertFunc
                          PAssertWalkStackMode == PAssertWalkStackNoSymbols,
                          &location == &s_ExceptionLocation); 
-    strm << ends;
+    strm << std::ends;
     str = strm.str();
   }
 
@@ -2041,7 +2041,7 @@ namespace PProfiling
     threadInfo.m_systemCPU = times.m_kernel.GetMilliSeconds()/1000.0f;
     threadInfo.m_userCPU = times.m_user.GetMilliSeconds()/1000.0f;
     threadInfo.m_running = true;
-    return threadByID.insert(make_pair(times.m_uniqueId, threadInfo)).first;
+    return threadByID.emplace(times.m_uniqueId, threadInfo)).first;
   }
 
   void Analyse(Analysis & analysis)
@@ -2054,7 +2054,7 @@ namespace PProfiling
       AddThreadByID(analysis.m_threadByID, *it);
 
     for (ThreadRawData * thrd = s_database.m_threads; thrd != NULL; thrd = thrd->m_link)
-      analysis.m_threadByID.insert(make_pair(thrd->m_uniqueId, *thrd));
+      analysis.m_threadByID.emplace(thrd->m_uniqueId, *thrd);
 
     for (FunctionRawData * exit = s_database.m_functions; exit != NULL; exit = exit->m_link) {
       std::string functionName;
@@ -2115,7 +2115,7 @@ namespace PProfiling
         FunctionMap & functions = thrd->second.m_functions;
         FunctionMap::iterator func = functions.find(functionName);
         if (func == functions.end()) {
-          func = functions.insert(make_pair(functionName, Function())).first;
+          func = functions.emplace(functionName, Function()).first;
           ++analysis.m_functionCount;
         }
 
@@ -2133,7 +2133,7 @@ namespace PProfiling
     }
 
     for (ThreadByID::iterator thrd = analysis.m_threadByID.begin(); thrd != analysis.m_threadByID.end(); ++thrd)
-      analysis.m_threadByUsage.insert(make_pair(Percentage(thrd->second.m_userCPU, thrd->second.m_realTime), thrd->second));
+      analysis.m_threadByUsage.emplace(Percentage(thrd->second.m_userCPU, thrd->second.m_realTime), thrd->second);
   }
 
 

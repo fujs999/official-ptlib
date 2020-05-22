@@ -91,7 +91,7 @@ void PTimeInterval::PrintOn(ostream & strm) const
   std::streamsize nextFieldWidth = 0;
 
   char oldFill = strm.fill();
-  ios::fmtflags adjustMode = strm.flags()&ios_base::adjustfield;
+  ios::fmtflags adjustMode = strm.flags() & ios::adjustfield;
   strm << right;
 
   if (includeDays && (ns > DaysToNano || width > (decimalsWidth + 9))) {

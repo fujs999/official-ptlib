@@ -903,7 +903,7 @@ ostream & PTraceInfo::InternalEnd(ostream & paramStream)
   if (context == NULL || &context->m_stream != &paramStream)
     return paramStream;
 
-  paramStream << ends << flush;
+  paramStream << std::ends << flush;
 
 
   PStringStream output;
@@ -2423,9 +2423,7 @@ P_POP_MSVC_WARNINGS()
 
 int PProcess::InternalMain(void *)
 {
-#ifdef P_HAS_WCHAR
   setlocale(LC_CTYPE, "UTF-8"); // A PString is documented as UTF-8, so all conversions go there
-#endif
 
 #if P_SDL && defined(P_MACOSX)
   PVideoOutputDevice * device = PVideoOutputDevice::CreateDeviceByName(P_SDL_VIDEO_PREFIX);
@@ -3671,7 +3669,7 @@ void * PThread::LocalStorageBase::GetStorage() const
   PWaitAndSignal lock(m_mutex);
   DataMap::iterator it = m_data.find(uinqueId);
   if (it == m_data.end())
-    it = m_data.insert(make_pair(uinqueId, Allocate())).first;
+    it = m_data.emplace(uinqueId, Allocate()).first;
   return it->second;
 }
 

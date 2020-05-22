@@ -36,7 +36,6 @@ void Test1()
     cout << pstring1 << endl;
     cout << pstring2 << endl;
   }
-#ifdef P_HAS_WCHAR
   {
     wchar_t widestr[] = L"Hellò world";
     PString pstring(widestr, sizeof(widestr)/2-1);
@@ -44,7 +43,6 @@ void Test1()
     PWCharArray wide = pstring.AsWide();
     cout << boolalpha << (wide.GetSize() == PARRAYSIZE(widestr) && memcmp(wide, widestr, sizeof(widestr)) == 0) << endl;
   }
-#endif
 
   {
     PCaselessString caseless("hello world");

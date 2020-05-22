@@ -884,7 +884,7 @@ LONG WINAPI MyExceptionHandler(_EXCEPTION_POINTERS * info)
 {
   ostringstream str;
   str << "Unhandled exception: code=" << info->ExceptionRecord->ExceptionCode
-      << ", when=" << PTime().AsString(PTime::LoggingFormat PTRACE_PARAM(, PTrace::GetTimeZone())) << ends;
+      << ", when=" << PTime().AsString(PTime::LoggingFormat PTRACE_PARAM(, PTrace::GetTimeZone()));
   
   PAssertAlways(str.str().c_str());
   ExitProcess(1);

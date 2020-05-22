@@ -1450,7 +1450,11 @@ template <class K, class D>
         iterator_pair() : first(reinterpret_cast<const K &>(0)) { }
     };
 
-    class iterator : public iterator_base, public std::iterator<std::forward_iterator_tag, iterator_pair> {
+    class iterator : public iterator_base
+    {
+      using iterator_category = std::forward_iterator_tag;
+      using value_type = iterator_pair;
+
       protected:
         iterator(dict_type * dict) : iterator_base(dict) { }
         iterator(dict_type * dict, const K & key) : iterator_base(dict, key) { }
@@ -1474,7 +1478,11 @@ template <class K, class D>
     iterator find(const K & key) { return iterator(this, key); }
 
 
-    class const_iterator : public iterator_base, public std::iterator<std::forward_iterator_tag, iterator_pair> {
+    class const_iterator : public iterator_base
+    {
+      using iterator_category = std::forward_iterator_tag;
+      using value_type = iterator_pair;
+
       protected:
         const_iterator(const dict_type * dict) : iterator_base(dict) { }
         const_iterator(const dict_type * dict, const K & key) : iterator_base(dict, key) { }

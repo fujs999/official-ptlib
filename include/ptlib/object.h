@@ -65,7 +65,19 @@
 
 #include "atomic.h"
 
-using namespace std; // Not a good practice (name space polution), but will take too long to fix.
+
+ // Not a good practice (name space polution), but will take too long to fix.
+using std::ostream, std::istream, std::ostringstream, std::cerr, std::cout, std::cin,
+      std::ios, std::setw, std::setfill, std::setprecision,
+      std::flush, std::endl, std::ws, std::boolalpha,
+      std::left, std::right,
+      std::hex, std::dec,
+      std::showbase, std::noshowbase,
+      std::showpos, std::noshowpos,
+      std::scientific, std::fixed,
+      std::string, std::vector, std::list, std::map,
+      std::numeric_limits;
+
 
 // Somewhere in C headers you get this, which blows up STL version
 #ifdef min
@@ -2025,7 +2037,7 @@ class PSingleton
   public:
     PSingleton()
     {
-      static auto_ptr<Type> s_pointer;
+      static std::unique_ptr<Type> s_pointer;
       static GuardType s_guard(0);
       if (s_guard++ != 0) {
         s_guard = 1;

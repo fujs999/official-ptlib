@@ -742,7 +742,6 @@ PString::PString(const char * cstr)
   }
 }
 
-#ifdef P_HAS_WCHAR
 
 PString::PString(const wchar_t * wstr)
 {
@@ -766,7 +765,6 @@ PString::PString(const PWCharArray & wstr)
   InternalFromWChar(wstr, size);
 }
 
-#endif // P_HAS_WCHAR
 
 PString::PString(const char * cstr, PINDEX len)
   : PCharArray(len+1)
@@ -2079,7 +2077,6 @@ double PString::AsReal() const
 }
 
 
-#if P_HAS_WCHAR
 
 #if P_HAS_ICONV
   namespace {
@@ -2337,7 +2334,6 @@ void PString::InternalFromWChar(const wchar_t * wstr, PINDEX len)
 #endif // _WIN32 || _POSIX_VERSION
 }
 
-#endif // P_HAS_WCHAR
 
 
 PBYTEArray PString::ToPascal() const
@@ -2496,7 +2492,7 @@ PStringStream::Buffer::Buffer(PStringStream & str, PINDEX size)
 }
 
 
-streambuf::int_type PStringStream::Buffer::overflow(int_type c)
+std::streambuf::int_type PStringStream::Buffer::overflow(int_type c)
 {
   if (pptr() >= epptr()) {
     if (fixedBufferSize)
@@ -2519,7 +2515,7 @@ streambuf::int_type PStringStream::Buffer::overflow(int_type c)
 }
 
 
-streambuf::int_type PStringStream::Buffer::underflow()
+std::streambuf::int_type PStringStream::Buffer::underflow()
 {
   return gptr() >= egptr() ? EOF : *gptr();
 }
@@ -2535,11 +2531,11 @@ int PStringStream::Buffer::sync()
   return 0;
 }
 
-streambuf::pos_type PStringStream::Buffer::seekoff(streamoff off, ios_base::seekdir dir, ios_base::openmode mode)
+std::streambuf::pos_type PStringStream::Buffer::seekoff(std::streamoff off, ios::seekdir dir, ios::openmode mode)
 {
-  streamoff len = (streamoff)strlen(string);
-  streamoff gpos = (streamoff)(gptr() - eback());
-  streamoff ppos = (streamoff)(pptr() - pbase());
+  std::streamoff len = static_cast<std::streamoff>(strlen(string));
+  std::streamoff gpos = static_cast<std::streamoff>(gptr() - eback());
+  std::streamoff ppos = static_cast<std::streamoff>(pptr() - pbase());
   char * newgptr;
   char * newpptr;
   switch (dir) {
@@ -2593,9 +2589,9 @@ streambuf::pos_type PStringStream::Buffer::seekoff(streamoff off, ios_base::seek
 }
 
 
-PStringStream::Buffer::pos_type PStringStream::Buffer::seekpos(pos_type pos, ios_base::openmode mode)
+PStringStream::Buffer::pos_type PStringStream::Buffer::seekpos(pos_type pos, ios::openmode mode)
 {
-  return seekoff(pos, ios_base::beg, mode);
+  return seekoff(pos, ios::beg, mode);
 }
 
 

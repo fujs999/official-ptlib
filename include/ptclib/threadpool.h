@@ -319,7 +319,7 @@ class PThreadPool : public PThreadPoolBase
 
         // add group ID to map
         if (!internalWork.m_group.empty()) {
-          m_groupInfoMap.insert(make_pair(internalWork.m_group, GroupInfo(internalWork.m_worker)));
+          m_groupInfoMap.emplace(internalWork.m_group, GroupInfo(internalWork.m_worker));
           PTRACE(6, PThreadPoolTraceModule, "Setting worker thread \"" << *internalWork.m_worker << "\""
                              " with group Id \"" << internalWork.m_group << '"');
         }
@@ -337,7 +337,7 @@ class PThreadPool : public PThreadPoolBase
       }
 
       // add work to external to internal map
-      m_externalToInternalWorkMap.insert(make_pair(work, internalWork));
+      m_externalToInternalWorkMap.emplace(work, internalWork);
 
       // give the work to the worker
       internalWork.m_worker->AddWork(work, internalWork.m_group);

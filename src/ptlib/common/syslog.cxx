@@ -114,7 +114,7 @@ PSystemLog::Buffer::Buffer()
 }
 
 
-streambuf::int_type PSystemLog::Buffer::overflow(int_type c)
+std::streambuf::int_type PSystemLog::Buffer::overflow(int_type c)
 {
   if (pptr() >= epptr()) {
     PMEMORY_IGNORE_ALLOCATIONS_FOR_SCOPE;
@@ -134,7 +134,7 @@ streambuf::int_type PSystemLog::Buffer::overflow(int_type c)
 }
 
 
-streambuf::int_type PSystemLog::Buffer::underflow()
+std::streambuf::int_type PSystemLog::Buffer::underflow()
 {
   return EOF;
 }

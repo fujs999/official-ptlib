@@ -268,7 +268,7 @@ struct PJavaScript::Private : PObject
   struct Intialisation
   {
 #if V8_MAJOR_VERSION > 3
-    unique_ptr<v8::Platform> m_platform;
+    std::unique_ptr<v8::Platform> m_platform;
 #endif
     bool m_initialised;
 
@@ -707,7 +707,7 @@ public:
 
     NotifierMap::iterator it = m_notifiers.find(key);
     if (it == m_notifiers.end())
-      it = m_notifiers.insert(make_pair(key.GetPointer(), NotifierInfo(m_owner, key))).first;
+      it = m_notifiers.emplace(key.GetPointer(), NotifierInfo(m_owner, key)).first;
     NotifierInfo & info = it->second;
     info.m_notifiers.Add(notifier);
 

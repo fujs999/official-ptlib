@@ -46,7 +46,7 @@ This class is necessary for implementing the standard C++ iostream interface
 on <code>PChannel</code> classes and its descendents. It is an internal class and
 should not ever be used by application writers.
 */
-class PChannelStreamBuffer : public streambuf {
+class PChannelStreamBuffer : public std::streambuf {
 
   protected:
     /* Construct the streambuf for standard streams on a channel. This is used
@@ -59,8 +59,8 @@ class PChannelStreamBuffer : public streambuf {
     virtual int_type overflow(int_type = EOF);
     virtual int_type underflow();
     virtual int sync();
-    virtual pos_type seekoff(std::streamoff, ios_base::seekdir, ios_base::openmode = ios_base::in | ios_base::out);
-    virtual pos_type seekpos(pos_type, ios_base::openmode = ios_base::in | ios_base::out);
+    virtual pos_type seekoff(std::streamoff, ios::seekdir, ios::openmode = ios::in | ios::out);
+    virtual pos_type seekpos(pos_type, ios::openmode = ios::in | ios::out);
 
     PBoolean SetBufferSize(
       PINDEX newSize

@@ -39,7 +39,7 @@ class PDebugStream : public ostream {
     PDebugStream();
 
   private:
-    class Buffer : public streambuf {
+    class Buffer : public std::streambuf {
       public:
         Buffer();
         virtual int overflow(int=EOF);

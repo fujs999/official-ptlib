@@ -949,7 +949,7 @@ PBoolean PLDAPSchema::SetAttribute(const PString & attribute, const PString & va
 
 	for (std::list<Attribute>::const_iterator r = m_attributelist.begin(); r != m_attributelist.end(); ++r) {
 		if ((r->m_name == attribute) &&  (r->m_type != AttributeBinary)) {
-	       m_attributes.insert(make_pair(attribute,value));
+	       m_attributes.emplace(attribute,value);
 		   PTRACE(4, "schema\tMatch " << attribute);
 		   return true;
 		}
@@ -962,7 +962,7 @@ PBoolean PLDAPSchema::SetAttribute(const PString & attribute, const PBYTEArray &
 {
 	for (std::list<Attribute>::const_iterator r = m_attributelist.begin(); r != m_attributelist.end(); ++r) {
 		if ((r->m_name == attribute) && (r->m_type == AttributeBinary)) {
-	       m_binattributes.insert(make_pair(attribute,value));
+	       m_binattributes.emplace(attribute,value);
 		   PTRACE(4, "schema\tMatch Binary " << attribute);
 		   return true;
 		}

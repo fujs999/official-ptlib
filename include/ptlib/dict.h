@@ -629,7 +629,11 @@ template <class T> class PSet : public PAbstractSet
   //@{
     class iterator;
     class const_iterator;
-    class iterator_base : public std::iterator<std::forward_iterator_tag, T> {
+    class iterator_base
+    {
+      using iterator_category = std::forward_iterator_tag;
+      using value_type = T;
+
       protected:
         iterator_base()
           : table(NULL)
@@ -1187,7 +1191,11 @@ template <class K, class D> class PDictionary : public PAbstractDictionary
         iterator_pair() : first(reinterpret_cast<CK&>(0)), second(reinterpret_cast<CD&>(0)) { }
     };
 
-    class iterator : public iterator_base, public std::iterator<std::forward_iterator_tag, iterator_pair<K,D> > {
+    class iterator : public iterator_base
+    {
+      using iterator_category = std::forward_iterator_tag;
+      using value_type = iterator_pair<K, D>;
+
       protected:
         iterator(dict_type * dict) : iterator_base(dict) { }
         iterator(dict_type * dict, const K & key) : iterator_base(dict, key) { }
@@ -1212,7 +1220,11 @@ template <class K, class D> class PDictionary : public PAbstractDictionary
     iterator find(const K & key) { return iterator(this, key); }
 
 
-    class const_iterator : public iterator_base, public std::iterator<std::forward_iterator_tag, iterator_pair<const K,const D> > {
+    class const_iterator : public iterator_base
+    {
+      using iterator_category = std::forward_iterator_tag;
+      using value_type = iterator_pair<const K, const D>;
+
       protected:
         const_iterator(const dict_type * dict) : iterator_base(dict) { }
         const_iterator(const dict_type * dict, const K & key) : iterator_base(dict, key) { }

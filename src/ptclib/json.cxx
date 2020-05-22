@@ -304,7 +304,7 @@ static void PrintString(ostream & strm, const PString & str)
           strm << str[i];
         else {
           char oldFill = strm.fill('0');
-          ios_base::fmtflags oldFlags = strm.setf(ios_base::hex, ios_base::dec);
+          ios::fmtflags oldFlags = strm.setf(ios::hex, ios::dec);
 
           strm << "\\u" << setw(4) << c;
 
@@ -353,7 +353,7 @@ void PJSON::Object::ReadFrom(istream & strm)
     if (value == NULL)
       return;
 
-    insert(make_pair(name.GetPointer(), value));
+    emplace(name.GetPointer(), value);
     value->ReadFrom(strm);
     if (strm.fail())
       return;
@@ -400,7 +400,7 @@ PJSON::Base * PJSON::Object::DeepClone() const
 {
   PJSON::Object * obj = new Object();
   for (std::map<std::string, Base *>::const_iterator it = begin(); it != end(); ++it)
-      obj->insert(make_pair(it->first, it->second->DeepClone()));
+      obj->emplace(it->first, it->second->DeepClone());
   return obj;
 }
 
@@ -482,7 +482,7 @@ bool PJSON::Object::Set(const PString & name, Types type)
   if (ptr == NULL)
     return false;
 
-  insert(make_pair(name.GetPointer(), ptr));
+  emplace(name.GetPointer(), ptr);
   return true;
 }
 
@@ -492,7 +492,7 @@ bool PJSON::Object::Set(const PString & name, const Base & toInsert)
   if (find(name) != end())
     return false;
 
-  insert(make_pair(name.GetPointer(), toInsert.DeepClone()));
+  emplace(name.GetPointer(), toInsert.DeepClone());
   return true;
 }
 
@@ -1111,7 +1111,7 @@ static PHMAC * CreateHMAC(const PJWT::Algorithm algorithm)
 
 PString PJWT::Encode(const PString & secret, const Algorithm algorithm)
 {
-  std::auto_ptr<PHMAC> hmac(CreateHMAC(algorithm));
+  std::unique_ptr<PHMAC> hmac(CreateHMAC(algorithm));
   if (!hmac.get())
     return PString::Empty();
 
@@ -1157,7 +1157,7 @@ bool PJWT::Decode(const PString & str, const PString & secret, const PTime & ver
     return false;
   }
 
-  std::auto_ptr<PHMAC> hmac(CreateHMAC(AlgorithmFromString(hdrObj.GetString("alg"))));
+  std::unique_ptr<PHMAC> hmac(CreateHMAC(AlgorithmFromString(hdrObj.GetString("alg"))));
   if (!hmac.get()) {
     PTRACE(2, "Unsupported JWT algorithm.");
     return false;

@@ -50,7 +50,7 @@ PBoolean PChannelStreamBuffer::SetBufferSize(PINDEX newSize)
 }
 
 
-streambuf::int_type PChannelStreamBuffer::overflow(int_type c)
+std::streambuf::int_type PChannelStreamBuffer::overflow(int_type c)
 {
   if (pbase() == NULL) {
     char * p = output.GetPointer(1024);
@@ -73,7 +73,7 @@ streambuf::int_type PChannelStreamBuffer::overflow(int_type c)
 }
 
 
-streambuf::int_type PChannelStreamBuffer::underflow()
+std::streambuf::int_type PChannelStreamBuffer::underflow()
 {
   if (eback() == NULL) {
     char * p = input.GetPointer(1024);
@@ -102,7 +102,7 @@ int PChannelStreamBuffer::sync()
 }
 
 
-PChannelStreamBuffer::pos_type PChannelStreamBuffer::seekoff(std::streamoff off, ios_base::seekdir dir, ios_base::openmode)
+PChannelStreamBuffer::pos_type PChannelStreamBuffer::seekoff(std::streamoff off, ios::seekdir dir, ios::openmode)
 {
   sync();
   if (PIsDescendant(channel, PFile)) {
@@ -128,9 +128,9 @@ PChannelStreamBuffer::pos_type PChannelStreamBuffer::seekoff(std::streamoff off,
 }
 
 
-PChannelStreamBuffer::pos_type PChannelStreamBuffer::seekpos(pos_type pos, ios_base::openmode mode)
+PChannelStreamBuffer::pos_type PChannelStreamBuffer::seekpos(pos_type pos, ios::openmode mode)
 {
-  return seekoff(pos, ios_base::beg, mode);
+  return seekoff(pos, ios::beg, mode);
 }
 
 

@@ -1014,7 +1014,6 @@ bool PMultiPartList::Decode(const PString & entityBody, const PStringToString & 
       PBase64::Decode(PString(partPtr, partLen), info->m_binaryBody);
     else
 #endif
-#ifdef P_HAS_WCHAR
     if ((typeInfo("charset") *= "UCS-2") || (typeInfo("charset") *= "UTF-16")) {
       PWCharArray wide(partLen/2);
       for (PINDEX i = 0; i < wide.GetSize(); ++i)
@@ -1022,7 +1021,6 @@ bool PMultiPartList::Decode(const PString & entityBody, const PStringToString & 
       info->m_textBody = wide;
     }
     else
-#endif
     if (encoding == "7bit" || encoding == "8bit" || (typeInfo("charset") *= "UTF-8") || memchr(partPtr, 0, partLen) == NULL)
       info->m_textBody = PString(partPtr, partLen);
     else

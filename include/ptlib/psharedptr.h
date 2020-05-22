@@ -35,75 +35,18 @@
 #include <ptlib.h>
 #include <memory>
 
-/**
- *
- * These templates implement an pointner class with an integral reference count
- * based on the PContainer base class. This allows the easy creation of an
- * a reference counted ptr that will autodestruct when the last reference 
- * goes out of scope.
+/** This class is simple wrapper around std::shared_ptr<> for backward compatibility
  */
-
 template <class T>
-class PSharedPtr : public PContainer
+class PSharedPtr : public PObject, public std::shared_ptr<T>
 {
-  PCLASSINFO(PSharedPtr, PContainer);
+  PCLASSINFO_WITH_CLONE(PSharedPtr, PObject);
   public:
     typedef T element_type;
 
-    PSharedPtr(element_type * p = NULL)
-    { ptr = p; }
-
-    PSharedPtr(const PSharedPtr & c)
-      : PContainer(c)
-    { CopyContents(c); } 
-
-    PSharedPtr(std::auto_ptr<element_type> & v)
-    { ptr = v.release(); }
-
-    PSharedPtr & operator=(const PSharedPtr & c) 
-    { AssignContents(c); return *this; } 
-
-    virtual ~PSharedPtr()
-    { Destruct(); } 
-
-    virtual PBoolean MakeUnique() 
-    { if (PContainer::MakeUnique()) return true; CloneContents(this); return false; } 
-
-    PBoolean SetSize(PINDEX)
-    { return false; }
-
-    T * Get() const
-    { return ptr; }
-
-    void Reset() const
-    { AssignContents(PSharedPtr()); }
-
-    T & operator*() const
-    { return *ptr; }
-
-    T * operator->() const
-    { return ptr; }
-
-
-  protected: 
-    PSharedPtr(int dummy, const PSharedPtr * c)
-    : PContainer(dummy, c)
-    { CloneContents(c); } 
-
-    void AssignContents(const PContainer & c) 
-    { PContainer::AssignContents(c); CopyContents((const PSharedPtr &)c); }
-
-    void DestroyContents()
-    { delete(ptr); }
-
-    void CloneContents(const PContainer * src)
-    { ptr = new element_type(*((const PSharedPtr *)src)->ptr); }
-
-    void CopyContents(const PContainer & c)
-    { ptr = ((const PSharedPtr &)c).ptr; }
-
-  protected:
-    T * ptr;
+    PSharedPtr(element_type * p = nullptr) : std::shared_ptr<T>(p) { }
+    element_type * Get() const { return get(); }
+    void Reset() const { reset(); }
 };
 
 

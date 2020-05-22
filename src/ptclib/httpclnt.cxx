@@ -794,15 +794,15 @@ bool PHTTPClient::ConnectURL(const PURL & url)
 
 #if P_SSL
   if (url.GetScheme() == "https" || url.GetScheme() == "wss") {
-    std::auto_ptr<PSSLChannel> ssl;
+    std::unique_ptr<PSSLChannel> ssl;
     PSSLContext::Method method = PSSLContext::HighestTLS;
     for (;;) {
-    std::auto_ptr<PTCPSocket> tcp(new PTCPSocket(url.GetPort()));
+    std::unique_ptr<PTCPSocket> tcp(new PTCPSocket(url.GetPort()));
       tcp->SetReadTimeout(readTimeout);
       if (!tcp->Connect(host))
         return SetLastResponse(TransportConnectError, tcp->GetErrorText() + psprintf(" (errno=%i)", tcp->GetErrorNumber()));
 
-      std::auto_ptr<PSSLContext> context(new PSSLContext(method));
+      std::unique_ptr<PSSLContext> context(new PSSLContext(method));
       if (!context->SetCredentials(m_authority, m_certificate, m_privateKey))
         return SetLastResponse(TransportConnectError, "Could not set certificates");
 

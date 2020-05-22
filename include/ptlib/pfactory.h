@@ -257,7 +257,7 @@ class PFactoryTemplate : public PFactoryBase
       }
 
       PMEMORY_IGNORE_ALLOCATIONS_FOR_SCOPE;
-      m_workers.insert(make_pair(key, WorkerWrap(PAssertNULL(worker), autoDeleteWorker)));
+      m_workers.emplace(key, WorkerWrap(PAssertNULL(worker), autoDeleteWorker));
       return true;
     }
 
@@ -269,7 +269,7 @@ class PFactoryTemplate : public PFactoryBase
         return it->second.m_worker->m_singletonInstance == instance;
 
       PMEMORY_IGNORE_ALLOCATIONS_FOR_SCOPE;
-      m_workers.insert(make_pair(key, WorkerWrap(PNEW WorkerBase(instance, autoDeleteInstance), true)));
+      m_workers.emplace(key, WorkerWrap(PNEW WorkerBase(instance, autoDeleteInstance), true));
       return true;
     }
 
@@ -284,7 +284,7 @@ class PFactoryTemplate : public PFactoryBase
       if (itNew != m_workers.end())
         return itNew->second.m_worker == itOld->second.m_worker;
 
-      m_workers.insert(make_pair(newKey, WorkerWrap(itOld->second.m_worker, false)));
+      m_workers.emplace(newKey, WorkerWrap(itOld->second.m_worker, false));
       return true;
     }
 
