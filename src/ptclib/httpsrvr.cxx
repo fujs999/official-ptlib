@@ -1824,7 +1824,7 @@ PBoolean PHTTPResource::OnPOSTData(PHTTPRequest & request, const PStringToString
 
   request.contentSize = msg.GetLength();
   StartResponse(request);
-  return request.server.Write((const char *)msg, request.contentSize) && persist;
+  return request.server.Write((const char *)(PString)msg, request.contentSize) && persist;
 }
 
 
@@ -2471,7 +2471,7 @@ PBoolean PHTTPDirectory::LoadHeaders(PHTTPRequest & request)
     url << m_baseURL << "?sort=" << Columns[i].m_name;
     if (sort == Columns[i].m_name)
       url << "&reversed=" << boolalpha << !reversed;
-    reply << PHTML::TableHeader() << PHTML::HotLink(url) << Columns[i].m_title << PHTML::HotLink();
+    reply << PHTML::TableHeader() << PHTML::HotLink(url.str().c_str()) << Columns[i].m_title << PHTML::HotLink();
   }
 
   for (PDirectory::Entries::iterator it = listing.begin(); it != listing.end(); ++it) {

@@ -1769,7 +1769,7 @@ void PVideoOutputDevice_Window::Draw(HDC hDC)
     SetBkMode(hDC, TRANSPARENT);
     rect.left += 8;
     rect.right -= 8;
-    DrawText(hDC, strm, strm.GetLength(), &rect, m_infoOptions);
+    DrawText(hDC, strm.str().c_str(), strm.GetLength(), &rect, m_infoOptions);
   }
 
   if (m_receivedFrame && m_observedFrameRate == 0 && !m_freezeText.IsEmpty()) {

@@ -216,14 +216,14 @@ void PXMLParserBase::GetFilePosition(unsigned & col, unsigned & line) const
 }
 
 
-void PXMLParserBase::GetErrorInfo(PString & errorString, unsigned & errorCol, unsigned & errorLine) const
+void PXMLParserBase::GetErrorInfo(ostream & errorOutput, unsigned & errorCol, unsigned & errorLine) const
 {
   GetFilePosition(errorCol, errorLine);
 
   if (m_userAborted)
-    errorString = "User aborted parsing";
+    errorOutput << "User aborted parsing";
   else
-    errorString = XML_ErrorString(XML_GetErrorCode(MY_CONTEXT));
+    errorOutput << XML_ErrorString(XML_GetErrorCode(MY_CONTEXT));
 }
 
 

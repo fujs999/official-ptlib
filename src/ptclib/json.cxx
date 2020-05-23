@@ -1124,9 +1124,9 @@ PString PJWT::Encode(const PString & secret, const Algorithm algorithm)
 
   PStringStream token;
   token << PBase64::Encode(hdr.AsString(), PBase64::e_URL) << '.' << PBase64::Encode(AsString(), PBase64::e_URL);
-  PINDEX prefixLength = token.GetLength();
+  PString prefix = token;
 
-  token << '.' << hmac->Encode(token.GetPointer(), prefixLength, PBase64::e_URL);
+  token << '.' << hmac->Encode(prefix.c_str(), prefix.length(), PBase64::e_URL);
 
   return token;
 }

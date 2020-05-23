@@ -189,7 +189,7 @@ void PServiceProcess::LogToWindow::Output(PSystemLog::Level level, const char * 
 
     PStringStream str;
     OutputToStream(str, level, msg);
-    process.DebugOutput(str);
+    process.DebugOutput(str.str().c_str());
 
     ReleaseMutex(mutex);
     SetLastError(0);
@@ -1602,7 +1602,7 @@ bool PServiceProcess::ProcessCommand(const char * cmd)
   }
 
   if (m_controlWindow == NULL)
-    MessageBox(NULL, msg, GetName(), MB_TASKMODAL);
+    MessageBox(NULL, msg.str().c_str(), GetName(), MB_TASKMODAL);
   else
     PError << msg << endl;
 

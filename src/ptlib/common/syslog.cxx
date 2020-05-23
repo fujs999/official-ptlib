@@ -397,7 +397,7 @@ bool PSystemLogToFile::RotateInfo::OnOpenFile(PFile & file)
     default :
       log << "Time Zone: " << setw(4) << setfill('0') << showpos << m_timeZone;
   }
-  logToFile->OutputToStream(file, PSystemLog::StdError, log, m_timeZone);
+  logToFile->OutputToStream(file, PSystemLog::StdError, log.str().c_str(), m_timeZone);
   return true;
 }
 
@@ -433,13 +433,12 @@ void PSystemLogToNetwork::Output(PSystemLog::Level level, const char * msg)
     2, 3, 4, 5, 6, 7, 7, 7, 7, 7
   };
 
-  PStringStream str;
-  str << '<' << (((m_facility*8)+PwlibLogToSeverity[level])%1000) << '>'
-    << PTime().AsString("MMM dd hh:mm:ss ")
-    << PIPSocket::GetHostName() << ' '
-    << PProcess::Current().GetName() << ' '
-    << msg;
-  m_socket.WriteTo((const char *)str, str.GetLength(), m_server);
+  PString str = PSTRSTRM('<' << (((m_facility*8)+PwlibLogToSeverity[level])%1000) << '>'
+                             << PTime().AsString("MMM dd hh:mm:ss ")
+                             << PIPSocket::GetHostName() << ' '
+                             << PProcess::Current().GetName() << ' '
+                             << msg);
+  m_socket.WriteTo(str.c_str(), str.length(), m_server);
 }
 
 

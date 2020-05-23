@@ -131,7 +131,7 @@ PBoolean PPipeChannel::PlatformOpen(const PString & subProgram,
     }
   }
 
-  if (ConvertOSError(CreateProcess(prog, (LPSTR)(const char *)cmdLine,
+  if (ConvertOSError(CreateProcess(prog, (LPSTR)cmdLine.str().c_str(),
                                    NULL, NULL, true, 0, envStr,
                                    NULL, &startup, &info) ? 0 : -2))
     os_handle = info.dwProcessId;

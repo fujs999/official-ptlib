@@ -996,7 +996,7 @@ ostream & PTraceInfo::InternalEnd(ostream & paramStream)
     }
   }
 
-  PString & message = context->m_stream;
+  PString message = context->m_stream;
   if (context->m_module.IsEmpty()) {
     PINDEX tab = message.Find('\t');
     if (tab != P_MAX_INDEX && tab < 16) {
@@ -1025,7 +1025,7 @@ ostream & PTraceInfo::InternalEnd(ostream & paramStream)
     output << message;
 
   if (HasOption(SystemLogStream))
-    PSystemLog::OutputToTarget(PSystemLog::LevelFromInt(context->m_level), output);
+    PSystemLog::OutputToTarget(PSystemLog::LevelFromInt(context->m_level), output.str().c_str());
   else {
     Lock();
     *m_stream << output << endl;

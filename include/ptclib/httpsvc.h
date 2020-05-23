@@ -224,6 +224,7 @@ class PConfigPage : public PHTTPConfig
       const PHTTPAuthority & auth
     );
 
+    void OnLoadedHTML(PHTTPRequest &, PHTML & text);
     void OnLoadedText(PHTTPRequest &, PString & text);
 
     virtual PBoolean OnPOST(
@@ -346,6 +347,12 @@ class PServiceHTML : public PHTML
       NoURLOverride       = 4,
       NoSignatureForFile  = 8
     };
+    static bool ProcessMacros(
+      PHTTPRequest & request,
+      PHTML & text,
+      const PString & filename,
+      unsigned options
+    );
     static bool ProcessMacros(
       PHTTPRequest & request,
       PString & text,

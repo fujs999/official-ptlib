@@ -158,7 +158,7 @@ int PCommaSeparatedVariableFormat::ReadField(PChannel & channel, PVarType & fiel
     else {
       if (c == '\r' || c == '\n' || c == ',') {
         if (autoDetect && wasQuoted)
-          field.SetDynamicString(str);
+          field.SetDynamicString(str.str().c_str());
         else
           field.FromString(str, autoDetect);
         return c == ',' ? 0 : 1;

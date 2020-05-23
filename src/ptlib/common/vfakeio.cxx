@@ -1497,13 +1497,13 @@ PBoolean PVideoInputDevice_FakeVideo::Open(const PString & devName, PBoolean /*s
       SetChannel(chan);
 
       if (chan == eText) {
-        PStringStream message;
+        PString message;
         if (equals != P_MAX_INDEX)
-          message << devName.Mid(equals+1);
+          message = devName.Mid(equals+1);
         else
-          message << PProcess::Current().GetUserName() <<  " on " <<
-                     PProcess::Current().GetOSName() << ":" <<
-                     PProcess::Current().GetOSHardware();
+          message = PSTRSTRM(PProcess::Current().GetUserName() <<  " on " <<
+                             PProcess::Current().GetOSName() << ":" <<
+                             PProcess::Current().GetOSHardware());
 
         for (int scanLine = 0; scanLine < PVideoFont::MAX_L_HEIGHT; ++scanLine)
           textLine[scanLine].MakeEmpty();

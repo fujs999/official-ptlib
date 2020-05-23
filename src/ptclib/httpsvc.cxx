@@ -516,6 +516,14 @@ PConfigPage::PConfigPage(PHTTPServiceProcess & app,
 }
 
 
+void PConfigPage::OnLoadedHTML(PHTTPRequest & request, PHTML & text)
+{
+  PString str = text;
+  OnLoadedText(request, str);
+  text = str;
+}
+
+
 void PConfigPage::OnLoadedText(PHTTPRequest & request, PString & text)
 {
   PServiceHTML::ProcessMacros(request, text,
@@ -546,7 +554,7 @@ PBoolean PConfigPage::Post(PHTTPRequest & request,
   PServiceHTML::ProcessMacros(request, reply,
                               GetURL().AsString(PURL::PathOnly),
                               PServiceHTML::LoadFromFile);
-  OnLoadedText(request, reply);
+  OnLoadedHTML(request, reply);
 
   return retval;
 }
@@ -902,7 +910,7 @@ PBoolean PRegisterPage::Post(PHTTPRequest & request,
 
   RemoveAllFields();
   LoadText(request);
-  OnLoadedText(request, reply);
+  OnLoadedHTML(request, reply);
 
   return retval;
 }
@@ -1607,6 +1615,18 @@ static void SplitCmdAndArgs(const PString & text, PINDEX pos, PCaselessString & 
     cmd = macro.Left(endCmd);
     args = macro.Mid(endCmd+1).LeftTrim();
   }
+}
+
+
+bool PServiceHTML::ProcessMacros(PHTTPRequest & request,
+                                 PHTML & text,
+                                 const PString & defaultFile,
+                                 unsigned options)
+{
+  PString str = text;
+  bool result = ProcessMacros(request, str, defaultFile, options);
+  text = str;
+  return result;
 }
 
 

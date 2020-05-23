@@ -1020,11 +1020,11 @@ bool PCLI::SetCommand(const char * commands, const PNotifier & notifier, const c
 
 bool PCLI::SetCommand(const char * commands, bool & value, const char * varName, const char * help, const PNotifier & notifier)
 {
-  PStringStream adjustedHelp;
+  PString adjustedHelp;
   if (help != NULL)
-    adjustedHelp << help;
+    adjustedHelp = help;
   else
-    adjustedHelp << "Set " << varName << " on/off.";
+    adjustedHelp = PSTRSTRM("Set " << varName << " on/off.");
   InternalCommand cmd(notifier, adjustedHelp, "[ \"on\" | \"off\" ]", NULL, varName);
   cmd.m_variable = new PRefVar<bool>(value);
   return InternalSetCommand(commands, cmd);
@@ -1039,11 +1039,11 @@ bool PCLI::SetCommand(const char * commands,
                       const char * help,
                       const PNotifier & notifier)
 {
-  PStringStream adjustedHelp;
+  PString adjustedHelp;
   if (help != NULL)
-    adjustedHelp << help;
+    adjustedHelp = help;
   else
-    adjustedHelp << "Set integer " << varName;
+    adjustedHelp = PSTRSTRM("Set integer " << varName);
   InternalCommand cmd(notifier, adjustedHelp, "[ <value> ]", NULL, varName);
   cmd.m_variable = value.CloneAs<PVarType>();
   cmd.m_minimum  = minValue.CloneAs<PVarType>();

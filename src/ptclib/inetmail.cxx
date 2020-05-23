@@ -1401,9 +1401,8 @@ PBoolean PRFC822Channel::Write(const void * buf, PINDEX len)
     else if (!headers.Contains(ContentTypeTag()))
       headers.SetAt(ContentTypeTag(), PMIMEInfo::TextPlain());
 
-    PStringStream hdr;
-    hdr << headers;
-    if (!PIndirectChannel::Write((const char *)hdr, hdr.GetLength()))
+    string hdr = PSTRSTRM(headers);
+    if (!PIndirectChannel::Write(hdr.data(), hdr.length()))
       return false;
 
     if (base64 != NULL)
@@ -1418,10 +1417,8 @@ PBoolean PRFC822Channel::Write(const void * buf, PINDEX len)
     if (!partHeaders.Contains(ContentTypeTag()))
       partHeaders.SetAt(ContentTypeTag(), PMIMEInfo::TextPlain());
 
-    PStringStream hdr;
-    hdr << "\n--"  << boundaries.front() << '\n'
-        << partHeaders;
-    if (!PIndirectChannel::Write((const char *)hdr, hdr.GetLength()))
+    string hdr = PSTRSTRM("\n--"  << boundaries.front() << '\n' << partHeaders);
+    if (!PIndirectChannel::Write(hdr.data(), hdr.length()))
       return false;
 
     if (base64 != NULL)

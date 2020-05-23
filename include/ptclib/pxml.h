@@ -547,7 +547,7 @@ class PXMLParserBase
     virtual bool Progress() { return true; }
 
     void GetFilePosition(unsigned & col, unsigned & line) const;
-    void GetErrorInfo(PString & errorString, unsigned & errorCol, unsigned & errorLine) const;
+    void GetErrorInfo(ostream & errorOutput, unsigned & errorCol, unsigned & errorLine) const;
 
     bool IsParsing() const { return m_parsing; }
 

@@ -103,11 +103,11 @@ typedef PBaseArray<wchar_t> PWCharArray;
    (typically Linux) this is UCS-4, 32 bit characters.
  */
 
-class PString : public PCharArray
+class PString : public PObject, public std::string
 {
-    PCLASSINFO(PString, PCharArray);
-  public:
-    typedef const char * Initialiser;
+  PCLASSINFO(PString, PObject);
+public:
+  typedef const char * Initialiser;
 
   /**@name Construction */
   //@{
@@ -161,16 +161,16 @@ class PString : public PCharArray
       const wchar_t * ustr ///< wchar_t null terminated string.
     );
 
-    /**Create a string from the array. A new memory block is allocated of
-       a size equal to <code>len</code> plus one which is sufficient to take
-       the string and a terminating '\\0' character.
+        /**Create a string from the array. A new memory block is allocated of
+           a size equal to <code>len</code> plus one which is sufficient to take
+           the string and a terminating '\\0' character.
 
-       Note that this function will allow a string with embedded '\\0'
-       characters to be created, but most of the functions here will be unable
-       to access characters beyond the first '\\0'. Furthermore, if the
-       <code>MakeMinimumSize()</code> function is called, all data beyond that first
-       '\\0' character will be lost.
-     */
+           Note that this function will allow a string with embedded '\\0'
+           characters to be created, but most of the functions here will be unable
+           to access characters beyond the first '\\0'. Furthermore, if the
+           <code>MakeMinimumSize()</code> function is called, all data beyond that first
+           '\\0' character will be lost.
+         */
     PString(
       const char * cstr,  ///< Pointer to a string of characters.
       PINDEX len          ///< Length of the string in bytes.
@@ -180,12 +180,12 @@ class PString : public PCharArray
        allocated of a size sufficient to take the converted string and a
        terminating '\\0' character.
 
-       Note that this function will allow a string with embedded '\\0'
-       characters to be created, but most of the functions here will be unable
-       to access characters beyond the first '\\0'. Furthermore, if the
-       <code>MakeMinimumSize()</code> function is called, all data beyond that first
-       '\\0' character will be lost.
-     */
+           Note that this function will allow a string with embedded '\\0'
+           characters to be created, but most of the functions here will be unable
+           to access characters beyond the first '\\0'. Furthermore, if the
+           <code>MakeMinimumSize()</code> function is called, all data beyond that first
+           '\\0' character will be lost.
+         */
     PString(
       const wchar_t * ustr,  ///< Pointer to a string of wchar_t characters.
       PINDEX len             ///< Length of the string in characters.
@@ -205,11 +205,11 @@ class PString : public PCharArray
       const PWCharArray & ustr ///< wchar_t null terminated string.
     );
 
-    /**Create a string from the single character. This is most commonly used
-       as a type conversion constructor when a literal character, eg 'A' is
-       used in a string expression. A new memory block is allocated of two
-       characters to take the char and its terminating '\\0' character.
-     */
+        /**Create a string from the single character. This is most commonly used
+           as a type conversion constructor when a literal character, eg 'A' is
+           used in a string expression. A new memory block is allocated of two
+           characters to take the char and its terminating '\\0' character.
+         */
     PString(
       char ch    ///< Single character to initialise string.
     );
@@ -262,29 +262,29 @@ class PString : public PCharArray
       unsigned long n   ///< Integer to convert
     );
 
-#ifdef HAVE_LONG_LONG_INT
-    /**Create a string from the integer type.
-       This will create a simple base 10, shortest length conversion of the
-       integer (with sign character if appropriate) into the string.
-      */
+    #ifdef HAVE_LONG_LONG_INT
+        /**Create a string from the integer type.
+           This will create a simple base 10, shortest length conversion of the
+           integer (with sign character if appropriate) into the string.
+          */
     PString(
       long long n   ///< Integer to convert
     );
-#endif
+    #endif
 
-#ifdef HAVE_UNSIGNED_LONG_LONG_INT
-    /**Create a string from the integer type.
-       This will create a simple base 10, shortest length conversion of the
-       integer (with sign character if appropriate) into the string.
-      */
+    #ifdef HAVE_UNSIGNED_LONG_LONG_INT
+        /**Create a string from the integer type.
+           This will create a simple base 10, shortest length conversion of the
+           integer (with sign character if appropriate) into the string.
+          */
     PString(
       unsigned long long n   ///< Integer to convert
     );
-#endif
+    #endif
 
- 
-    /* Type of conversion to make in the conversion constructors.
-     */
+
+        /* Type of conversion to make in the conversion constructors.
+         */
     enum ConversionType {
       Pascal,   ///< Data is a length byte followed by characters.
       Basic,    ///< Data is two length bytes followed by characters.
@@ -307,7 +307,7 @@ class PString : public PCharArray
       ...                 ///< Extra parameters for <code>sprintf()</code> call.
     );
 
-#ifdef HAVE_LONG_LONG_INT
+    #ifdef HAVE_LONG_LONG_INT
     PString(
       ConversionType type, ///< Type of data source for conversion.
       long long value,     ///< Large integer value to convert.
@@ -316,10 +316,10 @@ class PString : public PCharArray
                                 For ScaleSI, this is the number of significant
                                 figures to be used, maiximum 4. */
     );
-#endif
-#ifdef HAVE_UNSIGNED_LONG_LONG_INT
+    #endif
+    #ifdef HAVE_UNSIGNED_LONG_LONG_INT
     PString(ConversionType type, unsigned long long value, unsigned param = 10);
-#endif
+    #endif
 
     PString(ConversionType type, unsigned long  value, unsigned param = 10);
     PString(ConversionType type,   signed long  value, unsigned param = 10);
@@ -342,93 +342,93 @@ class PString : public PCharArray
     /**Assign the string to the current object. The current instance then
        becomes another reference to the same string in the <code>str</code>
        parameter.
-       
+
        @return
        reference to the current PString object.
      */
     PString & operator=(
       const PString & str  ///< New string to assign.
-    );
+      );
 
-    /**Assign the string to the current object. The current instance then
-       becomes another reference to the same string in the <code>str</code>
-       parameter.
-       
-       @return
-       reference to the current PString object.
-     */
+      /**Assign the string to the current object. The current instance then
+         becomes another reference to the same string in the <code>str</code>
+         parameter.
+
+         @return
+         reference to the current PString object.
+       */
     PString & operator=(
       const std::string & str  ///< New string to assign.
-    ) { return operator=(str.c_str()); }
+    );
 
     /**Assign the C string to the current object. The current instance then
        becomes a unique reference to a copy of the <code>cstr</code> parameter.
        The <code>cstr</code> parameter is typically a literal string, eg:
-<pre><code>
-          myStr = "fred";
-</code></pre>
+       <pre><code>
+            myStr = "fred";
+       </code></pre>
        @return
-       reference to the current PString object.
-     */
+         reference to the current PString object.
+      */
     PString & operator=(
       const char * cstr  ///< C string to assign.
     );
 
     /**Assign the character to the current object. The current instance then
        becomes a unique reference to a copy of the character parameter. eg:
-<pre><code>
-          myStr = 'A';
-</code></pre>
+       <pre><code>
+            myStr = 'A';
+       </code></pre>
        @return
-       reference to the current PString object.
-     */
+         reference to the current PString object.
+      */
     PString & operator=(
       char ch            ///< Character to assign.
     );
 
     /**Assign a string from the integer type.
-       This will create a simple base 10, shortest length conversion of the
-       integer (with sign character if appropriate) into the string.
+        This will create a simple base 10, shortest length conversion of the
+        integer (with sign character if appropriate) into the string.
       */
     PString & operator=(
       short n   ///< Integer to convert
     );
 
     /**Assign a string from the integer type.
-       This will create a simple base 10, shortest length conversion of the
-       integer (with sign character if appropriate) into the string.
+        This will create a simple base 10, shortest length conversion of the
+        integer (with sign character if appropriate) into the string.
       */
     PString & operator=(
       unsigned short n   ///< Integer to convert
     );
 
     /**Assign a string from the integer type.
-       This will create a simple base 10, shortest length conversion of the
-       integer (with sign character if appropriate) into the string.
+        This will create a simple base 10, shortest length conversion of the
+        integer (with sign character if appropriate) into the string.
       */
     PString & operator=(
       int n   ///< Integer to convert
     );
 
     /**Assign a string from the integer type.
-       This will create a simple base 10, shortest length conversion of the
-       integer (with sign character if appropriate) into the string.
+        This will create a simple base 10, shortest length conversion of the
+        integer (with sign character if appropriate) into the string.
       */
     PString & operator=(
       unsigned int n   ///< Integer to convert
     );
 
     /**Assign a string from the integer type.
-       This will create a simple base 10, shortest length conversion of the
-       integer (with sign character if appropriate) into the string.
+        This will create a simple base 10, shortest length conversion of the
+        integer (with sign character if appropriate) into the string.
       */
     PString & operator=(
       long n   ///< Integer to convert
     );
 
     /**Assign a string from the integer type.
-       This will create a simple base 10, shortest length conversion of the
-       integer (with sign character if appropriate) into the string.
+        This will create a simple base 10, shortest length conversion of the
+        integer (with sign character if appropriate) into the string.
       */
     PString & operator=(
       unsigned long n   ///< Integer to convert
@@ -436,8 +436,8 @@ class PString : public PCharArray
 
 #ifdef HAVE_LONG_LONG_INT
     /**Assign a string from the integer type.
-       This will create a simple base 10, shortest length conversion of the
-       integer (with sign character if appropriate) into the string.
+        This will create a simple base 10, shortest length conversion of the
+        integer (with sign character if appropriate) into the string.
       */
     PString & operator=(
       long long n   ///< Integer to convert
@@ -446,8 +446,8 @@ class PString : public PCharArray
 
 #ifdef HAVE_UNSIGNED_LONG_LONG_INT
     /**Assign a string from the integer type.
-       This will create a simple base 10, shortest length conversion of the
-       integer (with sign character if appropriate) into the string.
+        This will create a simple base 10, shortest length conversion of the
+        integer (with sign character if appropriate) into the string.
       */
     PString & operator=(
       unsigned long long n   ///< Integer to convert
@@ -500,7 +500,7 @@ class PString : public PCharArray
     );
 
     /**Calculate a hash value for use in sets and dictionaries.
-    
+
        The hash function for strings will produce a value based on the sum of
        the first three characters of the string. This is a fairly basic
        function and make no assumptions about the string contents. A user may
@@ -514,50 +514,6 @@ class PString : public PCharArray
      */
     virtual PINDEX HashFunction() const;
   //@}
-
-  /**@name Overrides from class PContainer */
-  //@{
-    /**Set the size of the string. A new string may be allocated to accomodate
-       the new number of characters. If the string increases in size then the
-       new characters are initialised to zero. If the string is made smaller
-       then the data beyond the new size is lost.
-
-       This does not set the actual length of the string, but only allocates
-       space for it. It is expected that GetPointerAndSetLength() or
-       MakeMinimumSize() is used to set the actual length of the string.
-
-       Note that this function will break the current instance from multiple
-       references to an array. A new array is allocated and the data from the
-       old array copied to it.
-
-       @return
-       true if the memory for the array was allocated successfully.
-     */
-    virtual PBoolean SetSize(
-      PINDEX newSize  ///< New size of the array in elements.
-    );
-
-    /**Determine if the string is empty. This is semantically slightly
-       different from the usual <code>PContainer::IsEmpty()</code> function. It does
-       not test for <code>PContainer::GetSize()</code> equal to zero, it tests for
-       <code>GetLength()</code> equal to zero.
-
-       @return
-       true if no non-null characters in string.
-     */
-    virtual PBoolean IsEmpty() const;
-
-    /**Make this instance to be the one and only reference to the container
-       contents. This implicitly does a clone of the contents of the container
-       to make a unique reference. If the instance was already unique then
-       the function does nothing.
-
-       @return
-       true if the instance was already unique.
-     */
-    virtual PBoolean MakeUnique();
-  //@}
-
 
   /**@name Size/Length functions */
   //@{
@@ -577,16 +533,6 @@ class PString : public PCharArray
     bool MakeMinimumSize(
       PINDEX newLength = 0  /// New length for string, if zero strlen is used
     );
-
-    /**Determine the length of the null terminated string. This is different
-       from <code>PContainer::GetSize()</code> which returns the amount of memory
-       allocated to the string. This is often, though no necessarily, one
-       larger than the length of the string.
-       
-       @return
-       length of the null terminated string.
-     */
-    virtual PINDEX GetLength() const { return m_length; }
   //@}
 
   /**@name Concatenation operators **/
@@ -1829,20 +1775,6 @@ class PString : public PCharArray
       PINDEX & offset
     ) const;
 
-    /**Get the internal buffer as a pointer to unsigned characters. The
-       standard "operator const char *" function is provided by the
-       <code>PCharArray</code> ancestor class.
-
-       @return
-       pointer to character buffer.
-     */
-    operator const unsigned char *() const;
-
-    /** Cast the PString to a std::string
-      */
-    operator std::string () const
-    { return std::string(theArray); }
-
     /**Get a pointer to the buffer and set the length of the string.
        Note the caller may require the actual length to be less than the len
        parameter, in which case the MakeMinimumSize() function should be
@@ -1867,48 +1799,24 @@ class PString : public PCharArray
     char * GetPointerAndSetLength(
       PINDEX len    /// New Length
     );
-
-    /**
-      Get a const pointer to the buffer contents
-      This function overrides the ancestor function that returns a char *
-      */
-    virtual const char * GetPointer(PINDEX = 0) const { return (const char *)(*this); }
   //@}
 
-  /**@name std::string compatible functions */
+  /**@name Backward compatibility functions */
   //@{
-    __inline std::string::size_type size() const { return (std::string::size_type)GetLength(); }
-    __inline std::string::size_type length() const { return (std::string::size_type)GetLength(); }
-    __inline std::string::size_type capacity() const { return (std::string::size_type)(GetSize()-1); }
-    __inline bool empty() const { return IsEmpty(); }
-    __inline void clear() { MakeEmpty();  }
-    __inline const char * c_str() const { return GetPointer(); }
-    __inline char * data() { return PCharArray::GetPointer(); }
-    __inline void push_back(char ch) { *this += ch;  }
-    __inline PString & append(std::string::size_type count, char ch) { while (--count > 0) *this += ch; return *this; }
-    __inline PString & append(const char * s) { return *this += s; }
-    __inline PString & append(const std::string & s) { return *this += s.c_str();  }
-    __inline PString & insert(std::string::size_type index, std::string::size_type count, char ch) { while (--count > 0) Splice(&ch, index); return *this; }
-    __inline PString & insert(std::string::size_type index, const char * s) { return Splice(s, index); }
-    __inline PString & insert(std::string::size_type index, const std::string & s) { return Splice(s.c_str(), index);  }
-    __inline PString & erase(std::string::size_type index = 0, std::string::size_type count = std::string::npos) { return Delete(index, count != std::string::npos ? count : P_MAX_INDEX);  }
-    __inline PString & replace(std::string::size_type pos, std::string::size_type count, const char * s) { return Splice(s, pos, count); }
-    __inline PString & replace(std::string::size_type pos, std::string::size_type count, const std::string & s) { return Splice(s.c_str(), pos, count); }
-    __inline std::string substr(std::string::size_type pos = 0, std::string::size_type count = std::string::npos) const { return std::string(Mid(pos, count).GetPointer()); }
-    __inline std::string::size_type find(char c, std::string::size_type pos = 0) const { return StdStringPos(Find(c, pos)); }
-    __inline std::string::size_type find(const char * s, std::string::size_type pos = 0) const { return StdStringPos(Find(s, pos)); }
-    __inline std::string::size_type find(const std::string & s, std::string::size_type pos = 0) const { return StdStringPos(Find(s.c_str(), pos)); }
-    __inline std::string::size_type rfind(char c, std::string::size_type pos = 0) const { return StdStringPos(FindLast(c, pos)); }
-    __inline std::string::size_type rfind(const char * s, std::string::size_type pos = 0) const { return StdStringPos(FindLast(s, pos)); }
-    __inline std::string::size_type rfind(const std::string & s, std::string::size_type pos = 0) const { return StdStringPos(FindLast(s.c_str(), pos)); }
-    __inline std::string::size_type find_first_of(const char * s, std::string::size_type pos = 0) const { return StdStringPos(FindOneOf(s, pos)); }
-    __inline std::string::size_type find_first_of(const std::string & s, std::string::size_type pos = 0) const { return StdStringPos(FindOneOf(s.c_str(), pos)); }
-    __inline std::string::size_type find_first_not_of(const char * s, std::string::size_type pos = 0) const { return StdStringPos(FindSpan(s, pos)); }
-    __inline std::string::size_type find_first_not_of(const std::string & s, std::string::size_type pos = 0) const { return StdStringPos(FindSpan(s.c_str(), pos)); }
-    private:
-      __inline static std::string::size_type StdStringPos(PINDEX p) { return p != P_MAX_INDEX ? (std::string::size_type)p : std::string::npos; }
-    public:
-    //@}
+    PINDEX GetSize() const { return capacity(); }
+    bool SetSize(PINDEX newSize) { reserve(newSize); return true; }
+    bool SetMinSize(PINDEX newSize) { return GetSize() >= newSize || SetSize(newSize); }
+    PINDEX GetLength() const { return length(); }
+    bool IsEmpty() const { return empty(); }
+    bool MakeUnique() { return true; }
+    const char * GetPointer(PINDEX = 0) const { return c_str(); }
+    char GetAt(PINDEX idx) const { return at(idx); }
+    operator const unsigned char *() const { return (const unsigned char *)c_str(); }
+    operator const char *() const { return c_str(); }
+    char operator[](PINDEX index) const { return at(index); }
+    char & operator[](PINDEX index) { return at(index); }
+  //@}
+
 
   protected:
     void InternalFromWChar(
@@ -1929,23 +1837,6 @@ class PString : public PCharArray
       PString & after,            // Substring after delimiter
       SplitOptions_Bits options   // options
     ) const;
-
-    /* Internal function to compare the current string value against the
-       specified C string.
-
-       @return
-       relative rank of the two strings.
-     */
-    PString(int dummy, const PString * str);
-
-    virtual void AssignContents(const PContainer &);
-    PString(PContainerReference & reference_, PINDEX len)
-      : PCharArray(reference_)
-      , m_length(len)
-      { }
-
-  protected:
-    mutable PINDEX m_length; // Length of the string, always at least one less than GetSize()
 };
 
 
@@ -2087,73 +1978,14 @@ class PCaselessString : public PString
   // Overrides from class PString
     virtual int internal_strcmp(const char * s1, const char *s2) const;
     virtual int internal_strncmp(const char * s1, const char *s2, size_t n) const;
-
-    /* Internal function to compare the current string value against the
-       specified C string.
-
-       @return
-       relative rank of the two strings or characters.
-     */
-
-    PCaselessString(int dummy, const PCaselessString * str);
-    PCaselessString(PContainerReference & reference_, PINDEX len) : PString(reference_, len) { }
 };
 
 
 //////////////////////////////////////////////////////////////////////////////
 
-/**Create a constant string.
-   This is used to create a PString wrapper around a constant char string. Thus
-   internal memory allocations are avoided as it does not change. The resultant
-   object can be used in almost every way that a PString does, except being
-   able modify it. However, copying to another PString instance and then
-   making modifications is OK.
-   
-   It is particularly useful in static string declarations, e.g.
-   <CODE>
-   static const PConstantString<PString> str("A test string");
-   </CODE>
-   and is completely thread safe in it's construction.
-  */
-template <class ParentString>
-class PConstantString : public ParentString
-{
-  private:
-    PContainerReference m_staticReference;
-  public:
-    PConstantString(typename ParentString::Initialiser init)
-      : ParentString(m_staticReference, init != NULL ? strlen(init) : 0)
-      , P_DISABLE_MSVC_WARNINGS(4267 4355, m_staticReference(this->m_length+1, true))
-    {
-      this->theArray = (char *)(init != NULL ? init : "");
-    }
-
-    PConstantString(const PConstantString & other)
-      : ParentString(m_staticReference, other.m_length)
-      , m_staticReference(other.m_length + 1, true)
-    {
-      this->theArray = other.theArray;
-    }
-
-    ~PConstantString()
-    {
-      this->Destruct();
-    }
-
-    virtual PBoolean SetSize(PINDEX s) { return s <= this->m_length+1; }
-    virtual void AssignContents(const PContainer &) { PAssertAlways(PInvalidParameter); }
-    virtual void DestroyReference() { this->reference = NULL; }
-
-  private:
-    void operator=(const PConstantString &) { }
-};
-
-
-/// Constant PString type. See PConstantString.
-typedef PConstantString<PString>         PConstString;
-
-/// Constant PCaselessString type. See PConstantString.
-typedef PConstantString<PCaselessString> PConstCaselessString;
+// For backward compatibility
+typedef const PString         PConstString;
+typedef const PCaselessString PConstCaselessString;
 
 
 #ifdef _WIN32
@@ -2172,143 +2004,41 @@ __inline PWideString & PWideString::operator=(const char        * str) { PWCharA
    All of the standard stream I/O operators, manipulators etc will operate on
    the PStringStream class.
  */
-class PStringStream : public PString, public std::iostream
+class PStringStream : public PObject, public std::stringstream
 {
-  PCLASSINFO(PStringStream, PString);
+  PCLASSINFO(PStringStream, PObject);
 
-  public:
-    /**Create a new, empty, string stream. Data may be output to this stream,
-       but attempts to input from it will return end of file.
+public:
+  /**Create a new, empty, string stream. Data may be output to this stream,
+     but attempts to input from it will return end of file.
 
-       The internal string is continually grown as required during output.
-     */
-    PStringStream();
+     The internal string is continually grown as required during output.
+   */
+  PStringStream() { }
+  PStringStream(const PString & str) : std::stringstream(str) { }
+  PStringStream(const char * cstr) : std::stringstream(cstr) { }
 
-    /**Create a new, empty, string stream of a fixed size. Data may be output
-       to this stream, but attempts to input from it will return end of file.
-       When the fixed size is reached then no more data may be output to it.
-     */
-    PStringStream(
-      PINDEX fixedBufferSize
-    );
+  PStringStream & operator=(const PStringStream & s) { str(s.str()); return *this; }
+  PStringStream & operator=(const PString & s) { str(s); return *this; }
+  PStringStream & operator=(const std::string & s) { str(s); return *this; }
+  PStringStream & operator=(const char * s) { str(s); return *this; }
+  PStringStream & operator=(char c) { str(std::string(1, c)); return *this; }
 
-    /**Create a new string stream and initialise it to the provided value. The
-       string stream references the same string buffer as the <code>str</code>
-       parameter until any output to the string stream is attempted. The
-       reference is then broken and the instance of the string stream becomes
-       a unique reference to a string buffer.
-     */
-    PStringStream(
-      const PString & str   ///< Initial value for string stream.
-    );
+  __inline void clear() { std::stringstream::clear(); }
 
-    /**Create a new string stream and initialise it with the provided value.
-       The stream may be read or written from. Writes will append to the end of
-       the string.
-     */
-    PStringStream(
-      const char * cstr   ///< Initial value for the string stream.
-    );
-
-    /// Destroy the string stream, deleting the stream buffer
-    virtual ~PStringStream();
-
-    /**Make the current string empty
-      */
-    virtual PString & MakeEmpty();
-
-    /**Assign the string part of the stream to the current object. The current
-       instance then becomes another reference to the same string in the <code>strm</code>
-       parameter.
-       
-       This will reset the read pointer for input to the beginning of the
-       string. Also, any data output to the string up until the asasignement
-       will be lost.
-
-       @return
-       reference to the current PStringStream object.
-     */
-    PStringStream & operator=(
-      const PStringStream & strm
-    );
-
-    /**Assign the string to the current object. The current instance then
-       becomes another reference to the same string in the <code>str</code>
-       parameter.
-       
-       This will reset the read pointer for input to the beginning of the
-       string. Also, any data output to the string up until the asasignement
-       will be lost.
-
-       @return
-       reference to the current PStringStream object.
-     */
-    PStringStream & operator=(
-      const PString & str  ///< New string to assign.
-    );
-
-    /**Assign the C string to the string stream. The current instance then
-       becomes a unique reference to a copy of the <code>cstr</code>
-       parameter. The <code>cstr</code> parameter is typically a literal
-       string, eg:
-<pre><code>
-          myStr = "fred";
-</code></pre>
-
-       This will reset the read pointer for input to the beginning of the
-       string. Also, any data output to the string up until the asasignement
-       will be lost.
-
-       @return
-       reference to the current PStringStream object.
-     */
-    PStringStream & operator=(
-      const char * cstr  ///< C string to assign.
-    );
-
-    /**Assign the character to the current object. The current instance then
-       becomes a unique reference to a copy of the character parameter. eg:
-<pre><code>
-          myStr = 'A';
-</code></pre>
-       @return
-       reference to the current PString object.
-     */
-    PStringStream & operator=(
-      char ch            ///< Character to assign.
-    );
-
-    // Miscellanous fix ups
-    __inline void clear() { std::iostream::clear(); }
-    virtual PINDEX GetLength() const;
-
-
-  protected:
-    virtual void AssignContents(const PContainer & cont);
-
-  private:
-    PStringStream(int, const PStringStream &)
-      : std::iostream(cout.rdbuf())
-    {
-    }
-
-    class Buffer : public std::streambuf {
-      public:
-        Buffer(PStringStream & str, PINDEX size);
-        Buffer(const Buffer & sbuf);
-        Buffer & operator=(const Buffer & sbuf);
-        virtual int_type overflow(int_type = EOF);
-        virtual int_type underflow();
-        virtual int sync();
-        virtual pos_type seekoff(std::streamoff, ios::seekdir, ios::openmode = ios::in | ios::out);
-        virtual pos_type seekpos(pos_type, ios::openmode = ios::in | ios::out);
-        PCharArray & string;
-        PBoolean     fixedBufferSize;
-    };
+  // Backward compatibility
+  PString MakeEmpty() { str(std::string()); return *this; }
+  operator PString() const { return str(); }
+  PINDEX GetLength() const { return str().length(); }
+  PString operator()(PINDEX start, PINDEX finish) const { return PString(str())(start, finish); }
+  bool IsEmpty() const { return rdbuf()->pubseekoff(0, ios_base::cur, ios_base::out) == 0; }
+  PStringStream & Replace(const PString & target, const PString & subs, bool all = false, PINDEX offset = 0) { PString s = str(); s.Replace(target, subs, all, offset); str(s); return *this; }
+  PStringStream & Splice(const PString & insert, PINDEX pos, PINDEX len = 0) { PString s = str(); s.Splice(insert, pos, len); str(s); return *this; }
+  PStringStream & Delete(PINDEX start, PINDEX len) { PString s = str(); s.Delete(start, len); str(s); return *this; }
 };
 
 
-__inline PString PSTRSTRM_support(const ostream & s) { return dynamic_cast<const PString &>(s); }
+__inline PString PSTRSTRM_support(const ostream & s) { return dynamic_cast<const std::stringstream &>(s).str(); }
 
 /**Output a stream expression to a string parameter.
    This allows a string parameter to a function use a stream expression to
@@ -2321,7 +2051,7 @@ __inline PString PSTRSTRM_support(const ostream & s) { return dynamic_cast<const
       DoSomething(PSTRSTRM("Fred used" << number << " of \"" << item << '"'));
 </code></pre>
  */
-#define PSTRSTRM(arg) PSTRSTRM_support(PStringStream() << std::flush << arg << std::flush)
+#define PSTRSTRM(arg) PSTRSTRM_support(std::stringstream() << std::flush << arg << std::flush)
 
 
 // Definition for template PString memeber function, needs to be after PStringStream

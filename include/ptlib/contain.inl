@@ -54,13 +54,22 @@ PINLINE PBoolean PContainer::IsUnique() const
 ///////////////////////////////////////////////////////////////////////////////
 
 PINLINE PString & PString::operator=(const PString & str)
-  { AssignContents(str); return *this; }
+  { std::string::operator=(str); return *this; }
+
+PINLINE PString & PString::operator=(const std::string & str)
+  { std::string::operator=(str); return *this; }
 
 PINLINE PString & PString::operator=(const char * cstr)
-  { AssignContents(PString(cstr)); return *this; }
+{
+  if (cstr != NULL)
+    std::string::operator=(cstr);
+  else
+    clear();
+  return *this;
+}
 
 PINLINE PString & PString::operator=(char ch)
-  { AssignContents(PString(ch)); return *this; }
+  { std::string::operator=(ch); return *this; }
 
 PINLINE PString PString::operator+(const PString & str) const
   { return operator+((const char *)str); }
@@ -164,9 +173,6 @@ PINLINE PString & PString::Splice(const PString & str, PINDEX pos, PINDEX len)
 PINLINE PStringArray PString::Tokenise(const PString & separators, PBoolean onePerSeparator) const
   { return Tokenise((const char *)separators, onePerSeparator); }
 
-PINLINE PString::operator const unsigned char *() const
-  { return (const unsigned char *)theArray; }
-
 PINLINE PString & PString::vsprintf(const PString & fmt, va_list args)
   { return vsprintf((const char *)fmt, args); }
 
@@ -185,38 +191,14 @@ PINLINE PCaselessString::PCaselessString(const char * cstr)
 PINLINE PCaselessString::PCaselessString(const PString & str)
   : PString(str) { }
 
-PINLINE PCaselessString::PCaselessString(int dummy,const PCaselessString * str)
-  : PString(dummy, str) { }
-
 PINLINE PCaselessString & PCaselessString::operator=(const PString & str)
-  { AssignContents(str); return *this; }
+  { PString::operator=(str); return *this; }
 
 PINLINE PCaselessString & PCaselessString::operator=(const char * cstr)
-  { AssignContents(PString(cstr)); return *this; }
+  { PString::operator=(cstr); return *this; }
 
 PINLINE PCaselessString & PCaselessString::operator=(char ch)
-  { AssignContents(PString(ch)); return *this; }
-
-
-///////////////////////////////////////////////////////////////////////////////
-
-PINLINE PStringStream::Buffer::Buffer(const Buffer & b)
-  : string(b.string) { }
-
-PINLINE PStringStream::Buffer& PStringStream::Buffer::operator=(const Buffer&b)
-  { string = b.string; return *this; }
-
-PINLINE PStringStream & PStringStream::operator=(const PStringStream & strm)
-  { AssignContents(strm); return *this; }
-
-PINLINE PStringStream & PStringStream::operator=(const PString & str)
-  { AssignContents(str); return *this; }
-
-PINLINE PStringStream & PStringStream::operator=(const char * cstr)
-  { AssignContents(PString(cstr)); return *this; }
-
-PINLINE PStringStream & PStringStream::operator=(char ch)
-  { AssignContents(PString(ch)); return *this; }
+  { PString::operator=(ch); return *this; }
 
 
 ///////////////////////////////////////////////////////////////////////////////
