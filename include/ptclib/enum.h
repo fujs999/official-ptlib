@@ -58,7 +58,8 @@ class NAPTRRecord : public PObject
     PString replacement;
 };
 
-PDECLARE_SORTED_LIST(NAPTRRecordList, PDNS::NAPTRRecord)
+class NAPTRRecordList : public PSortedList<PDNS::NAPTRRecord>
+{
   public:
     void PrintOn(ostream & strm) const;
 

@@ -275,7 +275,7 @@ class PIPCacheData : public PObject
 
 
 
-PDICTIONARY(PHostByName_private, PCaselessString, PIPCacheData);
+typedef PDictionary<PCaselessString, PIPCacheData> PHostByName_private;
 
 class PHostByName : PHostByName_private
 {
@@ -309,7 +309,7 @@ class PIPCacheKey : public PObject
     PIPSocket::Address addr;
 };
 
-PDICTIONARY(PHostByAddr_private, PIPCacheKey, PIPCacheData);
+typedef PDictionary<PIPCacheKey, PIPCacheData> PHostByAddr_private;
 
 class PHostByAddr : PHostByAddr_private
 {

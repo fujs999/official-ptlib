@@ -67,15 +67,6 @@ struct PListInfo
    The class remembers the last accessed element. This state information is
    used to optimise access by the "virtual array" model of collections. If
    access via ordinal index is made sequentially there is little overhead.
-
-   The PAbstractList class would very rarely be descended from directly by
-   the user. The <code>PDECLARE_LIST</code> and <code>PLIST</code> macros would normally
-   be used to create descendent classes. They will instantiate the template
-   based on <code>PList</code> or directly declare and define the class (using
-   inline functions) if templates are not being used.
-
-   The <code>PList</code> class or <code>PDECLARE_LIST</code> macro will define the
-   correctly typed operators for subscript access (operator[]).
  */
 class PAbstractList : public PCollection
 {
@@ -315,9 +306,6 @@ class PAbstractList : public PCollection
 
 /**This template class maps the PAbstractList to a specific object type. The
    functions in this class primarily do all the appropriate casting of types.
-
-   Note that if templates are not used the <code>PDECLARE_LIST</code> macro will
-   simulate the template instantiation.
  */
 template <class T> class PList : public PAbstractList
 {
@@ -442,43 +430,6 @@ template <class T> class PList : public PAbstractList
 };
 
 
-/**Declare a list class.
-   This macro is used to declare a descendent of PAbstractList class,
-   customised for a particular object type <b>T</b>. This macro closes the
-   class declaration off so no additional members can be added.
-
-   If the compilation is using templates then this macro produces a typedef
-   of the <code>PList</code> template class.
-
-   See the <code>PList</code> class and <code>PDECLARE_LIST</code> macro for more
-   information.
- */
-#define PLIST(cls, T) typedef PList<T> cls
-
-/**Begin declaration of list class.
-   This macro is used to declare a descendent of PAbstractList class,
-   customised for a particular object type <b>T</b>.
-
-   If the compilation is using templates then this macro produces a descendent
-   of the <code>PList</code> template class. If templates are not being used then the
-   macro defines a set of inline functions to do all casting of types. The
-   resultant classes have an identical set of functions in either case.
-
-   See the <code>PList</code> and <code>PAbstractList</code> classes for more information.
- */
-#define PDECLARE_LIST(cls, T) \
-  PLIST(cls##_PTemplate, T); \
-  PDECLARE_CLASS(cls, PList<T>) \
-  protected: \
-    cls(int dummy, const cls * c) \
-      : PList<T>(dummy, c) { } \
-  public: \
-    cls() \
-      : PList<T>() { } \
-    virtual PObject * Clone() const \
-      { return PNEW cls(0, this); } \
-
-
 /**This template class maps the PAbstractList to a specific object type, and
    adds functionality that allows the list to be used as a first in first out
    queue. The functions in this class primarily do all the appropriate casting
@@ -539,46 +490,6 @@ template <class T> class PQueue : public PAbstractList
       : PAbstractList(dummy, c)
       { reference->deleteObjects = c->reference->deleteObjects; }
 };
-
-
-/**Declare a queue class.
-   This macro is used to declare a descendent of PAbstractList class,
-   customised for a particular object type <b>T</b>, and adds functionality
-   that allows the list to be used as a first in first out queue. This macro
-   closes the class declaration off so no additional members can be added.
-
-   If the compilation is using templates then this macro produces a typedef
-   of the <code>PQueue</code> template class.
-
-   See the <code>PList</code> class and <code>PDECLARE_QUEUE</code> macro for more
-   information.
- */
-#define PQUEUE(cls, T) typedef PQueue<T> cls
-
-
-/**Begin declataion of a queue class.
-   This macro is used to declare a descendent of PAbstractList class,
-   customised for a particular object type <b>T</b>, and adds functionality
-   that allows the list to be used as a first in first out queue.
-
-   If the compilation is using templates then this macro produces a descendent
-   of the <code>PQueue</code> template class. If templates are not being used then
-   the macro defines a set of inline functions to do all casting of types. The
-   resultant classes have an identical set of functions in either case.
-
-   See the <code>PQueue</code> and <code>PAbstractList</code> classes for more information.
- */
-#define PDECLARE_QUEUE(cls, T) \
-  PQUEUE(cls##_PTemplate, T); \
-  PDECLARE_CLASS(cls, cls##_PTemplate) \
-  protected: \
-    cls(int dummy, const cls * c) \
-      : cls##_PTemplate(dummy, c) { } \
-  public: \
-    cls() \
-      : cls##_PTemplate() { } \
-    virtual PObject * Clone() const \
-      { return PNEW cls(0, this); } \
 
 
 /**This template class maps the PAbstractList to a specific object type, and
@@ -657,46 +568,6 @@ template <class T> class PStack : public PAbstractList
 };
 
 
-/**Declare a stack class.
-   This macro is used to declare a descendent of PAbstractList class,
-   customised for a particular object type <b>T</b>, and adds functionality
-   that allows the list to be used as a last in first out stack. This macro
-   closes the class declaration off so no additional members can be added.
-
-   If the compilation is using templates then this macro produces a typedef
-   of the <code>PStack</code> template class.
-
-   See the <code>PStack</code> class and <code>PDECLARE_STACK</code> macro for more
-   information.
- */
-#define PSTACK(cls, T) typedef PStack<T> cls
-
-
-/**Begin declaration of a stack class.
-   This macro is used to declare a descendent of PAbstractList class,
-   customised for a particular object type <b>T</b>, and adds functionality
-   that allows the list to be used as a last in first out stack.
-
-   If the compilation is using templates then this macro produces a descendent
-   of the <code>PStack</code> template class. If templates are not being used then
-   the macro defines a set of inline functions to do all casting of types. The
-   resultant classes have an identical set of functions in either case.
-
-   See the <code>PStack</code> and <code>PAbstractList</code> classes for more information.
- */
-#define PDECLARE_STACK(cls, T) \
-  PSTACK(cls##_PTemplate, T); \
-  PDECLARE_CLASS(cls, cls##_PTemplate) \
-  protected: \
-    cls(int dummy, const cls * c) \
-      : cls##_PTemplate(dummy, c) { } \
-  public: \
-    cls() \
-      : cls##_PTemplate() { } \
-    virtual PObject * Clone() const \
-      { return PNEW cls(0, this); } \
-
-
 ///////////////////////////////////////////////////////////////////////////////
 // Sorted List of PObjects
 
@@ -746,16 +617,6 @@ struct PSortedListInfo
    used to optimise access by the "virtual array" model of collections. If
    repeated access via ordinal index is made there is little overhead. All
    other access incurs a minimum overhead, but not insignificant.
-
-   The PAbstractSortedList class would very rarely be descended from directly
-   by the user. The <code>PDECLARE_LIST</code> and <code>PLIST</code> macros would normally
-   be used to create descendent classes. They will instantiate the template
-   based on <code>PSortedList</code> or directly declare and define the class (using
-   inline functions) if templates are not being used.
-
-   The <code>PSortedList</code> class or <code>PDECLARE_SORTED_LIST</code> macro will
-   define the correctly typed operators for subscript access
-   (operator[]).
  */
 class PAbstractSortedList : public PCollection
 {
@@ -959,9 +820,6 @@ class PAbstractSortedList : public PCollection
 /**This template class maps the PAbstractSortedList to a specific object type.
    The functions in this class primarily do all the appropriate casting of
    types.
-
-   Note that if templates are not used the <code>PDECLARE_SORTED_LIST</code> macro
-   will simulate the template instantiation.
  */
 template <class T> class PSortedList : public PAbstractSortedList
 {
@@ -1106,45 +964,6 @@ template <class T> class PSortedList : public PAbstractSortedList
     PSortedList(int dummy, const PSortedList * c)
       : PAbstractSortedList(dummy, c) { }
 };
-
-
-/**Declare a sorted list class.
-   This macro is used to declare a descendent of PAbstractSortedList class,
-   customised for a particular object type <b>T</b>. This macro closes the
-   class declaration off so no additional members can be added.
-
-   If the compilation is using templates then this macro produces a typedef
-   of the <code>PSortedList</code> template class.
-
-   See the <code>PSortedList</code> class and <code>PDECLARE_SORTED_LIST</code> macro for
-   more information.
- */
-#define PSORTED_LIST(cls, T) typedef PSortedList<T> cls
-
-
-/**Begin declaration of a sorted list class.
-   This macro is used to declare a descendent of PAbstractSortedList class,
-   customised for a particular object type <b>T</b>.
-
-   If the compilation is using templates then this macro produces a descendent
-   of the <code>PSortedList</code> template class. If templates are not being used
-   then the macro defines a set of inline functions to do all casting of types.
-   The resultant classes have an identical set of functions in either case.
-
-   See the <code>PSortedList</code> and <code>PAbstractSortedList</code> classes for more
-   information.
- */
-#define PDECLARE_SORTED_LIST(cls, T) \
-  PSORTED_LIST(cls##_PTemplate, T); \
-  PDECLARE_CLASS(cls, PSortedList<T>) \
-  protected: \
-    cls(int dummy, const cls * c) \
-      : PSortedList<T>(dummy, c) { } \
-  public: \
-    cls() \
-      : PSortedList<T>() { } \
-    virtual PObject * Clone() const \
-      { return PNEW cls(0, this); } \
 
 
 #endif // PTLIB_LISTS_H

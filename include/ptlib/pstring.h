@@ -2075,9 +2075,6 @@ class PStringSet;
    <code>PString</code> reference instead of a pointer as most standard collection
    functions do. This is more convenient for when string expressions are used
    as parameters to function in the collection.
-
-   See the <code>PAbstractArray</code> and <code>PArray</code> classes and
-   <code>PDECLARE_ARRAY</code> macro for more information.
 */
 class PStringArray : public PArray<PString>
 {
@@ -2272,9 +2269,6 @@ class PStringArray : public PArray<PString>
    <code>PString</code> reference instead of a pointer as most standard collection
    functions do. This is more convenient for when string expressions are used
    as parameters to function in the collection.
-
-   See the <code>PAbstractList</code> and <code>PList</code> classes and
-   <code>PDECLARE_LIST</code> macro for more information.
  */
 class PStringList : public PList<PString>
 {
@@ -2531,9 +2525,6 @@ class PSortedStringList : public PSortedList<PString>
    Unlike the normal sets, this will delete the PStrings removed from it. This
    complements the automatic creation of new PString objects when literals or
    expressions are used.
-
-   See the <code>PAbstractSet</code> and <code>PSet</code> classes and <code>PDECLARE_SET</code>
-   macro for more information.
  */
 class PStringSet : public PSet<PString>
 {
@@ -2754,10 +2745,6 @@ template <class K> class PStringDictionary : public PDictionary<K, PString>
    <code>PString</code> reference instead of a pointer as most standard collection
    functions do. This is more convenient for when string expressions are used
    as parameters to function in the collection.
-
-   See the <code>PAbstractDictionary</code> and <code>PStringDictionary</code> classes and
-   <code>PDECLARE_DICTIONARY</code> and <code>PDECLARE_STRING_DICTIONARY</code> macros for
-   more information.
  */
 #ifdef DOC_PLUS_PLUS
 class POrdinalToString : public PStringDictionary {
@@ -2806,13 +2793,13 @@ PDECLARE_STRING_DICTIONARY(POrdinalToString, POrdinalKey);
 
    See the PAbstractDicionary and POrdinalDictionary classes for more information.
  */
-#ifdef DOC_PLUS_PLUS
-class PStringToOrdinal : public POrdinalDictionary {
-#endif
-PDECLARE_ORDINAL_DICTIONARY(PStringToOrdinal, PString);
+class PStringToOrdinal : public POrdinalDictionary<PString>
+{
   public:
   /**@name Construction */
   //@{
+    PStringToOrdinal() {}
+
     /// Structure for static array initialiser for class.
     struct Initialiser {
       /// String key for ordinal.
@@ -2859,10 +2846,6 @@ PDECLARE_ORDINAL_DICTIONARY(PStringToOrdinal, PString);
    <code>PString</code> reference instead of a pointer as most standard collection
    functions do. This is more convenient for when string expressions are used
    as parameters to function in the collection.
-
-   See the <code>PAbstractDictionary</code> and <code>PStringDictionary</code> classes and
-   <code>PDECLARE_DICTIONARY</code> and <code>PDECLARE_STRING_DICTIONARY</code> macros for
-   more information.
  */
 #ifdef DOC_PLUS_PLUS
 class PStringToString : public PStringDictionary {

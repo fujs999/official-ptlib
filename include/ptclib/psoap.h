@@ -136,7 +136,7 @@ class PSOAPServerMethod : public PString
     PNotifier methodFunc;
 };
 
-PSORTED_LIST(PSOAPServerMethodList, PSOAPServerMethod);
+typedef PSortedList<PSOAPServerMethod> PSOAPServerMethodList;
 
 
 //! This resource will bind the methods to an http resource (a url)

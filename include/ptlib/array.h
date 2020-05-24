@@ -51,16 +51,6 @@
    PContainer::GetSize() elements of <code>elementSize</code> bytes
    each. The memory block itself will automatically be resized when required
    and freed when no more references to it are present.
-
-   The PAbstractArray class would very rarely be descended from directly by
-   the user. The <code>PBASEARRAY</code> macro would normally be used to create
-   a class and any new classes descended from that. That will instantiate the
-   template based on <code>PBaseArray</code> or directly declare and define a class
-   (using inline functions) if templates are not being used.
-
-   The <code>PBaseArray</code> class or <code>PBASEARRAY</code> macro will define the correctly
-   typed operators for pointer access (operator const T *) and subscript
-   access (operator[]).
  */
 class PAbstractArray : public PContainer
 {
@@ -71,11 +61,6 @@ class PAbstractArray : public PContainer
     /**Create a new dynamic array of \p initalSize elements of
        \p elementSizeInBytes bytes each. The array memory is
        initialised to zeros.
-
-       If the initial size is zero then no memory is allocated. Note that the
-       internal pointer is set to NULL, not to a pointer to zero bytes of
-       memory. This can be an important distinction when the pointer is
-       obtained via an operator created in the <code>PBASEARRAY</code> macro.
      */
     PAbstractArray(
       PINDEX elementSizeInBytes,  ///< Size of each element in the array. This must be > 0 or the
@@ -87,11 +72,6 @@ class PAbstractArray : public PContainer
        elements of \p elementSizeInBytes bytes each. The contents of
        the memory pointed to by buffer is then used to initialise the newly
        allocated array.
-
-       If the initial size is zero then no memory is allocated. Note that the
-       internal pointer is set to NULL, not to a pointer to zero bytes of
-       memory. This can be an important distinction when the pointer is
-       obtained via an operator created in the <code>PBASEARRAY</code> macro.
 
        If the \p dynamicAllocation parameter is <code>false</code> then the
        pointer is used directly by the container. It will not be copied to a
@@ -258,9 +238,6 @@ class PAbstractArray : public PContainer
 
 /**This template class maps the <code>PAbstractArray</code> to a specific element type. The
    functions in this class primarily do all the appropriate casting of types.
-
-   Note that if templates are not used the <code>PBASEARRAY</code> macro will
-   simulate the template instantiation.
 
    The following classes are instantiated automatically for the basic scalar
    types:
@@ -451,40 +428,6 @@ template <class T> class PBaseArray : public PAbstractArray
     PBaseArray(PContainerReference & reference_) : PAbstractArray(reference_, sizeof(T)) { }
 };
 
-/**Declare a dynamic array base type.
-   This macro is used to declare a descendent of <code>PAbstractArray</code> class,
-   customised for a particular element type \b T. This macro closes the
-   class declaration off so no additional members can be added.
-
-   If the compilation is using templates then this macro produces a typedef
-   of the <code>PBaseArray</code> template class.
- */
-#define PBASEARRAY(cls, T) typedef PBaseArray<T> cls
-
-/**Begin a declaration of an array of base types.
-   This macro is used to declare a descendent of <code>PAbstractArray</code> class,
-   customised for a particular element type \b T.
-
-   If the compilation is using templates then this macro produces a descendent
-   of the <code>PBaseArray</code> template class. If templates are not being used
-   then the macro defines a set of inline functions to do all casting of types.
-   The resultant classes have an identical set of functions in either case.
-
-   See the <code>PBaseArray</code> and <code>PAbstractArray</code> classes for more
-   information.
- */
-#define PDECLARE_BASEARRAY(cls, T) \
-  PDECLARE_CLASS(cls, PBaseArray<T>) \
-    cls(PINDEX initialSize = 0) \
-      : PBaseArray<T>(initialSize) { } \
-    cls(PContainerReference & reference_) \
-      : PBaseArray<T>(reference_) { } \
-    cls(T const * buffer, PINDEX length, PBoolean dynamic = true) \
-      : PBaseArray<T>(buffer, length, dynamic) { } \
-    virtual PObject * Clone() const \
-      { return PNEW cls(*this, GetSize()); } \
-
-
 /**This template class maps the <code>PAbstractArray</code> to a specific element type. The
    functions in this class primarily do all the appropriate casting of types.
 
@@ -535,17 +478,6 @@ template <class T> class PScalarArray : public PBaseArray<T>
         this->SetAt(index, t);
     }
 };
-
-
-/**Declare a dynamic array base type.
-   This macro is used to declare a descendent of <code>PAbstractArray</code> class,
-   customised for a particular element type \b T. This macro closes the
-   class declaration off so no additional members can be added.
-
-   If the compilation is using templates then this macro produces a typedef
-   of the <code>PBaseArray</code> template class.
- */
-#define PSCALAR_ARRAY(cls, T) typedef PScalarArray<T> cls
 
 
 /// Array of characters.
@@ -701,15 +633,6 @@ as all other objects must be moved to accommodate the change.
 
 An array of objects may have "gaps" in it. These are array entries that
 contain NULL as the object pointer.
-
-The PArrayObjects class would very rarely be descended from directly by
-the user. The <code>PARRAY</code> macro would normally be used to create a class.
-That will instantiate the template based on <code>PArray</code> or directly declare
-and define the class (using inline functions) if templates are not being used.
-
-The <code>PArray</code> class or <code>PARRAY</code> macro will define the
-correctly typed operators for pointer access (operator const T *) and
-subscript access (operator[]).
 */
 class PArrayObjects : public PCollection
 {
@@ -918,9 +841,6 @@ class PArrayObjects : public PCollection
 /**\class PArray
    This template class maps the <code>PArrayObjects</code> to a specific object type.
    The functions in this class primarily do all the appropriate casting of types.
-
-   Note that if templates are not used the <code>PARRAY</code> macro will
-   simulate the template instantiation.
 */
 template <class T> class PArray : public PArrayObjects
 {
@@ -969,45 +889,6 @@ template <class T> class PArray : public PArrayObjects
   protected:
     PArray(int dummy, const PArray * c) : PArrayObjects(dummy, c) { }
 };
-
-
-/**Declare an array to a specific type of object.
-   This macro is used to declare a descendent of <code>PArrayObjects</code> class,
-   customised for a particular object type \b T. This macro closes the
-   class declaration off so no additional members can be added.
-
-   If the compilation is using templates then this macro produces a typedef
-   of the <code>PArray</code> template class.
-
-   See the <code>PBaseArray</code> class and <code>PDECLARE_ARRAY</code> macro for more
-   information.
-*/
-#define PARRAY(cls, T) typedef PArray<T> cls
-
-
-/**Begin declaration an array to a specific type of object.
-   This macro is used to declare a descendent of <code>PArrayObjects</code> class,
-   customised for a particular object type \b T.
-
-   If the compilation is using templates then this macro produces a descendent
-   of the <code>PArray</code> template class. If templates are not being used then
-   the macro defines a set of inline functions to do all casting of types. The
-   resultant classes have an identical set of functions in either case.
-
-   See the <code>PBaseArray</code> and <code>PAbstractArray</code> classes for more
-   information.
-*/
-#define PDECLARE_ARRAY(cls, T) \
-  PARRAY(cls##_PTemplate, T); \
-  PDECLARE_CLASS(cls, cls##_PTemplate) \
-  protected: \
-    inline cls(int dummy, const cls * c) \
-      : cls##_PTemplate(dummy, c) { } \
-  public: \
-    inline cls(PINDEX initialSize = 0) \
-      : cls##_PTemplate(initialSize) { } \
-    virtual PObject * Clone() const \
-      { return PNEW cls(0, this); } \
 
 
 /**This class represents a dynamic bit array.

@@ -676,7 +676,7 @@ class PIPSocket : public PSocket
       friend class PIPSocket;
     };
 
-    PARRAY(RouteTable, RouteEntry);
+    typedef PArray<RouteEntry> RouteTable;
 
     /**Get the systems route table.
 
@@ -760,7 +760,7 @@ class PIPSocket : public PSocket
       friend class PIPSocket;
     };
 
-    PARRAY(InterfaceTable, InterfaceEntry);
+    typedef PArray<InterfaceEntry> InterfaceTable;
 
     /**Get a list of all interfaces.
        @return

@@ -503,9 +503,6 @@ class PAbstractSet : public PHashTable
    By default, objects placed into the set will \b not be deleted when
    removed or when all references to the set are destroyed. This is different
    from the default on most collection classes.
-
-   Note that if templates are not used the <code>PDECLARE_SET</code> macro will
-   simulate the template instantiation.
  */
 template <class T> class PSet : public PAbstractSet
 {
@@ -719,47 +716,6 @@ template <class T> class PSet : public PAbstractSet
 };
 
 
-/**Declare set class.
-   This macro is used to declare a descendent of <code>PAbstractSet</code> class,
-   customised for a particular object type \b T. This macro closes the
-   class declaration off so no additional members can be added.
-
-   If the compilation is using templates then this macro produces a typedef
-   of the <code>PSet</code> template class.
-
-   See the <code>PSet</code> class and <code>PDECLARE_SET</code> macro for more
-   information.
- */
-#define PSET(cls, T) typedef PSet<T> cls
-
-
-/**Begin declaration of a set class.
-   This macro is used to declare a descendent of <code>PAbstractSet</code> class,
-   customised for a particular object type \b T.
-
-   If the compilation is using templates then this macro produces a descendent
-   of the <code>PSet</code> template class. If templates are not being used then the
-   macro defines a set of inline functions to do all casting of types. The
-   resultant classes have an identical set of functions in either case.
-
-   See the <code>PSet</code> and <code>PAbstractSet</code> classes for more information.
- */
-#define PDECLARE_SET(cls, T, initDelObj) \
-  class cls : public PSet<T> { \
-    typedef PSet<T> BaseClass; PCLASSINFO(cls, BaseClass) \
-  protected: \
-    cls(int dummy, const cls * c) \
-      : BaseClass(dummy, c) { } \
-  public: \
-    cls(PBoolean initialDeleteObjects = initDelObj) \
-      : BaseClass(initialDeleteObjects) { } \
-    virtual PObject * Clone() const \
-      { return PNEW cls(0, this); } \
-
-
-/// A set of ordinal integers
-PDECLARE_SET(POrdinalSet, POrdinalKey, true)
-};
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -977,9 +933,6 @@ class PAbstractDictionary : public PHashTable
 /**This template class maps the <code>PAbstractDictionary</code> to a specific key and data
    types. The functions in this class primarily do all the appropriate casting
    of types.
-
-   Note that if templates are not used the <code>PDECLARE_DICTIONARY</code> macro
-   will simulate the template instantiation.
  */
 template <class K, class D> class PDictionary : public PAbstractDictionary
 {
@@ -1259,46 +1212,6 @@ template <class K, class D> class PDictionary : public PAbstractDictionary
 };
 
 
-/**Declare a dictionary class.
-   This macro is used to declare a descendent of PAbstractDictionary class,
-   customised for a particular key type \b K and data object type \b D.
-   This macro closes the class declaration off so no additional members can
-   be added.
-
-   If the compilation is using templates then this macro produces a typedef
-   of the <code>PDictionary</code> template class.
-
-   See the <code>PDictionary</code> class and <code>PDECLARE_DICTIONARY</code> macro for
-   more information.
- */
-#define PDICTIONARY(cls, K, D) typedef PDictionary<K, D> cls
-
-
-/**Begin declaration of dictionary class.
-   This macro is used to declare a descendent of PAbstractDictionary class,
-   customised for a particular key type \b K and data object type \b D.
-
-   If the compilation is using templates then this macro produces a descendent
-   of the <code>PDictionary</code> template class. If templates are not being used
-   then the macro defines a set of inline functions to do all casting of types.
-   The resultant classes have an identical set of functions in either case.
-
-   See the <code>PDictionary</code> and <code>PAbstractDictionary</code> classes for more
-   information.
- */
-#define PDECLARE_DICTIONARY(cls, K, D) \
-  PDICTIONARY(cls##_PTemplate, K, D); \
-  PDECLARE_CLASS(cls, cls##_PTemplate) \
-  protected: \
-    cls(int dummy, const cls * c) \
-      : cls##_PTemplate(dummy, c) { } \
-  public: \
-    cls() \
-      : cls##_PTemplate() { } \
-    virtual PObject * Clone() const \
-      { return PNEW cls(0, this); } \
-
-
 /**This template class maps the <code>PAbstractDictionary</code> to a specific key
    type and a <code>POrdinalKey</code> data type. The functions in this class
    primarily do all the appropriate casting of types.
@@ -1429,48 +1342,6 @@ template <class K> class POrdinalDictionary : public PDictionary<K, POrdinalKey>
     POrdinalDictionary(int dummy, const POrdinalDictionary * c)
       : ParentClass(dummy, c) { }
 };
-
-
-/**Declare an ordinal dictionary class.
-   This macro is used to declare a descendent of PAbstractDictionary class,
-   customised for a particular key type \b K and data object type of
-   <code>POrdinalKey</code>. This macro closes the class declaration off so no
-   additional members can be added.
-
-   If the compilation is using templates then this macro produces a typedef
-   of the <code>POrdinalDictionary</code> template class.
-
-   See the <code>POrdinalDictionary</code> class and
-   <code>PDECLARE_ORDINAL_DICTIONARY</code> macro for more information.
- */
-#define PORDINAL_DICTIONARY(cls, K) typedef POrdinalDictionary<K> cls
-
-
-/**Begin declaration of an ordinal dictionary class.
-   This macro is used to declare a descendent of PAbstractList class,
-   customised for a particular key type \b K and data object type of
-   <code>POrdinalKey</code>.
-
-   If the compilation is using templates then this macro produces a descendent
-   of the <code>POrdinalDictionary</code> template class. If templates are not being
-   used then the macro defines a set of inline functions to do all casting of
-   types. The resultant classes have an identical set of functions in either
-   case.
-
-   See the <code>POrdinalDictionary</code> and <code>PAbstractDictionary</code> classes
-   for more information.
- */
-#define PDECLARE_ORDINAL_DICTIONARY(cls, K) \
-  PORDINAL_DICTIONARY(cls##_PTemplate, K); \
-  PDECLARE_CLASS(cls, POrdinalDictionary<K>) \
-  protected: \
-    cls(int dummy, const cls * c) \
-      : cls##_PTemplate(dummy, c) { } \
-  public: \
-    cls() \
-      : cls##_PTemplate() { } \
-    virtual PObject * Clone() const \
-      { return PNEW cls(0, this); } \
 
 
 #endif // PTLIB_DICT_H

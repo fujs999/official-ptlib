@@ -164,7 +164,7 @@ class PIpAccessControlEntry : public PObject
     PBoolean               hidden;
 };
 
-PSORTED_LIST(PIpAccessControlList_base, PIpAccessControlEntry);
+typedef PList<PIpAccessControlEntry> PIpAccessControlList_base;
 
 
 /** This class is a list of IP address mask specifications used to validate if

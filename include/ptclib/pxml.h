@@ -363,7 +363,6 @@ class PXMLObject : public PObject
   P_REMOVE_VIRTUAL(PXMLObject *, Clone(PXMLElement *) const, 0);
 };
 
-PARRAY(PXMLObjectArray, PXMLObject);
 
 ////////////////////////////////////////////////////////////
 
@@ -459,8 +458,8 @@ class PXMLElement : public PXMLObject
 
     PString GetData(bool trim = true) const;
 
-    PXMLObjectArray  GetSubObjects() const
-      { return m_subObjects; }
+    const PArray<PXMLObject> & GetSubObjects() const { return m_subObjects; }
+          PArray<PXMLObject> & GetSubObjects()       { return m_subObjects; }
 
     void SetData(const PString & data);
     virtual PXMLData * AddData(const PString & data);

@@ -244,7 +244,7 @@ namespace XMPP
     static PString GenerateID();
   };
 
-  PLIST(StanzaList, Stanza);
+  typedef PList<Stanza> StanzaList;
 
 
   class Message : public Stanza
@@ -450,7 +450,8 @@ namespace XMPP
       const PString m_Node;
     };
 
-    PDECLARE_LIST(ItemList, Item)
+    class ItemList : public PList<Item>
+    {
     public:
       ItemList(PXMLElement * list);
       PXMLElement * AsXML(PXMLElement * parent) const;
@@ -475,9 +476,10 @@ namespace XMPP
       const PString m_Name;
     };
 
-    PDECLARE_LIST(IdentityList, Identity)
+    class IdentityList : public PList<Identity>
+    {
     public:
-      IdentityList(PXMLElement * list);
+      IdentityList(PXMLElement * list = nullptr);
       PXMLElement * AsXML(PXMLElement * parent) const;
     };
 

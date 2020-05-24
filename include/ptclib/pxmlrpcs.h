@@ -46,7 +46,7 @@ class PXMLRPCServerMethod : public PString
 };
 
 
-PSORTED_LIST(PXMLRPCServerMethodList, PXMLRPCServerMethod);
+typedef PSortedList<PXMLRPCServerMethod> PXMLRPCServerMethodList;
 
 
 class PXMLRPCServerResource : public PHTTPResource

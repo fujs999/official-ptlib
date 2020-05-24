@@ -130,7 +130,7 @@ class PHTTPSpace : public PContainer
     PReadWriteMutex * mutex;
 
     class Node;
-    PSORTED_LIST(ChildList, Node);
+    typedef PSortedList<Node> ChildList;
     class Node : public PString
     {
       PCLASSINFO(Node, PString)

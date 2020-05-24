@@ -269,7 +269,8 @@ class SRVRecord : public PObject
     WORD weight;
 };
 
-PDECLARE_SORTED_LIST(SRVRecordList, PDNS::SRVRecord)
+class SRVRecordList : public PSortedList<PDNS::SRVRecord>
+{
   public:
     void PrintOn(ostream & strm) const;
 
@@ -353,7 +354,8 @@ class MXRecord : public PObject
     WORD               preference;
 };
 
-PDECLARE_SORTED_LIST(MXRecordList, PDNS::MXRecord)
+class MXRecordList : public PSortedList<PDNS::MXRecord>
+{
   public:
     void PrintOn(ostream & strm) const;
 
