@@ -4,7 +4,7 @@
  * Extensible Messaging and Presence Protocol (XMPP) IM
  * Roster management classes
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 2004 Reitek S.p.A.
  *
@@ -18,7 +18,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Post Increment
  *
@@ -62,7 +62,7 @@ XMPP::Roster::Item::Item(const JID& jid, ItemType type, const PString& group, co
 }
 
 
-void XMPP::Roster::Item::AddGroup(const PString& group, PBoolean dirty)
+void XMPP::Roster::Item::AddGroup(const PString& group, bool dirty)
 {
   if (group.IsEmpty())
     return;
@@ -74,7 +74,7 @@ void XMPP::Roster::Item::AddGroup(const PString& group, PBoolean dirty)
 }
 
 
-void XMPP::Roster::Item::RemoveGroup(const PString& group, PBoolean dirty)
+void XMPP::Roster::Item::RemoveGroup(const PString& group, bool dirty)
 {
   if (m_Groups.Contains(group) && dirty)
     SetDirty();
@@ -188,7 +188,7 @@ XMPP::Roster::Item * XMPP::Roster::FindItem(const PString& jid)
 }
 
 
-PBoolean XMPP::Roster::SetItem(Item * item, PBoolean localOnly)
+bool XMPP::Roster::SetItem(Item * item, bool localOnly)
 {
   if (item == NULL)
     return false;
@@ -217,7 +217,7 @@ PBoolean XMPP::Roster::SetItem(Item * item, PBoolean localOnly)
 }
 
 
-PBoolean XMPP::Roster::RemoveItem(const PString& jid, PBoolean localOnly)
+bool XMPP::Roster::RemoveItem(const PString& jid, bool localOnly)
 {
   Item * item = FindItem(jid);
 
@@ -239,7 +239,7 @@ PBoolean XMPP::Roster::RemoveItem(const PString& jid, PBoolean localOnly)
 }
 
 
-PBoolean XMPP::Roster::RemoveItem(Item * item, PBoolean localOnly)
+bool XMPP::Roster::RemoveItem(Item * item, bool localOnly)
 {
   if (item == NULL)
     return false;
@@ -282,7 +282,7 @@ void XMPP::Roster::Detach()
 }
 
 
-void XMPP::Roster::Refresh(PBoolean sendPresence)
+void XMPP::Roster::Refresh(bool sendPresence)
 {
   if (m_Handler == NULL)
     return;

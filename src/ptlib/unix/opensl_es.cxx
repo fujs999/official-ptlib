@@ -404,13 +404,13 @@ class PSoundChannel_OpenSL_ES : public PSoundChannel
     }
 
 
-    virtual PBoolean IsOpen() const
+    virtual bool IsOpen() const
     {
       return m_bufferQueue.IsValid();
     }
 
 
-    virtual PBoolean Close()
+    virtual bool Close()
     {
       PTRACE_IF(4, IsOpen(), "Closing \"" << GetName() << '"');
 
@@ -431,7 +431,7 @@ class PSoundChannel_OpenSL_ES : public PSoundChannel
     }
 
 
-    virtual PBoolean Abort()
+    virtual bool Abort()
     {
       if (CheckNotOpen())
         return false;
@@ -464,7 +464,7 @@ class PSoundChannel_OpenSL_ES : public PSoundChannel
     }
 
 
-    virtual PBoolean Write(const void * buf, PINDEX len)
+    virtual bool Write(const void * buf, PINDEX len)
     {
       SetLastWriteCount(0);
 
@@ -496,13 +496,13 @@ class PSoundChannel_OpenSL_ES : public PSoundChannel
     }
 
 
-    virtual PBoolean HasPlayCompleted()
+    virtual bool HasPlayCompleted()
     {
       return m_queue.GetLength() == 0;
     }
 
 
-    virtual PBoolean WaitForPlayCompletion()
+    virtual bool WaitForPlayCompletion()
     {
       while (!HasPlayCompleted()) {
         PThread::Sleep(m_buffers[0].size()*1000/GetSampleRate());
@@ -513,7 +513,7 @@ class PSoundChannel_OpenSL_ES : public PSoundChannel
     }
 
 
-    virtual PBoolean Read(void * buf, PINDEX len)
+    virtual bool Read(void * buf, PINDEX len)
     {
       SetLastReadCount(0);
 
@@ -531,7 +531,7 @@ class PSoundChannel_OpenSL_ES : public PSoundChannel
     }
 
 
-    virtual PBoolean StartRecording()
+    virtual bool StartRecording()
     {
       if (CheckNotOpen())
         return false;
@@ -560,7 +560,7 @@ class PSoundChannel_OpenSL_ES : public PSoundChannel
     }
 
 
-    virtual PBoolean SetFormat(unsigned numChannels, unsigned sampleRate, unsigned bitsPerSample)
+    virtual bool SetFormat(unsigned numChannels, unsigned sampleRate, unsigned bitsPerSample)
     {
       if (numChannels == GetChannels()&&
           sampleRate == GetSampleRate() &&
@@ -610,7 +610,7 @@ class PSoundChannel_OpenSL_ES : public PSoundChannel
     }
 
 
-    virtual PBoolean SetBuffers(PINDEX size, PINDEX count)
+    virtual bool SetBuffers(PINDEX size, PINDEX count)
     {
       if (size ==  m_buffers[0].size() && count == m_queue.GetSize()/size)
         return true;
@@ -637,7 +637,7 @@ class PSoundChannel_OpenSL_ES : public PSoundChannel
     }
 
 
-    virtual PBoolean GetBuffers(PINDEX & size, PINDEX & count)
+    virtual bool GetBuffers(PINDEX & size, PINDEX & count)
     {
       size = m_buffers[0].size();
       count = m_queue.GetSize()/size;
@@ -645,7 +645,7 @@ class PSoundChannel_OpenSL_ES : public PSoundChannel
     }
 
 
-    virtual PBoolean SetVolume(unsigned newVolume)
+    virtual bool SetVolume(unsigned newVolume)
     {
       if (!m_volume.IsValid())
         return false;
@@ -658,7 +658,7 @@ class PSoundChannel_OpenSL_ES : public PSoundChannel
     }
 
 
-    virtual PBoolean GetVolume(unsigned & oldVolume)
+    virtual bool GetVolume(unsigned & oldVolume)
     {
       if (!m_volume.IsValid())
         return false;

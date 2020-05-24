@@ -456,7 +456,7 @@ class PRefVar <PBYTEArray> : public PVarType
 
   protected:
     virtual void OnGetValue()     { SetStaticBinary(m_value); }
-    virtual void OnValueChanged() { m_value = PBYTEArray((const BYTE *)m_.staticBinary.data, m_.staticBinary.size); }
+    virtual void OnValueChanged() { m_value = PBYTEArray((const uint8_t *)m_.staticBinary.data, m_.staticBinary.size); }
 
 protected:
   PBYTEArray & m_value;

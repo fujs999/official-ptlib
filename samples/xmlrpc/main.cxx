@@ -43,7 +43,7 @@ PXMLRPC_STRUCT_END()
 PXMLRPC_STRUCT_BEGIN     (TestStruct)
     PXMLRPC_STRING_INIT  (TestStruct, PString, a_string, "A string!");
     PXMLRPC_INTEGER_INIT (TestStruct, int, an_integer, 12);
-    PXMLRPC_BOOLEAN_INIT (TestStruct, PBoolean, a_boolean, true);
+    PXMLRPC_BOOLEAN_INIT (TestStruct, bool, a_boolean, true);
     PXMLRPC_DOUBLE_INIT  (TestStruct, double, a_float, 3.14159);
     PXMLRPC_DATETIME     (TestStruct, PTime, a_date);
     PXMLRPC_BINARY       (TestStruct, PBYTEArray, a_binary);
@@ -159,7 +159,7 @@ void XMLRPCApp::Main()
 
     ts.a_binary.SetSize(10);
     for (PINDEX i = 0; i < 10; i++)
-      ts.a_binary[i] = (BYTE)(i+1);
+      ts.a_binary[i] = (uint8_t)(i+1);
 
     ts.a_string_array.SetSize(3);
     ts.a_string_array[0] = "first";

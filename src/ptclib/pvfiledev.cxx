@@ -3,7 +3,7 @@
  *
  * Video file declaration
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (C) 2004 Post Increment
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is
  * Craig Southeren <craigs@postincrement.com>
@@ -95,7 +95,7 @@ PStringArray PVideoInputDevice_VideoFile::GetDeviceNames() const
 }
 
 
-PBoolean PVideoInputDevice_VideoFile::Open(const PString & devName, PBoolean /*startImmediate*/)
+bool PVideoInputDevice_VideoFile::Open(const PString & devName, bool /*startImmediate*/)
 {
   PWriteWaitAndSignal lock(m_mutex);
 
@@ -157,18 +157,18 @@ PBoolean PVideoInputDevice_VideoFile::Open(const PString & devName, PBoolean /*s
 }
 
 
-PBoolean PVideoInputDevice_VideoFile::IsOpen() 
+bool PVideoInputDevice_VideoFile::IsOpen() 
 {
   PReadWaitAndSignal lock(m_mutex);
   return m_file != NULL && m_file->IsOpen();
 }
 
 
-PBoolean PVideoInputDevice_VideoFile::Close()
+bool PVideoInputDevice_VideoFile::Close()
 {
   PWriteWaitAndSignal lock(m_mutex);
 
-  PBoolean ok = m_file != NULL && m_file->Close();
+  bool ok = m_file != NULL && m_file->Close();
 
   PThread::Sleep(1000/m_frameRate);
 
@@ -179,7 +179,7 @@ PBoolean PVideoInputDevice_VideoFile::Close()
 }
 
 
-bool PVideoInputDevice_VideoFile::InternalReadFrameData(BYTE * frame)
+bool PVideoInputDevice_VideoFile::InternalReadFrameData(uint8_t * frame)
 {
   PReadWaitAndSignal lock(m_mutex);
   m_file->SetPosition(m_frameNumber++);
@@ -218,7 +218,7 @@ PVideoOutputDevice_VideoFile::~PVideoOutputDevice_VideoFile()
 
 static const char DefaultYUVFileName[] = "*.yuv";
 
-PBoolean PVideoOutputDevice_VideoFile::Open(const PString & devName, PBoolean /*startImmediate*/)
+bool PVideoOutputDevice_VideoFile::Open(const PString & devName, bool /*startImmediate*/)
 {
   PFilePath fileName;
   if (devName != DefaultYUVFileName)
@@ -242,11 +242,11 @@ PBoolean PVideoOutputDevice_VideoFile::Open(const PString & devName, PBoolean /*
   return true;
 }
 
-PBoolean PVideoOutputDevice_VideoFile::Close()
+bool PVideoOutputDevice_VideoFile::Close()
 {
   m_opened = false;
 
-  PBoolean ok = m_file == NULL || m_file->Close();
+  bool ok = m_file == NULL || m_file->Close();
 
   PThread::Sleep(10);
 
@@ -256,17 +256,17 @@ PBoolean PVideoOutputDevice_VideoFile::Close()
   return ok;
 }
 
-PBoolean PVideoOutputDevice_VideoFile::Start()
+bool PVideoOutputDevice_VideoFile::Start()
 {
   return m_file != NULL && m_file->SetFrameSize(m_frameHeight, m_frameWidth);
 }
 
-PBoolean PVideoOutputDevice_VideoFile::Stop()
+bool PVideoOutputDevice_VideoFile::Stop()
 {
   return true;
 }
 
-PBoolean PVideoOutputDevice_VideoFile::IsOpen()
+bool PVideoOutputDevice_VideoFile::IsOpen()
 {
   return m_opened;
 }
@@ -284,13 +284,13 @@ PStringArray PVideoOutputDevice_VideoFile::GetOutputDeviceNames()
 }
 
 
-PBoolean PVideoOutputDevice_VideoFile::SetColourFormat(const PString & newFormat)
+bool PVideoOutputDevice_VideoFile::SetColourFormat(const PString & newFormat)
 {
   return (newFormat *= PVideoFrameInfo::YUV420P()) && PVideoDevice::SetColourFormat(newFormat);
 }
 
 
-PBoolean PVideoOutputDevice_VideoFile::SetFrameData(const FrameData & frameData)
+bool PVideoOutputDevice_VideoFile::SetFrameData(const FrameData & frameData)
 {
   if (!m_opened || PAssertNULL(m_file) == NULL) {
     PTRACE(5, "Abort SetFrameData, closed.");

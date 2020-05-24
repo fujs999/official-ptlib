@@ -3,7 +3,7 @@
  *
  * Sub-process communicating with pipe I/O channel class
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -40,11 +40,11 @@ PPipeChannel::PPipeChannel()
 }
 
 
-PBoolean PPipeChannel::PlatformOpen(const PString & subProgram,
+bool PPipeChannel::PlatformOpen(const PString & subProgram,
                                 const PStringArray & argumentList,
                                 OpenMode mode,
-                                PBoolean searchPath,
-                                PBoolean stderrSeparate,
+                                bool searchPath,
+                                bool stderrSeparate,
                                 const PStringToString * environment)
 {
   subProgName = subProgram;
@@ -161,7 +161,7 @@ PPipeChannel::~PPipeChannel()
 }
 
 
-PBoolean PPipeChannel::IsOpen() const
+bool PPipeChannel::IsOpen() const
 {
   return os_handle != -1;
 }
@@ -178,12 +178,12 @@ int PPipeChannel::GetReturnCode() const
 }
 
 
-PBoolean PPipeChannel::CanReadAndWrite()
+bool PPipeChannel::CanReadAndWrite()
 {
   return true;
 }
 
-PBoolean PPipeChannel::IsRunning() const
+bool PPipeChannel::IsRunning() const
 {
   return GetReturnCode() == -2;
 }
@@ -209,13 +209,13 @@ int PPipeChannel::WaitForTermination(const PTimeInterval & timeout)
 }
 
 
-PBoolean PPipeChannel::Kill(int signal)
+bool PPipeChannel::Kill(int signal)
 {
   return ConvertOSError(TerminateProcess(info.hProcess, signal) ? 0 : -2);
 }
 
 
-PBoolean PPipeChannel::Read(void * buffer, PINDEX len)
+bool PPipeChannel::Read(void * buffer, PINDEX len)
 {
   SetLastReadCount(0);
 
@@ -238,7 +238,7 @@ PBoolean PPipeChannel::Read(void * buffer, PINDEX len)
     if (count == 0)
       return true;
 
-    ++((BYTE * &)buffer);
+    ++((uint8_t * &)buffer);
     --len;
   }
   else {
@@ -269,7 +269,7 @@ PBoolean PPipeChannel::Read(void * buffer, PINDEX len)
 }
       
 
-PBoolean PPipeChannel::Write(const void * buffer, PINDEX len)
+bool PPipeChannel::Write(const void * buffer, PINDEX len)
 {
   SetLastWriteCount(0);
   DWORD count;
@@ -279,7 +279,7 @@ PBoolean PPipeChannel::Write(const void * buffer, PINDEX len)
 }
 
 
-PBoolean PPipeChannel::Close()
+bool PPipeChannel::Close()
 {
   if (IsOpen()) {
     os_handle = -1;
@@ -293,7 +293,7 @@ PBoolean PPipeChannel::Close()
 }
 
 
-PBoolean PPipeChannel::Execute()
+bool PPipeChannel::Execute()
 {
   flush();
   clear();
@@ -302,7 +302,7 @@ PBoolean PPipeChannel::Execute()
 }
 
 
-PBoolean PPipeChannel::ReadStandardError(PString & errors, PBoolean wait)
+bool PPipeChannel::ReadStandardError(PString & errors, bool wait)
 {
   DWORD available, bytesRead;
   if (!PeekNamedPipe(m_hStandardError, NULL, 0, NULL, &available, NULL))

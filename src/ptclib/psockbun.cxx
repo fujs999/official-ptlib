@@ -3,7 +3,7 @@
  *
  * Socket and interface bundle code
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (C) 2007 Post Increment
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Post Increment
  *
@@ -127,7 +127,7 @@ void PInterfaceMonitor::OnShutdown()
 }
 
 
-static PBoolean IsInterfaceInList(const PIPSocket::InterfaceEntry & entry,
+static bool IsInterfaceInList(const PIPSocket::InterfaceEntry & entry,
                               const PIPSocket::InterfaceTable & list)
 {
   for (PINDEX i = 0; i < list.GetSize(); ++i) {
@@ -139,7 +139,7 @@ static PBoolean IsInterfaceInList(const PIPSocket::InterfaceEntry & entry,
 }
 
 
-static PBoolean InterfaceListIsSubsetOf(const PIPSocket::InterfaceTable & subset,
+static bool InterfaceListIsSubsetOf(const PIPSocket::InterfaceTable & subset,
                                     const PIPSocket::InterfaceTable & set)
 {
   for (PINDEX i = 0; i < subset.GetSize(); ++i) {
@@ -152,7 +152,7 @@ static PBoolean InterfaceListIsSubsetOf(const PIPSocket::InterfaceTable & subset
 }
 
 
-static PBoolean CompareInterfaceLists(const PIPSocket::InterfaceTable & list1,
+static bool CompareInterfaceLists(const PIPSocket::InterfaceTable & list1,
                                   const PIPSocket::InterfaceTable & list2)
 {
   // if the sizes are different, then the list has changed. 
@@ -265,7 +265,7 @@ static bool SplitInterfaceDescription(const PString & iface,
 }
 
 
-static PBoolean InterfaceMatches(const PIPSocket::Address & addr,
+static bool InterfaceMatches(const PIPSocket::Address & addr,
                              const PString & name,
                              const PIPSocket::InterfaceEntry & entry)
 {
@@ -490,7 +490,7 @@ bool PMonitoredSockets::DestroySocket(SocketInfo & info)
   if (info.m_socket == NULL)
     return false;
 
-  PBoolean result = info.m_socket->Close();
+  bool result = info.m_socket->Close();
 
 #if PTRACING
   if (result)
@@ -522,7 +522,7 @@ bool PMonitoredSockets::DestroySocket(SocketInfo & info)
 
 bool PMonitoredSockets::GetSocketAddress(const SocketInfo & info,
                                          PIPSocket::Address & address,
-                                         WORD & port,
+                                         uint16_t & port,
                                          bool usingNAT) const
 {
   if (info.m_socket == NULL)
@@ -700,14 +700,14 @@ PString PMonitoredSocketChannel::GetName() const
 }
 
 
-PBoolean PMonitoredSocketChannel::IsOpen() const
+bool PMonitoredSocketChannel::IsOpen() const
 {
   PMonitoredSocketsPtr bundle = m_socketBundle; // Avoid race condition
   return !m_closing && bundle != NULL && bundle->IsOpen();
 }
 
 
-PBoolean PMonitoredSocketChannel::Close()
+bool PMonitoredSocketChannel::Close()
 {
   m_closing = true;
   PMonitoredSocketsPtr bundle = m_socketBundle; // Avoid race condition
@@ -715,7 +715,7 @@ PBoolean PMonitoredSocketChannel::Close()
 }
 
 
-PBoolean PMonitoredSocketChannel::Read(void * buffer, PINDEX length)
+bool PMonitoredSocketChannel::Read(void * buffer, PINDEX length)
 {
   PMonitoredSocketsPtr bundle = m_socketBundle; // Avoid race condition
   if (CheckNotOpen())
@@ -747,7 +747,7 @@ PBoolean PMonitoredSocketChannel::Read(void * buffer, PINDEX length)
 }
 
 
-PBoolean PMonitoredSocketChannel::Write(const void * buffer, PINDEX length)
+bool PMonitoredSocketChannel::Write(const void * buffer, PINDEX length)
 {
   PMonitoredSocketsPtr bundle = m_socketBundle; // Avoid race condition
   if (CheckNotOpen())
@@ -801,7 +801,7 @@ PString PMonitoredSocketChannel::GetInterface()
 }
 
 
-bool PMonitoredSocketChannel::GetLocal(PIPSocket::Address & address, WORD & port, bool usingNAT)
+bool PMonitoredSocketChannel::GetLocal(PIPSocket::Address & address, uint16_t & port, bool usingNAT)
 {
   PMonitoredSocketsPtr bundle = m_socketBundle; // Avoid race condition
   return bundle != NULL && bundle->GetAddress(GetInterface(), address, port, usingNAT);
@@ -811,7 +811,7 @@ bool PMonitoredSocketChannel::GetLocal(PIPSocket::Address & address, WORD & port
 bool PMonitoredSocketChannel::GetLocal(PIPSocket::AddressAndPort & ap, bool usingNAT)
 {
   PIPAddress ip;
-  WORD port = 0;
+  uint16_t port = 0;
   PMonitoredSocketsPtr bundle = m_socketBundle; // Avoid race condition
   if (bundle == NULL || !bundle->GetAddress(GetInterface(), ip, port, usingNAT))
     return false;
@@ -887,7 +887,7 @@ PStringArray PMonitoredSocketBundle::GetInterfaces(bool /*includeLoopBack*/, con
 }
 
 
-PBoolean PMonitoredSocketBundle::Open(WORD port)
+bool PMonitoredSocketBundle::Open(uint16_t port)
 {
   PSafeLockReadWrite guard(*this);
 
@@ -910,7 +910,7 @@ PBoolean PMonitoredSocketBundle::Open(WORD port)
 }
 
 
-PBoolean PMonitoredSocketBundle::Close()
+bool PMonitoredSocketBundle::Close()
 {
   if (!LockReadWrite())
     return false;
@@ -945,10 +945,10 @@ bool PMonitoredSocketBundle::SetQoS(const PIPSocket::QoS & qos)
 }
 
 
-PBoolean PMonitoredSocketBundle::GetAddress(const PString & iface,
+bool PMonitoredSocketBundle::GetAddress(const PString & iface,
                                         PIPSocket::Address & address,
-                                        WORD & port,
-                                        PBoolean usingNAT) const
+                                        uint16_t & port,
+                                        bool usingNAT) const
 {
   PIPSocket::InterfaceEntry info;
   if (GetInterfaceInfo(iface, info)) {
@@ -1136,7 +1136,7 @@ PStringArray PSingleMonitoredSocket::GetInterfaces(bool /*includeLoopBack*/, con
 }
 
 
-PBoolean PSingleMonitoredSocket::Open(WORD port)
+bool PSingleMonitoredSocket::Open(uint16_t port)
 {
   PSafeLockReadWrite guard(*this);
 
@@ -1162,7 +1162,7 @@ PBoolean PSingleMonitoredSocket::Open(WORD port)
 }
 
 
-PBoolean PSingleMonitoredSocket::Close()
+bool PSingleMonitoredSocket::Close()
 {
   PSafeLockReadWrite guard(*this);
 
@@ -1184,10 +1184,10 @@ bool PSingleMonitoredSocket::SetQoS(const PIPSocket::QoS & qos)
 }
 
 
-PBoolean PSingleMonitoredSocket::GetAddress(const PString & iface,
+bool PSingleMonitoredSocket::GetAddress(const PString & iface,
                                         PIPSocket::Address & address,
-                                        WORD & port,
-                                        PBoolean usingNAT) const
+                                        uint16_t & port,
+                                        bool usingNAT) const
 {
   PSafeLockReadOnly guard(*this);
 

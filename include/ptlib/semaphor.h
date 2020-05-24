@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -123,7 +123,7 @@ class PSemaphore : public PSync
        @return
        true if semaphore was signalled, false if timed out.
      */
-    virtual PBoolean Wait(
+    virtual bool Wait(
       const PTimeInterval & timeout // Amount of time to wait for semaphore.
     );
 

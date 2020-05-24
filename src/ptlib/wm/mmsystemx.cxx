@@ -50,8 +50,8 @@ public:
     bool m_fFormatErrorsFound;
 
     int m_currentChunk; // top of stack
-    DWORD m_type;
-    DWORD m_size;
+    uint32_t m_type;
+    uint32_t m_size;
 
     bool FindNext(void) 
     {
@@ -110,8 +110,8 @@ public:
         }
 
        // Read the next chunk
-       DWORD dwRead = 0L;
-       DWORD dwResult = ReadFile(m_hFile, &m_type, sizeof(long), &dwRead, NULL);
+       uint32_t dwRead = 0L;
+       uint32_t dwResult = ReadFile(m_hFile, &m_type, sizeof(long), &dwRead, NULL);
        if ((dwResult != 0) && (dwRead == 0L)) 
        {
           m_currentChunk = -1; // empty the stack
@@ -228,11 +228,11 @@ public:
     }
 };
 
-HMMIO WINAPI mmioOpen(LPSTR pszFileName, LPMMIOINFO pmmioinfo, DWORD fdwOpen)
+HMMIO WINAPI mmioOpen(LPSTR pszFileName, LPMMIOINFO pmmioinfo, uint32_t fdwOpen)
 {
-  DWORD dwAccess = fdwOpen & MMIO_READ ? GENERIC_READ : 0;
+  uint32_t dwAccess = fdwOpen & MMIO_READ ? GENERIC_READ : 0;
   dwAccess |= (fdwOpen & MMIO_WRITE) ? GENERIC_WRITE : 0xFFFF; 
-  DWORD dwFlags = fdwOpen & MMIO_CREATE ? CREATE_ALWAYS : OPEN_EXISTING;
+  uint32_t dwFlags = fdwOpen & MMIO_CREATE ? CREATE_ALWAYS : OPEN_EXISTING;
 
   PVarString filename = pszFileName;
   HANDLE hFile = CreateFile(filename,
@@ -263,14 +263,14 @@ MMRESULT WINAPI mmioClose(HMMIO hmmio, UINT fuClose)
 
 LONG WINAPI mmioRead(HMMIO hmmio, HPSTR pch, LONG cch)
 {
-    DWORD dwRead = 0L;
+    uint32_t dwRead = 0L;
     ReadFile(hmmio, pch, cch, &dwRead, NULL);
     return dwRead;
 }
 
 LONG WINAPI mmioWrite(HMMIO hmmio, const char * pch, LONG cch)
 {
-    DWORD dwWritten = 0L;
+    uint32_t dwWritten = 0L;
     WriteFile(hmmio, pch, cch, &dwWritten, NULL);
 
     return dwWritten;
@@ -333,7 +333,7 @@ MMRESULT WINAPI mmioCreateChunk(HMMIO hmmio, LPMMCKINFO pmmcki, UINT fuCreate)
    return MMSYSERR_NOERROR;
 }
 
-BOOL WINAPI PlaySound( LPCSTR pszSound, HMODULE hmod, DWORD fdwSound)
+BOOL WINAPI PlaySound( LPCSTR pszSound, HMODULE hmod, uint32_t fdwSound)
 {
   PVarString sound = pszSound;
   return ::PlaySound(sound, hmod, fdwSound);

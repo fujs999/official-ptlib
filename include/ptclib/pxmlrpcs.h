@@ -3,7 +3,7 @@
  *
  * XML parser support
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 2002 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -66,12 +66,12 @@ class PXMLRPCServerResource : public PHTTPResource
     );
 
     // overrides from PHTTPResource
-    PBoolean LoadHeaders(PHTTPRequest & request);
-    PBoolean OnPOSTData(PHTTPRequest & request, const PStringToString & data);
+    bool LoadHeaders(PHTTPRequest & request);
+    bool OnPOSTData(PHTTPRequest & request, const PStringToString & data);
 
     // new functions
     virtual void OnXMLRPCRequest(const PString & body, PString & reply);
-    virtual PBoolean SetMethod(const PString & methodName, const PNotifier & func);
+    virtual bool SetMethod(const PString & methodName, const PNotifier & func);
     void OnXMLRPCRequest(const PString & methodName, PXMLRPCBlock & request, PString & reply);
 
     virtual PString FormatFault(

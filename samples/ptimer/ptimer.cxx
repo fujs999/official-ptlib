@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Indranet Technologies Ltd.
  *
@@ -76,7 +76,7 @@ class DelayThread : public PThread
   PCLASSINFO(DelayThread, PThread);
 
 public:
-  DelayThread(PINDEX _delay, PBoolean _checkTimer);
+  DelayThread(PINDEX _delay, bool _checkTimer);
 
   ~DelayThread();
 
@@ -85,7 +85,7 @@ public:
 protected:
   PINDEX delay;
 
-  PBoolean checkTimer;
+  bool checkTimer;
 
   MyTimer localPTimer;
 
@@ -165,7 +165,7 @@ public:
 protected:
   PINDEX iteration;
   PTime startTime;
-  PBoolean  keepGoing;
+  bool  keepGoing;
 };
 
 
@@ -642,13 +642,13 @@ void PTimerTest::RestartThirdTimerMain(PThread &, P_INT_PTR)
 class TimerTestThread : public PThread
 {
   PCLASSINFO(TimerTestThread, PThread);
-  PInt64 m_iteration;
+  int64_t m_iteration;
 public:
   static PAtomicInteger m_counter;
   typedef std::pair<PTimer, PMutex> TimerPair;
   static std::vector<TimerPair> s_timers;
 public:
-  TimerTestThread(PInt64 aIterations)
+  TimerTestThread(int64_t aIterations)
     : PThread(10000, AutoDeleteThread)
     , m_iteration(aIterations)
   {
@@ -760,7 +760,7 @@ void PTimerTest::MultiTimerTest()
   while (runningCount > 0)
     PThread::Sleep(1000);
 
-  PInt64 sum = 0;
+  int64_t sum = 0;
   while (timers.size() > 0) {
     MultiTimer * timer = timers.back();
     sum += std::abs(((timer->m_end - timer->m_start) - timer->GetResetTime()).GetMilliSeconds());
@@ -912,7 +912,7 @@ void PTimerTest::PullCheck()
   PTimer timer(5000);
   while (timer.IsRunning())
     PThread::Sleep(25);
-  PInt64 duration = (PTime() - then).GetMilliSeconds();
+  int64_t duration = (PTime() - then).GetMilliSeconds();
   if (duration < 5000)
     cout << "Too fast - duration = " << duration << " ms" << endl;
   else
@@ -945,7 +945,7 @@ class TimerWithStopInTimeout
   : public MyTimerTester
 {
 public:
-  TimerWithStopInTimeout(PSyncPoint & _sync, PInt64 aTimeout)
+  TimerWithStopInTimeout(PSyncPoint & _sync, int64_t aTimeout)
     : MyTimerTester(_sync)
   {
     RunContinuous(aTimeout);
@@ -973,7 +973,7 @@ class TimerWithStopAndSleepInTimeout
   : public MyTimerTester
 {
 public:
-  TimerWithStopAndSleepInTimeout(PSyncPoint & _sync, PInt64 aTimeout)
+  TimerWithStopAndSleepInTimeout(PSyncPoint & _sync, int64_t aTimeout)
     : MyTimerTester(_sync)
   {
     RunContinuous(aTimeout);
@@ -1032,7 +1032,7 @@ void MyTimer::OnTimeout()
 
 /////////////////////////////////////////////////////////////////////////////
 
-DelayThread::DelayThread(PINDEX _delay, PBoolean _checkTimer)
+DelayThread::DelayThread(PINDEX _delay, bool _checkTimer)
   : PThread(10000, AutoDeleteThread), delay(_delay), checkTimer(_checkTimer)
 {
   PTRACE(5, "Constructor for a auto deleted PTimer test thread");
@@ -1078,7 +1078,7 @@ void LauncherThread::Main()
 {
   PINDEX delay      = PTimerTest::Current().Delay();
   PINDEX interval   = PTimerTest::Current().Interval();
-  PBoolean   checkTimer = PTimerTest::Current().CheckTimer();
+  bool   checkTimer = PTimerTest::Current().CheckTimer();
 
   while (keepGoing) {
     PThread * thread = new DelayThread(delay, checkTimer);

@@ -3,7 +3,7 @@
  *
  * XML/RPC support
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 2002 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -365,7 +365,7 @@ void PXMLRPCBlock::AddArray(const PArray<PStringToString> & array)
 
 /////////////////////////////////////////////
 
-PBoolean PXMLRPCBlock::ValidateResponse()
+bool PXMLRPCBlock::ValidateResponse()
 {
   // ensure root element exists and has correct name
   if (GetDocumentType() != "methodResponse") {
@@ -421,7 +421,7 @@ PBoolean PXMLRPCBlock::ValidateResponse()
   return true;
 }
 
-PBoolean PXMLRPCBlock::ParseScalar(PXMLElement * valueElement, 
+bool PXMLRPCBlock::ParseScalar(PXMLElement * valueElement, 
                                    PString & type, 
                                    PString & value)
 {
@@ -452,7 +452,7 @@ PBoolean PXMLRPCBlock::ParseScalar(PXMLElement * valueElement,
 }
 
 
-static PBoolean ParseStructBase(PXMLRPCBlock & block, PXMLElement * & element)
+static bool ParseStructBase(PXMLRPCBlock & block, PXMLElement * & element)
 {
   if (element == NULL)
     return false;
@@ -524,7 +524,7 @@ static PXMLElement * ParseStructElement(PXMLRPCBlock & block,
 }
 
 
-PBoolean PXMLRPCBlock::ParseStruct(PXMLElement * structElement, 
+bool PXMLRPCBlock::ParseStruct(PXMLElement * structElement, 
                                PStringToString & structDict)
 {
   if (!ParseStructBase(*this, structElement))
@@ -545,7 +545,7 @@ PBoolean PXMLRPCBlock::ParseStruct(PXMLElement * structElement,
 }
 
 
-PBoolean PXMLRPCBlock::ParseStruct(PXMLElement * structElement, PXMLRPCStructBase & data)
+bool PXMLRPCBlock::ParseStruct(PXMLElement * structElement, PXMLRPCStructBase & data)
 {
   if (!ParseStructBase(*this, structElement))
     return false;
@@ -617,7 +617,7 @@ static PXMLElement * ParseArrayBase(PXMLRPCBlock & block, PXMLElement * element)
 }
 
 
-PBoolean PXMLRPCBlock::ParseArray(PXMLElement * arrayElement, PStringArray & array)
+bool PXMLRPCBlock::ParseArray(PXMLElement * arrayElement, PStringArray & array)
 {
   PXMLElement * dataElement = ParseArrayBase(*this, arrayElement);
   if (dataElement == NULL)
@@ -638,7 +638,7 @@ PBoolean PXMLRPCBlock::ParseArray(PXMLElement * arrayElement, PStringArray & arr
 }
 
 
-PBoolean PXMLRPCBlock::ParseArray(PXMLElement * arrayElement, PArray<PStringToString> & array)
+bool PXMLRPCBlock::ParseArray(PXMLElement * arrayElement, PArray<PStringToString> & array)
 {
   PXMLElement * dataElement = ParseArrayBase(*this, arrayElement);
   if (dataElement == NULL)
@@ -660,7 +660,7 @@ PBoolean PXMLRPCBlock::ParseArray(PXMLElement * arrayElement, PArray<PStringToSt
 }
 
 
-PBoolean PXMLRPCBlock::ParseArray(PXMLElement * arrayElement, PXMLRPCVariableBase & array)
+bool PXMLRPCBlock::ParseArray(PXMLElement * arrayElement, PXMLRPCVariableBase & array)
 {
   PXMLElement * dataElement = ParseArrayBase(*this, arrayElement);
   if (dataElement == NULL)
@@ -735,7 +735,7 @@ PXMLElement * PXMLRPCBlock::GetParam(PINDEX idx) const
 }
 
 
-PBoolean PXMLRPCBlock::GetParams(PXMLRPCStructBase & data)
+bool PXMLRPCBlock::GetParams(PXMLRPCStructBase & data)
 {
   if (m_params == NULL) 
     return false;
@@ -775,7 +775,7 @@ PBoolean PXMLRPCBlock::GetParams(PXMLRPCStructBase & data)
 }
 
 
-PBoolean PXMLRPCBlock::GetParam(PINDEX idx, PString & type, PString & value)
+bool PXMLRPCBlock::GetParam(PINDEX idx, PString & type, PString & value)
 {
   // get the parameter
   if (!ParseScalar(GetParam(idx), type, value)) {
@@ -787,7 +787,7 @@ PBoolean PXMLRPCBlock::GetParam(PINDEX idx, PString & type, PString & value)
 }
 
 
-PBoolean PXMLRPCBlock::GetExpectedParam(PINDEX idx, const PString & expectedType, PString & value)
+bool PXMLRPCBlock::GetExpectedParam(PINDEX idx, const PString & expectedType, PString & value)
 {
   PString type;
 
@@ -805,12 +805,12 @@ PBoolean PXMLRPCBlock::GetExpectedParam(PINDEX idx, const PString & expectedType
 }
 
 
-PBoolean PXMLRPCBlock::GetParam(PINDEX idx, PString & result)
+bool PXMLRPCBlock::GetParam(PINDEX idx, PString & result)
 {
   return GetExpectedParam(idx, StringType, result); 
 }
 
-PBoolean PXMLRPCBlock::GetParam(PINDEX idx, int & val)
+bool PXMLRPCBlock::GetParam(PINDEX idx, int & val)
 {
   PString type, result; 
   if (!GetParam(idx, type, result))
@@ -827,7 +827,7 @@ PBoolean PXMLRPCBlock::GetParam(PINDEX idx, int & val)
   return true;
 }
 
-PBoolean PXMLRPCBlock::GetParam(PINDEX idx, double & val)
+bool PXMLRPCBlock::GetParam(PINDEX idx, double & val)
 {
   PString result; 
   if (!GetExpectedParam(idx, DoubleType, result))
@@ -840,7 +840,7 @@ PBoolean PXMLRPCBlock::GetParam(PINDEX idx, double & val)
 // 01234567890123456
 // yyyyMMddThh:mm:ss
 
-PBoolean PXMLRPCBlock::GetParam(PINDEX idx, PTime & val, int tz)
+bool PXMLRPCBlock::GetParam(PINDEX idx, PTime & val, int tz)
 {
   PString result; 
   if (!GetExpectedParam(idx, DateTimeType, result))
@@ -849,24 +849,24 @@ PBoolean PXMLRPCBlock::GetParam(PINDEX idx, PTime & val, int tz)
   return PXMLRPC::ISO8601ToPTime(result, val, tz);
 }
 
-PBoolean PXMLRPCBlock::GetParam(PINDEX idx, PStringArray & result)
+bool PXMLRPCBlock::GetParam(PINDEX idx, PStringArray & result)
 {
   return ParseArray(GetParam(idx), result);
 }
 
-PBoolean PXMLRPCBlock::GetParam(PINDEX idx, PArray<PStringToString> & result)
+bool PXMLRPCBlock::GetParam(PINDEX idx, PArray<PStringToString> & result)
 {
   return ParseArray(GetParam(idx), result);
 }
 
 
-PBoolean PXMLRPCBlock::GetParam(PINDEX idx, PStringToString & result)
+bool PXMLRPCBlock::GetParam(PINDEX idx, PStringToString & result)
 {
   return ParseStruct(GetParam(idx), result);
 }
 
 
-PBoolean PXMLRPCBlock::GetParam(PINDEX idx, PXMLRPCStructBase & data)
+bool PXMLRPCBlock::GetParam(PINDEX idx, PXMLRPCStructBase & data)
 {
   return ParseStruct(GetParam(idx), data);
 }
@@ -881,7 +881,7 @@ PXMLRPC::PXMLRPC(const PURL & url, PXMLParser::Options opts)
 {
 }
 
-PBoolean PXMLRPC::MakeRequest(const PString & method)
+bool PXMLRPC::MakeRequest(const PString & method)
 {
   PXMLRPCBlock request(method);
   PXMLRPCBlock response;
@@ -889,14 +889,14 @@ PBoolean PXMLRPC::MakeRequest(const PString & method)
   return MakeRequest(request, response);
 }
 
-PBoolean PXMLRPC::MakeRequest(const PString & method, PXMLRPCBlock & response)
+bool PXMLRPC::MakeRequest(const PString & method, PXMLRPCBlock & response)
 {
   PXMLRPCBlock request(method);
 
   return MakeRequest(request, response);
 }
 
-PBoolean PXMLRPC::MakeRequest(PXMLRPCBlock & request, PXMLRPCBlock & response)
+bool PXMLRPC::MakeRequest(PXMLRPCBlock & request, PXMLRPCBlock & response)
 {
   if (PerformRequest(request, response))
     return true;
@@ -907,7 +907,7 @@ PBoolean PXMLRPC::MakeRequest(PXMLRPCBlock & request, PXMLRPCBlock & response)
   return false;
 }
 
-PBoolean PXMLRPC::MakeRequest(const PString & method, const PXMLRPCStructBase & args, PXMLRPCStructBase & reply)
+bool PXMLRPC::MakeRequest(const PString & method, const PXMLRPCStructBase & args, PXMLRPCStructBase & reply)
 {
   PXMLRPCBlock request(method, args);
   PXMLRPCBlock response;
@@ -923,7 +923,7 @@ PBoolean PXMLRPC::MakeRequest(const PString & method, const PXMLRPCStructBase & 
 }
 
 
-PBoolean PXMLRPC::PerformRequest(PXMLRPCBlock & request, PXMLRPCBlock & response)
+bool PXMLRPC::PerformRequest(PXMLRPCBlock & request, PXMLRPCBlock & response)
 {
   // create XML version of request
   PString requestXML = request.AsString(m_options);
@@ -955,7 +955,7 @@ PBoolean PXMLRPC::PerformRequest(PXMLRPCBlock & request, PXMLRPCBlock & response
   PString replyXML;
 
   // do the request
-  PBoolean ok = client.PostData(m_url, sendMIME, requestXML, replyMIME, replyXML);
+  bool ok = client.PostData(m_url, sendMIME, requestXML, replyMIME, replyXML);
 
   PTRACE(5, "XMLRPC\tIncoming XML/RPC:\n" << replyMIME << replyXML);
 
@@ -1001,7 +1001,7 @@ PBoolean PXMLRPC::PerformRequest(PXMLRPCBlock & request, PXMLRPCBlock & response
   return true;
 }
 
-PBoolean PXMLRPC::ISO8601ToPTime(const PString & iso8601, PTime & val, int tz)
+bool PXMLRPC::ISO8601ToPTime(const PString & iso8601, PTime & val, int tz)
 {
   if ((iso8601.GetLength() != 17) ||
       (iso8601[8]  != 'T') ||
@@ -1050,7 +1050,7 @@ PXMLRPCStructBase * PXMLRPCVariableBase::GetStruct(PINDEX) const
 }
 
 
-PBoolean PXMLRPCVariableBase::IsArray() const
+bool PXMLRPCVariableBase::IsArray() const
 {
   return false;
 }
@@ -1062,7 +1062,7 @@ PINDEX PXMLRPCVariableBase::GetSize() const
 }
 
 
-PBoolean PXMLRPCVariableBase::SetSize(PINDEX)
+bool PXMLRPCVariableBase::SetSize(PINDEX)
 {
   return true;
 }
@@ -1119,7 +1119,7 @@ void PXMLRPCArrayBase::Copy(const PXMLRPCVariableBase & other)
 }
 
 
-PBoolean PXMLRPCArrayBase::IsArray() const
+bool PXMLRPCArrayBase::IsArray() const
 {
   return true;
 }
@@ -1131,7 +1131,7 @@ PINDEX PXMLRPCArrayBase::GetSize() const
 }
 
 
-PBoolean PXMLRPCArrayBase::SetSize(PINDEX sz)
+bool PXMLRPCArrayBase::SetSize(PINDEX sz)
 {
   return m_array.SetSize(sz);
 }
@@ -1146,7 +1146,7 @@ PXMLRPCArrayObjectsBase::PXMLRPCArrayObjectsBase(PArrayObjects & a, const char *
 }
 
 
-PBoolean PXMLRPCArrayObjectsBase::SetSize(PINDEX sz)
+bool PXMLRPCArrayObjectsBase::SetSize(PINDEX sz)
 {
   if (!m_array.SetSize(sz))
     return false;

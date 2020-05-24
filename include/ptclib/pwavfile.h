@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is
  * Roger Hardiman <roger@freebsd.org>
@@ -50,7 +50,7 @@ namespace PWAV {
   struct ChunkHeader
   {
     char    tag[4];
-    PInt32l len;
+    int32_tl len;
   };
 
   struct RIFFChunkHeader
@@ -64,8 +64,8 @@ namespace PWAV {
     ChunkHeader hdr;          ///< chunk header (already packed)
     PUInt16l format;          ///< Format
     PUInt16l numChannels;     ///< Channels 0x01 = mono, 0x02 = stereo
-    PUInt32l sampleRate;      ///< Sample Rate in Hz
-    PUInt32l bytesPerSec;     ///< Average bytes Per Second
+    uint32_tl sampleRate;      ///< Sample Rate in Hz
+    uint32_tl bytesPerSec;     ///< Average bytes Per Second
     PUInt16l bytesPerSample;  ///< Bytes Per Sample, eg 2
     PUInt16l bitsPerSample;   ///< Bits Per Sample, eg 16
   };
@@ -79,7 +79,7 @@ namespace PWAV {
   struct G7231FACTChunk
   {
     PWAV::ChunkHeader hdr;
-    PInt32l data1;      // 0   Should be number of samples.
+    int32_tl data1;      // 0   Should be number of samples.
   };
 
 #pragma pack()
@@ -125,12 +125,12 @@ public:
 
   /**Write any extra headers after the FORMAT chunk.
    */
-  virtual PBoolean WriteExtraChunks(PWAVFile & /*file*/)
+  virtual bool WriteExtraChunks(PWAVFile & /*file*/)
   { return true; }
 
   /**Read any extra headers after the FORMAT chunk.
    */
-  virtual PBoolean ReadExtraChunks(PWAVFile & /*file*/)
+  virtual bool ReadExtraChunks(PWAVFile & /*file*/)
   { return true; }
 
   /**Called before the reading/writing starts.
@@ -145,11 +145,11 @@ public:
 
   /**Write data to the file.
    */
-  virtual PBoolean Read(PWAVFile & file, void * buf, PINDEX & len);
+  virtual bool Read(PWAVFile & file, void * buf, PINDEX & len);
 
   /**Read data from the file.
    */
-  virtual PBoolean Write(PWAVFile & file, const void * buf, PINDEX & len);
+  virtual bool Write(PWAVFile & file, const void * buf, PINDEX & len);
 };
 
 typedef PFactory<PWAVFileFormat, PCaselessString> PWAVFileFormatByFormatFactory;
@@ -171,11 +171,11 @@ public:
   virtual ~PWAVFileConverter() { }
   virtual unsigned GetFormat    (const PWAVFile & file) const = 0;
   virtual off_t GetPosition     (const PWAVFile & file) const = 0;
-  virtual PBoolean SetPosition  (PWAVFile & file, off_t pos, PFile::FilePositionOrigin origin) = 0;
+  virtual bool SetPosition  (PWAVFile & file, off_t pos, PFile::FilePositionOrigin origin) = 0;
   virtual unsigned GetSampleSize(const PWAVFile & file) const = 0;
   virtual off_t GetDataLength   (PWAVFile & file) = 0;
-  virtual PBoolean Read         (PWAVFile & file, void * buf, PINDEX len)  = 0;
-  virtual PBoolean Write        (PWAVFile & file, const void * buf, PINDEX len) = 0;
+  virtual bool Read         (PWAVFile & file, void * buf, PINDEX len)  = 0;
+  virtual bool Write        (PWAVFile & file, const void * buf, PINDEX len) = 0;
 
 protected:
 };
@@ -274,7 +274,7 @@ public:
      true indicates that at least one character was read from the channel.
      false means no bytes were read due to timeout or some other I/O error.
   */
-  virtual PBoolean Read(
+  virtual bool Read(
     void * buf,   ///< Pointer to a block of memory to receive the read bytes.
     PINDEX len    ///< Maximum number of bytes to read into the buffer.
   );
@@ -286,7 +286,7 @@ public:
      true indicates that at least one character was written to the channel.
      false means no bytes were written due to timeout or some other I/O error.
   */
-  virtual PBoolean Write(
+  virtual bool Write(
     const void * buf,   ///< Pointer to a block of memory to receive the write bytes.
     PINDEX len    ///< Maximum number of bytes to write to the channel.
   );
@@ -296,7 +296,7 @@ public:
       to contain the correct size information.
       @return true if close was OK.
   */
-  virtual PBoolean Close();
+  virtual bool Close();
 
   /**Get the current size of the file.
 
@@ -311,7 +311,7 @@ public:
       @return
       true if the file size was changed to the length specified.
     */
-  virtual PBoolean SetLength(
+  virtual bool SetLength(
     off_t len   // New length of file.
   );
 
@@ -329,7 +329,7 @@ public:
      @return
      true if the new file position was set.
   */
-  virtual PBoolean SetPosition(
+  virtual bool SetPosition(
     off_t pos,                         ///< New position to set.
     FilePositionOrigin origin = Start  ///< Origin for position change.
   );
@@ -350,8 +350,8 @@ public:
      Note this can only be performed for WriteOnly files, and before the first
      call to Write() is executed.
    */
-  virtual PBoolean SetFormat(unsigned fmt);
-  virtual PBoolean SetFormat(const PString & format);
+  virtual bool SetFormat(unsigned fmt);
+  virtual bool SetFormat(const PString & format);
 
   /**Find out the format of the WAV file. Eg 0x01 for PCM, 0x42 or 0x111 for G.723.1.
    */

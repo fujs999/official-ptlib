@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -327,12 +327,12 @@ class PSystemLogToNetwork : public PSystemLogTarget
   //@{
     PSystemLogToNetwork(
       const PIPSocket::Address & address, ///< Host to which data is sent.
-      WORD port = RFC3164_Port,           ///< Port to which data is sent.
+      uint16_t port = RFC3164_Port,           ///< Port to which data is sent.
       unsigned facility = 16              ///< Facility code
     );
     PSystemLogToNetwork(
       const PString & server,             ///< Host/port to which data is sent.
-      WORD port = RFC3164_Port,           ///< Default port to which data is sent.
+      uint16_t port = RFC3164_Port,           ///< Default port to which data is sent.
       unsigned facility = 16              ///< Facility code
     );
   //@}

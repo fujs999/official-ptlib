@@ -3,7 +3,7 @@
  *
  * Class for implementing a serial queue channel in memory.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 2001 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -85,7 +85,7 @@ class PQueueChannel : public PChannel
        true indicates that at least one character was read from the channel.
        false means no bytes were read due to timeout or some other I/O error.
      */
-    virtual PBoolean Read(
+    virtual bool Read(
       void * buf,   ///< Pointer to a block of memory to receive the read bytes.
       PINDEX len    ///< Maximum number of bytes to read into the buffer.
     );
@@ -99,7 +99,7 @@ class PQueueChannel : public PChannel
 
        @return true if at least len bytes were written to the channel.
      */
-    virtual PBoolean Write(
+    virtual bool Write(
       const void * buf, ///< Pointer to a block of memory to write.
       PINDEX len        ///< Number of bytes to write.
     );
@@ -107,7 +107,7 @@ class PQueueChannel : public PChannel
     /** Close the file channel.
         @return true if close was OK.
       */
-    virtual PBoolean Close();
+    virtual bool Close();
   //@}
 
 
@@ -115,7 +115,7 @@ class PQueueChannel : public PChannel
   //@{
     /**Open a queue, allocating the queueSize bytes.
       */
-    virtual PBoolean Open(
+    virtual bool Open(
       PINDEX queueSize   ///< Queue size
     );
 
@@ -128,7 +128,7 @@ class PQueueChannel : public PChannel
 
   protected:
     PDECLARE_MUTEX(mutex);
-    BYTE     * queueBuffer;
+    uint8_t     * queueBuffer;
     PINDEX     queueSize, queueLength, enqueuePos, dequeuePos;
     PSyncPoint unempty;
     PSyncPoint unfull;

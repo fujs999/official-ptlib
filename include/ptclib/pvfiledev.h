@@ -3,7 +3,7 @@
  *
  * Video file declaration
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (C) 2004 Post Increment
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is
  * Craig Southeren <craigs@postincrement.com>
@@ -68,22 +68,22 @@ class PVideoInputDevice_VideoFile : public PVideoInputEmulatedDevice
 
     /**Open the device given the device name.
       */
-    PBoolean Open(
+    bool Open(
       const PString & deviceName,   /// Device name to open
-      PBoolean startImmediate = true    /// Immediately start device
+      bool startImmediate = true    /// Immediately start device
     );
 
     /**Determine of the device is currently open.
       */
-    PBoolean IsOpen() ;
+    bool IsOpen() ;
 
     /**Close the device.
       */
-    PBoolean Close();
+    bool Close();
 
    
 protected:
-  virtual bool InternalReadFrameData(BYTE * frame);
+  virtual bool InternalReadFrameData(uint8_t * frame);
 
    PVideoFile    * m_file;
    PDECLARE_READ_WRITE_MUTEX(m_mutex);
@@ -117,39 +117,39 @@ class PVideoOutputDevice_VideoFile : public PVideoOutputDevice
 
     /**Open the device given the device name.
       */
-    virtual PBoolean Open(
+    virtual bool Open(
       const PString & deviceName,   /// Device name to open
-      PBoolean startImmediate = true    /// Immediately start device
+      bool startImmediate = true    /// Immediately start device
     );
 
     /**Start the video device I/O.
       */
-    PBoolean Start();
+    bool Start();
 
     /**Stop the video device I/O capture.
       */
-    PBoolean Stop();
+    bool Stop();
 
     /**Close the device.
       */
-    virtual PBoolean Close();
+    virtual bool Close();
 
     /**Determine if the device is currently open.
       */
-    virtual PBoolean IsOpen();
+    virtual bool IsOpen();
 
     /**Set the colour format to be used.
 
        Default behaviour sets the value of the colourFormat variable and then
        returns the IsOpen() status.
     */
-    virtual PBoolean SetColourFormat(
+    virtual bool SetColourFormat(
       const PString & colourFormat   // New colour format for device.
     );
     
     /**Set a section of the output frame buffer.
       */
-    virtual PBoolean SetFrameData(const FrameData & frameData);
+    virtual bool SetFrameData(const FrameData & frameData);
 
   protected:  
    PVideoFile * m_file;

@@ -3,7 +3,7 @@
  *
  * TCP socket I/O channel class.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -31,6 +31,6 @@
 // PTCPSocket
 
   public:
-    virtual PBoolean Read(void * buf, PINDEX len);
+    virtual bool Read(void * buf, PINDEX len);
 
 // End Of File ////////////////////////////////////////////////////////////////

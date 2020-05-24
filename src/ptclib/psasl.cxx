@@ -3,7 +3,7 @@
  *
  * Simple Authentication Security Layer interface classes
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 2004 Reitek S.p.A.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Post Increment
  *
@@ -195,7 +195,7 @@ PSASLClient::~PSASLClient()
 }
 
 
-PBoolean PSASLClient::Init(const PString& fqdn, PStringSet& supportedMechanisms)
+bool PSASLClient::Init(const PString& fqdn, PStringSet& supportedMechanisms)
 {
     if (!m_CallBacks)
     {
@@ -242,7 +242,7 @@ PBoolean PSASLClient::Init(const PString& fqdn, PStringSet& supportedMechanisms)
 }
 
 
-PBoolean PSASLClient::Start(const PString& mechanism, PString& output)
+bool PSASLClient::Start(const PString& mechanism, PString& output)
 {
     const char * _output = 0;
     unsigned _len = 0;
@@ -265,7 +265,7 @@ PBoolean PSASLClient::Start(const PString& mechanism, PString& output)
 }
 
 
-PBoolean PSASLClient::Start(const PString& mechanism, const char ** output, unsigned& len)
+bool PSASLClient::Start(const PString& mechanism, const char ** output, unsigned& len)
 {
     if (!m_ConnState)
         return false;
@@ -287,7 +287,7 @@ PSASLClient::PSASLResult PSASLClient::Negotiate(const PString& input, PString& o
     b64.ProcessDecoding(input);
 
     PBYTEArray _bin_input = b64.GetDecodedData();
-    PString _input((const char *)(const BYTE *)_bin_input, _bin_input.GetSize());
+    PString _input((const char *)(const uint8_t *)_bin_input, _bin_input.GetSize());
 
     const char * _output;
     
@@ -321,7 +321,7 @@ PSASLClient::PSASLResult PSASLClient::Negotiate(const char * input, const char *
 }
 
 
-PBoolean PSASLClient::End()
+bool PSASLClient::End()
 {
     if (m_ConnState)
     {

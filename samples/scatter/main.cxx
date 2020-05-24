@@ -15,7 +15,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Post Increment
  *
@@ -55,8 +55,8 @@ void WaitForIncoming::operator () (PThread &)
 {
   std::vector<PUDPSocket::Slice> slices;
 
-  BYTE buffer1[10];
-  BYTE buffer2[10];
+  uint8_t buffer1[10];
+  uint8_t buffer2[10];
 
   slices.push_back(PUDPSocket::Slice(buffer1, sizeof(buffer1)));
   slices.push_back(PUDPSocket::Slice(buffer2, sizeof(buffer2)));
@@ -111,7 +111,7 @@ void ScatterTest::Main()
     return;
   }  
 
-  WORD port = rxAddr.GetPort();
+  uint16_t port = rxAddr.GetPort();
   PError << "listening socket opened on port " << port << endl;
 
   WaitForIncoming waiter(rxSocket);
@@ -123,8 +123,8 @@ void ScatterTest::Main()
 
   {
     std::vector<PIPSocket::Slice> slices;
-    BYTE buffer1[7];
-    BYTE buffer2[7];
+    uint8_t buffer1[7];
+    uint8_t buffer2[7];
     slices.push_back(PUDPSocket::Slice(buffer1, sizeof(buffer1)));
     slices.push_back(PUDPSocket::Slice(buffer2, sizeof(buffer2)));
 

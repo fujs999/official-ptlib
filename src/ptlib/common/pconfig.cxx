@@ -3,7 +3,7 @@
  *
  * Operating System utilities.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -53,14 +53,14 @@ PStringToString PConfig::GetAllKeyValues(const PString & section) const
 
 #if !defined(_WIN32) || defined (__NUCLEUS_MNT__)
 
-PBoolean PConfig::GetBoolean(const PString & section, const PString & key, PBoolean dflt) const
+bool PConfig::GetBoolean(const PString & section, const PString & key, bool dflt) const
 {
   PString str = GetString(section, key, dflt ? "T" : "F").ToUpper();
   return str[0] == 'T' || str[0] == 'Y' || str.AsInteger() != 0;
 }
 
 
-void PConfig::SetBoolean(const PString & section, const PString & key, PBoolean value)
+void PConfig::SetBoolean(const PString & section, const PString & key, bool value)
 {
   SetString(section, key, value ? "True" : "False");
 }
@@ -82,7 +82,7 @@ void PConfig::SetInteger(const PString & section, const PString & key, long valu
 #endif
 
 
-PInt64 PConfig::GetInt64(const PString & section, const PString & key, PInt64 dflt) const
+int64_t PConfig::GetInt64(const PString & section, const PString & key, int64_t dflt) const
 {
   PString str = GetString(section, key, "");
   if (!str.IsEmpty())
@@ -91,7 +91,7 @@ PInt64 PConfig::GetInt64(const PString & section, const PString & key, PInt64 df
 }
 
 
-void PConfig::SetInt64(const PString & section, const PString & key, PInt64 value)
+void PConfig::SetInt64(const PString & section, const PString & key, int64_t value)
 {
   PStringStream strm;
   strm << value;

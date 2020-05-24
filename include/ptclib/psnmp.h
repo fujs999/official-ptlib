@@ -3,7 +3,7 @@
  *
  * Simple Network Management Protocol classes.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-2002 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -125,7 +125,7 @@ class PSNMP : public PIndirectChannel
                             const PString & enterprise,
                                      PINDEX specificTrap,
                                PASNUnsigned timeTicks,
-                                       WORD sendPort = TrapPort);
+                                       uint16_t sendPort = TrapPort);
 
     static void SendEnterpriseTrap (
                  const PIPSocket::Address & addr,
@@ -134,7 +134,7 @@ class PSNMP : public PIndirectChannel
                                      PINDEX specificTrap,
                                PASNUnsigned timeTicks,
                 const PSNMPVarBindingList & vars,
-                                       WORD sendPort = TrapPort);
+                                       uint16_t sendPort = TrapPort);
 
     static void SendTrap (
                        const PIPSocket::Address & addr,
@@ -144,7 +144,7 @@ class PSNMP : public PIndirectChannel
                                            PINDEX specificTrap,
                                      PASNUnsigned timeTicks,
                       const PSNMPVarBindingList & vars,
-                                             WORD sendPort = TrapPort);
+                                             uint16_t sendPort = TrapPort);
 
     static void SendTrap (
                       const PIPSocket::Address & addr,
@@ -155,7 +155,7 @@ class PSNMP : public PIndirectChannel
                                      PASNUnsigned timeTicks,
                       const PSNMPVarBindingList & vars,
                        const PIPSocket::Address & agentAddress,
-                                             WORD sendPort = TrapPort);
+                                             uint16_t sendPort = TrapPort);
                             
     static void WriteTrap (           PChannel & channel,
                                   PSNMP::TrapType trapType,
@@ -167,7 +167,7 @@ class PSNMP : public PIndirectChannel
                        const PIPSocket::Address & agentAddress);
 
 /*
-  static PBoolean DecodeTrap(const PBYTEArray & readBuffer,
+  static bool DecodeTrap(const PBYTEArray & readBuffer,
                                        PINDEX & version,
                                       PString & community,
                                       PString & enterprise,
@@ -210,13 +210,13 @@ class PSNMPClient : public PSNMP
     void SetRequestID(PASNInt requestID);
     PASNInt GetRequestID() const;
 
-    PBoolean WriteGetRequest (PSNMPVarBindingList & varsIn,
+    bool WriteGetRequest (PSNMPVarBindingList & varsIn,
                           PSNMPVarBindingList & varsOut);
 
-    PBoolean WriteGetNextRequest (PSNMPVarBindingList & varsIn,
+    bool WriteGetNextRequest (PSNMPVarBindingList & varsIn,
                               PSNMPVarBindingList & varsOut);
 
-    PBoolean WriteSetRequest (PSNMPVarBindingList & varsIn,
+    bool WriteSetRequest (PSNMPVarBindingList & varsIn,
                           PSNMPVarBindingList & varsOut);
 
     ErrorType GetLastErrorCode() const;
@@ -224,12 +224,12 @@ class PSNMPClient : public PSNMP
     PString   GetLastErrorText() const;
 
   protected:
-    PBoolean WriteRequest (PASNInt requestCode,
+    bool WriteRequest (PASNInt requestCode,
                        PSNMPVarBindingList & varsIn,
                        PSNMPVarBindingList & varsOut);
 
 
-    PBoolean ReadRequest(PBYTEArray & readBuffer);
+    bool ReadRequest(PBYTEArray & readBuffer);
 
     PString    m_hostName;
     PString    m_community;
@@ -254,7 +254,7 @@ class PSNMPServer : public PSNMP
   public:
 
     PSNMPServer(PIPSocket::Address binding = PIPSocket::GetDefaultIpAny(), 
-                WORD localPort = 161,   
+                uint16_t localPort = 161,   
                 PINDEX timeout = 5000, 
                 PINDEX rxSize = 10000, 
                 PINDEX txSize = 10000);
@@ -264,18 +264,18 @@ class PSNMPServer : public PSNMP
 	void Main();
 
     void SetVersion(PASNInt newVersion);
-    PBoolean HandleChannel();
-    PBoolean ProcessPDU(const PBYTEArray & readBuffer, PBYTEArray & writeBuffer);
+    bool HandleChannel();
+    bool ProcessPDU(const PBYTEArray & readBuffer, PBYTEArray & writeBuffer);
 
-    virtual PBoolean Authorise(const PIPSocket::Address & received);
-    virtual PBoolean ConfirmVersion(PASN_Integer vers);
-    virtual PBoolean ConfirmCommunity(PASN_OctetString & community);
+    virtual bool Authorise(const PIPSocket::Address & received);
+    virtual bool ConfirmVersion(PASN_Integer vers);
+    virtual bool ConfirmCommunity(PASN_OctetString & community);
 
-    virtual PBoolean MIB_LocalMatch(PSNMP_PDU & pdu);
+    virtual bool MIB_LocalMatch(PSNMP_PDU & pdu);
 
-    virtual PBoolean OnGetRequest     (PINDEX reqID, PSNMP::BindingList & vars, PSNMP::ErrorType & errCode);
-    virtual PBoolean OnGetNextRequest (PINDEX reqID, PSNMP::BindingList & vars, PSNMP::ErrorType & errCode);
-    virtual PBoolean OnSetRequest     (PINDEX reqID, PSNMP::BindingList & vars, PSNMP::ErrorType & errCode);
+    virtual bool OnGetRequest     (PINDEX reqID, PSNMP::BindingList & vars, PSNMP::ErrorType & errCode);
+    virtual bool OnGetNextRequest (PINDEX reqID, PSNMP::BindingList & vars, PSNMP::ErrorType & errCode);
+    virtual bool OnSetRequest     (PINDEX reqID, PSNMP::BindingList & vars, PSNMP::ErrorType & errCode);
 
     PSNMP::ErrorType SendGetResponse  (PSNMPVarBindingList & vars);
   

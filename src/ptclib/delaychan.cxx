@@ -3,7 +3,7 @@
  *
  * Class for controlling the timing of data passing through it.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 2001 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -137,7 +137,7 @@ PDelayChannel::PDelayChannel(PChannel &channel,
   PTRACE(5, "delay = " << frameDelay << ", size = " << frameSize);
 }
 
-PBoolean PDelayChannel::Read(void * buf, PINDEX count)
+bool PDelayChannel::Read(void * buf, PINDEX count)
 {
   if (!PIndirectChannel::Read(buf, count))
     return false;
@@ -149,7 +149,7 @@ PBoolean PDelayChannel::Read(void * buf, PINDEX count)
 }
 
 
-PBoolean PDelayChannel::Write(const void * buf, PINDEX count)
+bool PDelayChannel::Write(const void * buf, PINDEX count)
 {
   if (!PIndirectChannel::Write(buf, count))
     return false;

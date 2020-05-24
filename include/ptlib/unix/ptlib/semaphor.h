@@ -3,7 +3,7 @@
  *
  * Thread synchronisation semaphore class.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -52,10 +52,10 @@
 #elif defined(__BEOS__)
 
   public:
-    PSemaphore(PBoolean fNested); 
+    PSemaphore(bool fNested); 
 
   protected:
-    PBoolean mfNested; // Does it support recursive locks?
+    bool mfNested; // Does it support recursive locks?
     thread_id mOwner; // delete can be called by owner thread
     sem_id semId;
     volatile int32 mCount;

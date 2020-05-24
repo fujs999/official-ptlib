@@ -3,7 +3,7 @@
  *
  * Encryption support classes.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-2002 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -111,7 +111,7 @@ void PSASLString::AppendValidated(wchar_t c)
     case 0x200D: // ZERO WIDTH JOINER
     case 0x2028: // LINE SEPARATOR
     case 0x2029: // PARAGRAPH SEPARATOR
-    case 0x2060: // WORD JOINER
+    case 0x2060: // uint16_t JOINER
     case 0x2061: // FUNCTION APPLICATION
     case 0x2062: // INVISIBLE TIMES
     case 0x2063: // INVISIBLE SEPARATOR
@@ -216,7 +216,7 @@ void PBase64::ProcessEncoding(const PString & str)
 
 void PBase64::ProcessEncoding(const char * cstr)
 {
-  ProcessEncoding((const BYTE *)cstr, (int)strlen(cstr));
+  ProcessEncoding((const uint8_t *)cstr, (int)strlen(cstr));
 }
 
 
@@ -226,7 +226,7 @@ void PBase64::ProcessEncoding(const PBYTEArray & data)
 }
 
 
-void PBase64::OutputBase64(const BYTE * data)
+void PBase64::OutputBase64(const uint8_t * data)
 {
   m_encodedString.SetMinSize(((m_encodedString.GetLength()+7)&~255) + 256);
 
@@ -248,7 +248,7 @@ void PBase64::ProcessEncoding(const void * dataPtr, PINDEX length)
   if (length == 0)
     return;
 
-  const BYTE * data = (const BYTE *)dataPtr;
+  const uint8_t * data = (const uint8_t *)dataPtr;
   while (m_saveCount < 3) {
     m_saveTriple[m_saveCount++] = *data++;
     if (--length == 0) {
@@ -336,7 +336,7 @@ PString PBase64::Encode(const char * cstr, Options options, PINDEX width)
   if (cstr == NULL || *cstr == '\0')
     return PString::Empty();
 
-  return Encode((const BYTE *)cstr, (PINDEX)strlen(cstr), options, width);
+  return Encode((const uint8_t *)cstr, (PINDEX)strlen(cstr), options, width);
 }
 
 
@@ -345,7 +345,7 @@ PString PBase64::Encode(const char * cstr, const char * endOfLine, PINDEX width)
   if (cstr == NULL || *cstr == '\0')
     return PString::Empty();
 
-  return Encode((const BYTE *)cstr, (PINDEX)strlen(cstr), endOfLine, width);
+  return Encode((const uint8_t *)cstr, (PINDEX)strlen(cstr), endOfLine, width);
 }
 
 
@@ -399,15 +399,15 @@ void PBase64::StartDecoding()
 }
 
 
-PBoolean PBase64::ProcessDecoding(const PString & str)
+bool PBase64::ProcessDecoding(const PString & str)
 {
   return ProcessDecoding((const char *)str);
 }
 
 
-PBoolean PBase64::ProcessDecoding(const char * cstr)
+bool PBase64::ProcessDecoding(const char * cstr)
 {
-  static const BYTE Base642Binary[256] = {
+  static const uint8_t Base642Binary[256] = {
     96, 99, 99, 99, 99, 99, 99, 99, 99, 99, 98, 99, 99, 98, 99, 99,
     99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99,
     99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 62, 99, 62, 99, 63,
@@ -427,7 +427,7 @@ PBoolean PBase64::ProcessDecoding(const char * cstr)
   };
 
   for (;;) {
-    BYTE value = Base642Binary[(BYTE)*cstr++];
+    uint8_t value = Base642Binary[(uint8_t)*cstr++];
     switch (value) {
       case 96 : // end of string
         return false;
@@ -448,21 +448,21 @@ PBoolean PBase64::ProcessDecoding(const char * cstr)
         break;
 
       default : // legal value from 0 to 63
-        BYTE * out = m_decodedData.GetPointer(((m_decodeSize+1)&~255) + 256);
+        uint8_t * out = m_decodedData.GetPointer(((m_decodeSize+1)&~255) + 256);
         switch (m_quadPosition) {
           case 0 :
-            out[m_decodeSize] = (BYTE)(value << 2);
+            out[m_decodeSize] = (uint8_t)(value << 2);
             break;
           case 1 :
-            out[m_decodeSize++] |= (BYTE)(value >> 4);
-            out[m_decodeSize] = (BYTE)((value&15) << 4);
+            out[m_decodeSize++] |= (uint8_t)(value >> 4);
+            out[m_decodeSize] = (uint8_t)((value&15) << 4);
             break;
           case 2 :
-            out[m_decodeSize++] |= (BYTE)(value >> 2);
-            out[m_decodeSize] = (BYTE)((value&3) << 6);
+            out[m_decodeSize++] |= (uint8_t)(value >> 2);
+            out[m_decodeSize] = (uint8_t)((value&3) << 6);
             break;
           case 3 :
-            out[m_decodeSize++] |= (BYTE)value;
+            out[m_decodeSize++] |= (uint8_t)value;
             break;
         }
         m_quadPosition = (m_quadPosition+1)&3;
@@ -483,10 +483,10 @@ PBYTEArray PBase64::GetDecodedData()
 }
 
 
-PBoolean PBase64::GetDecodedData(void * dataBlock, PINDEX length)
+bool PBase64::GetDecodedData(void * dataBlock, PINDEX length)
 {
   m_perfectDecode = m_quadPosition == 0;
-  PBoolean bigEnough = length >= m_decodeSize;
+  bool bigEnough = length >= m_decodeSize;
   memcpy(dataBlock, m_decodedData, bigEnough ? m_decodeSize : length);
   m_decodedData.SetSize(0);
   m_decodeSize = 0;
@@ -505,7 +505,7 @@ PString PBase64::Decode(const PString & str)
 }
 
 
-PBoolean PBase64::Decode(const PString & str, PBYTEArray & data)
+bool PBase64::Decode(const PString & str, PBYTEArray & data)
 {
   if (str.IsEmpty())
     return false;
@@ -517,7 +517,7 @@ PBoolean PBase64::Decode(const PString & str, PBYTEArray & data)
 }
 
 
-PBoolean PBase64::Decode(const PString & str, void * dataBlock, PINDEX length)
+bool PBase64::Decode(const PString & str, void * dataBlock, PINDEX length)
 {
   if (str.IsEmpty())
     return false;
@@ -580,10 +580,10 @@ void PMessageDigest::Result::PrintOn(ostream & strm) const
 
 bool PMessageDigest::Result::ConstantTimeCompare(const Result & other) const
 {
-  const BYTE * leftPtr = *this;
+  const uint8_t * leftPtr = *this;
   size_t leftCount = size();
 
-  const BYTE * rightPtr = other;
+  const uint8_t * rightPtr = other;
   size_t rightCount = other.size();
 
   unsigned check = 0;
@@ -653,36 +653,36 @@ PMessageDigest5::PMessageDigest5()
 // FF, GG, HH, and II transformations for rounds 1, 2, 3, and 4.
 // Rotation is separate from addition to prevent recomputation.
 #define FF(a, b, c, d, x, s, ac) \
- (a) += F ((b), (c), (d)) + (x) + (DWORD)(ac); \
+ (a) += F ((b), (c), (d)) + (x) + (uint32_t)(ac); \
  (a) = ROTATE_LEFT ((a), (s)); \
  (a) += (b); \
 
 #define GG(a, b, c, d, x, s, ac) \
- (a) += G ((b), (c), (d)) + (x) + (DWORD)(ac); \
+ (a) += G ((b), (c), (d)) + (x) + (uint32_t)(ac); \
  (a) = ROTATE_LEFT ((a), (s)); \
  (a) += (b); \
 
 #define HH(a, b, c, d, x, s, ac) \
- (a) += H ((b), (c), (d)) + (x) + (DWORD)(ac); \
+ (a) += H ((b), (c), (d)) + (x) + (uint32_t)(ac); \
  (a) = ROTATE_LEFT ((a), (s)); \
  (a) += (b); \
 
 #define II(a, b, c, d, x, s, ac) \
- (a) += I ((b), (c), (d)) + (x) + (DWORD)(ac); \
+ (a) += I ((b), (c), (d)) + (x) + (uint32_t)(ac); \
  (a) = ROTATE_LEFT ((a), (s)); \
  (a) += (b); \
 
 
-void PMessageDigest5::Transform(const BYTE * block)
+void PMessageDigest5::Transform(const uint8_t * block)
 {
-  DWORD a = state[0];
-  DWORD b = state[1];
-  DWORD c = state[2];
-  DWORD d = state[3];
+  uint32_t a = state[0];
+  uint32_t b = state[1];
+  uint32_t c = state[2];
+  uint32_t d = state[3];
 
-  DWORD x[16];
+  uint32_t x[16];
   for (PINDEX i = 0; i < 16; i++)
-    x[i] = ((PUInt32l*)block)[i];
+    x[i] = ((uint32_tl*)block)[i];
 
   /* Round 1 */
   FF(a, b, c, d, x[ 0], S11, 0xd76aa478); /* 1 */
@@ -779,14 +779,14 @@ void PMessageDigest5::InternalStart()
 
 void PMessageDigest5::InternalProcess(const void * dataPtr, PINDEX length)
 {
-  const BYTE * data = (const BYTE *)dataPtr;
+  const uint8_t * data = (const uint8_t *)dataPtr;
 
   // Compute number of bytes mod 64
   PINDEX index = (PINDEX)((count >> 3) & 0x3F);
   PINDEX partLen = 64 - index;
 
   // Update number of bits
-  count += (PUInt64)length << 3;
+  count += (uint64_t)length << 3;
 
   // See if have a buffer full
   PINDEX i;
@@ -814,7 +814,7 @@ void PMessageDigest5::InternalCompleteDigest(Result & result)
   // Pad out to 56 mod 64.
   PINDEX index = (PINDEX)((count >> 3) & 0x3f);
   PINDEX padLen = (index < 56) ? (56 - index) : (120 - index);
-  static BYTE const padding[64] = {
+  static uint8_t const padding[64] = {
     0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
@@ -825,7 +825,7 @@ void PMessageDigest5::InternalCompleteDigest(Result & result)
   Process(&countBytes, sizeof(countBytes));
 
   // Store state in digest
-  PUInt32l * valuep = (PUInt32l *)result.GetPointer(4 * sizeof(PUInt32l));
+  uint32_tl * valuep = (uint32_tl *)result.GetPointer(4 * sizeof(uint32_tl));
   for (PINDEX i = 0; i < PARRAYSIZE(state); i++)
     valuep[i] = state[i];
 
@@ -963,7 +963,7 @@ PCypher::PCypher(PINDEX blkSize, BlockChainMode mode)
 
 PCypher::PCypher(const void * keyData, PINDEX keyLength,
                  PINDEX blkSize, BlockChainMode mode)
-  : key((const BYTE *)keyData, keyLength),
+  : key((const uint8_t *)keyData, keyLength),
     blockSize(blkSize),
     chainMode(mode)
 {
@@ -978,7 +978,7 @@ PString PCypher::Encode(const PString & str)
 
 PString PCypher::Encode(const PBYTEArray & clear)
 {
-  return Encode((const BYTE *)clear, clear.GetSize());
+  return Encode((const uint8_t *)clear, clear.GetSize());
 }
 
 
@@ -992,7 +992,7 @@ PString PCypher::Encode(const void * data, PINDEX length)
 
 void PCypher::Encode(const PBYTEArray & clear, PBYTEArray & coded)
 {
-  Encode((const BYTE *)clear, clear.GetSize(), coded);
+  Encode((const uint8_t *)clear, clear.GetSize(), coded);
 }
 
 
@@ -1002,8 +1002,8 @@ void PCypher::Encode(const void * data, PINDEX length, PBYTEArray & coded)
 
   Initialise(true);
 
-  const BYTE * in = (const BYTE *)data;
-  BYTE * out = coded.GetPointer(
+  const uint8_t * in = (const uint8_t *)data;
+  uint8_t * out = coded.GetPointer(
                       blockSize > 1 ? (length/blockSize+1)*blockSize : length);
 
   while (length >= blockSize) {
@@ -1019,10 +1019,10 @@ void PCypher::Encode(const void * data, PINDEX length, PBYTEArray & coded)
     for (i = 0; i < length; i++)
       extra[i] = *in++;
     PTime now;
-    PRandom rand((DWORD)now.GetTimestamp());
+    PRandom rand((uint32_t)now.GetTimestamp());
     for (; i < blockSize-1; i++)
-      extra[i] = (BYTE)rand.Generate();
-    extra[blockSize-1] = (BYTE)length;
+      extra[i] = (uint8_t)rand.Generate();
+    extra[blockSize-1] = (uint8_t)length;
     EncodeBlock(extra, out);
   }
 }
@@ -1037,7 +1037,7 @@ PString PCypher::Decode(const PString & cypher)
 }
 
 
-PBoolean PCypher::Decode(const PString & cypher, PString & clear)
+bool PCypher::Decode(const PString & cypher, PString & clear)
 {
   clear = PString();
 
@@ -1049,12 +1049,12 @@ PBoolean PCypher::Decode(const PString & cypher, PString & clear)
     return true;
 
   PINDEX sz = clearText.GetSize();
-  memcpy(clear.GetPointerAndSetLength(sz), (const BYTE *)clearText, sz);
+  memcpy(clear.GetPointerAndSetLength(sz), (const uint8_t *)clearText, sz);
   return true;
 }
 
 
-PBoolean PCypher::Decode(const PString & cypher, PBYTEArray & clear)
+bool PCypher::Decode(const PString & cypher, PBYTEArray & clear)
 {
   PBYTEArray coded;
   if (!PBase64::Decode(cypher, coded))
@@ -1085,7 +1085,7 @@ PINDEX PCypher::Decode(const PBYTEArray & coded, void * data, PINDEX length)
 }
 
 
-PBoolean PCypher::Decode(const PBYTEArray & coded, PBYTEArray & clear)
+bool PCypher::Decode(const PBYTEArray & coded, PBYTEArray & clear)
 {
   PAssert((blockSize%8) == 0, PUnsupportedFeature);
   if (coded.IsEmpty() || (coded.GetSize()%blockSize) != 0)
@@ -1093,9 +1093,9 @@ PBoolean PCypher::Decode(const PBYTEArray & coded, PBYTEArray & clear)
 
   Initialise(false);
 
-  const BYTE * in = coded;
+  const uint8_t * in = coded;
   PINDEX length = coded.GetSize();
-  BYTE * out = clear.GetPointer(length);
+  uint8_t * out = clear.GetPointer(length);
 
   for (PINDEX count = 0; count < length; count += blockSize) {
     DecodeBlock(in, out);
@@ -1146,26 +1146,26 @@ void PTEACypher::GenerateKey(Key & newKey)
 {
   static PRandom rand; //=1 // Explicitly set seed if need known random sequence
   for (size_t i = 0; i < sizeof(Key); i++)
-    newKey.value[i] = (BYTE)rand;
+    newKey.value[i] = (uint8_t)rand;
 }
 
 
-static const DWORD TEADelta = 0x9e3779b9;    // Magic number for key schedule
+static const uint32_t TEADelta = 0x9e3779b9;    // Magic number for key schedule
 
-void PTEACypher::Initialise(PBoolean)
+void PTEACypher::Initialise(bool)
 {
-  k0 = ((const PUInt32l *)(const BYTE *)key)[0];
-  k1 = ((const PUInt32l *)(const BYTE *)key)[1];
-  k2 = ((const PUInt32l *)(const BYTE *)key)[2];
-  k3 = ((const PUInt32l *)(const BYTE *)key)[3];
+  k0 = ((const uint32_tl *)(const uint8_t *)key)[0];
+  k1 = ((const uint32_tl *)(const uint8_t *)key)[1];
+  k2 = ((const uint32_tl *)(const uint8_t *)key)[2];
+  k3 = ((const uint32_tl *)(const uint8_t *)key)[3];
 }
 
 
 void PTEACypher::EncodeBlock(const void * in, void * out)
 {
-  DWORD y = ((PUInt32b*)in)[0];
-  DWORD z = ((PUInt32b*)in)[1];
-  DWORD sum = 0;
+  uint32_t y = ((PUInt32b*)in)[0];
+  uint32_t z = ((PUInt32b*)in)[1];
+  uint32_t sum = 0;
   for (PINDEX count = 32; count > 0; count--) {
     sum += TEADelta;    // Magic number for key schedule
     y += ((z<<4)+k0) ^ (z+sum) ^ ((z>>5)+k1);
@@ -1178,9 +1178,9 @@ void PTEACypher::EncodeBlock(const void * in, void * out)
 
 void PTEACypher::DecodeBlock(const void * in, void * out)
 {
-  DWORD y = ((PUInt32b*)in)[0];
-  DWORD z = ((PUInt32b*)in)[1];
-  DWORD sum = TEADelta<<5;
+  uint32_t y = ((PUInt32b*)in)[0];
+  uint32_t z = ((PUInt32b*)in)[1];
+  uint32_t sum = TEADelta<<5;
   for (PINDEX count = 32; count > 0; count--) {
     z -= ((y<<4)+k2) ^ (y+sum) ^ ((y>>5)+k3); 
     y -= ((z<<4)+k0) ^ (z+sum) ^ ((z>>5)+k1);
@@ -1226,8 +1226,8 @@ void PHMAC_MD5::InitKey(const void * key, PINDEX len)
 void PHMAC_MD5::InternalProcess(const void * data, PINDEX len, PHMAC::Result & result)
 {
   PINDEX i;
-  BYTE const * k;
-  BYTE * d;
+  uint8_t const * k;
+  uint8_t * d;
 
   PINDEX const keyLen = m_key.GetSize();
 
@@ -1368,7 +1368,7 @@ void PSecureConfig::GetProductKey(PTEACypher::Key & prodKey) const
 PSecureConfig::ValidationState PSecureConfig::GetValidation() const
 {
   PString str;
-  PBoolean allEmpty = true;
+  bool allEmpty = true;
   PMessageDigest5 digestor;
   for (PINDEX i = 0; i < securedKeys.GetSize(); i++) {
     str = GetString(securedKeys[i]);
@@ -1398,7 +1398,7 @@ PSecureConfig::ValidationState PSecureConfig::GetValidation() const
   if (vkey.IsEmpty())
     return Invalid;
 
-  BYTE info[PMessageDigest5::DigestLength+1+sizeof(DWORD)];
+  uint8_t info[PMessageDigest5::DigestLength+1+sizeof(uint32_t)];
   PTEACypher crypt(productKey);
   if (crypt.Decode(vkey, info, sizeof(info)) != sizeof(info))
     return Invalid;
@@ -1414,7 +1414,7 @@ PSecureConfig::ValidationState PSecureConfig::GetValidation() const
 }
 
 
-PBoolean PSecureConfig::ValidatePending()
+bool PSecureConfig::ValidatePending()
 {
   if (GetValidation() != Pending)
     return false;
@@ -1424,7 +1424,7 @@ PBoolean PSecureConfig::ValidatePending()
     return true;
 
   PMessageDigest5::Code code;
-  BYTE info[PMessageDigest5::DigestLength+1+sizeof(DWORD)];
+  uint8_t info[PMessageDigest5::DigestLength+1+sizeof(uint32_t)];
   PTEACypher crypt(productKey);
   if (crypt.Decode(vkey, info, sizeof(info)) != sizeof(info))
     return false;
@@ -1438,7 +1438,7 @@ PBoolean PSecureConfig::ValidatePending()
   void * dst = &opt;
   void * src = &info[PMessageDigest5::DigestLength+1];
   memcpy(dst, src, sizeof(opt));
-  PString options(PString::Unsigned, (DWORD)opt);
+  PString options(PString::Unsigned, (uint32_t)opt);
 
   PMessageDigest5 digestor;
   PINDEX i;

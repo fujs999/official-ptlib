@@ -87,7 +87,7 @@ void Md5::Main()
        << PBase64::Encode(&digester, sizeof(digester)) << endl << endl;
 
   for(PINDEX i = 0; i < (PINDEX)sizeof(digester); i++) 
-    cerr << ::hex << ::setfill('0') << ::setw(2) << (int)(*(((BYTE *)&digester)+i));
+    cerr << ::hex << ::setfill('0') << ::setw(2) << (int)(*(((uint8_t *)&digester)+i));
 
   cerr << ::dec << endl;
 

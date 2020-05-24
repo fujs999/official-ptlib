@@ -3,7 +3,7 @@
  *
  * Sound driver implementation.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original ALSA Code is
  * Damien Sandras <dsandras@seconix.com>
@@ -315,7 +315,7 @@ bool PSoundChannelALSA::SetHardwareParams()
 }
 
 
-PBoolean PSoundChannelALSA::Close()
+bool PSoundChannelALSA::Close()
 {
   PWaitAndSignal m(device_mutex);
 
@@ -334,7 +334,7 @@ PBoolean PSoundChannelALSA::Close()
 }
 
 
-PBoolean PSoundChannelALSA::Write(const void *buf, PINDEX len)
+bool PSoundChannelALSA::Write(const void *buf, PINDEX len)
 {
   SetLastWriteCount(0);
 
@@ -388,7 +388,7 @@ PBoolean PSoundChannelALSA::Write(const void *buf, PINDEX len)
 }
 
 
-PBoolean PSoundChannelALSA::Read(void * buf, PINDEX len)
+bool PSoundChannelALSA::Read(void * buf, PINDEX len)
 {
   SetLastReadCount(0);
 
@@ -442,7 +442,7 @@ PBoolean PSoundChannelALSA::Read(void * buf, PINDEX len)
 }
 
 
-PBoolean PSoundChannelALSA::SetFormat(unsigned numChannels,
+bool PSoundChannelALSA::SetFormat(unsigned numChannels,
                                       unsigned sampleRate,
                                       unsigned bitsPerSample)
 {
@@ -482,7 +482,7 @@ unsigned PSoundChannelALSA::GetSampleSize() const
 }
 
 
-PBoolean PSoundChannelALSA::SetBuffers(PINDEX size, PINDEX count)
+bool PSoundChannelALSA::SetBuffers(PINDEX size, PINDEX count)
 {
   PTRACE(4,"ALSA\tSetBuffers direction=" <<
 	         ((m_activeDirection == Player) ? "Player" : "Recorder") << " size=" << size << " count=" << count);
@@ -495,7 +495,7 @@ PBoolean PSoundChannelALSA::SetBuffers(PINDEX size, PINDEX count)
 }
 
 
-PBoolean PSoundChannelALSA::GetBuffers(PINDEX & size, PINDEX & count)
+bool PSoundChannelALSA::GetBuffers(PINDEX & size, PINDEX & count)
 {
   size = m_bufferSize;
   count = m_bufferCount;
@@ -503,7 +503,7 @@ PBoolean PSoundChannelALSA::GetBuffers(PINDEX & size, PINDEX & count)
 }
 
 
-PBoolean PSoundChannelALSA::HasPlayCompleted()
+bool PSoundChannelALSA::HasPlayCompleted()
 {
   if (!pcm_handle)
     return SetErrorValues(NotOpen, EBADF);
@@ -512,7 +512,7 @@ PBoolean PSoundChannelALSA::HasPlayCompleted()
 }
 
 
-PBoolean PSoundChannelALSA::WaitForPlayCompletion()
+bool PSoundChannelALSA::WaitForPlayCompletion()
 {
   if (!pcm_handle)
     return SetErrorValues(NotOpen, EBADF);
@@ -523,37 +523,37 @@ PBoolean PSoundChannelALSA::WaitForPlayCompletion()
 }
 
 
-PBoolean PSoundChannelALSA::StartRecording()
+bool PSoundChannelALSA::StartRecording()
 {
   return false;
 }
 
 
-PBoolean PSoundChannelALSA::IsRecordBufferFull()
+bool PSoundChannelALSA::IsRecordBufferFull()
 {
   return true;
 }
 
 
-PBoolean PSoundChannelALSA::AreAllRecordBuffersFull()
+bool PSoundChannelALSA::AreAllRecordBuffersFull()
 {
   return true;
 }
 
 
-PBoolean PSoundChannelALSA::WaitForRecordBufferFull()
+bool PSoundChannelALSA::WaitForRecordBufferFull()
 {
   return true;
 }
 
 
-PBoolean PSoundChannelALSA::WaitForAllRecordBuffersFull()
+bool PSoundChannelALSA::WaitForAllRecordBuffersFull()
 {
   return false;
 }
 
 
-PBoolean PSoundChannelALSA::Abort()
+bool PSoundChannelALSA::Abort()
 {
   int r = 0;
 
@@ -571,26 +571,26 @@ PBoolean PSoundChannelALSA::Abort()
 
 
 
-PBoolean PSoundChannelALSA::SetVolume(unsigned newVal)
+bool PSoundChannelALSA::SetVolume(unsigned newVal)
 {
   unsigned i = 0;
   return Volume(true, newVal, i);
 }
 
 
-PBoolean  PSoundChannelALSA::GetVolume(unsigned &devVol)
+bool  PSoundChannelALSA::GetVolume(unsigned &devVol)
 {
   return Volume(false, 0, devVol);
 }
 
 
-PBoolean PSoundChannelALSA::IsOpen() const
+bool PSoundChannelALSA::IsOpen() const
 {
   return pcm_handle != NULL;
 }
 
 
-PBoolean PSoundChannelALSA::Volume(PBoolean set, unsigned set_vol, unsigned &get_vol)
+bool PSoundChannelALSA::Volume(bool set, unsigned set_vol, unsigned &get_vol)
 {
   int err = 0;
   snd_mixer_t *handle;

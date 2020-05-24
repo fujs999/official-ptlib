@@ -3,7 +3,7 @@
  *
  * Video file implementation
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (C) 2004 Post Increment
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is
  * Craig Southeren <craigs@postincrement.com>
@@ -93,13 +93,13 @@ bool PVideoFile::SetFPSFromFilename(const PString & fn)
 }
 
 
-PBoolean PVideoFile::WriteFrame(const void * frame)
+bool PVideoFile::WriteFrame(const void * frame)
 {
   return Write(frame, m_frameBytes);
 }
 
 
-PBoolean PVideoFile::ReadFrame(void * frame)
+bool PVideoFile::ReadFrame(void * frame)
 {
   if (Read(frame, m_frameBytes) && (GetLastReadCount() == m_frameBytes))
     return true;
@@ -122,7 +122,7 @@ off_t PVideoFile::GetLength() const
 }
 
 
-PBoolean PVideoFile::SetLength(off_t len)
+bool PVideoFile::SetLength(off_t len)
 {
   return PFile::SetLength(len*(m_frameBytes + m_frameHeaderLen) + m_headerOffset);
 }
@@ -135,7 +135,7 @@ off_t PVideoFile::GetPosition() const
 }
 
 
-PBoolean PVideoFile::SetPosition(off_t pos, PFile::FilePositionOrigin origin)
+bool PVideoFile::SetPosition(off_t pos, PFile::FilePositionOrigin origin)
 {
   pos *= m_frameBytes+m_frameHeaderLen;
   if (origin == PFile::Start)
@@ -145,7 +145,7 @@ PBoolean PVideoFile::SetPosition(off_t pos, PFile::FilePositionOrigin origin)
 }
 
 
-PBoolean PVideoFile::SetFrameSize(unsigned width, unsigned height)
+bool PVideoFile::SetFrameSize(unsigned width, unsigned height)
 {
   if (m_videoInfo.GetFrameWidth() == width && m_videoInfo.GetFrameHeight() == height)
     return true;
@@ -161,7 +161,7 @@ PBoolean PVideoFile::SetFrameSize(unsigned width, unsigned height)
 }
 
 
-PBoolean PVideoFile::SetFrameRate(unsigned rate)
+bool PVideoFile::SetFrameRate(unsigned rate)
 {
   if (m_videoInfo.GetFrameRate() == rate)
     return true;
@@ -276,7 +276,7 @@ bool PYUVFile::InternalOpen(OpenMode mode, OpenOptions opts, PFileInfo::Permissi
 }
 
 
-PBoolean PYUVFile::WriteFrame(const void * frame)
+bool PYUVFile::WriteFrame(const void * frame)
 {
   if (m_y4mMode) {
     if (PFile::GetPosition() > 0)
@@ -296,7 +296,7 @@ PBoolean PYUVFile::WriteFrame(const void * frame)
 }
 
 
-PBoolean PYUVFile::ReadFrame(void * frame)
+bool PYUVFile::ReadFrame(void * frame)
 {
   if (m_y4mMode) {
     PString info = ReadPrintable(*this);
@@ -338,7 +338,7 @@ class PStillImageVideoFile : public PVideoFile
       return true;
     }
 
-    virtual PBoolean IsOpen() const
+    virtual bool IsOpen() const
     { 
       return !m_pixelData.IsEmpty();
     }
@@ -360,12 +360,12 @@ class PStillImageVideoFile : public PVideoFile
       return pos == 0;
     }
 
-    virtual PBoolean WriteFrame(const void *)
+    virtual bool WriteFrame(const void *)
     {
       return false;
     }
 
-    virtual PBoolean ReadFrame(void * frame)
+    virtual bool ReadFrame(void * frame)
     {
       if (!IsOpen())
         return false;
@@ -486,10 +486,10 @@ class PBMPFile : public PStillImageVideoFile
     #pragma pack(1)
       struct {
         PUInt16l m_FileType;     /* File type, always 4D42h ("BM") */
-        PUInt32l m_FileSize;     /* Size of the file in bytes */
+        uint32_tl m_FileSize;     /* Size of the file in bytes */
         PUInt16l m_Reserved1;    /* Always 0 */
         PUInt16l m_Reserved2;    /* Always 0 */
-        PUInt32l m_BitmapOffset; /* Starting position of image data in bytes */
+        uint32_tl m_BitmapOffset; /* Starting position of image data in bytes */
       } fileHeader;
     #pragma pack()
 
@@ -501,17 +501,17 @@ class PBMPFile : public PStillImageVideoFile
 
     #pragma pack(1)
       struct {
-        PUInt32l m_Size;            /* Size of this header in bytes */
-        PInt32l  m_Width;           /* Image width in pixels */
-        PInt32l  m_Height;          /* Image height in pixels */
+        uint32_tl m_Size;            /* Size of this header in bytes */
+        int32_tl  m_Width;           /* Image width in pixels */
+        int32_tl  m_Height;          /* Image height in pixels */
         PUInt16l m_Planes;          /* Number of color planes */
         PUInt16l m_BitsPerPixel;    /* Number of bits per pixel */
-        PUInt32l m_Compression;     /* Compression methods used */
-        PUInt32l m_SizeOfBitmap;    /* Size of bitmap in bytes */
-        PInt32l  m_HorzResolution;  /* Horizontal resolution in pixels per meter */
-        PInt32l  m_VertResolution;  /* Vertical resolution in pixels per meter */
-        PUInt32l m_ColorsUsed;      /* Number of colors in the image */
-        PUInt32l m_ColorsImportant; /* Minimum number of important colors */
+        uint32_tl m_Compression;     /* Compression methods used */
+        uint32_tl m_SizeOfBitmap;    /* Size of bitmap in bytes */
+        int32_tl  m_HorzResolution;  /* Horizontal resolution in pixels per meter */
+        int32_tl  m_VertResolution;  /* Vertical resolution in pixels per meter */
+        uint32_tl m_ColorsUsed;      /* Number of colors in the image */
+        uint32_tl m_ColorsImportant; /* Minimum number of important colors */
       } bitmapHeader;
     #pragma pack()
 

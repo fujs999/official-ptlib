@@ -3,7 +3,7 @@
  *
  * Remote networking connection class.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -85,24 +85,24 @@ class PRemoteConnection : public PObject
   //@{
     /** Open the remote connection.
      */
-    PBoolean Open(
-      PBoolean existing = false  ///< Flag for open only if already connected.
+    bool Open(
+      bool existing = false  ///< Flag for open only if already connected.
     );
 
     /** Open the remote connection.
      */
-    PBoolean Open(
+    bool Open(
       const PString & name,   ///< RAS name of of connection to open.
-      PBoolean existing = false   ///< Flag for open only if already connected.
+      bool existing = false   ///< Flag for open only if already connected.
     );
 
     /** Open the remote connection.
      */
-    PBoolean Open(
+    bool Open(
       const PString & name,     ///< RAS name of of connection to open.
       const PString & username, ///< Username for remote log in.
       const PString & password, ///< password for remote log in.
-      PBoolean existing = false     ///< Flag for open only if already connected.
+      bool existing = false     ///< Flag for open only if already connected.
     );
 
     /** Close the remote connection.
@@ -157,7 +157,7 @@ class PRemoteConnection : public PObject
        @return
        Operating system error code.
      */
-    DWORD GetErrorCode() const { return osError; }
+    uint32_t GetErrorCode() const { return osError; }
   //@}
 
   /**@name Information functions */
@@ -202,7 +202,7 @@ class PRemoteConnection : public PObject
       /// Sub-entry number when Multi-link PPP is used.
       PINDEX  subEntries;
       /// Always establish maximum bandwidth when Multi-link PPP is used.
-      PBoolean    dialAllSubEntries;
+      bool    dialAllSubEntries;
     };
 
     /**Get the configuration of the specified remote access connection.
@@ -240,7 +240,7 @@ class PRemoteConnection : public PObject
      */
     Status SetConfiguration(
       const Configuration & config,  ///< Configuration of remote connection
-      PBoolean create = false            ///< Flag to create connection if not present
+      bool create = false            ///< Flag to create connection if not present
     );
 
     /**Set the configuration of the specified remote access connection.
@@ -254,7 +254,7 @@ class PRemoteConnection : public PObject
     static Status SetConfiguration(
       const PString & name,          ///< Remote connection name to configure
       const Configuration & config,  ///< Configuration of remote connection
-      PBoolean create = false            ///< Flag to create connection if not present
+      bool create = false            ///< Flag to create connection if not present
     );
 
     /**Remove the specified remote access connection.
@@ -274,7 +274,7 @@ class PRemoteConnection : public PObject
     PString remoteName;
     PString userName;
     PString password;
-    DWORD osError;
+    uint32_t osError;
 
   private:
     PRemoteConnection(const PRemoteConnection &) { }

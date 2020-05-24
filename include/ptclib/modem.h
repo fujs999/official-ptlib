@@ -3,7 +3,7 @@
  *
  * AT command set modem on asynchonous port class.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-2002 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -69,10 +69,10 @@ class PModem : public PSerialChannel
     PModem();
     PModem(
       const PString & port,   ///< Serial port name to open.
-      DWORD speed = 0,        ///< Speed of serial port.
-      BYTE data = 0,          ///< Number of data bits for serial port.
+      uint32_t speed = 0,        ///< Speed of serial port.
+      uint8_t data = 0,          ///< Number of data bits for serial port.
       Parity parity = DefaultParity,  ///< Parity for serial port.
-      BYTE stop = 0,          ///< Number of stop bits for serial port.
+      uint8_t stop = 0,          ///< Number of stop bits for serial port.
       FlowControl inputFlow = DefaultFlowControl,   ///< Input flow control.
       FlowControl outputFlow = DefaultFlowControl   ///< Output flow control.
     );
@@ -89,7 +89,7 @@ class PModem : public PSerialChannel
 
 
   // Overrides from class PChannel
-    virtual PBoolean Close();
+    virtual bool Close();
     // Close the modem serial port channel.
 
 
@@ -102,12 +102,12 @@ class PModem : public PSerialChannel
        @return
        true if the modem serial port was successfully opened.
      */
-    virtual PBoolean Open(
+    virtual bool Open(
       const PString & port,   ///< Serial port name to open.
-      DWORD speed = 0,        ///< Speed of serial port.
-      BYTE data = 0,          ///< Number of data bits for serial port.
+      uint32_t speed = 0,        ///< Speed of serial port.
+      uint8_t data = 0,          ///< Number of data bits for serial port.
       Parity parity = DefaultParity,  ///< Parity for serial port.
-      BYTE stop = 0,          ///< Number of stop bits for serial port.
+      uint8_t stop = 0,          ///< Number of stop bits for serial port.
       FlowControl inputFlow = DefaultFlowControl,   ///< Input flow control.
       FlowControl outputFlow = DefaultFlowControl   ///< Output flow control.
     );
@@ -120,7 +120,7 @@ class PModem : public PSerialChannel
        @return
        true if the modem serial port was successfully opened.
      */
-    virtual PBoolean Open(
+    virtual bool Open(
       PConfig & cfg   ///< Configuration file to read parameters from.
     );
 
@@ -158,7 +158,7 @@ class PModem : public PSerialChannel
        @return
        true if the <A>Initialise()</A> function may proceeed.
      */
-    PBoolean CanInitialise() const;
+    bool CanInitialise() const;
 
     /** Send the initialisation meta-command string to the modem. The return
        value indicates that the conditions for the operation to start were met,
@@ -169,7 +169,7 @@ class PModem : public PSerialChannel
        true if command string sent successfully and the objects state has
        changed.
      */
-    PBoolean Initialise();
+    bool Initialise();
 
     /** Set the modem de-initialisation meta-command string.
 
@@ -197,7 +197,7 @@ class PModem : public PSerialChannel
        @return
        true if the <A>Deinitialise()</A> function may proceeed.
      */
-    PBoolean CanDeinitialise() const;
+    bool CanDeinitialise() const;
 
     /** Send the de-initialisation meta-command string to the modem. The return
        value indicates that the conditions for the operation to start were met,
@@ -208,7 +208,7 @@ class PModem : public PSerialChannel
        true if command string sent successfully and the objects state has
        changed.
      */
-    PBoolean Deinitialise();
+    bool Deinitialise();
 
     /** Set the modem pre-dial meta-command string.
 
@@ -327,7 +327,7 @@ class PModem : public PSerialChannel
        @return
        true if the <A>Dial()</A> function may proceeed.
      */
-    PBoolean CanDial() const;
+    bool CanDial() const;
 
     /** Send the dial meta-command strings to the modem. The return
        value indicates that the conditions for the operation to start were met,
@@ -342,7 +342,7 @@ class PModem : public PSerialChannel
        true if command string sent successfully and the objects state has
        changed.
      */
-    PBoolean Dial(const PString & number);
+    bool Dial(const PString & number);
 
     /** Set the modem hang up meta-command string.
 
@@ -370,7 +370,7 @@ class PModem : public PSerialChannel
        @return
        true if the <A>HangUp()</A> function may proceeed.
      */
-    PBoolean CanHangUp() const;
+    bool CanHangUp() const;
 
     /** Send the hang up meta-command string to the modem. The return
        value indicates that the conditions for the operation to start were met,
@@ -381,14 +381,14 @@ class PModem : public PSerialChannel
        true if command string sent successfully and the objects state has
        changed.
      */
-    PBoolean HangUp();
+    bool HangUp();
 
     /** The modem is in a state that allows the user command to start.
     
        @return
        true if the <A>SendUser()</A> function may proceeed.
      */
-    PBoolean CanSendUser() const;
+    bool CanSendUser() const;
 
     /** Send an arbitrary user meta-command string to the modem. The return
        value indicates that the conditions for the operation to start were met,
@@ -398,7 +398,7 @@ class PModem : public PSerialChannel
        @return
        true if command string sent successfully.
      */
-    PBoolean SendUser(
+    bool SendUser(
       const PString & str   ///< User command string to send.
     );
 
@@ -413,7 +413,7 @@ class PModem : public PSerialChannel
        @return
        true if <A>Read()</A> operations are "safe".
      */
-    PBoolean CanRead() const;
+    bool CanRead() const;
 
     enum Status {
       Unopened,           ///< Has not been opened yet

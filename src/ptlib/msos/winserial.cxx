@@ -3,7 +3,7 @@
  *
  * Miscellaneous implementation of classes for Win32
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -57,7 +57,7 @@ void PSerialChannel::Construct()
 }
 
 
-PBoolean PSerialChannel::Read(void * buf, PINDEX len)
+bool PSerialChannel::Read(void * buf, PINDEX len)
 {
   SetLastReadCount(0);
 
@@ -112,7 +112,7 @@ PBoolean PSerialChannel::Read(void * buf, PINDEX len)
 }
 
 
-PBoolean PSerialChannel::Write(const void * buf, PINDEX len)
+bool PSerialChannel::Write(const void * buf, PINDEX len)
 {
   SetLastWriteCount(0);
 
@@ -146,7 +146,7 @@ PBoolean PSerialChannel::Write(const void * buf, PINDEX len)
 }
 
 
-PBoolean PSerialChannel::Close()
+bool PSerialChannel::Close()
 {
   if (CheckNotOpen())
     return false;
@@ -158,8 +158,8 @@ PBoolean PSerialChannel::Close()
 }
 
 
-PBoolean PSerialChannel::SetCommsParam(DWORD speed, BYTE data, Parity parity,
-                     BYTE stop, FlowControl inputFlow, FlowControl outputFlow)
+bool PSerialChannel::SetCommsParam(uint32_t speed, uint8_t data, Parity parity,
+                     uint8_t stop, FlowControl inputFlow, FlowControl outputFlow)
 {
   if (speed > 0)
     deviceControlBlock.BaudRate = speed;
@@ -240,8 +240,8 @@ PBoolean PSerialChannel::SetCommsParam(DWORD speed, BYTE data, Parity parity,
 }
 
 
-PBoolean PSerialChannel::Open(const PString & port, DWORD speed, BYTE data,
-               Parity parity, BYTE stop, FlowControl inputFlow, FlowControl outputFlow)
+bool PSerialChannel::Open(const PString & port, uint32_t speed, uint8_t data,
+               Parity parity, uint8_t stop, FlowControl inputFlow, FlowControl outputFlow)
 {
   Close();
 
@@ -272,33 +272,33 @@ PBoolean PSerialChannel::Open(const PString & port, DWORD speed, BYTE data,
 }
 
 
-PBoolean PSerialChannel::SetSpeed(DWORD speed)
+bool PSerialChannel::SetSpeed(uint32_t speed)
 {
   return SetCommsParam(speed,
                   0, DefaultParity, 0, DefaultFlowControl, DefaultFlowControl);
 }
 
 
-DWORD PSerialChannel::GetSpeed() const
+uint32_t PSerialChannel::GetSpeed() const
 {
   return deviceControlBlock.BaudRate;
 }
 
 
-PBoolean PSerialChannel::SetDataBits(BYTE data)
+bool PSerialChannel::SetDataBits(uint8_t data)
 {
   return SetCommsParam(0,
                data, DefaultParity, 0, DefaultFlowControl, DefaultFlowControl);
 }
 
 
-BYTE PSerialChannel::GetDataBits() const
+uint8_t PSerialChannel::GetDataBits() const
 {
   return deviceControlBlock.ByteSize;
 }
 
 
-PBoolean PSerialChannel::SetParity(Parity parity)
+bool PSerialChannel::SetParity(Parity parity)
 {
   return SetCommsParam(0,0,parity,0,DefaultFlowControl,DefaultFlowControl);
 }
@@ -320,20 +320,20 @@ PSerialChannel::Parity PSerialChannel::GetParity() const
 }
 
 
-PBoolean PSerialChannel::SetStopBits(BYTE stop)
+bool PSerialChannel::SetStopBits(uint8_t stop)
 {
   return SetCommsParam(0,
                0, DefaultParity, stop, DefaultFlowControl, DefaultFlowControl);
 }
 
 
-BYTE PSerialChannel::GetStopBits() const
+uint8_t PSerialChannel::GetStopBits() const
 {
-  return (BYTE)(deviceControlBlock.StopBits == ONESTOPBIT ? 1 : 2);
+  return (uint8_t)(deviceControlBlock.StopBits == ONESTOPBIT ? 1 : 2);
 }
 
 
-PBoolean PSerialChannel::SetInputFlowControl(FlowControl flowControl)
+bool PSerialChannel::SetInputFlowControl(FlowControl flowControl)
 {
   return SetCommsParam(0,0,DefaultParity,0,flowControl,DefaultFlowControl);
 }
@@ -349,7 +349,7 @@ PSerialChannel::FlowControl PSerialChannel::GetInputFlowControl() const
 }
 
 
-PBoolean PSerialChannel::SetOutputFlowControl(FlowControl flowControl)
+bool PSerialChannel::SetOutputFlowControl(FlowControl flowControl)
 {
   return SetCommsParam(0,0,DefaultParity,0,DefaultFlowControl,flowControl);
 }
@@ -365,7 +365,7 @@ PSerialChannel::FlowControl PSerialChannel::GetOutputFlowControl() const
 }
 
 
-void PSerialChannel::SetDTR(PBoolean state)
+void PSerialChannel::SetDTR(bool state)
 {
   if (IsOpen())
     PAssertOS(EscapeCommFunction(commsResource, state ? SETDTR : CLRDTR));
@@ -374,7 +374,7 @@ void PSerialChannel::SetDTR(PBoolean state)
 }
 
 
-void PSerialChannel::SetRTS(PBoolean state)
+void PSerialChannel::SetRTS(bool state)
 {
   if (IsOpen())
     PAssertOS(EscapeCommFunction(commsResource, state ? SETRTS : CLRRTS));
@@ -383,7 +383,7 @@ void PSerialChannel::SetRTS(PBoolean state)
 }
 
 
-void PSerialChannel::SetBreak(PBoolean state)
+void PSerialChannel::SetBreak(bool state)
 {
   if (IsOpen())
     if (state)
@@ -395,7 +395,7 @@ void PSerialChannel::SetBreak(PBoolean state)
 }
 
 
-PBoolean PSerialChannel::GetCTS()
+bool PSerialChannel::GetCTS()
 {
   if (CheckNotOpen())
     return false;
@@ -406,7 +406,7 @@ PBoolean PSerialChannel::GetCTS()
 }
 
 
-PBoolean PSerialChannel::GetDSR()
+bool PSerialChannel::GetDSR()
 {
   if (CheckNotOpen())
     return false;
@@ -417,7 +417,7 @@ PBoolean PSerialChannel::GetDSR()
 }
 
 
-PBoolean PSerialChannel::GetDCD()
+bool PSerialChannel::GetDCD()
 {
   if (CheckNotOpen())
     return false;
@@ -428,7 +428,7 @@ PBoolean PSerialChannel::GetDCD()
 }
 
 
-PBoolean PSerialChannel::GetRing()
+bool PSerialChannel::GetRing()
 {
   if (CheckNotOpen())
     return false;

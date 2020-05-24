@@ -195,13 +195,13 @@ static SYSTEMTIME TmToSystemTime(tm &t)
 {
 	SYSTEMTIME s;
 
-	s.wYear      = (WORD)(t.tm_year + 1900);
-	s.wMonth     = (WORD)(t.tm_mon + 1);
-	s.wDayOfWeek = (WORD) t.tm_wday;
-	s.wDay       = (WORD) t.tm_mday;
-	s.wHour      = (WORD) t.tm_hour;
-	s.wMinute    = (WORD) t.tm_min;
-	s.wSecond    = (WORD) t.tm_sec;
+	s.wYear      = (uint16_t)(t.tm_year + 1900);
+	s.wMonth     = (uint16_t)(t.tm_mon + 1);
+	s.wDayOfWeek = (uint16_t) t.tm_wday;
+	s.wDay       = (uint16_t) t.tm_mday;
+	s.wHour      = (uint16_t) t.tm_hour;
+	s.wMinute    = (uint16_t) t.tm_min;
+	s.wSecond    = (uint16_t) t.tm_sec;
 	s.wMilliseconds = 0;
 
 	return s;
@@ -235,7 +235,7 @@ static void GetTZBias(int* pTZBiasSecs = NULL, int* pDSTBiasSecs = NULL)
 	}
 }
 
-static FILETIME YearToFileTime(WORD wYear)
+static FILETIME YearToFileTime(uint16_t wYear)
 {	
 	SYSTEMTIME sbase;
 
@@ -258,8 +258,8 @@ static FILETIME Int64ToFileTime(__int64 iTime)
 {
 	FILETIME f;
 
-	f.dwHighDateTime = (DWORD)((iTime >> 32) & 0x00000000FFFFFFFF);
-	f.dwLowDateTime  = (DWORD)( iTime        & 0x00000000FFFFFFFF);
+	f.dwHighDateTime = (uint32_t)((iTime >> 32) & 0x00000000FFFFFFFF);
+	f.dwLowDateTime  = (uint32_t)( iTime        & 0x00000000FFFFFFFF);
 
 	return f;
 }

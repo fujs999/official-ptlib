@@ -3,7 +3,7 @@
  *
  * Operating System file I/O channel class.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -165,7 +165,7 @@ class PFile : public PChannel
        true indicates that at least one character was read from the channel.
        false means no bytes were read due to timeout or some other I/O error.
      */
-    virtual PBoolean Read(
+    virtual bool Read(
       void * buf,   ///< Pointer to a block of memory to receive the read bytes.
       PINDEX len    ///< Maximum number of bytes to read into the buffer.
     );
@@ -179,7 +179,7 @@ class PFile : public PChannel
 
        @return true if at least len bytes were written to the channel.
      */
-    virtual PBoolean Write(
+    virtual bool Write(
       const void * buf, ///< Pointer to a block of memory to write.
       PINDEX len        ///< Number of bytes to write.
     );
@@ -187,7 +187,7 @@ class PFile : public PChannel
     /** Close the file channel.
         @return true if close was OK.
       */
-    virtual PBoolean Close();
+    virtual bool Close();
   //@}
 
 
@@ -492,7 +492,7 @@ class PFile : public PChannel
        @return
        true if the file size was changed to the length specified.
      */
-    virtual PBoolean SetLength(
+    virtual bool SetLength(
       off_t len   // New length of file.
     );
 
@@ -513,7 +513,7 @@ class PFile : public PChannel
        @return
        true if the new file position was set.
      */
-    virtual PBoolean SetPosition(
+    virtual bool SetPosition(
       off_t pos,                         ///< New position to set.
       FilePositionOrigin origin = Start  ///< Origin for position change.
     );

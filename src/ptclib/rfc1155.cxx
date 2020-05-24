@@ -93,7 +93,7 @@ PRFC1155_ObjectSyntax::operator const PRFC1155_ApplicationSyntax &() const
 }
 
 
-PBoolean PRFC1155_ObjectSyntax::CreateObject()
+bool PRFC1155_ObjectSyntax::CreateObject()
 {
   choice = new PRFC1155_SimpleSyntax(m_tag, m_tagClass);
   if (((PASN_Choice*)choice)->CreateObject())
@@ -142,7 +142,7 @@ PRFC1155_SimpleSyntax::PRFC1155_SimpleSyntax(unsigned tag, PASN_Object::TagClass
 }
 
 
-PBoolean PRFC1155_SimpleSyntax::CreateObject()
+bool PRFC1155_SimpleSyntax::CreateObject()
 {
   switch (m_tag) {
     case e_number :
@@ -306,7 +306,7 @@ PRFC1155_ApplicationSyntax::operator const PRFC1155_Opaque &() const
 }
 
 
-PBoolean PRFC1155_ApplicationSyntax::CreateObject()
+bool PRFC1155_ApplicationSyntax::CreateObject()
 {
   switch (m_tag) {
     case e_counter :
@@ -384,7 +384,7 @@ PRFC1155_NetworkAddress::operator const PRFC1155_IpAddress &() const
 }
 
 
-PBoolean PRFC1155_NetworkAddress::CreateObject()
+bool PRFC1155_NetworkAddress::CreateObject()
 {
   switch (m_tag) {
     case e_internet :

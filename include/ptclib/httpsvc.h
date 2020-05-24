@@ -3,7 +3,7 @@
  *
  * Common classes for service applications using HTTP as the user interface.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-2002 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -53,10 +53,10 @@ class PHTTPServiceProcess : public PServiceProcess, public PHTTPListener
       const char * productName;
       const char * manufacturerName;
 
-      WORD majorVersion;
-      WORD minorVersion;
+      uint16_t majorVersion;
+      uint16_t minorVersion;
       CodeStatus buildStatus;    ///< AlphaCode, BetaCode or ReleaseCode
-      WORD patchVersion;
+      uint16_t patchVersion;
       const char * compilationDate;
 
       PTEACypher::Key productKey;  ///< Poduct key for registration
@@ -79,20 +79,20 @@ class PHTTPServiceProcess : public PServiceProcess, public PHTTPListener
       const char * copyrightHomePage; ///< Home page for copyright holder
       const char * copyrightEmail;    ///< E-Mail address for copyright holder
 
-      WORD oemVersion;
+      uint16_t oemVersion;
     };
 
     PHTTPServiceProcess(const Info & inf);
     ~PHTTPServiceProcess();
 
-    PBoolean OnStart();
+    bool OnStart();
     void OnStop();
-    PBoolean OnPause();
+    bool OnPause();
     void OnContinue();
     const char * GetServiceDependencies() const;
 
     virtual void OnConfigChanged() = 0;
-    virtual PBoolean Initialise(const char * initMsg) = 0;
+    virtual bool Initialise(const char * initMsg) = 0;
 
     static const PString & GetDefaultSection();
 
@@ -138,7 +138,7 @@ class PHTTPServiceProcess : public PServiceProcess, public PHTTPListener
       // HTTP access
       const char *  m_httpPortKey;
       const char *  m_httpInterfacesKey;
-      WORD          m_httpPort;         // Output
+      uint16_t          m_httpPort;         // Output
       PString       m_httpInterfaces;
     };
     virtual bool InitialiseBase(
@@ -171,7 +171,7 @@ class PHTTPServiceProcess : public PServiceProcess, public PHTTPListener
 
     virtual void AddRegisteredText(PHTML & html);
     virtual void AddUnregisteredText(PHTML & html);
-    virtual PBoolean SubstituteEquivalSequence(PHTTPRequest & request, const PString &, PString &);
+    virtual bool SubstituteEquivalSequence(PHTTPRequest & request, const PString &, PString &);
 
   protected:
     PString         m_macroKeyword;
@@ -227,19 +227,19 @@ class PConfigPage : public PHTTPConfig
     void OnLoadedHTML(PHTTPRequest &, PHTML & text);
     void OnLoadedText(PHTTPRequest &, PString & text);
 
-    virtual PBoolean OnPOST(
+    virtual bool OnPOST(
       PHTTPServer & server,
       const PHTTPConnectionInfo & connectInfo
     );
 
-    virtual PBoolean Post(
+    virtual bool Post(
       PHTTPRequest & request,       ///< Information on this request.
       const PStringToString & data, ///< Variables in the POST data.
       PHTML & replyMessage          ///< Reply message for post.
     );
 
   protected:
-    virtual PBoolean GetExpirationDate(
+    virtual bool GetExpirationDate(
       PTime & when          ///< Time that the resource expires
     );
 
@@ -267,19 +267,19 @@ class PConfigSectionsPage : public PHTTPConfigSectionList
 
     void OnLoadedText(PHTTPRequest &, PString & text);
 
-    virtual PBoolean OnPOST(
+    virtual bool OnPOST(
       PHTTPServer & server,
       const PHTTPConnectionInfo & connectInfo
     );
 
-    virtual PBoolean Post(
+    virtual bool Post(
       PHTTPRequest & request,       ///< Information on this request.
       const PStringToString & data, ///< Variables in the POST data.
       PHTML & replyMessage          ///< Reply message for post.
     );
 
   protected:
-    virtual PBoolean GetExpirationDate(
+    virtual bool GetExpirationDate(
       PTime & when          ///< Time that the resource expires
     );
 
@@ -303,7 +303,7 @@ class PRegisterPage : public PConfigPage
     );
     void OnLoadedText(PHTTPRequest & request, PString & text);
 
-    virtual PBoolean Post(
+    virtual bool Post(
       PHTTPRequest & request,       ///< Information on this request.
       const PStringToString & data, ///< Variables in the POST data.
       PHTML & replyMessage          ///< Reply message for post.
@@ -337,8 +337,8 @@ class PServiceHTML : public PHTML
     static PString CalculateSignature(const PString & out);
     static PString CalculateSignature(const PString & out, const PTEACypher::Key & sig);
 
-    PBoolean CheckSignature();
-    static PBoolean CheckSignature(const PString & html);
+    bool CheckSignature();
+    static bool CheckSignature(const PString & html);
 
     enum MacroOptions {
       NoOptions           = 0,
@@ -372,8 +372,8 @@ class PServiceHTML : public PHTML
 class PServiceMacro : public PObject
 {
   public:
-    PServiceMacro(const char * name, PBoolean isBlock);
-    PServiceMacro(const PCaselessString & name, PBoolean isBlock);
+    PServiceMacro(const char * name, bool isBlock);
+    PServiceMacro(const PCaselessString & name, bool isBlock);
     Comparison Compare(const PObject & obj) const;
     virtual PString Translate(
       PHTTPRequest & request,
@@ -382,7 +382,7 @@ class PServiceMacro : public PObject
     ) const;
   protected:
     const char * macroName;
-    PBoolean isMacroBlock;
+    bool isMacroBlock;
     PServiceMacro * link;
     static PServiceMacro * list;
   friend class PServiceMacros_list;
@@ -437,7 +437,7 @@ class PServiceHTTPString : public PHTTPString
     PString LoadText(PHTTPRequest &);
 
   protected:
-    virtual PBoolean GetExpirationDate(
+    virtual bool GetExpirationDate(
       PTime & when          ///< Time that the resource expires
     );
 };
@@ -447,45 +447,45 @@ class PServiceHTTPFile : public PHTTPFile
 {
   PCLASSINFO(PServiceHTTPFile, PHTTPFile)
   public:
-    PServiceHTTPFile(const PString & filename, PBoolean needSig = false)
+    PServiceHTTPFile(const PString & filename, bool needSig = false)
       : PHTTPFile(filename) { needSignature = needSig; }
-    PServiceHTTPFile(const PString & filename, const PFilePath & file, PBoolean needSig = false)
+    PServiceHTTPFile(const PString & filename, const PFilePath & file, bool needSig = false)
       : PHTTPFile(filename, file) { needSignature = needSig; }
-    PServiceHTTPFile(const PString & filename, const PString & file, PBoolean needSig = false)
+    PServiceHTTPFile(const PString & filename, const PString & file, bool needSig = false)
       : PHTTPFile(filename, file) { needSignature = needSig; }
-    PServiceHTTPFile(const PString & filename, const PHTTPAuthority & auth, PBoolean needSig = false)
+    PServiceHTTPFile(const PString & filename, const PHTTPAuthority & auth, bool needSig = false)
       : PHTTPFile(filename, auth) { needSignature = needSig; }
-    PServiceHTTPFile(const PString & filename, const PFilePath & file, const PHTTPAuthority & auth, PBoolean needSig = false)
+    PServiceHTTPFile(const PString & filename, const PFilePath & file, const PHTTPAuthority & auth, bool needSig = false)
       : PHTTPFile(filename, file, auth) { needSignature = needSig; }
 
     void OnLoadedText(PHTTPRequest &, PString & text);
 
   protected:
-    virtual PBoolean GetExpirationDate(
+    virtual bool GetExpirationDate(
       PTime & when          ///< Time that the resource expires
     );
 
-    PBoolean needSignature;
+    bool needSignature;
 };
 
 class PServiceHTTPDirectory : public PHTTPDirectory
 {
   PCLASSINFO(PServiceHTTPDirectory, PHTTPDirectory)
   public:
-    PServiceHTTPDirectory(const PURL & url, const PDirectory & dirname, PBoolean needSig = false)
+    PServiceHTTPDirectory(const PURL & url, const PDirectory & dirname, bool needSig = false)
       : PHTTPDirectory(url, dirname) { needSignature = needSig; }
 
-    PServiceHTTPDirectory(const PURL & url, const PDirectory & dirname, const PHTTPAuthority & auth, PBoolean needSig = false)
+    PServiceHTTPDirectory(const PURL & url, const PDirectory & dirname, const PHTTPAuthority & auth, bool needSig = false)
       : PHTTPDirectory(url, dirname, auth) { needSignature = needSig; }
 
     void OnLoadedText(PHTTPRequest &, PString & text);
 
   protected:
-    virtual PBoolean GetExpirationDate(
+    virtual bool GetExpirationDate(
       PTime & when          ///< Time that the resource expires
     );
 
-    PBoolean needSignature;
+    bool needSignature;
 };
 
 
@@ -499,7 +499,7 @@ class PHTTPServiceProcess::ClearLogPage : public PServiceHTTPString
       PHTTPRequest & request    // Information on this request.
       );
 
-    virtual PBoolean Post(
+    virtual bool Post(
       PHTTPRequest & request,
       const PStringToString &,
       PHTML & msg

@@ -3,7 +3,7 @@
  *
  * Electronic Mail abstraction class.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -106,7 +106,7 @@ class PMail : public PObject
        @return
        true if successfully logged on.
      */
-    PBoolean LogOn(
+    bool LogOn(
       const PString & username,  ///< User withing mail system to use.
       const PString & password   ///< Password for user in mail system.
     );
@@ -116,7 +116,7 @@ class PMail : public PObject
        @return
        true if successfully logged on.
      */
-    PBoolean LogOn(
+    bool LogOn(
       const PString & username,  ///< User withing mail system to use.
       const PString & password,  ///< Password for user in mail system.
       const PString & service
@@ -131,14 +131,14 @@ class PMail : public PObject
        @return
        true if successfully logged off.
      */
-    virtual PBoolean LogOff();
+    virtual bool LogOff();
 
     /**Determine if the mail session is active and logged into the mail system.
 
        @return
        true if logged into the mail system.
      */
-    PBoolean IsLoggedOn() const;
+    bool IsLoggedOn() const;
   //@}
 
   /**@name Send message functions */
@@ -149,7 +149,7 @@ class PMail : public PObject
        true if the mail message was successfully queued. Note that this does
        {\b not} mean that it has been delivered.
      */
-    PBoolean SendNote(
+    bool SendNote(
       const PString & recipient,  ///< Name of recipient of the mail message.
       const PString & subject,    ///< Subject name for the mail message.
       const char * body           ///< Text body of the mail message.
@@ -161,7 +161,7 @@ class PMail : public PObject
        true if the mail message was successfully queued. Note that this does
        {\b not} mean that it has been delivered.
      */
-    PBoolean SendNote(
+    bool SendNote(
       const PString & recipient,  ///< Name of recipient of the mail message.
       const PString & subject,    ///< Subject name for the mail message.
       const char * body,          ///< Text body of the mail message.
@@ -175,7 +175,7 @@ class PMail : public PObject
        true if the mail message was successfully queued. Note that this does
        {\b not} mean that it has been delivered.
      */
-    PBoolean SendNote(
+    bool SendNote(
       const PString & recipient,  ///< Name of recipient of the mail message.
       const PStringList & carbonCopies, ///< Name of CC recipients.
       const PStringList & blindCarbons, ///< Name of BCC recipients.
@@ -194,7 +194,7 @@ class PMail : public PObject
        An array of ID strings.
      */
     PStringArray GetMessageIDs(
-      PBoolean unreadOnly = true    ///< Only get the IDs for unread messages.
+      bool unreadOnly = true    ///< Only get the IDs for unread messages.
     );
 
     /// Message header for each mail item.
@@ -214,7 +214,7 @@ class PMail : public PObject
        @return
        true if header information was successfully obtained.
      */
-    PBoolean GetMessageHeader(
+    bool GetMessageHeader(
       const PString & id,      ///< Identifier of message to get header.
       Header & hdrInfo         ///< Header info for the message.
     );
@@ -235,10 +235,10 @@ class PMail : public PObject
        true if the body text was retrieved, false if the body was too large or
        some other error occurred.
      */
-    PBoolean GetMessageBody(
+    bool GetMessageBody(
       const PString & id,      ///< Identifier of message to get body.
       PString & body,          ///< Body text of mail message.
-      PBoolean markAsRead = false  ///< Mark the message as read.
+      bool markAsRead = false  ///< Mark the message as read.
     );
 
     /**Get all of the attachments for a message as disk files.
@@ -246,11 +246,11 @@ class PMail : public PObject
        @return
        true if attachments were successfully obtained.
      */
-    PBoolean GetMessageAttachments(
+    bool GetMessageAttachments(
       const PString & id,       ///< Identifier of message to get attachments.
       PStringArray & filenames, ///< File names for each attachment.
-      PBoolean includeBody = false, ///< Include the message body as first attachment
-      PBoolean markAsRead = false   ///< Mark the message as read
+      bool includeBody = false, ///< Include the message body as first attachment
+      bool markAsRead = false   ///< Mark the message as read
     );
 
     /**Mark the message as read.
@@ -258,7 +258,7 @@ class PMail : public PObject
        @return
        true if message was successfully marked as read.
      */
-    PBoolean MarkMessageRead(
+    bool MarkMessageRead(
       const PString & id      ///< Identifier of message to get header.
     );
 
@@ -267,7 +267,7 @@ class PMail : public PObject
        @return
        true if message was successfully deleted.
      */
-    PBoolean DeleteMessage(
+    bool DeleteMessage(
       const PString & id      ///< Identifier of message to get header.
     );
   //@}
@@ -326,7 +326,7 @@ class PMail : public PObject
     // Common construction code.
 
     /// Flag indicating the session is active.
-    PBoolean loggedOn;
+    bool loggedOn;
 
 
 // Include platform dependent part of class

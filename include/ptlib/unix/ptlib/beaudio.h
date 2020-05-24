@@ -3,7 +3,7 @@
  *
  * BeOS Sound driver class definitions.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -86,40 +86,40 @@ class PSoundChannelBeOS: public PSoundChannel
     ~PSoundChannelBeOS();
     static PStringArray GetDeviceNames(PSoundChannel::Directions = Player);
     static PString GetDefaultDevice(PSoundChannel::Directions);
-    PBoolean Open(
+    bool Open(
       const PString & device,
       Directions dir,
       unsigned numChannels,
       unsigned sampleRate,
       unsigned bitsPerSample
     );
-    PBoolean Setup();
-    PBoolean Close();
-    PBoolean IsOpen() const;
-    PBoolean Write(const void * buf, PINDEX len);
-    PBoolean Read(void * buf, PINDEX len);
-    PBoolean SetFormat(unsigned numChannels,
+    bool Setup();
+    bool Close();
+    bool IsOpen() const;
+    bool Write(const void * buf, PINDEX len);
+    bool Read(void * buf, PINDEX len);
+    bool SetFormat(unsigned numChannels,
                    unsigned sampleRate,
                    unsigned bitsPerSample);
     unsigned GetChannels() const;
     unsigned GetSampleRate() const;
     unsigned GetSampleSize() const;
-    PBoolean SetBuffers(PINDEX size, PINDEX count);
-    PBoolean GetBuffers(PINDEX & size, PINDEX & count);
-    PBoolean PlaySound(const PSound & sound, PBoolean wait);
-    PBoolean PlayFile(const PFilePath & filename, PBoolean wait);
-    PBoolean HasPlayCompleted();
-    PBoolean WaitForPlayCompletion();
-    PBoolean RecordSound(PSound & sound);
-    PBoolean RecordFile(const PFilePath & filename);
-    PBoolean StartRecording();
-    PBoolean IsRecordBufferFull();
-    PBoolean AreAllRecordBuffersFull();
-    PBoolean WaitForRecordBufferFull();
-    PBoolean WaitForAllRecordBuffersFull();
-    PBoolean Abort();
-    PBoolean SetVolume(unsigned newVal);
-    PBoolean GetVolume(unsigned &devVol);
+    bool SetBuffers(PINDEX size, PINDEX count);
+    bool GetBuffers(PINDEX & size, PINDEX & count);
+    bool PlaySound(const PSound & sound, bool wait);
+    bool PlayFile(const PFilePath & filename, bool wait);
+    bool HasPlayCompleted();
+    bool WaitForPlayCompletion();
+    bool RecordSound(PSound & sound);
+    bool RecordFile(const PFilePath & filename);
+    bool StartRecording();
+    bool IsRecordBufferFull();
+    bool AreAllRecordBuffersFull();
+    bool WaitForRecordBufferFull();
+    bool WaitForAllRecordBuffersFull();
+    bool Abort();
+    bool SetVolume(unsigned newVal);
+    bool GetVolume(unsigned &devVol);
 
   public:
     // Overrides from class PChannel
@@ -149,14 +149,14 @@ class PSoundChannelBeOS: public PSoundChannel
     PINDEX mNumBuffers;       // for reference only!
 
     // Just some helpers so that the Open function doesn't get too big
-    PBoolean OpenPlayer(void);
-    PBoolean OpenRecorder(const PString &dev);
+    bool OpenPlayer(void);
+    bool OpenRecorder(const PString &dev);
 
     // internal buffer setting function so we can disable the SetBuffers
     // function for debug purposes
     // size is the total size, threshold is the fill/drain threshold on
     // the buffer
-    PBoolean InternalSetBuffers(PINDEX size, PINDEX threshold);
+    bool InternalSetBuffers(PINDEX size, PINDEX threshold);
 
     // Input resampler
     Resampler *mResampler;

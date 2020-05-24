@@ -3,7 +3,7 @@
  *
  * Berkley sockets classes implementation
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -185,7 +185,7 @@ int PSocket::os_socket(int af, int type, int protocol)
 }
 
 
-PBoolean PSocket::os_connect(struct sockaddr * addr, socklen_t size)
+bool PSocket::os_connect(struct sockaddr * addr, socklen_t size)
 {
   int result;
   do {
@@ -215,7 +215,7 @@ PBoolean PSocket::os_connect(struct sockaddr * addr, socklen_t size)
 }
 
 
-PBoolean PSocket::os_accept(PSocket & listener, struct sockaddr * addr, socklen_t * size)
+bool PSocket::os_accept(PSocket & listener, struct sockaddr * addr, socklen_t * size)
 {
   int new_fd;
   while ((new_fd = ::accept(listener.GetHandle(), addr, (socklen_t *)size)) < 0) {
@@ -583,13 +583,13 @@ bool PSocket::os_vwrite(const Slice * slices, size_t sliceCount, int flags, stru
 
 #endif // P_RECVMSG
 
-PIPSocket::Address::Address(DWORD dw)
+PIPSocket::Address::Address(uint32_t dw)
 {
   operator=(dw);
 }
 
 
-PIPSocket::Address & PIPSocket::Address::operator=(DWORD dw)
+PIPSocket::Address & PIPSocket::Address::operator=(uint32_t dw)
 {
   m_version = 4;
   m_v.m_four.s_addr = dw;
@@ -597,35 +597,35 @@ PIPSocket::Address & PIPSocket::Address::operator=(DWORD dw)
 }
 
 
-PIPSocket::Address::operator DWORD() const
+PIPSocket::Address::operator uint32_t() const
 {
-  return m_version != 4 ? 0 : (DWORD)m_v.m_four.s_addr;
+  return m_version != 4 ? 0 : (uint32_t)m_v.m_four.s_addr;
 }
 
-BYTE PIPSocket::Address::Byte1() const
+uint8_t PIPSocket::Address::Byte1() const
 {
-  return *(((BYTE *)&m_v.m_four.s_addr)+0);
+  return *(((uint8_t *)&m_v.m_four.s_addr)+0);
 }
 
-BYTE PIPSocket::Address::Byte2() const
+uint8_t PIPSocket::Address::Byte2() const
 {
-  return *(((BYTE *)&m_v.m_four.s_addr)+1);
+  return *(((uint8_t *)&m_v.m_four.s_addr)+1);
 }
 
-BYTE PIPSocket::Address::Byte3() const
+uint8_t PIPSocket::Address::Byte3() const
 {
-  return *(((BYTE *)&m_v.m_four.s_addr)+2);
+  return *(((uint8_t *)&m_v.m_four.s_addr)+2);
 }
 
-BYTE PIPSocket::Address::Byte4() const
+uint8_t PIPSocket::Address::Byte4() const
 {
-  return *(((BYTE *)&m_v.m_four.s_addr)+3);
+  return *(((uint8_t *)&m_v.m_four.s_addr)+3);
 }
 
-PIPSocket::Address::Address(BYTE b1, BYTE b2, BYTE b3, BYTE b4)
+PIPSocket::Address::Address(uint8_t b1, uint8_t b2, uint8_t b3, uint8_t b4)
 {
   m_version = 4;
-  BYTE * p = (BYTE *)&m_v.m_four.s_addr;
+  uint8_t * p = (uint8_t *)&m_v.m_four.s_addr;
   p[0] = b1;
   p[1] = b2;
   p[2] = b3;
@@ -637,7 +637,7 @@ PIPSocket::Address::Address(BYTE b1, BYTE b2, BYTE b3, BYTE b4)
 //
 //  PTCPSocket
 //
-PBoolean PTCPSocket::Read(void * buf, PINDEX maxLen)
+bool PTCPSocket::Read(void * buf, PINDEX maxLen)
 {
   SetLastReadCount(0);
 
@@ -663,7 +663,7 @@ PBoolean PTCPSocket::Read(void * buf, PINDEX maxLen)
 }
 
 
-PBoolean PSocket::Read(void * buf, PINDEX len)
+bool PSocket::Read(void * buf, PINDEX len)
 {
   if (os_handle < 0)
     return SetErrorValues(NotOpen, EBADF, LastReadError);
@@ -686,7 +686,7 @@ bool PSocket::Write(const void * buf, PINDEX len)
   return PChannel::Write(buf, len);
 }
 
-PBoolean PSocket::Read(Slice * slices, size_t sliceCount)
+bool PSocket::Read(Slice * slices, size_t sliceCount)
 {
   SetLastReadCount(0);
 
@@ -702,7 +702,7 @@ PBoolean PSocket::Read(Slice * slices, size_t sliceCount)
 }
 
 
-PBoolean PSocket::Write(const Slice * slices, size_t sliceCount)
+bool PSocket::Write(const Slice * slices, size_t sliceCount)
 {
   SetLastWriteCount(0);
 
@@ -744,16 +744,16 @@ bool PIPSocket::SetQoS(const QoS & qos)
 
 // bit setting inspired by Tim Ring on StackOverflow
 const unsigned char QuickByteMask[8] = { 0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01 };
-void ResetBit(unsigned bit, BYTE *bitmap)
+void ResetBit(unsigned bit, uint8_t *bitmap)
 {
     unsigned x = bit / 8;                // Index to byte.
     unsigned n = bit % 8;                // Specific bit in byte.
     bitmap[x] &= (~QuickByteMask[n]);  // Reset bit.
 }
 
-PIPSocket::Address NetmaskV6WithPrefix(unsigned prefixbits, unsigned masklen = 0, BYTE * mask = NULL)
+PIPSocket::Address NetmaskV6WithPrefix(unsigned prefixbits, unsigned masklen = 0, uint8_t * mask = NULL)
 {
-  BYTE fullmask[16] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
+  uint8_t fullmask[16] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
 
   if (mask) {
     memset(&fullmask, 0, sizeof(fullmask));
@@ -762,12 +762,12 @@ PIPSocket::Address NetmaskV6WithPrefix(unsigned prefixbits, unsigned masklen = 0
   for(unsigned i=128; i > prefixbits; --i) {
     ResetBit(i, fullmask);
   }
-  return PIPSocket::Address(16, (BYTE*)&fullmask);
+  return PIPSocket::Address(16, (uint8_t*)&fullmask);
 }
 
 #if defined(P_LINUX) || defined(P_ANDROID) || defined (P_AIX)
 
-PBoolean PIPSocket::GetRouteTable(RouteTable & table)
+bool PIPSocket::GetRouteTable(RouteTable & table)
 {
   table.RemoveAll();
 
@@ -807,11 +807,11 @@ PBoolean PIPSocket::GetRouteTable(RouteTable & table)
         // 8 = flags
         // 9 = device name
 
-        BYTE net_addr[16];
+        uint8_t net_addr[16];
         for (size_t i = 0; i < sizeof(net_addr); ++i)
           net_addr[i] = tokens[0].Mid(i*2, 2).AsUnsigned(16);
 
-        BYTE dest_addr[16];
+        uint8_t dest_addr[16];
         for (size_t i = 0; i < sizeof(dest_addr); ++i)
           dest_addr[i] = tokens[4].Mid(i*2, 2).AsUnsigned(16);
 
@@ -819,7 +819,7 @@ PBoolean PIPSocket::GetRouteTable(RouteTable & table)
         entry->destination = Address(sizeof(dest_addr), dest_addr);
         entry->interfaceName = tokens[9];
         entry->metric = tokens[5].AsUnsigned(16);
-		BYTE net_mask[16];
+		uint8_t net_mask[16];
 		memset(net_mask, 0, sizeof(net_mask));
 		for(size_t i = 0; i < tokens[1].AsUnsigned(16) / 4; ++i)
 			net_mask[i/2] = (i % 2 == 0) ? 0xf0 : 0xff;
@@ -835,11 +835,11 @@ PBoolean PIPSocket::GetRouteTable(RouteTable & table)
 
 #elif defined(P_HAS_RT_MSGHDR)
 
-PBoolean process_rtentry(struct rt_msghdr *rtm, char *ptr, PIPSocket::Address & net_addr,
+bool process_rtentry(struct rt_msghdr *rtm, char *ptr, PIPSocket::Address & net_addr,
                      PIPSocket::Address & net_mask, PIPSocket::Address & dest_addr, int & metric);
-PBoolean get_ifname(int index, char *name);
+bool get_ifname(int index, char *name);
 
-PBoolean PIPSocket::GetRouteTable(RouteTable & table)
+bool PIPSocket::GetRouteTable(RouteTable & table)
 {
   int mib[6];
   size_t space_needed;
@@ -907,7 +907,7 @@ PBoolean PIPSocket::GetRouteTable(RouteTable & table)
   return true;
 }
 
-PBoolean process_rtentry(struct rt_msghdr *rtm, char *ptr, PIPSocket::Address & net_addr,
+bool process_rtentry(struct rt_msghdr *rtm, char *ptr, PIPSocket::Address & net_addr,
                      PIPSocket::Address & net_mask, PIPSocket::Address & dest_addr, int & metric) {
 
   struct sockaddr_in *sa_in = (struct sockaddr_in *)(rtm + 1);
@@ -1001,7 +1001,7 @@ PBoolean process_rtentry(struct rt_msghdr *rtm, char *ptr, PIPSocket::Address & 
   }
 }
 
-PBoolean get_ifname(int index, char *name) {
+bool get_ifname(int index, char *name) {
   int mib[6];
   size_t needed;
   char *lim, *buf, *next;
@@ -1076,7 +1076,7 @@ PBoolean get_ifname(int index, char *name) {
 #define T_CURRENT       MI_T_CURRENT
 #endif
 
-PBoolean PIPSocket::GetRouteTable(RouteTable & table)
+bool PIPSocket::GetRouteTable(RouteTable & table)
 {
 #define task_pagesize 512
     char buf[task_pagesize];  /* = task_block_malloc(task_pagesize);*/
@@ -1225,12 +1225,12 @@ PBoolean PIPSocket::GetRouteTable(RouteTable & table)
             } else {
               mib2_ipv6RouteEntry_t *rp6 = (mib2_ipv6RouteEntry_t *) rp;
               if (rp6->ipv6RouteInfo.re_ire_type & (IRE_BROADCAST|IRE_CACHE|IRE_LOCAL)) {
-                rp = (mib2_ipRouteEntry_t *) ((BYTE*)rp + sizeof(mib2_ipv6RouteEntry_t));
+                rp = (mib2_ipRouteEntry_t *) ((uint8_t*)rp + sizeof(mib2_ipv6RouteEntry_t));
                 continue;
               }
-              RouteEntry * entry = new RouteEntry(Address(16, (BYTE*)&rp6->ipv6RouteDest));
+              RouteEntry * entry = new RouteEntry(Address(16, (uint8_t*)&rp6->ipv6RouteDest));
               entry->net_mask = NetmaskV6WithPrefix(rp6->ipv6RoutePfxLength);
-              entry->destination = Address(16, (BYTE*)&rp6->ipv6RouteNextHop);
+              entry->destination = Address(16, (uint8_t*)&rp6->ipv6RouteNextHop);
               unsigned len = rp6->ipv6RouteIfIndex.o_length;
               if (len >= sizeof(name))
                 len = sizeof(name)-1;
@@ -1239,7 +1239,7 @@ PBoolean PIPSocket::GetRouteTable(RouteTable & table)
               entry->interfaceName = name;
               entry->metric = rp6->ipv6RouteMetric;
               table.Append(entry);
-              rp = (mib2_ipRouteEntry_t *) ((BYTE*)rp + sizeof(mib2_ipv6RouteEntry_t));
+              rp = (mib2_ipRouteEntry_t *) ((uint8_t*)rp + sizeof(mib2_ipv6RouteEntry_t));
             }
           } while (rp < lp) ;
 
@@ -1263,7 +1263,7 @@ PBoolean PIPSocket::GetRouteTable(RouteTable & table)
 
 #elif defined(P_VXWORKS)
 
-PBoolean PIPSocket::GetRouteTable(RouteTable & table)
+bool PIPSocket::GetRouteTable(RouteTable & table)
 {
   PAssertAlways("PIPSocket::GetRouteTable()");
   for(;;){
@@ -1283,7 +1283,7 @@ PBoolean PIPSocket::GetRouteTable(RouteTable & table)
 #else // unsupported platform
 
 #if 0 
-PBoolean PIPSocket::GetRouteTable(RouteTable & table)
+bool PIPSocket::GetRouteTable(RouteTable & table)
 {
         // Most of this code came from the source code for the "route" command 
         // so it should work on other platforms too. 
@@ -1326,7 +1326,7 @@ PBoolean PIPSocket::GetRouteTable(RouteTable & table)
         return true; 
 #endif // 0
 
-PBoolean PIPSocket::GetRouteTable(RouteTable & table)
+bool PIPSocket::GetRouteTable(RouteTable & table)
 {
 #warning Platform requires implemetation of GetRouteTable()
   return false;
@@ -1577,7 +1577,7 @@ class ReachabilityRouteTableDetector : public PIPSocket::RouteTableDetector
 
   private:
     PSyncPoint m_cancel;
-	PBoolean m_continue;
+	bool m_continue;
 };
 
 PIPSocket::RouteTableDetector * PIPSocket::CreateRouteTableDetector()
@@ -1613,7 +1613,7 @@ PIPSocket::RouteTableDetector * PIPSocket::CreateRouteTableDetector()
 #endif // P_HAS_NETLINK, elif defined(P_IOS)
 
 
-PBoolean PIPSocket::GetInterfaceTable(InterfaceTable & list, PBoolean includeDown)
+bool PIPSocket::GetInterfaceTable(InterfaceTable & list, bool includeDown)
 {
 #if defined(P_LINUX) || defined(P_FREEBSD) || defined (P_NETBSD) || defined(P_OPENBSD) || defined(P_MACOSX) || defined(P_IOS) || defined(P_SOLARIS)
   // tested on Linux 2.6.x, FreeBSD 8.2, NetBSD 5.1, OpenBSD 5.0, MacOS X 10.5.6 and Solaris 11
@@ -1631,7 +1631,7 @@ PBoolean PIPSocket::GetInterfaceTable(InterfaceTable & list, PBoolean includeDow
       ifReq.ifr_addr.sa_family = ifa->ifa_addr->sa_family;
       strncpy(ifReq.ifr_name, ifa->ifa_name, sizeof(ifReq.ifr_name) - 1);
       if (ioctl(ifsock.GetHandle(), SIO_Get_MAC_Address, &ifReq) == 0) {
-        PEthSocket::Address eth((BYTE *)ifReq.ifr_macaddr);
+        PEthSocket::Address eth((uint8_t *)ifReq.ifr_macaddr);
         if (eth != PEthSocket::Address(NULL))
           macAddr = eth;
       }
@@ -1702,7 +1702,7 @@ PBoolean PIPSocket::GetInterfaceTable(InterfaceTable & list, PBoolean includeDow
 #if defined(SIO_Get_MAC_Address)
           memcpy(&ifReq, ifName, sizeof(ifreq));
           if (ioctl(sock.GetHandle(), SIO_Get_MAC_Address, &ifReq) >= 0)
-            macAddr = PEthSocket::Address((BYTE *)ifReq.ifr_macaddr);
+            macAddr = PEthSocket::Address((uint8_t *)ifReq.ifr_macaddr);
 #endif
 
 #if !defined(P_NETBSD)
@@ -1779,7 +1779,7 @@ PBoolean PIPSocket::GetInterfaceTable(InterfaceTable & list, PBoolean includeDow
             &addr[8],  &addr[9],  &addr[10], &addr[11], 
             &addr[12], &addr[13], &addr[14], &addr[15], 
            &dummy, &dummy, &scope, &dummy, ifaceName) != EOF) {
-      BYTE bytes[16];
+      uint8_t bytes[16];
       for (PINDEX i = 0; i < 16; i++)
         bytes[i] = addr[i];
 
@@ -1790,7 +1790,7 @@ PBoolean PIPSocket::GetInterfaceTable(InterfaceTable & list, PBoolean includeDow
       memset(&ifReq, 0, sizeof(ifReq));
       strncpy(ifReq.ifr_name, ifaceName, sizeof(ifReq.ifr_name) - 1);
       if (ioctl(sock.GetHandle(), SIO_Get_MAC_Address, &ifReq) >= 0)
-        macAddr = PEthSocket::Address((BYTE *)ifReq.ifr_macaddr);
+        macAddr = PEthSocket::Address((uint8_t *)ifReq.ifr_macaddr);
 #endif
 
       // the scope value in /proc/net/if_inet6 does not give the scope value for the interface
@@ -1859,7 +1859,7 @@ PIPSocket::Address PIPSocket::GetGatewayInterfaceAddress(unsigned version)
 static unsigned CountMaskBits(const PIPSocket::Address & mask)
 {
   unsigned count = 0;
-  DWORD m = (DWORD) mask;
+  uint32_t m = (uint32_t) mask;
 
   switch (mask.GetVersion()) {
     case 4:

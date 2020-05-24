@@ -3,7 +3,7 @@
  *
  * Dynamic Link Library implementation.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -71,7 +71,7 @@ PString PDynaLink::GetExtension()
 #endif
 }
 
-PBoolean PDynaLink::Open(const PString & names)
+bool PDynaLink::Open(const PString & names)
 {
   m_lastError.MakeEmpty();
 
@@ -118,12 +118,12 @@ void PDynaLink::Close()
   UNLOCK_DLFCN();
 }
 
-PBoolean PDynaLink::IsLoaded() const
+bool PDynaLink::IsLoaded() const
 {
   return m_dll != NULL;
 }
 
-PString PDynaLink::GetName(PBoolean full) const
+PString PDynaLink::GetName(bool full) const
 {
   if (!IsLoaded())
     return PString::Empty();
@@ -144,12 +144,12 @@ PString PDynaLink::GetName(PBoolean full) const
 }
 
 
-PBoolean PDynaLink::GetFunction(PINDEX, Function &, bool)
+bool PDynaLink::GetFunction(PINDEX, Function &, bool)
 {
   return false;
 }
 
-PBoolean PDynaLink::GetFunction(const PString & fn, Function & func, bool compulsory)
+bool PDynaLink::GetFunction(const PString & fn, Function & func, bool compulsory)
 {
   m_lastError.MakeEmpty();
   func = NULL;

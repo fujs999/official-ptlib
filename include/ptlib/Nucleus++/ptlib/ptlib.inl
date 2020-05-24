@@ -3,7 +3,7 @@
  *
  * Operating System classes inline function implementation
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -33,13 +33,13 @@
 #include <langinfo.h>
 #endif
 
-PINLINE DWORD PProcess::GetProcessID() const
+PINLINE uint32_t PProcess::GetProcessID() const
 {
 #ifdef __NUCLEUS_PLUS__
 // Only one process
   return 0;
 #else
-  return (DWORD)getpid();
+  return (uint32_t)getpid();
 #endif
 }
 
@@ -68,27 +68,27 @@ PINLINE void PTime::SetCurrentTime()
 
 ///////////////////////////////////////////////////////////////////////////////
 
-PINLINE PBoolean PDirectory::IsRoot() const
+PINLINE bool PDirectory::IsRoot() const
 #ifdef WOT_NO_FILESYSTEM
   { return true;}
 #else
   { return IsSeparator((*this)[0]) && ((*this)[1] == '\0'); }
 #endif
 
-PINLINE PBoolean PDirectory::IsSeparator(char ch)
+PINLINE bool PDirectory::IsSeparator(char ch)
   { return ch == PDIR_SEPARATOR; }
 
 #ifdef WOT_NO_FILESYSTEM
-PINLINE PBoolean PDirectory::Change(const PString &)
+PINLINE bool PDirectory::Change(const PString &)
   { return true;}
 
-PINLINE PBoolean PDirectory::Exists(const PString & p)
+PINLINE bool PDirectory::Exists(const PString & p)
   { return false; }
 #else
-PINLINE PBoolean PDirectory::Change(const PString & p)
+PINLINE bool PDirectory::Change(const PString & p)
   { return chdir(p) == 0; }
 
-PINLINE PBoolean PDirectory::Exists(const PString & p)
+PINLINE bool PDirectory::Exists(const PString & p)
   { return access((const char *)p, 0) == 0; }
 #endif
 
@@ -99,14 +99,14 @@ PINLINE PString PFilePath::GetVolume() const
 
 ///////////////////////////////////////////////////////////////////////////////
 
-PINLINE PBoolean PFile::Exists(const PFilePath & name)
+PINLINE bool PFile::Exists(const PFilePath & name)
 #ifdef WOT_NO_FILESYSTEM
   { return false; }
 #else
   { return access(name, 0) == 0; }
 #endif
 
-PINLINE PBoolean PFile::Remove(const PFilePath & name, PBoolean)
+PINLINE bool PFile::Remove(const PFilePath & name, bool)
   { return unlink(name) == 0; }
 
 ///////////////////////////////////////////////////////////////////////////////

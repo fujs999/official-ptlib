@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -410,14 +410,14 @@ void PSystemLogToFile::RotateInfo::OnMessage(bool error, const PString & msg)
 
 ///////////////////////////////////////////////////////////////
 
-PSystemLogToNetwork::PSystemLogToNetwork(const PIPSocket::Address & address, WORD port, unsigned facility)
+PSystemLogToNetwork::PSystemLogToNetwork(const PIPSocket::Address & address, uint16_t port, unsigned facility)
   : m_server(address, port)
   , m_facility(facility)
 {
 }
 
 
-PSystemLogToNetwork::PSystemLogToNetwork(const PString & server, WORD port, unsigned facility)
+PSystemLogToNetwork::PSystemLogToNetwork(const PString & server, uint16_t port, unsigned facility)
   : m_facility(facility)
 {
   m_server.Parse(server, port, ':', "udp");

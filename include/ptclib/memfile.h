@@ -3,7 +3,7 @@
  *
  * WAV file I/O channel class.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 2002 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is
  * Equivalence Pty Ltd
@@ -79,7 +79,7 @@ class PMemoryFile : public PFile
 
        @return true if the channel successfully closed.
      */
-    virtual PBoolean Close();
+    virtual bool Close();
 
     /**Low level read from the memory file channel. The read timeout is
        ignored.  The GetLastReadCount() function returns the actual number
@@ -92,7 +92,7 @@ class PMemoryFile : public PFile
        true indicates that at least one character was read from the channel.
        false means no bytes were read due to timeout or some other I/O error.
      */
-    virtual PBoolean Read(
+    virtual bool Read(
       void * buf,   ///< Pointer to a block of memory to receive the read bytes.
       PINDEX len    ///< Maximum number of bytes to read into the buffer.
     );
@@ -106,7 +106,7 @@ class PMemoryFile : public PFile
 
        @return true if at least len bytes were written to the channel.
      */
-    virtual PBoolean Write(
+    virtual bool Write(
       const void * buf, ///< Pointer to a block of memory to write.
       PINDEX len        ///< Number of bytes to write.
     );
@@ -129,7 +129,7 @@ class PMemoryFile : public PFile
        @return
        true if the file size was changed to the length specified.
      */
-    virtual PBoolean SetLength(
+    virtual bool SetLength(
       off_t len   ///< New length of file.
     );
 
@@ -143,7 +143,7 @@ class PMemoryFile : public PFile
        @return
        true if the new file position was set.
      */
-    virtual PBoolean SetPosition(
+    virtual bool SetPosition(
       off_t pos,                         ///< New position to set.
       FilePositionOrigin origin = Start  ///< Origin for position change.
     );

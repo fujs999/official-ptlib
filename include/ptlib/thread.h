@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -165,7 +165,7 @@ class PThread : public PObject
        @return
        <code>true</code> if the thread has been terminated.
      */
-    virtual PBoolean IsTerminated() const;
+    virtual bool IsTerminated() const;
 
     /** Block and wait for the thread to terminate.
      */
@@ -176,7 +176,7 @@ class PThread : public PObject
        @return
        <code>false</code> if the thread has not terminated and the timeout has expired, <code>true</code> otherwise.
      */
-    PBoolean WaitForTermination(
+    bool WaitForTermination(
       const PTimeInterval & maxWait  ///< Maximum time to wait for termination.
     ) const;
 
@@ -214,7 +214,7 @@ class PThread : public PObject
        <code>Suspend(true)</code> calls are made.
      */
     virtual void Suspend(
-      PBoolean susp = true    ///< Flag to suspend or resume a thread.
+      bool susp = true    ///< Flag to suspend or resume a thread.
     );
 
     /** Resume thread execution, this is identical to
@@ -245,7 +245,7 @@ class PThread : public PObject
        @return
        <code>true</code> if thread is suspended.
      */
-    virtual PBoolean IsSuspended() const;
+    virtual bool IsSuspended() const;
 
     /// Suspend the current thread for the specified amount of time.
     static void Sleep(

@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -76,7 +76,7 @@ class PSocket : public PChannel
        @return
        true if the channel was successfully connected to the remote host.
      */
-    virtual PBoolean Connect(
+    virtual bool Connect(
       const PString & address   ///< Address of remote machine to connect to.
     );
 
@@ -100,9 +100,9 @@ class PSocket : public PChannel
        @return
        true if the channel was successfully opened.
      */
-    virtual PBoolean Listen(
+    virtual bool Listen(
       unsigned queueSize = 5,  ///< Number of pending accepts that may be queued.
-      WORD port = 0,           ///< Port number to use for the connection.
+      uint16_t port = 0,           ///< Port number to use for the connection.
       Reusability reuse = AddressIsExclusive ///< Can/Cant listen more than once.
     );
 
@@ -128,7 +128,7 @@ class PSocket : public PChannel
        @return
        true if the channel was successfully opened.
      */
-    virtual PBoolean Accept(
+    virtual bool Accept(
       PSocket & socket          ///< Listening socket making the connection.
     );
 
@@ -137,7 +137,7 @@ class PSocket : public PChannel
        @return
        true if the shutdown was performed
      */
-    virtual PBoolean Shutdown(
+    virtual bool Shutdown(
       ShutdownValue option   ///< Flag for shutdown of read, write or both.
     );
   //@}
@@ -150,7 +150,7 @@ class PSocket : public PChannel
        @return
        true if the option was successfully set.
      */
-    PBoolean SetOption(
+    bool SetOption(
       int option,             ///< Option to set.
       int value,              ///< New value for option.
       int level = SOL_SOCKET  ///< Level for option.
@@ -162,7 +162,7 @@ class PSocket : public PChannel
        @return
        true if the option was successfully set.
      */
-    PBoolean SetOption(
+    bool SetOption(
       int option,             ///< Option to set.
       const void * valuePtr,  ///< Pointer to new value for option.
       PINDEX valueSize,       ///< Size of new value.
@@ -175,7 +175,7 @@ class PSocket : public PChannel
        @return
        true if the option was successfully retrieved.
      */
-    PBoolean GetOption(
+    bool GetOption(
       int option,             ///< Option to get.
       int & value,            ///< Integer to receive value.
       int level = SOL_SOCKET  ///< Level for option.
@@ -187,7 +187,7 @@ class PSocket : public PChannel
        @return
        true if the option was successfully retrieved.
      */
-    PBoolean GetOption(
+    bool GetOption(
       int option,             ///< Option to get.
       void * valuePtr,        ///< Pointer to buffer for value.
       PINDEX valueSize,       ///< Size of buffer to receive value.
@@ -202,7 +202,7 @@ class PSocket : public PChannel
        @return
        Number of protocol or 0 if the protocol was not found.
      */
-    static WORD GetProtocolByName(
+    static uint16_t GetProtocolByName(
       const PString & name      ///< Name of protocol.
     );
 
@@ -212,12 +212,12 @@ class PSocket : public PChannel
        Name of protocol or the number if the protocol was not found.
      */
     static PString GetNameByProtocol(
-      WORD proto                ///< Number of protocol.
+      uint16_t proto                ///< Number of protocol.
     );
 
 
     /**Get the port number for the specified service name. */
-    virtual WORD GetPortByService(
+    virtual uint16_t GetPortByService(
       const PString & service   ///< Name of service to get port number for.
     ) const;
     /**Get the port number for the specified service name.
@@ -237,14 +237,14 @@ class PSocket : public PChannel
        @return
        Port number for service name, or 0 if service cannot be found.
      */
-    static WORD GetPortByService(
+    static uint16_t GetPortByService(
       const char * protocol,     ///< Protocol type for port lookup.
       const PString & service    ///< Name of service to get port number for.
     );
 
     /**Get the service name from the port number. */
     virtual PString GetServiceByPort(
-      WORD port   ///< Number for service to find name of.
+      uint16_t port   ///< Number for service to find name of.
     ) const;
     /**Get the service name from the port number.
 
@@ -265,13 +265,13 @@ class PSocket : public PChannel
      */
     static PString GetServiceByPort(
       const char * protocol,  ///< Protocol type for port lookup
-      WORD port   ///< Number for service to find name of.
+      uint16_t port   ///< Number for service to find name of.
     );
 
 
     /**Set the port number for the channel. */
     void SetPort(
-      WORD port   ///< New port number for the channel.
+      uint16_t port   ///< New port number for the channel.
     );
     /**Set the port number for the channel. This a 16 bit number representing
        an agreed high level protocol type. The string version looks up a
@@ -294,7 +294,7 @@ class PSocket : public PChannel
        @return
        Port number.
      */
-    WORD GetPort() const;
+    uint16_t GetPort() const;
 
     /**Get a service name for the port number the TCP socket channel object
        instance is using.
@@ -392,14 +392,14 @@ class PSocket : public PChannel
   /**@name Integer conversion functions */
   //@{
     /// Convert from host to network byte order
-    inline static WORD  Host2Net(WORD  v) { return htons(v); }
+    inline static uint16_t  Host2Net(uint16_t  v) { return htons(v); }
     /// Convert from host to network byte order
-    inline static DWORD Host2Net(DWORD v) { return htonl(v); }
+    inline static uint32_t Host2Net(uint32_t v) { return htonl(v); }
 
     /// Convert from network to host byte order
-    inline static WORD  Net2Host(WORD  v) { return ntohs(v); }
+    inline static uint16_t  Net2Host(uint16_t  v) { return ntohs(v); }
     /// Convert from network to host byte order
-    inline static DWORD Net2Host(DWORD v) { return ntohl(v); }
+    inline static uint32_t Net2Host(uint32_t v) { return ntohl(v); }
   //@}
 
 
@@ -481,12 +481,12 @@ class PSocket : public PChannel
   //@}
 
   protected:
-    virtual PBoolean ConvertOSError(P_INT_PTR libcReturnValue, ErrorGroup group = LastGeneralError);
+    virtual bool ConvertOSError(P_INT_PTR libcReturnValue, ErrorGroup group = LastGeneralError);
 
     /*This function calls os_socket() with the correct parameters for the
        socket protocol type.
      */
-    virtual PBoolean OpenSocket() = 0;
+    virtual bool OpenSocket() = 0;
 
     /**This function returns the protocol name for the socket type.
      */
@@ -495,12 +495,12 @@ class PSocket : public PChannel
 
     int os_close();
     int os_socket(int af, int type, int proto);
-    PBoolean os_connect(
+    bool os_connect(
       struct sockaddr * sin,
       socklen_t size
     );
 
-    PBoolean os_vread(
+    bool os_vread(
       Slice * slices,
       size_t sliceCount,
       int flags,
@@ -508,7 +508,7 @@ class PSocket : public PChannel
       socklen_t * fromlen
     );
 
-    PBoolean os_vwrite(
+    bool os_vwrite(
       const Slice * slices,
       size_t sliceCount,
       int flags,
@@ -516,7 +516,7 @@ class PSocket : public PChannel
       socklen_t tolen
     );
 
-    PBoolean os_accept(
+    bool os_accept(
       PSocket & listener,
       struct sockaddr * addr,
       socklen_t * size
@@ -527,7 +527,7 @@ class PSocket : public PChannel
 
   // Member variables
     /// Port to be used by the socket when opening the channel.
-    WORD m_port;
+    uint16_t m_port;
 
 // Include platform dependent part of class
 #ifdef _WIN32

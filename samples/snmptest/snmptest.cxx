@@ -72,7 +72,7 @@ MySNMPServer::MySNMPServer()
 /** Authorise on ip address of the request
     we are just printing the ip address and accepting it
 */
-PBoolean MySNMPServer::Authorise(const PIPSocket::Address & received)
+bool MySNMPServer::Authorise(const PIPSocket::Address & received)
 {
   PTRACE(1, "SNMPServer\tReceived request from " << received);
   return true;
@@ -81,7 +81,7 @@ PBoolean MySNMPServer::Authorise(const PIPSocket::Address & received)
 
 /** Confirm Community String. We print community string and accept it
 */
-PBoolean MySNMPServer::ConfirmCommunity(PASN_OctetString & community)
+bool MySNMPServer::ConfirmCommunity(PASN_OctetString & community)
 {
   PTRACE(1, "SNMPServer\tReceived community : " << community);
   return true;
@@ -90,7 +90,7 @@ PBoolean MySNMPServer::ConfirmCommunity(PASN_OctetString & community)
 /** This is called on every get request
     We are just going to return true for now 
 */
-PBoolean MySNMPServer::OnGetRequest(PINDEX reqID, PSNMP::BindingList & vars, PSNMP::ErrorType & errCode)
+bool MySNMPServer::OnGetRequest(PINDEX reqID, PSNMP::BindingList & vars, PSNMP::ErrorType & errCode)
 {
   return true;
 }
@@ -98,7 +98,7 @@ PBoolean MySNMPServer::OnGetRequest(PINDEX reqID, PSNMP::BindingList & vars, PSN
 /* We can confirm the version of the snmp request here
    default is 0 which is snmp version 1 
 */
-PBoolean MySNMPServer::ConfirmVersion(PASN_Integer vers)
+bool MySNMPServer::ConfirmVersion(PASN_Integer vers)
 {
   PTRACE(1,"SNMPServer\tReceived Request version " << vers);
   return true;

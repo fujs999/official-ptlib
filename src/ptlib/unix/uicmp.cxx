@@ -3,7 +3,7 @@
  *
  * ICMP socket class implementation.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -45,49 +45,49 @@
 
 
 typedef struct {
-  BYTE   type;
-  BYTE   code;
-  WORD   checksum;
+  uint8_t   type;
+  uint8_t   code;
+  uint16_t   checksum;
 
-  WORD   id;
-  WORD   sequence;
+  uint16_t   id;
+  uint16_t   sequence;
 
-  PInt64 sendtime;
-  BYTE   data[ICMP_DATA_LEN-sizeof(PInt64)];
+  int64_t sendtime;
+  uint8_t   data[ICMP_DATA_LEN-sizeof(int64_t)];
 } ICMPPacket;
 
 
 typedef struct {
-  BYTE verIhl;
-  BYTE typeOfService;
-  WORD totalLength;
-  WORD identification;
-  WORD fragOff;
-  BYTE timeToLive;
-  BYTE protocol;
-  WORD checksum;
-  BYTE sourceAddr[4];
-  BYTE destAddr[4];
+  uint8_t verIhl;
+  uint8_t typeOfService;
+  uint16_t totalLength;
+  uint16_t identification;
+  uint16_t fragOff;
+  uint8_t timeToLive;
+  uint8_t protocol;
+  uint16_t checksum;
+  uint8_t sourceAddr[4];
+  uint8_t destAddr[4];
 } IPHdr;
 
 
-static WORD CalcChecksum(void * p, PINDEX len)
+static uint16_t CalcChecksum(void * p, PINDEX len)
 {
-  WORD * ptr = (WORD *)p;
-  DWORD sum = 0;
+  uint16_t * ptr = (uint16_t *)p;
+  uint32_t sum = 0;
   while (len > 1) {
     sum += *ptr++;
     len-=2;
   }
 
   if (len > 0) {
-    WORD t = *(BYTE *)ptr;
+    uint16_t t = *(uint8_t *)ptr;
     sum += t;
   }
 
   sum = (sum >> 16) + (sum & 0xffff);
   sum += (sum >> 16);
-  return (WORD)~sum;
+  return (uint16_t)~sum;
 }
 
 
@@ -97,14 +97,14 @@ PICMPSocket::PICMPSocket()
 }
 
 
-PBoolean PICMPSocket::Ping(const PString & host)
+bool PICMPSocket::Ping(const PString & host)
 {
   PingInfo info;
   return Ping(host, info);
 }
 
 
-PBoolean PICMPSocket::Ping(const PString & host, PingInfo & info)
+bool PICMPSocket::Ping(const PString & host, PingInfo & info)
 {
   if (!WritePing(host, info))
     return false;
@@ -113,7 +113,7 @@ PBoolean PICMPSocket::Ping(const PString & host, PingInfo & info)
 }
 
 
-PBoolean PICMPSocket::WritePing(const PString & host, PingInfo & info)
+bool PICMPSocket::WritePing(const PString & host, PingInfo & info)
 {
   // find address of the host
   PIPSocket::Address addr;
@@ -149,14 +149,14 @@ PBoolean PICMPSocket::WritePing(const PString & host, PingInfo & info)
 }
 
 
-PBoolean PICMPSocket::ReadPing(PingInfo & info)
+bool PICMPSocket::ReadPing(PingInfo & info)
 {
   // receive a packet
-  BYTE packet[RX_BUFFER_SIZE];
+  uint8_t packet[RX_BUFFER_SIZE];
   IPHdr      * ipHdr;
   ICMPPacket * icmpPacket;
-  WORD port;
-  PInt64 now;
+  uint16_t port;
+  int64_t now;
   PTimer timeout(GetReadTimeout());
 
   for (;;) {
@@ -170,7 +170,7 @@ PBoolean PICMPSocket::ReadPing(PingInfo & info)
     icmpPacket = (ICMPPacket *)(packet + ((ipHdr->verIhl & 0xf) << 2));
 
     if ((      icmpPacket->type == ICMP_ECHO_REPLY) && 
-        ((WORD)icmpPacket->id   == info.identifier)) {
+        ((uint16_t)icmpPacket->id   == info.identifier)) {
       info.status = PingSuccess;
       break;
     }
@@ -192,10 +192,10 @@ PBoolean PICMPSocket::ReadPing(PingInfo & info)
   // calc round trip time. Be careful, as unaligned "long long" ints
   // can cause problems on some platforms
 #if defined(P_SUN4) || defined(P_SOLARIS)
-  PInt64 then;
-  BYTE * pthen = (BYTE *)&then;
-  BYTE * psendtime = (BYTE *)&icmpPacket->sendtime;
-  memcpy(pthen, psendtime, sizeof(PInt64));
+  int64_t then;
+  uint8_t * pthen = (uint8_t *)&then;
+  uint8_t * psendtime = (uint8_t *)&icmpPacket->sendtime;
+  memcpy(pthen, psendtime, sizeof(int64_t));
   info.delay.SetInterval(now - then);
 #else
   info.delay.SetInterval(now - icmpPacket->sendtime);
@@ -207,7 +207,7 @@ PBoolean PICMPSocket::ReadPing(PingInfo & info)
 }
 
 
-PBoolean PICMPSocket::OpenSocket()
+bool PICMPSocket::OpenSocket()
 {
 #if !defined BE_BONELESS && !defined(P_VXWORKS)
   struct protoent * p = ::getprotobyname(GetProtocolName());
@@ -226,7 +226,7 @@ const char * PICMPSocket::GetProtocolName() const
 }
 
 
-PICMPSocket::PingInfo::PingInfo(WORD id)
+PICMPSocket::PingInfo::PingInfo(uint16_t id)
 {
   identifier = id;
   sequenceNum = 0;

@@ -77,7 +77,7 @@ bool PCLI::Context::InternalWrite(const char * str, PINDEX len, PINDEX & written
 }
 
 
-PBoolean PCLI::Context::Write(const void * buf, PINDEX len)
+bool PCLI::Context::Write(const void * buf, PINDEX len)
 {
   unsigned rows, columns;
   if (!GetTerminalSize(rows, columns))
@@ -1163,7 +1163,7 @@ bool PCLIStandard::RunScript(PChannel * channel, bool autoDelete)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-PCLISocket::PCLISocket(WORD port, const char * prompt, bool singleThreadForAll)
+PCLISocket::PCLISocket(uint16_t port, const char * prompt, bool singleThreadForAll)
   : PCLI(prompt)
   , m_singleThreadForAll(singleThreadForAll)
   , m_listenSocket(port)
@@ -1242,7 +1242,7 @@ void PCLISocket::RemoveContext(Context * context)
 }
 
 
-bool PCLISocket::Listen(WORD port)
+bool PCLISocket::Listen(uint16_t port)
 {
   if (!m_listenSocket.Listen(5, port, PSocket::CanReuseAddress)) {
     PTRACE(2, "Cannot open PCLI socket on port " << port
@@ -1337,7 +1337,7 @@ PTCPSocket * PCLISocket::CreateSocket()
 
 #if P_TELNET
 
-PCLITelnet::PCLITelnet(WORD port, const char * prompt, bool singleThreadForAll)
+PCLITelnet::PCLITelnet(uint16_t port, const char * prompt, bool singleThreadForAll)
   : PCLISocket(port, prompt, singleThreadForAll)
 {
 }
@@ -2008,7 +2008,7 @@ PCLICurses::Window::Window(PCLICurses & owner, PCLICurses::Borders border)
 }
 
 
-PBoolean PCLICurses::Window::Write(const void * data, PINDEX length)
+bool PCLICurses::Window::Write(const void * data, PINDEX length)
 {
   SetLastWriteCount(0);
 

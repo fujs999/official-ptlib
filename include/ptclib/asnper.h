@@ -3,7 +3,7 @@
  *
  * Abstract Syntax Notation Encoding Rules classes
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  */
 
@@ -17,68 +17,68 @@ class PPER_Stream : public PASN_Stream
     PCLASSINFO(PPER_Stream, PASN_Stream);
   public:
     PPER_Stream(int aligned = true);
-    PPER_Stream(const BYTE * buf, PINDEX size, PBoolean aligned = true);
-    PPER_Stream(const PBYTEArray & bytes, PBoolean aligned = true);
+    PPER_Stream(const uint8_t * buf, PINDEX size, bool aligned = true);
+    PPER_Stream(const PBYTEArray & bytes, bool aligned = true);
 
     PPER_Stream & operator=(const PBYTEArray & bytes);
 
     unsigned GetBitsLeft() const;
 
-    virtual PBoolean Read(PChannel & chan);
-    virtual PBoolean Write(PChannel & chan);
+    virtual bool Read(PChannel & chan);
+    virtual bool Write(PChannel & chan);
 
-    virtual PBoolean NullDecode(PASN_Null &);
+    virtual bool NullDecode(PASN_Null &);
     virtual void NullEncode(const PASN_Null &);
-    virtual PBoolean BooleanDecode(PASN_Boolean &);
+    virtual bool BooleanDecode(PASN_Boolean &);
     virtual void BooleanEncode(const PASN_Boolean &);
-    virtual PBoolean IntegerDecode(PASN_Integer &);
+    virtual bool IntegerDecode(PASN_Integer &);
     virtual void IntegerEncode(const PASN_Integer &);
-    virtual PBoolean EnumerationDecode(PASN_Enumeration &);
+    virtual bool EnumerationDecode(PASN_Enumeration &);
     virtual void EnumerationEncode(const PASN_Enumeration &);
-    virtual PBoolean RealDecode(PASN_Real &);
+    virtual bool RealDecode(PASN_Real &);
     virtual void RealEncode(const PASN_Real &);
-    virtual PBoolean ObjectIdDecode(PASN_ObjectId &);
+    virtual bool ObjectIdDecode(PASN_ObjectId &);
     virtual void ObjectIdEncode(const PASN_ObjectId &);
-    virtual PBoolean BitStringDecode(PASN_BitString &);
+    virtual bool BitStringDecode(PASN_BitString &);
     virtual void BitStringEncode(const PASN_BitString &);
-    virtual PBoolean OctetStringDecode(PASN_OctetString &);
+    virtual bool OctetStringDecode(PASN_OctetString &);
     virtual void OctetStringEncode(const PASN_OctetString &);
-    virtual PBoolean ConstrainedStringDecode(PASN_ConstrainedString &);
+    virtual bool ConstrainedStringDecode(PASN_ConstrainedString &);
     virtual void ConstrainedStringEncode(const PASN_ConstrainedString &);
-    virtual PBoolean BMPStringDecode(PASN_BMPString &);
+    virtual bool BMPStringDecode(PASN_BMPString &);
     virtual void BMPStringEncode(const PASN_BMPString &);
-    virtual PBoolean ChoiceDecode(PASN_Choice &);
+    virtual bool ChoiceDecode(PASN_Choice &);
     virtual void ChoiceEncode(const PASN_Choice &);
-    virtual PBoolean ArrayDecode(PASN_Array &);
+    virtual bool ArrayDecode(PASN_Array &);
     virtual void ArrayEncode(const PASN_Array &);
-    virtual PBoolean SequencePreambleDecode(PASN_Sequence &);
+    virtual bool SequencePreambleDecode(PASN_Sequence &);
     virtual void SequencePreambleEncode(const PASN_Sequence &);
-    virtual PBoolean SequenceKnownDecode(PASN_Sequence &, PINDEX, PASN_Object &);
+    virtual bool SequenceKnownDecode(PASN_Sequence &, PINDEX, PASN_Object &);
     virtual void SequenceKnownEncode(const PASN_Sequence &, PINDEX, const PASN_Object &);
-    virtual PBoolean SequenceUnknownDecode(PASN_Sequence &);
+    virtual bool SequenceUnknownDecode(PASN_Sequence &);
     virtual void SequenceUnknownEncode(const PASN_Sequence &);
 
-    PBoolean IsAligned() const { return aligned; }
+    bool IsAligned() const { return aligned; }
 
-    PBoolean SingleBitDecode();
-    void SingleBitEncode(PBoolean value);
+    bool SingleBitDecode();
+    void SingleBitEncode(bool value);
 
-    PBoolean MultiBitDecode(unsigned nBits, unsigned & value);
+    bool MultiBitDecode(unsigned nBits, unsigned & value);
     void MultiBitEncode(unsigned value, unsigned nBits);
 
-    PBoolean SmallUnsignedDecode(unsigned & value);
+    bool SmallUnsignedDecode(unsigned & value);
     void SmallUnsignedEncode(unsigned value);
 
-    PBoolean LengthDecode(unsigned lower, unsigned upper, unsigned & len);
+    bool LengthDecode(unsigned lower, unsigned upper, unsigned & len);
     void LengthEncode(unsigned len, unsigned lower, unsigned upper);
 
-    PBoolean UnsignedDecode(unsigned lower, unsigned upper, unsigned & value);
+    bool UnsignedDecode(unsigned lower, unsigned upper, unsigned & value);
     void UnsignedEncode(int value, unsigned lower, unsigned upper);
 
     void AnyTypeEncode(const PASN_Object * value);
 
   protected:
-    PBoolean aligned;
+    bool aligned;
 };
 
 #endif

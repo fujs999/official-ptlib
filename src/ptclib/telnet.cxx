@@ -3,7 +3,7 @@
  *
  * TELNET socket I/O channel class.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-2002 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -73,7 +73,7 @@ void PTelnetSocket::Construct()
 }
 
 
-PBoolean PTelnetSocket::Connect(const PString & host)
+bool PTelnetSocket::Connect(const PString & host)
 {
   PTRACE(3, "Telnet\tConnecting to " << host);
 
@@ -87,7 +87,7 @@ PBoolean PTelnetSocket::Connect(const PString & host)
 }
 
 
-PBoolean PTelnetSocket::Accept(PSocket & sock)
+bool PTelnetSocket::Accept(PSocket & sock)
 {
   if (!PTCPSocket::Accept(sock))
     return false;
@@ -98,10 +98,10 @@ PBoolean PTelnetSocket::Accept(PSocket & sock)
 }
 
 
-PBoolean PTelnetSocket::Write(void const * buffer, PINDEX length)
+bool PTelnetSocket::Write(void const * buffer, PINDEX length)
 {
-  const BYTE * base = (const BYTE *)buffer;
-  const BYTE * next = base;
+  const uint8_t * base = (const uint8_t *)buffer;
+  const uint8_t * next = base;
   int count = 0;
 
   while (length > 0) {
@@ -149,18 +149,18 @@ bool PTelnetSocket::SetLocalEcho(bool localEcho)
 }
 
 
-PBoolean PTelnetSocket::SendCommand(Command cmd, int opt)
+bool PTelnetSocket::SendCommand(Command cmd, int opt)
 {
-  BYTE buffer[3];
+  uint8_t buffer[3];
   buffer[0] = IAC;
-  buffer[1] = (BYTE)cmd;
+  buffer[1] = (uint8_t)cmd;
 
   switch (cmd) {
     case DO :
     case DONT :
     case WILL :
     case WONT :
-      buffer[2] = (BYTE)opt;
+      buffer[2] = (uint8_t)opt;
       return PTCPSocket::Write(buffer, 3);
 
     case InterruptProcess :
@@ -274,7 +274,7 @@ PBoolean PTelnetSocket::SendCommand(Command cmd, int opt)
   #define TELNET_TRACE(info)
 #endif
 
-PBoolean PTelnetSocket::SendDo(BYTE code)
+bool PTelnetSocket::SendDo(uint8_t code)
 {
   SEND_OP_START("SendDo", code);
 
@@ -316,7 +316,7 @@ PBoolean PTelnetSocket::SendDo(BYTE code)
 }
 
 
-PBoolean PTelnetSocket::SendDont(BYTE code)
+bool PTelnetSocket::SendDont(uint8_t code)
 {
   SEND_OP_START("SendDont", code);
 
@@ -358,7 +358,7 @@ PBoolean PTelnetSocket::SendDont(BYTE code)
 }
 
 
-PBoolean PTelnetSocket::SendWill(BYTE code)
+bool PTelnetSocket::SendWill(uint8_t code)
 {
   SEND_OP_START("SendWill", code);
 
@@ -400,7 +400,7 @@ PBoolean PTelnetSocket::SendWill(BYTE code)
 }
 
 
-PBoolean PTelnetSocket::SendWont(BYTE code)
+bool PTelnetSocket::SendWont(uint8_t code)
 {
   SEND_OP_START("SendWont", code);
 
@@ -442,7 +442,7 @@ PBoolean PTelnetSocket::SendWont(BYTE code)
 }
 
 
-PBoolean PTelnetSocket::SendSubOption(BYTE code, const BYTE * info, PINDEX len, int subCode)
+bool PTelnetSocket::SendSubOption(uint8_t code, const uint8_t * info, PINDEX len, int subCode)
 {
   {
     SEND_OP_START("SendSubOption", code);
@@ -455,7 +455,7 @@ PBoolean PTelnetSocket::SendSubOption(BYTE code, const BYTE * info, PINDEX len, 
   buffer[2] = code;
   PINDEX i = 3;
   if (subCode >= 0)
-    buffer[i++] = (BYTE)subCode;
+    buffer[i++] = (uint8_t)subCode;
   while (len-- > 0) {
     if (*info == IAC)
       buffer[i++] = IAC;
@@ -464,7 +464,7 @@ PBoolean PTelnetSocket::SendSubOption(BYTE code, const BYTE * info, PINDEX len, 
   buffer[i++] = IAC;
   buffer[i++] = SE;
 
-  return PTCPSocket::Write((const BYTE *)buffer, i);
+  return PTCPSocket::Write((const uint8_t *)buffer, i);
 }
 
 
@@ -474,16 +474,16 @@ void PTelnetSocket::SetTerminalType(const PString & newType)
 }
 
 
-void PTelnetSocket::SetWindowSize(WORD width, WORD height)
+void PTelnetSocket::SetWindowSize(uint16_t width, uint16_t height)
 {
   m_windowWidth = width;
   m_windowHeight = height;
   if (IsOurOption(WindowSize)) {
-    BYTE buffer[4];
-    buffer[0] = (BYTE)(width >> 8);
-    buffer[1] = (BYTE)width;
-    buffer[2] = (BYTE)(height >> 8);
-    buffer[3] = (BYTE)height;
+    uint8_t buffer[4];
+    buffer[0] = (uint8_t)(width >> 8);
+    buffer[1] = (uint8_t)width;
+    buffer[2] = (uint8_t)(height >> 8);
+    buffer[3] = (uint8_t)height;
     SendSubOption(WindowSize, buffer, sizeof(buffer));
   }
   else {
@@ -493,27 +493,27 @@ void PTelnetSocket::SetWindowSize(WORD width, WORD height)
 }
 
 
-void PTelnetSocket::GetWindowSize(WORD & width, WORD & height) const
+void PTelnetSocket::GetWindowSize(uint16_t & width, uint16_t & height) const
 {
   width = m_windowWidth;
   height = m_windowHeight;
 }
 
 
-PBoolean PTelnetSocket::Read(void * data, PINDEX bytesToRead)
+bool PTelnetSocket::Read(void * data, PINDEX bytesToRead)
 {
   PBYTEArray buffer(bytesToRead);
   PINDEX charsLeft = bytesToRead;
-  BYTE * dst = (BYTE *)data;
+  uint8_t * dst = (uint8_t *)data;
 
   while (charsLeft > 0) {
-    BYTE * src = buffer.GetPointer(charsLeft);
+    uint8_t * src = buffer.GetPointer(charsLeft);
     if (!PTCPSocket::Read(src, charsLeft))
       return SetLastReadCount(bytesToRead - charsLeft) > 0;
 
     PINDEX readCount = GetLastReadCount();
     while (readCount > 0) {
-      BYTE currentByte = *src++;
+      uint8_t currentByte = *src++;
       readCount--;
       switch (m_state) {
         case StateCarriageReturn :
@@ -626,7 +626,7 @@ PBoolean PTelnetSocket::Read(void * data, PINDEX bytesToRead)
             break;  // Was IAC IAC, subnegotiation not over yet.
           }
           if (m_subOption.GetSize() > 1 && IsOurOption(m_subOption[0]))
-            OnSubOption(m_subOption[0], ((const BYTE*)m_subOption)+1, m_subOption.GetSize()-1);
+            OnSubOption(m_subOption[0], ((const uint8_t*)m_subOption)+1, m_subOption.GetSize()-1);
           break;
 
         default :
@@ -635,7 +635,7 @@ PBoolean PTelnetSocket::Read(void * data, PINDEX bytesToRead)
       }
       if (m_synchronising > 0) {
         charsLeft = bytesToRead;    // Flush data being received.
-        dst = (BYTE *)data;
+        dst = (uint8_t *)data;
       }
     }
   }
@@ -644,7 +644,7 @@ PBoolean PTelnetSocket::Read(void * data, PINDEX bytesToRead)
 }
 
 
-void PTelnetSocket::OnDo(BYTE code)
+void PTelnetSocket::OnDo(uint8_t code)
 {
   {
     ON_OP_START("OnDo", code);
@@ -694,7 +694,7 @@ void PTelnetSocket::OnDo(BYTE code)
   if (IsOurOption(code)) {
     switch (code) {
       case TerminalSpeed : {
-          static BYTE defSpeed[] = "38400,38400";
+          static uint8_t defSpeed[] = "38400,38400";
           SendSubOption(TerminalSpeed, defSpeed, sizeof(defSpeed)-1, SubOptionIs);
         }
         break;
@@ -711,7 +711,7 @@ void PTelnetSocket::OnDo(BYTE code)
 }
 
 
-void PTelnetSocket::OnDont(BYTE code)
+void PTelnetSocket::OnDont(uint8_t code)
 {
   ON_OP_START("OnDont", code);
 
@@ -752,7 +752,7 @@ void PTelnetSocket::OnDont(BYTE code)
 }
 
 
-void PTelnetSocket::OnWill(BYTE code)
+void PTelnetSocket::OnWill(uint8_t code)
 {
   ON_OP_START("OnWill", code);
 
@@ -799,7 +799,7 @@ void PTelnetSocket::OnWill(BYTE code)
 }
 
 
-void PTelnetSocket::OnWont(BYTE code)
+void PTelnetSocket::OnWont(uint8_t code)
 {
   ON_OP_START("OnWont", code);
 
@@ -840,7 +840,7 @@ void PTelnetSocket::OnWont(BYTE code)
 }
 
 
-void PTelnetSocket::OnSubOption(BYTE code, const BYTE * info, PINDEX PTRACE_PARAM(len))
+void PTelnetSocket::OnSubOption(uint8_t code, const uint8_t * info, PINDEX PTRACE_PARAM(len))
 {
   ON_OP_START("OnSubOption", code);
 
@@ -855,7 +855,7 @@ void PTelnetSocket::OnSubOption(BYTE code, const BYTE * info, PINDEX PTRACE_PARA
     case TerminalSpeed :
       if (*info == SubOptionSend) {
         TELNET_TRACE("TerminalSpeed");
-        static BYTE defSpeed[] = "38400,38400";
+        static uint8_t defSpeed[] = "38400,38400";
         SendSubOption(TerminalSpeed, defSpeed, sizeof(defSpeed)-1, SubOptionIs);
       }
       break;
@@ -866,7 +866,7 @@ void PTelnetSocket::OnSubOption(BYTE code, const BYTE * info, PINDEX PTRACE_PARA
 }
 
 
-PBoolean PTelnetSocket::OnCommand(BYTE code)
+bool PTelnetSocket::OnCommand(uint8_t code)
 {
   if (code == NOP)
     return true;

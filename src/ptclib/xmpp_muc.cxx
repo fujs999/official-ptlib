@@ -4,7 +4,7 @@
  * Extensible Messaging and Presence Protocol (XMPP)
  * JEP-0045 Multi-User Chat
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 2004 Reitek S.p.A.
  *
@@ -18,7 +18,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Post Increment
  *
@@ -83,7 +83,7 @@ XMPP::MUC::Room::Room(C2S::StreamHandler * handler, const JID& jid, const PStrin
 }
 
 
-PBoolean XMPP::MUC::Room::Enter()
+bool XMPP::MUC::Room::Enter()
 {
   if (PAssertNULL(m_Handler) == NULL)
     return false;
@@ -103,7 +103,7 @@ PBoolean XMPP::MUC::Room::Enter()
 }
 
 
-PBoolean XMPP::MUC::Room::Leave()
+bool XMPP::MUC::Room::Leave()
 {
   if (PAssertNULL(m_Handler) == NULL)
     return false;
@@ -116,7 +116,7 @@ PBoolean XMPP::MUC::Room::Leave()
 }
 
 
-PBoolean XMPP::MUC::Room::SendMessage(const PString& msg)
+bool XMPP::MUC::Room::SendMessage(const PString& msg)
 {
   XMPP::Message _msg;
   _msg.SetBody(msg);
@@ -125,7 +125,7 @@ PBoolean XMPP::MUC::Room::SendMessage(const PString& msg)
 }
 
 
-PBoolean XMPP::MUC::Room::SendMessage(Message& msg)
+bool XMPP::MUC::Room::SendMessage(Message& msg)
 {
   if (PAssertNULL(m_Handler) == NULL)
     return false;

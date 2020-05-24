@@ -3,7 +3,7 @@
  *
  * Internet Control Message Protocol socket I/O channel class.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -31,7 +31,7 @@
 // PICMPSocket
 
   protected:
-    PBoolean WritePing(
+    bool WritePing(
       const PString & host,   // Host to send ping.
       PingInfo & info         // Information on the ping and reply.
     );
@@ -41,7 +41,7 @@
        false if host not found or no response.
      */
 
-    PBoolean ReadPing(
+    bool ReadPing(
       PingInfo & info         // Information on the ping and reply.
     );
     /* Receive an ECHO_REPLY message from the host.

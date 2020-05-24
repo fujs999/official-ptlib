@@ -3,7 +3,7 @@
  *
  * Operating System Process (running program executable) class.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -220,7 +220,7 @@ class PProcess : public PThread
        @return
        true if process class has been initialised.
      */
-    static PBoolean IsInitialised();
+    static bool IsInitialised();
 
     /**Set the termination value for the process.
     
@@ -288,7 +288,7 @@ class PProcess : public PThread
        string for the version eg "1.0b3".
      */
     virtual PString GetVersion(
-      PBoolean full = true ///< true for full version, false for short version.
+      bool full = true ///< true for full version, false for short version.
     ) const;
 
     /**Get the processes executable image file path.
@@ -393,9 +393,9 @@ class PProcess : public PThread
        true if processes owner changed. The most common reason for failure is
        that the process does not have the privilege to change the effective user.
       */
-    PBoolean SetUserName(
+    bool SetUserName(
       const PString & username, ///< New user name or uid
-      PBoolean permanent = false    ///< Flag for if effective or real user
+      bool permanent = false    ///< Flag for if effective or real user
     );
 
     /**Get the "home" directory for the logged in user.
@@ -438,9 +438,9 @@ class PProcess : public PThread
        that the process does not have the privilege to change the effective
        group.
       */
-    PBoolean SetGroupName(
+    bool SetGroupName(
       const PString & groupname, ///< New group name or gid
-      PBoolean permanent = false     ///< Flag for if effective or real group
+      bool permanent = false     ///< Flag for if effective or real group
     );
 
     /**Get the maximum file handle value for the process.
@@ -460,7 +460,7 @@ class PProcess : public PThread
        @return
        true if successfully set the maximum file hadles.
       */
-    PBoolean SetMaxHandles(
+    bool SetMaxHandles(
       int newLimit  ///< New limit on file handles
     );
 

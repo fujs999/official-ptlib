@@ -5,7 +5,7 @@
 //  PTime
 //
 
-PBoolean PTime::GetTimeAMPM()
+bool PTime::GetTimeAMPM()
 {
 #if defined(P_USE_LANGINFO)
   return strstr(nl_langinfo(T_FMT), "%p") != NULL;
@@ -274,7 +274,7 @@ PAssertAlways("Using default month names");
 }
 
 
-PBoolean PTime::IsDaylightSavings()
+bool PTime::IsDaylightSavings()
 {
 #ifdef __NUCLEUS_PLUS__
 PAssertAlways("No RTC");

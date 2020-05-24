@@ -3,7 +3,7 @@
  *
  * Operating System utilities.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -44,7 +44,7 @@ PChannelStreamBuffer::PChannelStreamBuffer(PChannel * chan)
 }
 
 
-PBoolean PChannelStreamBuffer::SetBufferSize(PINDEX newSize)
+bool PChannelStreamBuffer::SetBufferSize(PINDEX newSize)
 {
   return input.SetSize(newSize) && output.SetSize(newSize);
 }
@@ -82,7 +82,7 @@ std::streambuf::int_type PChannelStreamBuffer::underflow()
   }
 
   if (gptr() != egptr())
-    return (BYTE)*gptr();
+    return (uint8_t)*gptr();
 
   if (!channel->Read(eback(), egptr() - eback()) ||
                                   channel->GetErrorCode() != PChannel::NoError)
@@ -92,7 +92,7 @@ std::streambuf::int_type PChannelStreamBuffer::underflow()
   char * p = egptr() - count;
   memmove(p, eback(), count);
   setg(eback(), p, egptr());
-  return (BYTE)*p;
+  return (uint8_t)*p;
 }
 
 
@@ -193,7 +193,7 @@ int PChannel::os_errno() const
 }
 
 
-PBoolean PChannel::IsOpen() const
+bool PChannel::IsOpen() const
 {
   return os_handle != -1;
 }
@@ -213,8 +213,8 @@ PINDEX PChannel::SetLastReadCount(PINDEX count)
 
 int PChannel::ReadChar()
 {
-  BYTE c;
-  PBoolean retVal = Read(&c, 1);
+  uint8_t c;
+  bool retVal = Read(&c, 1);
   return (retVal && GetLastReadCount() == 1) ? c : -1;
 }
 
@@ -231,7 +231,7 @@ int PChannel::ReadCharWithTimeout(PTimeInterval & timeout)
 }
 
 
-PBoolean PChannel::ReadBlock(void * buf, PINDEX len)
+bool PChannel::ReadBlock(void * buf, PINDEX len)
 {
   char * ptr = (char *)buf;
   PINDEX numRead = 0;
@@ -278,7 +278,7 @@ PINDEX PChannel::SetLastWriteCount(PINDEX count)
 }
 
 
-PBoolean PChannel::WriteString(const PString & str)
+bool PChannel::WriteString(const PString & str)
 {
   PINDEX len = str.GetLength();
   PINDEX written = 0;
@@ -294,7 +294,7 @@ PBoolean PChannel::WriteString(const PString & str)
 }
 
 
-PBoolean PChannel::WriteChar(int c)
+bool PChannel::WriteChar(int c)
 {
   PAssert(c >= 0 && c < 256, PInvalidParameter);
   char buf = (char)c;
@@ -302,7 +302,7 @@ PBoolean PChannel::WriteChar(int c)
 }
 
 
-PBoolean PChannel::SetBufferSize(PINDEX newSize)
+bool PChannel::SetBufferSize(PINDEX newSize)
 {
   return ((PChannelStreamBuffer *)rdbuf())->SetBufferSize(newSize);
 }
@@ -426,7 +426,7 @@ static int GetNextChar(const PString & command,
 }
 
 
-PBoolean PChannel::ReceiveCommandString(int nextChar,
+bool PChannel::ReceiveCommandString(int nextChar,
                             const PString & reply, PINDEX & pos, PINDEX start)
 {
   if (nextChar != GetNextChar(reply, pos)) {
@@ -439,7 +439,7 @@ PBoolean PChannel::ReceiveCommandString(int nextChar,
 }
 
 
-PBoolean PChannel::SendCommandString(const PString & command)
+bool PChannel::SendCommandString(const PString & command)
 {
   m_abortCommandString = false;
 
@@ -493,7 +493,7 @@ PBoolean PChannel::SendCommandString(const PString & command)
 }
 
 
-PBoolean PChannel::Shutdown(ShutdownValue)
+bool PChannel::Shutdown(ShutdownValue)
 {
   return false;
 }
@@ -551,7 +551,7 @@ PString PChannel::GetErrorText(ErrorGroup group) const
 }
 
 
-PBoolean PChannel::SetErrorValues(Errors errorCode, int errorNum, ErrorGroup group)
+bool PChannel::SetErrorValues(Errors errorCode, int errorNum, ErrorGroup group)
 {
   m_status[NumErrorGroups]->m_lastErrorCode = m_status[group]->m_lastErrorCode = errorCode;
   m_status[NumErrorGroups]->m_lastErrorNumber = m_status[group]->m_lastErrorNumber = errorNum;
@@ -612,14 +612,14 @@ PNullChannel::PNullChannel()
 }
 
 
-PBoolean PNullChannel::Read(void *, PINDEX)
+bool PNullChannel::Read(void *, PINDEX)
 {
   SetLastReadCount(0);
   return false;
 }
 
 
-PBoolean PNullChannel::Write(const void *, PINDEX length)
+bool PNullChannel::Write(const void *, PINDEX length)
 {
   SetLastWriteCount(length);
   return true;
@@ -680,9 +680,9 @@ P_INT_PTR PIndirectChannel::GetHandle() const
 }
 
 
-PBoolean PIndirectChannel::Close()
+bool PIndirectChannel::Close()
 {
-  PBoolean retval = true;
+  bool retval = true;
 
   flush();
 
@@ -716,14 +716,14 @@ PBoolean PIndirectChannel::Close()
 }
 
 
-PBoolean PIndirectChannel::IsOpen() const
+bool PIndirectChannel::IsOpen() const
 {
   PReadWaitAndSignal mutex(channelPointerMutex);
 
   if (readChannel != NULL && readChannel == writeChannel)
     return readChannel->IsOpen();
 
-  PBoolean returnValue = readChannel != NULL ? readChannel->IsOpen() : false;
+  bool returnValue = readChannel != NULL ? readChannel->IsOpen() : false;
 
   if (writeChannel != NULL)
     returnValue = writeChannel->IsOpen() || returnValue;
@@ -732,7 +732,7 @@ PBoolean PIndirectChannel::IsOpen() const
 }
 
 
-PBoolean PIndirectChannel::Read(void * buf, PINDEX len)
+bool PIndirectChannel::Read(void * buf, PINDEX len)
 {
   PReadWaitAndSignal mutex(channelPointerMutex);
 
@@ -742,7 +742,7 @@ PBoolean PIndirectChannel::Read(void * buf, PINDEX len)
   }
 
   readChannel->SetReadTimeout(readTimeout);
-  PBoolean returnValue = readChannel->Read(buf, len);
+  bool returnValue = readChannel->Read(buf, len);
 
   SetErrorValues(readChannel->GetErrorCode(LastReadError),
                  readChannel->GetErrorNumber(LastReadError),
@@ -774,7 +774,7 @@ int PIndirectChannel::ReadChar()
 }
 
 
-PBoolean PIndirectChannel::Write(const void * buf, PINDEX len)
+bool PIndirectChannel::Write(const void * buf, PINDEX len)
 {
   flush();
 
@@ -786,7 +786,7 @@ PBoolean PIndirectChannel::Write(const void * buf, PINDEX len)
   }
 
   writeChannel->SetWriteTimeout(writeTimeout);
-  PBoolean returnValue = writeChannel->Write(buf, len);
+  bool returnValue = writeChannel->Write(buf, len);
 
   SetErrorValues(writeChannel->GetErrorCode(LastWriteError),
                  writeChannel->GetErrorNumber(LastWriteError),
@@ -798,14 +798,14 @@ PBoolean PIndirectChannel::Write(const void * buf, PINDEX len)
 }
 
 
-PBoolean PIndirectChannel::Shutdown(ShutdownValue value)
+bool PIndirectChannel::Shutdown(ShutdownValue value)
 {
   PReadWaitAndSignal mutex(channelPointerMutex);
 
   if (readChannel != NULL && readChannel == writeChannel)
     return readChannel->Shutdown(value);
 
-  PBoolean returnValue = readChannel != NULL ? readChannel->Shutdown(value) : false;
+  bool returnValue = readChannel != NULL ? readChannel->Shutdown(value) : false;
 
   if (writeChannel != NULL)
     returnValue = writeChannel->Shutdown(value) || returnValue;
@@ -833,22 +833,22 @@ PString PIndirectChannel::GetErrorText(ErrorGroup group) const
 }
 
 
-PBoolean PIndirectChannel::Open(PChannel & channel)
+bool PIndirectChannel::Open(PChannel & channel)
 {
-  return Open(&channel, (PBoolean)false);
+  return Open(&channel, (bool)false);
 }
 
 
-PBoolean PIndirectChannel::Open(PChannel * channel, PBoolean autoDelete)
+bool PIndirectChannel::Open(PChannel * channel, bool autoDelete)
 {
   return Open(channel, channel, autoDelete, autoDelete);
 }
 
 
-PBoolean PIndirectChannel::Open(PChannel * readChan,
+bool PIndirectChannel::Open(PChannel * readChan,
                             PChannel * writeChan,
-                            PBoolean autoDeleteRead,
-                            PBoolean autoDeleteWrite)
+                            bool autoDeleteRead,
+                            bool autoDeleteWrite)
 {
   flush();
 
@@ -863,7 +863,7 @@ PBoolean PIndirectChannel::Open(PChannel * readChan,
 }
 
 
-PBoolean PIndirectChannel::OnOpen()
+bool PIndirectChannel::OnOpen()
 {
   return true;
 }
@@ -1013,7 +1013,7 @@ bool PFile::Move(const PFilePath & newname, bool force, bool recurse)
 }
 
 
-PBoolean PFile::Close()
+bool PFile::Close()
 {
   if (CheckNotOpen())
     return false;
@@ -1021,9 +1021,9 @@ PBoolean PFile::Close()
   flush();
 
 #ifdef WOT_NO_FILESYSTEM
-  PBoolean ok = true;
+  bool ok = true;
 #else
-  PBoolean ok = ConvertOSError(_close(GetOSHandleAsInt()));
+  bool ok = ConvertOSError(_close(GetOSHandleAsInt()));
 #endif
 
   os_handle = -1;
@@ -1035,7 +1035,7 @@ PBoolean PFile::Close()
 }
 
 
-PBoolean PFile::Read(void * buffer, PINDEX amount)
+bool PFile::Read(void * buffer, PINDEX amount)
 {
   if (CheckNotOpen())
     return false;
@@ -1049,7 +1049,7 @@ PBoolean PFile::Read(void * buffer, PINDEX amount)
 }
 
 
-PBoolean PFile::Write(const void * buffer, PINDEX amount)
+bool PFile::Write(const void * buffer, PINDEX amount)
 {
   if (CheckNotOpen())
     return false;
@@ -1119,7 +1119,7 @@ bool PFile::IsEndOfFile() const
 }
 
 
-PBoolean PFile::SetPosition(off_t pos, FilePositionOrigin origin)
+bool PFile::SetPosition(off_t pos, FilePositionOrigin origin)
 {
 #ifdef WOT_NO_FILESYSTEM
   return true;
@@ -1210,14 +1210,14 @@ bool PFile::Move(const PFilePath & oldname, const PFilePath & newname, bool forc
 ///////////////////////////////////////////////////////////////////////////////
 // PTextFile
 
-PBoolean PTextFile::ReadLine(PString & str)
+bool PTextFile::ReadLine(PString & str)
 {
   str.ReadFrom(*this);
   return !str.IsEmpty() || good();
 }
 
 
-PBoolean PTextFile::WriteLine(const PString & str)
+bool PTextFile::WriteLine(const PString & str)
 {
   return WriteString(str) && WriteChar('\n');
 }

@@ -16,7 +16,7 @@ class FindIP : public PProcess
   PCLASSINFO(FindIP, PProcess)
   public:
     void Main();
-    PBoolean get_ip(PString server_url, PString &ip_address);
+    bool get_ip(PString server_url, PString &ip_address);
 };
 
 PCREATE_PROCESS(FindIP)
@@ -51,11 +51,11 @@ void FindIP::Main()
   }
 }
 
-PBoolean FindIP::get_ip(PString server_url, PString &ip_address){
+bool FindIP::get_ip(PString server_url, PString &ip_address){
 
   cout << "Trying " << server_url << " - " << flush;
 
-  PBoolean result = false;
+  bool result = false;
 
   PHTTPClient web("webserver");
 

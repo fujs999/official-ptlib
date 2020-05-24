@@ -3,7 +3,7 @@
  *
  * Media file implementation
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (C) 2017 Vox Lucida Pty. Ltd.
  *
@@ -257,7 +257,7 @@ PString PMediaFile::SoundChannel::GetName() const
 }
 
 
-PBoolean PMediaFile::SoundChannel::Close()
+bool PMediaFile::SoundChannel::Close()
 {
   if (CheckNotOpen())
     return false;
@@ -267,7 +267,7 @@ PBoolean PMediaFile::SoundChannel::Close()
 }
 
 
-PBoolean PMediaFile::SoundChannel::IsOpen() const
+bool PMediaFile::SoundChannel::IsOpen() const
 {
   return !m_mediaFile.IsNULL() && m_mediaFile->IsOpen();
 }
@@ -341,7 +341,7 @@ PStringArray PMediaFile::VideoInputDevice::GetDeviceNames() const
 }
 
 
-PBoolean PMediaFile::VideoInputDevice::Open(const PString & devName, PBoolean)
+bool PMediaFile::VideoInputDevice::Open(const PString & devName, bool)
 {
   if (devName.IsEmpty())
     return false;
@@ -396,20 +396,20 @@ PBoolean PMediaFile::VideoInputDevice::Open(const PString & devName, PBoolean)
 }
 
 
-PBoolean PMediaFile::VideoInputDevice::IsOpen()
+bool PMediaFile::VideoInputDevice::IsOpen()
 {
   return !m_mediaFile.IsNULL() && m_mediaFile->IsOpen();
 }
 
 
-PBoolean PMediaFile::VideoInputDevice::Close()
+bool PMediaFile::VideoInputDevice::Close()
 {
   m_mediaFile = NULL;
   return true;
 }
 
 
-bool PMediaFile::VideoInputDevice::InternalReadFrameData(BYTE * frame)
+bool PMediaFile::VideoInputDevice::InternalReadFrameData(uint8_t * frame)
 {
   return m_mediaFile->ReadVideo(m_track, frame);
 }
@@ -1087,7 +1087,7 @@ public:
         AVPacket packet;
         av_init_packet(&packet);
         packet.stream_index = m_index;
-        packet.data = (BYTE *)data;
+        packet.data = (uint8_t *)data;
         packet.size = size;
         packet.pts = packet.dts = frames;
 
@@ -1757,7 +1757,7 @@ static PMediaFile_FFMPEG::FactoryInitialiser PMediaFile_FFMPEG_FactoryInitialise
 #pragma comment(lib, "vfw32.lib")
 
 
-static PString FromFOURCC(DWORD fourCC)
+static PString FromFOURCC(uint32_t fourCC)
 {
   char str[5];
   str[0] = (char)fourCC;
@@ -1769,7 +1769,7 @@ static PString FromFOURCC(DWORD fourCC)
 }
 
 
-static bool GetVideoCompressorInfo(const PString & format, DWORD & videoCompressorKeyFrameRate, DWORD & videoCompressorQuality)
+static bool GetVideoCompressorInfo(const PString & format, uint32_t & videoCompressorKeyFrameRate, uint32_t & videoCompressorQuality)
 {
   if (format.GetLength() != 4)
     return false;
@@ -1784,15 +1784,15 @@ static bool GetVideoCompressorInfo(const PString & format, DWORD & videoCompress
   PTRACE(4, NULL, PTraceModule(), "Found " << format << ' ' << PString(info.szDescription));
 #endif
 
-  ICSendMessage(hic, ICM_GETDEFAULTKEYFRAMERATE, (DWORD_PTR)(LPVOID)&videoCompressorKeyFrameRate, sizeof(DWORD));
-  ICSendMessage(hic, ICM_GETDEFAULTQUALITY, (DWORD_PTR)(LPVOID)&videoCompressorQuality, sizeof(DWORD));
+  ICSendMessage(hic, ICM_GETDEFAULTKEYFRAMERATE, (DWORD_PTR)(LPVOID)&videoCompressorKeyFrameRate, sizeof(uint32_t));
+  ICSendMessage(hic, ICM_GETDEFAULTQUALITY, (DWORD_PTR)(LPVOID)&videoCompressorQuality, sizeof(uint32_t));
 
   ICClose(hic);
   return true;
 }
 
 
-static bool GetDefaultCompressor(PString & format, DWORD & videoCompressorKeyFrameRate, DWORD & videoCompressorQuality)
+static bool GetDefaultCompressor(PString & format, uint32_t & videoCompressorKeyFrameRate, uint32_t & videoCompressorQuality)
 {
   static const char * const DefaultCompressor[] =
   { "H264", "XVID", "DIVX", "MPEG", "H263", "IV50", "CVID", "MSVC" }; // Final default to Microsoft Video 1, every system has that!
@@ -1889,7 +1889,7 @@ protected:
     }
 
 
-    bool Open(PMediaFile_AVI * owner, PAVIFILE file, DWORD index)
+    bool Open(PMediaFile_AVI * owner, PAVIFILE file, uint32_t index)
     {
       m_owner = owner;
 
@@ -1967,8 +1967,8 @@ protected:
       WAVEFORMATEX fmt;
       fmt.wFormatTag = m_format == "GSM-06.10" ? PWAVFile::fmt_GSM : WAVE_FORMAT_PCM;
       fmt.wBitsPerSample = 16;
-      fmt.nChannels = (WORD)m_channels;
-      fmt.nSamplesPerSec = (DWORD)m_rate;
+      fmt.nChannels = (uint16_t)m_channels;
+      fmt.nSamplesPerSec = (uint32_t)m_rate;
       fmt.nBlockAlign = (fmt.nChannels*fmt.wBitsPerSample + 7) / 8;
       fmt.nAvgBytesPerSec = fmt.nSamplesPerSec*fmt.nBlockAlign;
       fmt.cbSize = 0;
@@ -1981,7 +1981,7 @@ protected:
       info.dwScale = fmt.nBlockAlign;
       info.dwRate = fmt.nAvgBytesPerSec;
       info.dwSampleSize = fmt.nBlockAlign;
-      info.dwQuality = (DWORD)-1;
+      info.dwQuality = (uint32_t)-1;
       strcpy(info.szName, fmt.nChannels == 2 ? "Stereo Audio" : "Mixed Audio");
 
       if (IS_RESULT_ERROR(m_owner, AVIFileCreateStream(file, &m_stream, &info), "creating AVI audio stream"))
@@ -1996,7 +1996,7 @@ protected:
 
     bool CreateVideo(PAVIFILE file)
     {
-      DWORD videoCompressorKeyFrameRate, videoCompressorQuality;
+      uint32_t videoCompressorKeyFrameRate, videoCompressorQuality;
       if (m_format.IsEmpty()) {
         if (!GetDefaultCompressor(m_format, videoCompressorKeyFrameRate, videoCompressorQuality))
           return false;
@@ -2012,7 +2012,7 @@ protected:
       memset(&info, 0, sizeof(info));
       info.fccType = streamtypeVIDEO;
       info.dwRate = 90000;
-      info.dwScale = (DWORD)(info.dwRate / m_rate);
+      info.dwScale = (uint32_t)(info.dwRate / m_rate);
       info.rcFrame.right = m_width;
       info.rcFrame.bottom = m_height;
       info.dwSuggestedBufferSize = m_width*m_height;
@@ -2080,7 +2080,7 @@ protected:
       if (IS_RESULT_ERROR(m_owner,
                           AVIStreamWrite(m_stream,
                                          m_position, samples,
-                                         (BYTE *)data, samples*m_size,
+                                         (uint8_t *)data, samples*m_size,
                                          0, &samplesWritten, &bytesWritten),
                           "writing AVI native stream"))
         return false;
@@ -2111,7 +2111,7 @@ protected:
       if (IS_RESULT_ERROR(m_owner,
                           AVIStreamRead(m_stream,
                                         m_position, size / m_size,
-                                        (BYTE *)pcm, size,
+                                        (uint8_t *)pcm, size,
                                         &bytesRead, &samplesRead),
                           "reading AVI PCM stream"))
         return false;
@@ -2135,7 +2135,7 @@ protected:
       if (IS_RESULT_ERROR(m_owner,
                           AVIStreamWrite(m_stream,
                                          m_position, size / m_size,
-                                         (BYTE *)pcm, size,
+                                         (uint8_t *)pcm, size,
                                          0, &samplesWritten, &bytesWritten),
                           "writing AVI PCM stream"))
         return false;
@@ -2201,7 +2201,7 @@ protected:
       if (m_decompressor == NULL && !ConfigureReadVideo(PVideoFrameInfo(m_width, m_height)))
         return false;
 
-      const BYTE * image = (const BYTE *)AVIStreamGetFrame(m_decompressor, ++m_position);
+      const uint8_t * image = (const uint8_t *)AVIStreamGetFrame(m_decompressor, ++m_position);
       if (image == NULL) {
         return false;
       }
@@ -2209,7 +2209,7 @@ protected:
       if (m_videoConverter == NULL)
         memcpy(data, image, m_size);
       else {
-        if (!m_videoConverter->Convert(image, (BYTE *)data)) {
+        if (!m_videoConverter->Convert(image, (uint8_t *)data)) {
           PTRACE(2, m_owner, "Conversion of RGB24 to YUV420P failed!");
           return false;
         }
@@ -2231,7 +2231,7 @@ protected:
       if (m_compressor != NULL)
         return true;
 
-      DWORD videoCompressorKeyFrameRate, videoCompressorQuality;
+      uint32_t videoCompressorKeyFrameRate, videoCompressorQuality;
       GetVideoCompressorInfo(m_format, videoCompressorKeyFrameRate, videoCompressorQuality);
 
       AVICOMPRESSOPTIONS opts;
@@ -2307,16 +2307,16 @@ protected:
       if (m_compressor == NULL && !ConfigureWriteVideo(PVideoFrameInfo(m_width, m_height)))
         return false;
 
-      BYTE * bufferPtr;
+      uint8_t * bufferPtr;
       PINDEX bufferSize;
       if (m_videoConverter == NULL) {
-        bufferPtr = (BYTE *)data;
+        bufferPtr = (uint8_t *)data;
         bufferSize = m_width*m_height * 3 / 2;
       }
       else {
         bufferPtr = m_videoBuffer.GetPointer(m_videoConverter->GetMaxDstFrameBytes());
         bufferSize = m_videoBuffer.GetSize();
-        if (!m_videoConverter->Convert((const BYTE *)data, bufferPtr, &bufferSize)) {
+        if (!m_videoConverter->Convert((const uint8_t *)data, bufferPtr, &bufferSize)) {
           PTRACE(2, m_owner, "Conversion of YUV420P to RGB24 failed!");
           return false;
         }
@@ -2375,7 +2375,7 @@ public:
       return false;
 
     m_tracks.resize(finfo.dwStreams);
-    for (DWORD i = 0; i < finfo.dwStreams; ++i) {
+    for (uint32_t i = 0; i < finfo.dwStreams; ++i) {
       if (!m_tracks[i].Open(this, m_file, i))
         return false;
     }
@@ -2421,7 +2421,7 @@ public:
       info = TrackInfo(16000, 1);
     else if (type == Video()) {
       info = TrackInfo(PVideoFrameInfo::CIF4Width, PVideoFrameInfo::CIF4Height, 25);
-      DWORD videoCompressorKeyFrameRate, videoCompressorQuality;
+      uint32_t videoCompressorKeyFrameRate, videoCompressorQuality;
       if (!GetDefaultCompressor(info.m_format, videoCompressorKeyFrameRate, videoCompressorQuality))
         return false;
     }
@@ -2633,7 +2633,7 @@ PVideoOutputDevice_MediaFile::~PVideoOutputDevice_MediaFile()
 
 static const char DefaultYUVFileName[] = "*.yuv";
 
-PBoolean PVideoOutputDevice_MediaFile::Open(const PString & devName, PBoolean /*startImmediate*/)
+bool PVideoOutputDevice_MediaFile::Open(const PString & devName, bool /*startImmediate*/)
 {
   PFilePath fileName;
   if (devName != DefaultYUVFileName)
@@ -2663,7 +2663,7 @@ PBoolean PVideoOutputDevice_MediaFile::Open(const PString & devName, PBoolean /*
   return true;
 }
 
-PBoolean PVideoOutputDevice_MediaFile::Close()
+bool PVideoOutputDevice_MediaFile::Close()
 {
   bool ok = m_file == NULL || m_file->Close();
 
@@ -2676,7 +2676,7 @@ PBoolean PVideoOutputDevice_MediaFile::Close()
 }
 
 
-PBoolean PVideoOutputDevice_MediaFile::Start()
+bool PVideoOutputDevice_MediaFile::Start()
 {
   if (m_file == NULL)
     return false;
@@ -2690,13 +2690,13 @@ PBoolean PVideoOutputDevice_MediaFile::Start()
 }
 
 
-PBoolean PVideoOutputDevice_MediaFile::Stop()
+bool PVideoOutputDevice_MediaFile::Stop()
 {
   return true;
 }
 
 
-PBoolean PVideoOutputDevice_MediaFile::IsOpen()
+bool PVideoOutputDevice_MediaFile::IsOpen()
 {
   return m_file != NULL;
 }
@@ -2725,13 +2725,13 @@ PStringArray PVideoOutputDevice_MediaFile::GetOutputDeviceNames()
 }
 
 
-PBoolean PVideoOutputDevice_MediaFile::SetColourFormat(const PString & newFormat)
+bool PVideoOutputDevice_MediaFile::SetColourFormat(const PString & newFormat)
 {
   return (newFormat *= PVideoFrameInfo::YUV420P()) && PVideoDevice::SetColourFormat(newFormat);
 }
 
 
-PBoolean PVideoOutputDevice_MediaFile::SetFrameData(const FrameData & frameData)
+bool PVideoOutputDevice_MediaFile::SetFrameData(const FrameData & frameData)
 {
   if (m_file == NULL) {
     PTRACE(5, "Abort SetFrameData, closed.");

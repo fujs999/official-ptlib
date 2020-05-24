@@ -3,7 +3,7 @@
  *
  * Implementation of sound classes for Win32
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -65,9 +65,9 @@ PMultiMediaFile::~PMultiMediaFile()
 }
 
 
-PBoolean PMultiMediaFile::CreateWaveFile(const PFilePath & filename,
+bool PMultiMediaFile::CreateWaveFile(const PFilePath & filename,
                                      const PWaveFormat & waveFormat,
-                                     DWORD dataSize)
+                                     uint32_t dataSize)
 {
   if (!Open(filename, MMIO_CREATE|MMIO_WRITE))
     return false;
@@ -75,8 +75,8 @@ PBoolean PMultiMediaFile::CreateWaveFile(const PFilePath & filename,
   MMCKINFO mmChunk;
   mmChunk.fccType = mmioFOURCC('W', 'A', 'V', 'E');
   mmChunk.cksize = 4 + // Form type
-                   4 + sizeof(DWORD) + waveFormat.GetSize() + // fmt chunk
-                   4 + sizeof(DWORD) + dataSize;              // data chunk
+                   4 + sizeof(uint32_t) + waveFormat.GetSize() + // fmt chunk
+                   4 + sizeof(uint32_t) + dataSize;              // data chunk
 
   // Create a RIFF chunk
   if (!CreateChunk(mmChunk, MMIO_CREATERIFF))
@@ -98,9 +98,9 @@ PBoolean PMultiMediaFile::CreateWaveFile(const PFilePath & filename,
 }
 
 
-PBoolean PMultiMediaFile::OpenWaveFile(const PFilePath & filename,
+bool PMultiMediaFile::OpenWaveFile(const PFilePath & filename,
                                    PWaveFormat  & waveFormat,
-                                   DWORD & dataSize)
+                                   uint32_t & dataSize)
 {
   // Open wave file
   if (!Open(filename, MMIO_READ | MMIO_ALLOCBUF))
@@ -146,8 +146,8 @@ PBoolean PMultiMediaFile::OpenWaveFile(const PFilePath & filename,
 }
 
 
-PBoolean PMultiMediaFile::Open(const PFilePath & filename,
-                          DWORD dwOpenFlags,
+bool PMultiMediaFile::Open(const PFilePath & filename,
+                          uint32_t dwOpenFlags,
                           LPMMIOINFO lpmmioinfo)
 {
   MMIOINFO local_mmioinfo;
@@ -164,7 +164,7 @@ PBoolean PMultiMediaFile::Open(const PFilePath & filename,
 }
 
 
-PBoolean PMultiMediaFile::Close(UINT wFlags)
+bool PMultiMediaFile::Close(UINT wFlags)
 {
   if (hmmio == NULL)
     return false;
@@ -175,34 +175,34 @@ PBoolean PMultiMediaFile::Close(UINT wFlags)
 }
 
 
-PBoolean PMultiMediaFile::Ascend(MMCKINFO & ckinfo, UINT wFlags)
+bool PMultiMediaFile::Ascend(MMCKINFO & ckinfo, UINT wFlags)
 {
   dwLastError = mmioAscend(hmmio, &ckinfo, wFlags);
   return dwLastError == MMSYSERR_NOERROR;
 }
 
 
-PBoolean PMultiMediaFile::Descend(UINT wFlags, MMCKINFO & ckinfo, LPMMCKINFO lpckParent)
+bool PMultiMediaFile::Descend(UINT wFlags, MMCKINFO & ckinfo, LPMMCKINFO lpckParent)
 {
   dwLastError = mmioDescend(hmmio, &ckinfo, lpckParent, wFlags);
   return dwLastError == MMSYSERR_NOERROR;
 }
 
 
-PBoolean PMultiMediaFile::Read(void * data, PINDEX len)
+bool PMultiMediaFile::Read(void * data, PINDEX len)
 {
   return mmioRead(hmmio, (char *)data, len) == (int)len;
 }
 
 
-PBoolean PMultiMediaFile::CreateChunk(MMCKINFO & ckinfo, UINT wFlags)
+bool PMultiMediaFile::CreateChunk(MMCKINFO & ckinfo, UINT wFlags)
 {
   dwLastError = mmioCreateChunk(hmmio, &ckinfo, wFlags);
   return dwLastError == MMSYSERR_NOERROR;
 }
 
 
-PBoolean PMultiMediaFile::Write(const void * data, PINDEX len)
+bool PMultiMediaFile::Write(const void * data, PINDEX len)
 {
   return mmioWrite(hmmio, (char *)data, len) == (int)len;
 }
@@ -264,7 +264,7 @@ void PWaveFormat::PrintOn(ostream & out) const
         << waveFormat->wBitsPerSample;
     if (waveFormat->cbSize > 0) {
       out << hex << setfill('0');
-      const BYTE * ptr = (const BYTE *)&waveFormat[1];
+      const uint8_t * ptr = (const uint8_t *)&waveFormat[1];
       for (PINDEX i = 0; i < waveFormat->cbSize; i++)
         out << ',' << setw(2) << (unsigned)*ptr++;
       out << dec << setfill(' ');
@@ -293,10 +293,10 @@ void PWaveFormat::SetFormat(unsigned numChannels,
   PAssert(waveFormat != NULL, POutOfMemory);
 
   waveFormat->wFormatTag = WAVE_FORMAT_PCM;
-  waveFormat->nChannels = (WORD)numChannels;
+  waveFormat->nChannels = (uint16_t)numChannels;
   waveFormat->nSamplesPerSec = sampleRate;
-  waveFormat->wBitsPerSample = (WORD)bitsPerSample;
-  waveFormat->nBlockAlign = (WORD)(numChannels*bitsPerSample/8);
+  waveFormat->wBitsPerSample = (uint16_t)bitsPerSample;
+  waveFormat->nBlockAlign = (uint16_t)(numChannels*bitsPerSample/8);
   waveFormat->nAvgBytesPerSec = waveFormat->nSamplesPerSec*waveFormat->nBlockAlign;
   waveFormat->cbSize = 0;
 }
@@ -309,7 +309,7 @@ void PWaveFormat::SetFormat(const void * data, PINDEX len)
 }
 
 
-PBoolean PWaveFormat::SetSize(PINDEX sz)
+bool PWaveFormat::SetSize(PINDEX sz)
 {
   if (waveFormat != NULL)
     free(waveFormat);
@@ -321,7 +321,7 @@ PBoolean PWaveFormat::SetSize(PINDEX sz)
     if (sz < (PINDEX)sizeof(WAVEFORMATEX))
       sz = sizeof(WAVEFORMATEX);
     waveFormat = (WAVEFORMATEX *)calloc(sz, 1);
-    waveFormat->cbSize = (WORD)(sz - sizeof(WAVEFORMATEX));
+    waveFormat->cbSize = (uint16_t)(sz - sizeof(WAVEFORMATEX));
   }
 
   return waveFormat != NULL;
@@ -334,7 +334,7 @@ PSound::PSound(unsigned channels,
                unsigned samplesPerSecond,
                unsigned bitsPerSample,
                PINDEX   bufferSize,
-               const BYTE * buffer)
+               const uint8_t * buffer)
 {
   encoding = 0;
   numChannels = channels;
@@ -375,12 +375,12 @@ void PSound::SetFormat(unsigned channels,
 }
 
 
-PBoolean PSound::Load(const PFilePath & filename)
+bool PSound::Load(const PFilePath & filename)
 {
   // Open wave file
   PMultiMediaFile mmio;
   PWaveFormat waveFormat;
-  DWORD dataSize;
+  uint32_t dataSize;
   if (!mmio.OpenWaveFile(filename, waveFormat, dataSize)) {
     dwLastError = mmio.GetLastError();
     return false;
@@ -412,7 +412,7 @@ PBoolean PSound::Load(const PFilePath & filename)
 }
 
 
-PBoolean PSound::Save(const PFilePath & filename)
+bool PSound::Save(const PFilePath & filename)
 {
   PWaveFormat waveFormat;
   if (encoding == 0)
@@ -438,7 +438,7 @@ PBoolean PSound::Save(const PFilePath & filename)
 }
 
 
-PBoolean PSound::Play()
+bool PSound::Play()
 {
   PSoundChannel channel(PSoundChannel::GetDefaultDevice(PSoundChannel::Player),
                         PSoundChannel::Player);
@@ -448,7 +448,7 @@ PBoolean PSound::Play()
   return channel.PlaySound(*this, true);
 }
 
-PBoolean PSound::Play(const PString & device)
+bool PSound::Play(const PString & device)
 {
 
   PSoundChannel channel(device,
@@ -491,11 +491,11 @@ void PWaveBuffer::PrepareCommon(PINDEX count)
   memset(&header, 0, sizeof(header));
   header.lpData = (char *)GetPointer();
   header.dwBufferLength = count;
-  //header.dwUser = (DWORD)this;  // NOT USED
+  //header.dwUser = (uint32_t)this;  // NOT USED
 }
 
 
-DWORD PWaveBuffer::Prepare(HWAVEOUT hOut, PINDEX & count)
+uint32_t PWaveBuffer::Prepare(HWAVEOUT hOut, PINDEX & count)
 {
   // Set up WAVEHDR structure and prepare it to be written to wave device
   if (count > GetSize())
@@ -507,7 +507,7 @@ DWORD PWaveBuffer::Prepare(HWAVEOUT hOut, PINDEX & count)
 }
 
 
-DWORD PWaveBuffer::Prepare(HWAVEIN hIn)
+uint32_t PWaveBuffer::Prepare(HWAVEIN hIn)
 {
   // Set up WAVEHDR structure and prepare it to be read from wave device
   PrepareCommon(GetSize());
@@ -516,9 +516,9 @@ DWORD PWaveBuffer::Prepare(HWAVEIN hIn)
 }
 
 
-DWORD PWaveBuffer::Release()
+uint32_t PWaveBuffer::Release()
 {
-  DWORD err = MMSYSERR_NOERROR;
+  uint32_t err = MMSYSERR_NOERROR;
 
   // There seems to be some pathalogical cases where on an Abort() call the buffers
   // still are "in use", even though waveOutReset() was called. So wait until the
@@ -650,7 +650,7 @@ PStringArray PSoundChannelWin32::GetDeviceNames(Directions dir)
 }
 
 
-PBoolean PSoundChannelWin32::GetDeviceID(const PString & device, Directions dir, unsigned& id)
+bool PSoundChannelWin32::GetDeviceID(const PString & device, Directions dir, unsigned& id)
 {
   PINDEX offset = device.Find(PPluginServiceDescriptor::SeparatorChar);
   if (offset == P_MAX_INDEX)
@@ -727,7 +727,7 @@ bool PSoundChannelWin32::Open(const Params & params)
   return OpenDevice(id);
 }
 
-PBoolean PSoundChannelWin32::Open(const PString & device,
+bool PSoundChannelWin32::Open(const PString & device,
                                   Directions dir,
                                   const PWaveFormat& format)
 {
@@ -744,7 +744,7 @@ PBoolean PSoundChannelWin32::Open(const PString & device,
 }
 
 
-PBoolean PSoundChannelWin32::OpenDevice(P_INT_PTR id)
+bool PSoundChannelWin32::OpenDevice(P_INT_PTR id)
 {
   Close();
 
@@ -759,7 +759,7 @@ PBoolean PSoundChannelWin32::OpenDevice(P_INT_PTR id)
   MIXERLINE line;
 
   MMRESULT osError = MMSYSERR_BADDEVICEID;
-  DWORD flags = CALLBACK_EVENT;
+  uint32_t flags = CALLBACK_EVENT;
 #ifdef WAVE_MAPPED_DEFAULT_COMMUNICATION_DEVICE
   if (id == WAVE_MAPPER)
     flags |= WAVE_MAPPED_DEFAULT_COMMUNICATION_DEVICE;
@@ -818,7 +818,7 @@ PBoolean PSoundChannelWin32::OpenDevice(P_INT_PTR id)
          No need to do all of these on Vista/Win7/Win2008 as there is
          a "master" for every input on those OS */
 
-      DWORD iConn = line.cConnections; //should save first
+      uint32_t iConn = line.cConnections; //should save first
       
       //1)Attempt to find currently selected input
       MIXERCONTROL muxControl;
@@ -848,7 +848,7 @@ PBoolean PSoundChannelWin32::OpenDevice(P_INT_PTR id)
           // Get the control values for line states (selected/not selected)
           if ((osError = mixerGetControlDetails((HMIXEROBJ)hMixer, &mxcd,
                                                 MIXER_OBJECTF_HMIXER | MIXER_GETCONTROLDETAILSF_VALUE)) == MMSYSERR_NOERROR) {
-            DWORD iMult = mxcd.cMultipleItems;
+            uint32_t iMult = mxcd.cMultipleItems;
             while (iMult > 0) {
               line.dwLineID = mxcdlt[--iMult].dwParam1;
               if ((osError = mixerGetLineInfo((HMIXEROBJ)hMixer, &line,
@@ -935,12 +935,12 @@ PBoolean PSoundChannelWin32::OpenDevice(P_INT_PTR id)
   return true; // Still return true as have actual device
 }
 
-PBoolean PSoundChannelWin32::IsOpen() const
+bool PSoundChannelWin32::IsOpen() const
 { 
   return opened ? true : false;
 }
 
-PBoolean PSoundChannelWin32::SetFormat(unsigned numChannels,
+bool PSoundChannelWin32::SetFormat(unsigned numChannels,
                               unsigned sampleRate,
                               unsigned bitsPerSample)
 {
@@ -952,7 +952,7 @@ PBoolean PSoundChannelWin32::SetFormat(unsigned numChannels,
 }
 
 
-PBoolean PSoundChannelWin32::SetFormat(const PWaveFormat & format)
+bool PSoundChannelWin32::SetFormat(const PWaveFormat & format)
 {
   Abort();
 
@@ -980,7 +980,7 @@ unsigned PSoundChannelWin32::GetSampleSize() const
 }
 
 
-PBoolean PSoundChannelWin32::Close()
+bool PSoundChannelWin32::Close()
 {
   if (CheckNotOpen())
     return false;
@@ -1012,7 +1012,7 @@ PBoolean PSoundChannelWin32::Close()
 }
 
 
-PBoolean PSoundChannelWin32::SetBuffers(PINDEX size, PINDEX count)
+bool PSoundChannelWin32::SetBuffers(PINDEX size, PINDEX count)
 {
   if (count == buffers.GetSize() && size == buffers[0].GetSize())
       return true;
@@ -1023,7 +1023,7 @@ PBoolean PSoundChannelWin32::SetBuffers(PINDEX size, PINDEX count)
 
   PTRACE(3, "WinSnd\tSetting sounds buffers to " << count << " x " << size);
 
-  PBoolean ok = true;
+  bool ok = true;
 
   PWaitAndSignal mutex(bufferMutex);
 
@@ -1045,7 +1045,7 @@ PBoolean PSoundChannelWin32::SetBuffers(PINDEX size, PINDEX count)
 }
 
 
-PBoolean PSoundChannelWin32::GetBuffers(PINDEX & size, PINDEX & count)
+bool PSoundChannelWin32::GetBuffers(PINDEX & size, PINDEX & count)
 {
   PWaitAndSignal mutex(bufferMutex);
 
@@ -1094,18 +1094,18 @@ int PSoundChannelWin32::WaitEvent(ErrorGroup group)
 }
 
 
-PBoolean PSoundChannelWin32::Write(const void * data, PINDEX size)
+bool PSoundChannelWin32::Write(const void * data, PINDEX size)
 {
   SetLastWriteCount(0);
 
   if (hWaveOut == NULL)
     return SetErrorValues(NotOpen, EBADF, LastWriteError);
 
-  const BYTE * ptr = (const BYTE *)data;
+  const uint8_t * ptr = (const uint8_t *)data;
 
   bufferMutex.Wait();
 
-  DWORD osError = MMSYSERR_NOERROR;
+  uint32_t osError = MMSYSERR_NOERROR;
   PINDEX written = 0;
   while (size > 0) {
     PWaveBuffer & buffer = buffers[bufferIndex];
@@ -1149,11 +1149,11 @@ PBoolean PSoundChannelWin32::Write(const void * data, PINDEX size)
 }
 
 
-PBoolean PSoundChannelWin32::PlaySound(const PSound & sound, PBoolean wait)
+bool PSoundChannelWin32::PlaySound(const PSound & sound, bool wait)
 {
   Abort();
 
-  PBoolean ok = false;
+  bool ok = false;
 
   PINDEX bufferSize;
   PINDEX bufferCount;
@@ -1178,7 +1178,7 @@ PBoolean PSoundChannelWin32::PlaySound(const PSound & sound, PBoolean wait)
     PWaveBuffer & buffer = buffers[0];
     buffer = sound;
 
-    DWORD osError;
+    uint32_t osError;
     PINDEX count = sound.GetSize();
     if ((osError = buffer.Prepare(hWaveOut, count)) == MMSYSERR_NOERROR &&
         (osError = waveOutWrite(hWaveOut, &buffer.header, sizeof(WAVEHDR))) == MMSYSERR_NOERROR) {
@@ -1199,7 +1199,7 @@ PBoolean PSoundChannelWin32::PlaySound(const PSound & sound, PBoolean wait)
 }
 
 
-PBoolean PSoundChannelWin32::HasPlayCompleted()
+bool PSoundChannelWin32::HasPlayCompleted()
 {
   PWaitAndSignal mutex(bufferMutex);
 
@@ -1212,7 +1212,7 @@ PBoolean PSoundChannelWin32::HasPlayCompleted()
 }
 
 
-PBoolean PSoundChannelWin32::WaitForPlayCompletion()
+bool PSoundChannelWin32::WaitForPlayCompletion()
 {
   while (!HasPlayCompleted()) {
     if (!WaitEvent(LastWriteError))
@@ -1223,7 +1223,7 @@ PBoolean PSoundChannelWin32::WaitForPlayCompletion()
 }
 
 
-PBoolean PSoundChannelWin32::StartRecording()
+bool PSoundChannelWin32::StartRecording()
 {
   PWaitAndSignal mutex(bufferMutex);
 
@@ -1231,7 +1231,7 @@ PBoolean PSoundChannelWin32::StartRecording()
   if (bufferByteOffset != P_MAX_INDEX)
     return true;
 
-  DWORD osError;
+  uint32_t osError;
 
   // Start the first read, queue all the buffers
   for (PINDEX i = 0; i < buffers.GetSize(); i++) {
@@ -1252,7 +1252,7 @@ PBoolean PSoundChannelWin32::StartRecording()
 }
 
 
-PBoolean PSoundChannelWin32::Read(void * data, PINDEX size)
+bool PSoundChannelWin32::Read(void * data, PINDEX size)
 {
   SetLastReadCount(0);
 
@@ -1277,7 +1277,7 @@ PBoolean PSoundChannelWin32::Read(void * data, PINDEX size)
 
   bufferByteOffset += GetLastReadCount();
   if (bufferByteOffset >= (PINDEX)buffer.header.dwBytesRecorded) {
-    DWORD osError;
+    uint32_t osError;
     if ((osError = buffer.Prepare(hWaveIn)) != MMSYSERR_NOERROR)
       return SetErrorValues(Miscellaneous, osError|PWIN32ErrorFlag, LastReadError);
     if ((osError = waveInAddBuffer(hWaveIn, &buffer.header, sizeof(WAVEHDR))) != MMSYSERR_NOERROR)
@@ -1291,7 +1291,7 @@ PBoolean PSoundChannelWin32::Read(void * data, PINDEX size)
 }
 
 
-PBoolean PSoundChannelWin32::RecordSound(PSound & sound)
+bool PSoundChannelWin32::RecordSound(PSound & sound)
 {
   if (!WaitForAllRecordBuffersFull())
     return false;
@@ -1314,7 +1314,7 @@ PBoolean PSoundChannelWin32::RecordSound(PSound & sound)
     if (!sound.SetSize(totalSize))
       return SetErrorValues(NoMemory, ENOMEM, LastReadError);
 
-    BYTE * ptr = sound.GetPointer();
+    uint8_t * ptr = sound.GetPointer();
     for (i = 0; i < buffers.GetSize(); i++) {
       PINDEX sz = buffers[i].header.dwBytesRecorded;
       memcpy(ptr, buffers[i], sz);
@@ -1326,7 +1326,7 @@ PBoolean PSoundChannelWin32::RecordSound(PSound & sound)
 }
 
 
-PBoolean PSoundChannelWin32::RecordFile(const PFilePath & filename)
+bool PSoundChannelWin32::RecordFile(const PFilePath & filename)
 {
   if (!WaitForAllRecordBuffersFull())
     return false;
@@ -1351,7 +1351,7 @@ PBoolean PSoundChannelWin32::RecordFile(const PFilePath & filename)
 }
 
 
-PBoolean PSoundChannelWin32::IsRecordBufferFull()
+bool PSoundChannelWin32::IsRecordBufferFull()
 {
   PWaitAndSignal mutex(bufferMutex);
 
@@ -1360,7 +1360,7 @@ PBoolean PSoundChannelWin32::IsRecordBufferFull()
 }
 
 
-PBoolean PSoundChannelWin32::AreAllRecordBuffersFull()
+bool PSoundChannelWin32::AreAllRecordBuffersFull()
 {
   PWaitAndSignal mutex(bufferMutex);
 
@@ -1374,7 +1374,7 @@ PBoolean PSoundChannelWin32::AreAllRecordBuffersFull()
 }
 
 
-PBoolean PSoundChannelWin32::WaitForRecordBufferFull()
+bool PSoundChannelWin32::WaitForRecordBufferFull()
 {
   if (!StartRecording())  // Start the first read, queue all the buffers
     return false;
@@ -1400,7 +1400,7 @@ PBoolean PSoundChannelWin32::WaitForRecordBufferFull()
 }
 
 
-PBoolean PSoundChannelWin32::WaitForAllRecordBuffersFull()
+bool PSoundChannelWin32::WaitForAllRecordBuffersFull()
 {
   if (!StartRecording())  // Start the first read, queue all the buffers
     return false;
@@ -1426,9 +1426,9 @@ PBoolean PSoundChannelWin32::WaitForAllRecordBuffersFull()
 }
 
 
-PBoolean PSoundChannelWin32::Abort()
+bool PSoundChannelWin32::Abort()
 {
-  DWORD osError = MMSYSERR_NOERROR;
+  uint32_t osError = MMSYSERR_NOERROR;
 
   {
     PWaitAndSignal mutex(bufferMutex);
@@ -1467,7 +1467,7 @@ PString PSoundChannelWin32::GetErrorText(ErrorGroup group) const
   if ((err&PWIN32ErrorFlag) == 0)
     return PChannel::GetErrorText(group);
 
-  DWORD osError = err&~PWIN32ErrorFlag;
+  uint32_t osError = err&~PWIN32ErrorFlag;
   if (m_activeDirection == Recorder) {
     if (waveInGetErrorText(osError, str, sizeof(str)) != MMSYSERR_NOERROR)
       return PChannel::GetErrorText(group);
@@ -1481,7 +1481,7 @@ PString PSoundChannelWin32::GetErrorText(ErrorGroup group) const
 }
 
 
-PBoolean PSoundChannelWin32::SetVolume(unsigned newVolume)
+bool PSoundChannelWin32::SetVolume(unsigned newVolume)
 {
   if (CheckNotOpen())
     return false;
@@ -1493,7 +1493,7 @@ PBoolean PSoundChannelWin32::SetVolume(unsigned newVolume)
     volume.dwValue = volumeControl.Bounds.dwMaximum;
   else
     volume.dwValue = volumeControl.Bounds.dwMinimum +
-            (DWORD)((volumeControl.Bounds.dwMaximum - volumeControl.Bounds.dwMinimum)*newVolume/MaxVolume);
+            (uint32_t)((volumeControl.Bounds.dwMaximum - volumeControl.Bounds.dwMinimum)*newVolume/MaxVolume);
   PTRACE(5, "WinSnd\tVolume set to " << newVolume << " -> " << volume.dwValue);
 
   MIXERCONTROLDETAILS details;
@@ -1513,7 +1513,7 @@ PBoolean PSoundChannelWin32::SetVolume(unsigned newVolume)
 
 
 
-PBoolean PSoundChannelWin32::GetVolume(unsigned & oldVolume)
+bool PSoundChannelWin32::GetVolume(unsigned & oldVolume)
 {
   if (CheckNotOpen())
     return false;

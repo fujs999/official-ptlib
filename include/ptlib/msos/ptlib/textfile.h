@@ -3,7 +3,7 @@
  *
  * Text file I/O channel class.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -31,7 +31,7 @@
 // PTextFile
 
   protected:
-    virtual PBoolean IsTextFile() const;
+    virtual bool IsTextFile() const;
       // Return true if text file translation is required
 
   private:

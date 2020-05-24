@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -150,20 +150,6 @@ using std::ostream, std::istream, std::ostringstream, std::cerr, std::cout, std:
 #else
   #define PIGNORE_RETURN(t,e)	do { t unused __attribute__((unused)) = (e); } while(0)
 #endif
-
-// We are gradually converting over to standard C++ names, these
-// are for backward compatibility only
-
-#ifndef FALSE
-#define FALSE 0
-#endif
-#ifndef TRUE
-#define TRUE 1
-#endif
-
-typedef bool   PBoolean;
-#define PTrue  true
-#define PFalse false
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -731,7 +717,7 @@ public:
       This checks against the current global trace level set by SetLevel()
       for if the trace output may be emitted. This is used by the PTRACE() macro.
   */
-  static PBoolean CanTrace(
+  static bool CanTrace(
     unsigned level ///< Trace level to check
   );
 
@@ -1631,7 +1617,7 @@ class PMemoryHeap {
        This effectively calls Validate() on every object in the heap.
         @return true if every object in heap is Ok.
      */
-    static PBoolean ValidateHeap(
+    static bool ValidateHeap(
       ostream * error = NULL  ///< Stream to output, use default if NULL
     );
 
@@ -1640,8 +1626,8 @@ class PMemoryHeap {
        leak check on program termination.
        Returns the previous state.
      */
-    static PBoolean SetIgnoreAllocations(
-      PBoolean ignore  ///< New flag for allocation ignoring.
+    static bool SetIgnoreAllocations(
+      bool ignore  ///< New flag for allocation ignoring.
     );
 
     /** Get memory check system statistics.
@@ -1730,7 +1716,7 @@ class PMemoryHeap {
     );
     bool InternalValidateHeap(ostream * error);
     void InternalDumpStatistics(ostream & strm);
-    void InternalDumpObjectsSince(DWORD objectNumber, ostream & strm);
+    void InternalDumpObjectsSince(uint32_t objectNumber, ostream & strm);
 
     enum Flags {
       NoLeakPrint = 1
@@ -1943,14 +1929,14 @@ public:
   PMemoryHeapIgnoreAllocationsForScope() : previousIgnoreAllocations(PMemoryHeap::SetIgnoreAllocations(true)) { }
   ~PMemoryHeapIgnoreAllocationsForScope() { PMemoryHeap::SetIgnoreAllocations(previousIgnoreAllocations); }
 private:
-  PBoolean previousIgnoreAllocations;
+  bool previousIgnoreAllocations;
 };
 
 #define PMEMORY_IGNORE_ALLOCATIONS_FOR_SCOPE PMemoryHeapIgnoreAllocationsForScope instance_PMemoryHeapIgnoreAllocationsForScope
 
 class PMemoryAllocationBreakpoint {
 public:
-  PMemoryAllocationBreakpoint(DWORD point)
+  PMemoryAllocationBreakpoint(uint32_t point)
   {
     PMemoryHeap::SetAllocationBreakpoint(point);
   }
@@ -2440,7 +2426,6 @@ class PObject {
 // do byte swapping for little endien and big endien processor architectures
 // as well as accommodating structure packing rules for memory structures.
 
-#define PANSI_CHAR 1
 #define PLITTLE_ENDIAN 2
 #define PBIG_ENDIAN 3
 
@@ -2503,19 +2488,11 @@ __inline static double   ReverseBytes(const   double src) { uint64_t dst = Rever
     type dst;
     size_t s = sizeof(type)-1;
     for (size_t d = 0; d < sizeof(type); ++d,--s)
-      ((BYTE *)&dst)[d] = ((const BYTE *)&src)[s];
+      ((uint8_t *)&dst)[d] = ((const uint8_t *)&src)[s];
     return dst;
   }
 #endif
 };
-
-#ifndef PCHAR8
-#define PCHAR8 PANSI_CHAR
-#endif
-
-#if PCHAR8==PANSI_CHAR
-typedef PIntSameOrder<int8_t> PChar8;
-#endif
 
 typedef PIntSameOrder<int8_t> PInt8;
 
@@ -2546,21 +2523,21 @@ typedef PIntSameOrder<uint16_t> PUInt16b;
 #endif
 
 #if PBYTE_ORDER==PLITTLE_ENDIAN
-typedef PIntSameOrder<int32_t> PInt32l;
+typedef PIntSameOrder<int32_t> int32_tl;
 #elif PBYTE_ORDER==PBIG_ENDIAN
-typedef PIntReversedOrder<int32_t> PInt32l;
+typedef PIntReversedOrder<int32_t> int32_tl;
 #endif
 
 #if PBYTE_ORDER==PLITTLE_ENDIAN
-typedef PIntReversedOrder<int32_t> PInt32b;
+typedef PIntReversedOrder<int32_t> int32_tb;
 #elif PBYTE_ORDER==PBIG_ENDIAN
-typedef PIntSameOrder<PInt32> int32_t;
+typedef PIntSameOrder<int32_t> int32_tb;
 #endif
 
 #if PBYTE_ORDER==PLITTLE_ENDIAN
-typedef PIntSameOrder<uint32_t> PUInt32l;
+typedef PIntSameOrder<uint32_t> uint32_tl;
 #elif PBYTE_ORDER==PBIG_ENDIAN
-typedef PIntReversedOrder<uint32_t> PUInt32l;
+typedef PIntReversedOrder<uint32_t> uint32_tl;
 #endif
 
 #if PBYTE_ORDER==PLITTLE_ENDIAN

@@ -3,7 +3,7 @@
  *
  * ISAAC random number generator by Bob Jenkins.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-2000 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -118,7 +118,7 @@ class PRandom
     */
     static PBYTEArray Octets(PINDEX size);
     static void Octets(PBYTEArray & octets, PINDEX size = 0);
-    static void Octets(BYTE *  octets, PINDEX size);
+    static void Octets(uint8_t *  octets, PINDEX size);
 
     /// Get a string of random alphanumeric characters
     static PString String(PINDEX size);

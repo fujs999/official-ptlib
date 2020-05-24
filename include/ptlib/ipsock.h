@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -71,13 +71,13 @@ class PIPSocket : public PSocket
         explicit Address(const PString & dotNotation);
 
         /// Create an IPv4 or IPv6 address from 4 or 16 byte values.
-        Address(PINDEX len, const BYTE * bytes, int scope = 0);
+        Address(PINDEX len, const uint8_t * bytes, int scope = 0);
 
         /// Create an IP address from four byte values.
-        Address(BYTE b1, BYTE b2, BYTE b3, BYTE b4);
+        Address(uint8_t b1, uint8_t b2, uint8_t b3, uint8_t b4);
 
         /// Create an IPv4 address from a four byte value in network byte order.
-        Address(DWORD dw);
+        Address(uint32_t dw);
 
         /// Create an IPv4 address from an in_addr structure.
         Address(const in_addr & addr);
@@ -109,7 +109,7 @@ class PIPSocket : public PSocket
         Address & operator=(const PString & dotNotation);
 
         /// Copy an address from a four byte value in network order.
-        Address & operator=(DWORD dw);
+        Address & operator=(uint32_t dw);
         //@}
 
         /// Compare two adresses for absolute (in)equality.
@@ -125,26 +125,22 @@ class PIPSocket : public PSocket
 #endif
         bool operator==(in_addr & addr) const;
         bool operator!=(in_addr & addr) const { return !operator==(addr); }
-        bool operator==(DWORD dw) const;
-        bool operator!=(DWORD dw) const   { return !operator==(dw); }
+        bool operator==(uint32_t dw) const;
+        bool operator!=(uint32_t dw) const   { return !operator==(dw); }
 #ifdef P_VXWORKS
-        bool operator==(long unsigned int u) const { return  operator==((DWORD)u); }
-        bool operator!=(long unsigned int u) const { return !operator==((DWORD)u); }
-#endif
-#ifdef _WIN32
-        bool operator==(unsigned u) const { return  operator==((DWORD)u); }
-        bool operator!=(unsigned u) const { return !operator==((DWORD)u); }
+        bool operator==(long unsigned int u) const { return  operator==((uint32_t)u); }
+        bool operator!=(long unsigned int u) const { return !operator==((uint32_t)u); }
 #endif
 #ifdef P_RTEMS
-        bool operator==(u_long u) const { return  operator==((DWORD)u); }
-        bool operator!=(u_long u) const { return !operator==((DWORD)u); }
+        bool operator==(u_long u) const { return  operator==((uint32_t)u); }
+        bool operator!=(u_long u) const { return !operator==((uint32_t)u); }
 #endif
 #ifdef P_BEOS
-        bool operator==(in_addr_t a) const { return  operator==((DWORD)a); }
-        bool operator!=(in_addr_t a) const { return !operator==((DWORD)a); }
+        bool operator==(in_addr_t a) const { return  operator==((uint32_t)a); }
+        bool operator!=(in_addr_t a) const { return !operator==((uint32_t)a); }
 #endif
-        bool operator==(int i) const      { return  operator==((DWORD)i); }
-        bool operator!=(int i) const      { return !operator==((DWORD)i); }
+        bool operator==(int i) const      { return  operator==((uint32_t)i); }
+        bool operator!=(int i) const      { return !operator==((uint32_t)i); }
 
         /// Compare two addresses for equivalence. This will return true
         /// if the two addresses are equivalent even if they are IPV6 and IPV4.
@@ -161,7 +157,7 @@ class PIPSocket : public PSocket
         ) const;
 
         /// Convert string to IP address. Returns true if was a valid address.
-        PBoolean FromString(
+        bool FromString(
           const PString & str
         );
 
@@ -179,22 +175,22 @@ class PIPSocket : public PSocket
 #endif
 
         /// Return IPv4 address in network order.
-        operator DWORD() const;
+        operator uint32_t() const;
 
         /// Return first byte of IPv4 address.
-        BYTE Byte1() const;
+        uint8_t Byte1() const;
 
         /// Return second byte of IPv4 address.
-        BYTE Byte2() const;
+        uint8_t Byte2() const;
 
         /// Return third byte of IPv4 address.
-        BYTE Byte3() const;
+        uint8_t Byte3() const;
 
         /// Return fourth byte of IPv4 address.
-        BYTE Byte4() const;
+        uint8_t Byte4() const;
 
         /// Return specified byte of IPv4 or IPv6 address.
-        BYTE operator[](PINDEX idx) const;
+        uint8_t operator[](PINDEX idx) const;
 
         /// Get the address length (will be either 4 or 16).
         PINDEX GetSize() const;
@@ -282,18 +278,18 @@ class PIPSocket : public PSocket
           char separator = ':'
         );
         AddressAndPort(
-          WORD defaultPort,
+          uint16_t defaultPort,
           char separator = ':'
         );
         AddressAndPort(
           const PString & str,
-          WORD defaultPort = 0,
+          uint16_t defaultPort = 0,
           char separator = ':',
           const char * proto = NULL
         );
         AddressAndPort(
           const PIPSocket::Address & addr,
-          WORD defaultPort = 0,
+          uint16_t defaultPort = 0,
           char separator = ':'
         );
         AddressAndPort(
@@ -303,7 +299,7 @@ class PIPSocket : public PSocket
 
         bool Parse(
           const PString & str,
-          WORD defaultPort = 0,
+          uint16_t defaultPort = 0,
           char separator = ':',
           const char * proto = NULL
         );
@@ -314,13 +310,13 @@ class PIPSocket : public PSocket
 
         void SetAddress(
           const PIPSocket::Address & addr,
-          WORD port = 0
+          uint16_t port = 0
         );
 
-        WORD GetPort() const { return m_port; }
+        uint16_t GetPort() const { return m_port; }
 
         void SetPort(
-          WORD port
+          uint16_t port
         ) { m_port = port; }
 
         bool IsValid() const
@@ -341,7 +337,7 @@ class PIPSocket : public PSocket
 
       protected:
         PIPSocket::Address m_address;
-        WORD               m_port;
+        uint16_t               m_port;
         char               m_separator;
     };
 
@@ -377,7 +373,7 @@ class PIPSocket : public PSocket
     static void SetDefaultIpAddressFamilyV4(); // PF_INET
 #if P_HAS_IPV6
     static void SetDefaultIpAddressFamilyV6(); // PF_INET6
-    static PBoolean IsIpAddressFamilyV6Supported();
+    static bool IsIpAddressFamilyV6Supported();
 #endif
     static const PIPSocket::Address & GetDefaultIpAny();
     static const PIPSocket::Address & GetInvalidAddress();
@@ -400,7 +396,7 @@ class PIPSocket : public PSocket
 
     /**Open an IPv4 or IPv6 socket
      */
-    virtual PBoolean OpenSocket(
+    virtual bool OpenSocket(
       int ipAdressFamily=PF_INET
     ) = 0;
     //@}
@@ -411,7 +407,7 @@ class PIPSocket : public PSocket
       */
     class PortRange {
       public:
-        PortRange(WORD basePort = 0, WORD maxPort = 0);
+        PortRange(uint16_t basePort = 0, uint16_t maxPort = 0);
 
         /// Set the port range parameters
         void Set(
@@ -447,15 +443,15 @@ class PIPSocket : public PSocket
         );
 
         /// Get base port for range.
-        WORD GetBase() const { return m_base; }
+        uint16_t GetBase() const { return m_base; }
 
         /// Get maximum port for range.
-        WORD GetMax() const { return m_max; }
+        uint16_t GetMax() const { return m_max; }
 
       protected:
         PDECLARE_MUTEX(m_mutex);
-        WORD   m_base;
-        WORD   m_max;
+        uint16_t   m_base;
+        uint16_t   m_max;
     };
 
     /**Connect a socket to a remote host on the specified port number. This is
@@ -469,23 +465,23 @@ class PIPSocket : public PSocket
        @return
        true if the channel was successfully connected to the remote host.
      */
-    virtual PBoolean Connect(
+    virtual bool Connect(
       const PString & address   ///< Address of remote machine to connect to.
     );
-    virtual PBoolean Connect(
+    virtual bool Connect(
       const Address & addr      ///< Address of remote machine to connect to.
     );
-    virtual PBoolean Connect(
-      WORD localPort,           ///< Local port number for connection.
+    virtual bool Connect(
+      uint16_t localPort,           ///< Local port number for connection.
       const Address & addr      ///< Address of remote machine to connect to.
     );
-    virtual PBoolean Connect(
+    virtual bool Connect(
       const Address & iface,    ///< Address of local interface to us.
       const Address & addr      ///< Address of remote machine to connect to.
     );
-    virtual PBoolean Connect(
+    virtual bool Connect(
       const Address & iface,    ///< Address of local interface to us.
-      WORD localPort,           ///< Local port number for connection.
+      uint16_t localPort,           ///< Local port number for connection.
       const Address & addr      ///< Address of remote machine to connect to.
     );
 
@@ -504,16 +500,16 @@ class PIPSocket : public PSocket
        @return
        true if the channel was successfully opened.
      */
-    virtual PBoolean Listen(
+    virtual bool Listen(
       unsigned queueSize = 5,  ///< Number of pending accepts that may be queued.
-      WORD port = 0,           ///< Port number to use for the connection.
+      uint16_t port = 0,           ///< Port number to use for the connection.
       Reusability reuse = AddressIsExclusive ///< Can/Cant listen more than once.
     ) { return InternalListen(GetDefaultIpAny(), queueSize, port, reuse); }
 
-    virtual PBoolean Listen(
+    virtual bool Listen(
       const Address & bind,     ///< Local interface address to bind to.
       unsigned queueSize = 5,   ///< Number of pending accepts that may be queued.
-      WORD port = 0,            ///< Port number to use for the connection.
+      uint16_t port = 0,            ///< Port number to use for the connection.
       Reusability reuse = AddressIsExclusive ///< Can/Can't listen more than once.
     ) { return InternalListen(bind, queueSize, port, reuse); }
     //@}
@@ -541,10 +537,10 @@ class PIPSocket : public PSocket
        @return
        true if the IP number was returned.
      */
-    static PBoolean GetHostAddress(
+    static bool GetHostAddress(
       Address & addr    ///< Variable to receive hosts IP address.
     );
-    static PBoolean GetHostAddress(
+    static bool GetHostAddress(
       const PString & hostname,
       /**< Name of host to get address for. This may be either a domain name or
            an IP number in "dot" format.
@@ -579,7 +575,7 @@ class PIPSocket : public PSocket
        @return
        true if the host is the local machine.
      */
-    static PBoolean IsLocalHost(
+    static bool IsLocalHost(
       /**Name of host to get address for. This may be either a domain name or
          an IP number in "dot" format.
        */
@@ -597,7 +593,7 @@ class PIPSocket : public PSocket
     ) const;
     bool GetLocalAddress(
       Address & addr,    ///< Variable to receive peer hosts IP address.
-      WORD & port        ///< Variable to receive peer hosts port number.
+      uint16_t & port        ///< Variable to receive peer hosts port number.
     ) const;
     bool GetLocalAddress(
       AddressAndPort & addr    ///< Variable to receive hosts IP address and port.
@@ -615,7 +611,7 @@ class PIPSocket : public PSocket
       ) const;
     bool GetPeerAddress(
       Address & addr,    ///< Variable to receive peer hosts IP address.
-      WORD & port        ///< Variable to receive peer hosts port number.
+      uint16_t & port        ///< Variable to receive peer hosts port number.
       ) const;
     bool GetPeerAddress(
       AddressAndPort & addr    ///< Variable to receive hosts IP address and port.
@@ -683,7 +679,7 @@ class PIPSocket : public PSocket
        @return
        true if the route table is returned, false if an error occurs.
      */
-    static PBoolean GetRouteTable(
+    static bool GetRouteTable(
       RouteTable & table      ///< Route table
     );
 
@@ -766,9 +762,9 @@ class PIPSocket : public PSocket
        @return
        true if the interface table is returned, false if an error occurs.
      */
-    static PBoolean GetInterfaceTable(
+    static bool GetInterfaceTable(
       InterfaceTable & table,      ///< interface table
-      PBoolean includeDown = false     ///< Include interfaces that are down
+      bool includeDown = false     ///< Include interfaces that are down
     );
 
     /**Get the interface name for the specified local IP address.
@@ -909,7 +905,7 @@ class PIPSocket : public PSocket
 
     virtual bool InternalGetLocalAddress(AddressAndPort & addrAndPort);
     virtual bool InternalGetPeerAddress(AddressAndPort & addrAndPort);
-    virtual bool InternalListen(const Address & bind, unsigned queueSize, WORD port, Reusability reuse);
+    virtual bool InternalListen(const Address & bind, unsigned queueSize, uint16_t port, Reusability reuse);
 
 // Include platform dependent part of class
 #ifdef _WIN32
@@ -926,17 +922,17 @@ class PIPSocket : public PSocket
       public:
         sockaddr_wrapper();
         sockaddr_wrapper(const AddressAndPort & ipPort);
-        sockaddr_wrapper(const Address & ip, WORD port);
+        sockaddr_wrapper(const Address & ip, uint16_t port);
 
         sockaddr* operator->() const { return addr; }
         operator sockaddr*()   const { return addr; }
         socklen_t GetSize() const;
 
         PIPSocket::Address GetIP() const;
-        WORD GetPort() const;
+        uint16_t GetPort() const;
 
       private:
-        void Construct(const Address & ip, WORD port);
+        void Construct(const Address & ip, uint16_t port);
 
         sockaddr_storage storage;
         union {

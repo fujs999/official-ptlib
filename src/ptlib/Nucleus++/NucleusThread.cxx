@@ -80,7 +80,7 @@ void PThread::Terminate()
 
 // What a pfaff for something that's easy...
 // Still, at last I've written a function I'm pretty confident will work!
-PBoolean PThread::IsTerminated() const
+bool PThread::IsTerminated() const
   {
 #ifdef __NUCLEUS_MNT__
   cout << "q";
@@ -101,7 +101,7 @@ void PThread::WaitForTermination() const
     }
   }
 
-PBoolean PThread::WaitForTermination(const PTimeInterval & maxWait) const
+bool PThread::WaitForTermination(const PTimeInterval & maxWait) const
   {
   PTimer timeout = maxWait;
   while (!IsTerminated())
@@ -115,7 +115,7 @@ PBoolean PThread::WaitForTermination(const PTimeInterval & maxWait) const
   return true;
   }
 
-void PThread::Suspend(PBoolean susp)
+void PThread::Suspend(bool susp)
   {
   STATUS stat;
   if (susp)
@@ -152,7 +152,7 @@ void PThread::Resume()
     }
   }
 
-PBoolean PThread::IsSuspended() const
+bool PThread::IsSuspended() const
   {
   return (n_suspendCount != 0);
   }
@@ -169,7 +169,7 @@ PThread::Priority PThread::GetPriority() const
   NucleusTaskInfo->Update();
   PAssert(stat == NU_SUCCESS, "Invalid Task Pointer on GetPriority Request");
 
-  PBoolean FoundIt = false;
+  bool FoundIt = false;
 
   for ( int i = LowestPriority;
         i < NumPriorities;
@@ -204,7 +204,7 @@ void PThread::Sleep(const PTimeInterval & time)
 
 #if 0
 // Unnecessary as Nucleus has threads!
-PBoolean PThread::IsNoLongerBlocked()
+bool PThread::IsNoLongerBlocked()
   {
   STATUS stat = NucleusTaskInfo->Update();
   PAssert(stat == NU_SUCCESS, "Invalid Task Pointer on Blocking Check");

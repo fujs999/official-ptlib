@@ -3,7 +3,7 @@
  *
  * Microsoft Internet Location Server Protocol interface class.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-2003 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -59,12 +59,12 @@ class PILSSession : public PLDAPSession
     class MSIPAddress : public PIPSocket::Address
     {
       public:
-        MSIPAddress(DWORD a = 0)                    : Address(a) { }
+        MSIPAddress(uint32_t a = 0)                    : Address(a) { }
         MSIPAddress(const PIPSocket::Address & a)   : Address(a) { }
         MSIPAddress(const PString & dotNotation)    : Address(dotNotation) { }
-        MSIPAddress(PINDEX len, const BYTE * bytes) : Address(len, bytes) { }
+        MSIPAddress(PINDEX len, const uint8_t * bytes) : Address(len, bytes) { }
 
-        MSIPAddress & operator=(DWORD a)                      { Address::operator=(a); return *this; }
+        MSIPAddress & operator=(uint32_t a)                      { Address::operator=(a); return *this; }
         MSIPAddress & operator=(const PIPSocket::Address & a) { Address::operator=(a); return *this; }
         MSIPAddress & operator=(const PString & dotNotation)  { Address::operator=(dotNotation); return *this; }
 
@@ -92,9 +92,9 @@ class PILSSession : public PLDAPSession
        PLDAP_ATTR_INIT(RTPerson, PString,     sappid,       PProcess::Current().GetName()); // Must be non-empty
        PLDAP_ATTR_INIT(RTPerson, PString,     sappguid,     "none"); // Must be non-empty
        PLDAP_ATTR_SIMP(RTPerson, PStringList, smimetype);
-       PLDAP_ATTR_INIT(RTPerson, PBoolean,        ilsa32833566, 0); // 1=audio capable
-       PLDAP_ATTR_INIT(RTPerson, PBoolean,        ilsa32964638, 0); // 1=video capable
-       PLDAP_ATTR_INIT(RTPerson, PBoolean,        ilsa26214430, 0); // 1=in a call
+       PLDAP_ATTR_INIT(RTPerson, bool,        ilsa32833566, 0); // 1=audio capable
+       PLDAP_ATTR_INIT(RTPerson, bool,        ilsa32964638, 0); // 1=video capable
+       PLDAP_ATTR_INIT(RTPerson, bool,        ilsa26214430, 0); // 1=in a call
        PLDAP_ATTR_INIT(RTPerson, unsigned,    ilsa26279966, 0); // unknown
        PLDAP_ATTR_INIT(RTPerson, unsigned,    ilsa39321630, 0); // 1 personal; 2 business user; 4 adults-only
        PLDAP_ATTR_INIT(RTPerson, time_t,      timestamp,    PTime().GetTimeInSeconds());
@@ -104,19 +104,19 @@ class PILSSession : public PLDAPSession
 
     PLDAP_STRUCT_END();
 
-    PBoolean AddPerson(
+    bool AddPerson(
       const RTPerson & person
     );
 
-    PBoolean ModifyPerson(
+    bool ModifyPerson(
       const RTPerson & person
     );
 
-    PBoolean DeletePerson(
+    bool DeletePerson(
       const RTPerson & person
     );
 
-    PBoolean SearchPerson(
+    bool SearchPerson(
       const PString & canonicalName,
       RTPerson & person
     );

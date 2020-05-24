@@ -3,7 +3,7 @@
  *
  * ISAAC random number generator by Bob Jenkins.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-2001 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -41,7 +41,7 @@
 
 PRandom::PRandom()
 {
-  SetSeed((DWORD)PTimer::Tick().GetMilliSeconds());
+  SetSeed((uint32_t)PTimer::Tick().GetMilliSeconds());
 }
 
 
@@ -109,7 +109,7 @@ void PRandom::SetSeed(uint32_t seed)
 }
 
 
-#define ind(mm,x)  (*(uint32_t *)((BYTE *)(mm) + ((x) & ((RandSize-1)<<2))))
+#define ind(mm,x)  (*(uint32_t *)((uint8_t *)(mm) + ((x) & ((RandSize-1)<<2))))
 
 #define rngstep(mix,a,b,mm,m,m2,r,x) \
 { \
@@ -210,7 +210,7 @@ void PRandom::Octets(PBYTEArray & octets, PINDEX size)
 }
 
 
-void PRandom::Octets(BYTE * octets, PINDEX size)
+void PRandom::Octets(uint8_t * octets, PINDEX size)
 {
   if (octets == NULL || size == 0)
     return;
@@ -227,7 +227,7 @@ void PRandom::Octets(BYTE * octets, PINDEX size)
     *uintPtr++ = rand.Generate();
 
   for (i -= sizeof(uint32_t); i < size; ++i)
-    octets[i] = (BYTE)rand.Generate(0, 255);
+    octets[i] = (uint8_t)rand.Generate(0, 255);
 }
 
 

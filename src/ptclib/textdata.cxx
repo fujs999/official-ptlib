@@ -400,7 +400,7 @@ bool PTextDataFile::InternalOpen(OpenMode mode, OpenOptions opts, PFileInfo::Per
 }
 
 
-PBoolean PTextDataFile::Read(void * buf, PINDEX len)
+bool PTextDataFile::Read(void * buf, PINDEX len)
 {
   return m_formatting && PTextFile::Read(buf, len);
 }
@@ -412,7 +412,7 @@ int PTextDataFile::ReadChar()
 }
 
 
-PBoolean PTextDataFile::ReadBlock(void *, PINDEX)
+bool PTextDataFile::ReadBlock(void *, PINDEX)
 {
   return false;
 }
@@ -424,19 +424,19 @@ PString PTextDataFile::ReadString(PINDEX)
 }
 
 
-PBoolean PTextDataFile::Write(const void * buf, PINDEX len)
+bool PTextDataFile::Write(const void * buf, PINDEX len)
 {
   return m_formatting && PTextFile::Write(buf, len);
 }
 
 
-PBoolean PTextDataFile::WriteChar(int)
+bool PTextDataFile::WriteChar(int)
 {
   return false;
 }
 
 
-PBoolean PTextDataFile::WriteString(const PString &)
+bool PTextDataFile::WriteString(const PString &)
 {
   return false;
 }

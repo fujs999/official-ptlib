@@ -21,45 +21,45 @@ public:
   PStringArray GetDeviceNames() const
   { return GetInputDeviceNames(); }
 
-  PBoolean Open(const PString &deviceName, PBoolean startImmediate);
+  bool Open(const PString &deviceName, bool startImmediate);
 
-  PBoolean IsOpen();
+  bool IsOpen();
 
-  PBoolean Close();
+  bool Close();
 
-  PBoolean Start();
-  PBoolean Stop();
+  bool Start();
+  bool Stop();
 
-  PBoolean IsCapturing();
+  bool IsCapturing();
 
   PINDEX GetMaxFrameBytes();
 
-  PBoolean GetFrameSizeLimits(unsigned int&, unsigned int&,
+  bool GetFrameSizeLimits(unsigned int&, unsigned int&,
 			  unsigned int&, unsigned int&);
 
-  PBoolean TestAllFormats();
+  bool TestAllFormats();
 
-  PBoolean SetFrameSize(unsigned int, unsigned int);
-  PBoolean SetFrameRate(unsigned int);
-  PBoolean VerifyHardwareFrameSize(unsigned int, unsigned int);
+  bool SetFrameSize(unsigned int, unsigned int);
+  bool SetFrameRate(unsigned int);
+  bool VerifyHardwareFrameSize(unsigned int, unsigned int);
 
   bool GetAttributes(Attributes & attrib);
   bool SetAttributes(const Attributes & attrib);
 
-  PBoolean SetColourFormat(const PString&);
+  bool SetColourFormat(const PString&);
 
-  PBoolean SetVideoChannelFormat(int, PVideoDevice::VideoFormat);
-  PBoolean SetVideoFormat(PVideoDevice::VideoFormat);
+  bool SetVideoChannelFormat(int, PVideoDevice::VideoFormat);
+  bool SetVideoFormat(PVideoDevice::VideoFormat);
   int GetNumChannels();
-  PBoolean SetChannel(int);
+  bool SetChannel(int);
 
-  PBoolean NormalReadProcess(BYTE*, PINDEX*);
+  bool NormalReadProcess(uint8_t*, PINDEX*);
 
   void ClearMapping();
-  PBoolean RefreshCapabilities();
+  bool RefreshCapabilities();
 
 protected:
-  virtual bool InternalGetFrameData(BYTE * buffer, PINDEX & bytesReturned, bool & keyFrame, bool wait);
+  virtual bool InternalGetFrameData(uint8_t * buffer, PINDEX & bytesReturned, bool & keyFrame, bool wait);
 
   PAdaptiveDelay m_pacing;
 
@@ -68,10 +68,10 @@ protected:
   int    canMap;  // -1 = don't know, 0 = no, 1 = yes
   int    colourFormatCode;
   PINDEX hint_index;
-  BYTE *videoBuffer;
+  uint8_t *videoBuffer;
   PINDEX frameBytes;
   
-  PBoolean   pendingSync[2];
+  bool   pendingSync[2];
   
   int    currentFrame;
   struct video_mbuf frame;

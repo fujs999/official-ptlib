@@ -3,7 +3,7 @@
  *
  * FTP client class.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-2002 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -50,15 +50,15 @@ PFTPClient::~PFTPClient()
 }
 
 
-PBoolean PFTPClient::Close()
+bool PFTPClient::Close()
 {
   if (CheckNotOpen())
     return false;
-  PBoolean ok = ExecuteCommand(QUIT)/100 == 2;
+  bool ok = ExecuteCommand(QUIT)/100 == 2;
   return PFTP::Close() && ok;
 }
 
-PBoolean PFTPClient::OnOpen()
+bool PFTPClient::OnOpen()
 {
   if (!ReadResponse() || m_lastResponseCode != 220)
     return false;
@@ -75,7 +75,7 @@ PBoolean PFTPClient::OnOpen()
 }
 
 
-bool PFTPClient::OpenHost(const PString & host, WORD port)
+bool PFTPClient::OpenHost(const PString & host, uint16_t port)
 {
   PTCPSocket * socket = new PTCPSocket(port);
   if (socket->Connect(host) && Open(socket))
@@ -88,7 +88,7 @@ bool PFTPClient::OpenHost(const PString & host, WORD port)
 
 static const PConstString AnonymousUser("anonymous");
 
-PBoolean PFTPClient::LogIn(const PString & username, const PString & password)
+bool PFTPClient::LogIn(const PString & username, const PString & password)
 {
   if (ExecuteCommand(USER, username.IsEmpty() ? AnonymousUser : username)/100 != 3)
     return false;
@@ -105,7 +105,7 @@ PString PFTPClient::GetSystemType()
 }
 
 
-PBoolean PFTPClient::SetType(RepresentationType type)
+bool PFTPClient::SetType(RepresentationType type)
 {
   static const char * const typeCode[] = { "A", "E", "I" };
   PAssert((PINDEX)type < PARRAYSIZE(typeCode), PInvalidParameter);
@@ -113,7 +113,7 @@ PBoolean PFTPClient::SetType(RepresentationType type)
 }
 
 
-PBoolean PFTPClient::ChangeDirectory(const PString & dirPath)
+bool PFTPClient::ChangeDirectory(const PString & dirPath)
 {
   return ExecuteCommand(CWD, dirPath)/100 == 2;
 }
@@ -174,7 +174,7 @@ PStringArray PFTPClient::GetDirectoryNames(const PString & path,
 }
 
 
-PBoolean PFTPClient::CreateDirectory(const PString & path)
+bool PFTPClient::CreateDirectory(const PString & path)
 {
   return ExecuteCommand (MKD, path) / 100 == 2;
 }
@@ -224,7 +224,7 @@ PTCPSocket * PFTPClient::NormalClientTransfer(Commands cmd,
   autoDeleteSocket.Open(listenSocket);
 
   // get host address and port to send to other end
-  WORD localPort = listenSocket->GetPort();
+  uint16_t localPort = listenSocket->GetPort();
   PIPSocket::Address localAddr;
   socket->GetLocalAddress(localAddr);
 
@@ -248,7 +248,7 @@ PTCPSocket * PFTPClient::PassiveClientTransfer(Commands cmd,
                                                const PString & args)
 {
   PIPSocket::Address passiveAddress;
-  WORD passivePort;
+  uint16_t passivePort;
 
   if (ExecuteCommand(PASV) != 227)
     return NULL;
@@ -261,11 +261,11 @@ PTCPSocket * PFTPClient::PassiveClientTransfer(Commands cmd,
   if (bytes.GetSize() != 6)
     return NULL;
 
-  passiveAddress = PIPSocket::Address((BYTE)bytes[0].AsInteger(),
-                                      (BYTE)bytes[1].AsInteger(),
-                                      (BYTE)bytes[2].AsInteger(),
-                                      (BYTE)bytes[3].AsInteger());
-  passivePort = (WORD)(bytes[4].AsInteger()*256 + bytes[5].AsInteger());
+  passiveAddress = PIPSocket::Address((uint8_t)bytes[0].AsInteger(),
+                                      (uint8_t)bytes[1].AsInteger(),
+                                      (uint8_t)bytes[2].AsInteger(),
+                                      (uint8_t)bytes[3].AsInteger());
+  passivePort = (uint16_t)(bytes[4].AsInteger()*256 + bytes[5].AsInteger());
 
   PTCPSocket * socket = new PTCPSocket(passiveAddress, passivePort);
   if (socket->IsOpen())
@@ -368,7 +368,7 @@ class PURL_FtpLoader : public PURLLoader
       socket->SetReadTimeout(params.m_timeout);
       static const PINDEX chunk = 10000;
       PINDEX total = 0;
-      BYTE * ptr = data.GetPointer(chunk);
+      uint8_t * ptr = data.GetPointer(chunk);
       while (socket->Read(ptr, chunk)) {
         total += socket->GetLastReadCount();
         ptr = data.GetPointer(total+chunk)+total;

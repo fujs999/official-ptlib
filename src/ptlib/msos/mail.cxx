@@ -3,7 +3,7 @@
  *
  * Electronic mail class.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -79,13 +79,13 @@ void PMail::Construct()
 }
 
 
-PBoolean PMail::LogOn(const PString & username, const PString & password)
+bool PMail::LogOn(const PString & username, const PString & password)
 {
   return LogOnCommonInterface(username, password, NULL);
 }
 
 
-PBoolean PMail::LogOn(const PString & username,
+bool PMail::LogOn(const PString & username,
                   const PString & password,
                   const PString & service)
 {
@@ -100,7 +100,7 @@ PBoolean PMail::LogOn(const PString & username,
   #pragma warning(disable:4100)
 #endif
 
-PBoolean PMail::LogOnCommonInterface(const char * username,
+bool PMail::LogOnCommonInterface(const char * username,
                                  const char * password,
                                  const char * service)
 {
@@ -149,7 +149,7 @@ PBoolean PMail::LogOnCommonInterface(const char * username,
 }
 
 
-PBoolean PMail::LogOff()
+bool PMail::LogOff()
 {
   if (!loggedOn)
     return true;
@@ -185,13 +185,13 @@ PBoolean PMail::LogOff()
 }
 
 
-PBoolean PMail::IsLoggedOn() const
+bool PMail::IsLoggedOn() const
 {
   return loggedOn;
 }
 
 
-PBoolean PMail::SendNote(const PString & recipient,
+bool PMail::SendNote(const PString & recipient,
                      const PString & subject,
                      const char * body)
 {
@@ -200,7 +200,7 @@ PBoolean PMail::SendNote(const PString & recipient,
 }
 
 
-PBoolean PMail::SendNote(const PString & recipient,
+bool PMail::SendNote(const PString & recipient,
                      const PString & subject,
                      const char * body,
                      const PStringList & attachments)
@@ -210,7 +210,7 @@ PBoolean PMail::SendNote(const PString & recipient,
 }
 
 
-PBoolean PMail::SendNote(const PString & recipient,
+bool PMail::SendNote(const PString & recipient,
                      const PStringList & carbonCopies,
                      const PStringList & blindCarbons,
                      const PString & subject,
@@ -296,7 +296,7 @@ PBoolean PMail::SendNote(const PString & recipient,
       memset(message.lpFiles, 0, attachments.GetSize()*sizeof(MapiFileDesc));
       count = 0;
       for (i = attachments.begin(); i != attachments.end(); i++) {
-        message.lpFiles[count].nPosition = (DWORD)-1;
+        message.lpFiles[count].nPosition = (uint32_t)-1;
         message.lpFiles[count++].lpszPathName = (CMC_string)(const char *)*i;
       }
     }
@@ -314,7 +314,7 @@ PBoolean PMail::SendNote(const PString & recipient,
 }
 
 
-PStringArray PMail::GetMessageIDs(PBoolean unreadOnly)
+PStringArray PMail::GetMessageIDs(bool unreadOnly)
 {
   PStringArray msgIDs;
 
@@ -428,7 +428,7 @@ CMC_message_reference_ptr::CMC_message_reference_ptr(const PString & id)
 #endif
 
 
-PBoolean PMail::GetMessageHeader(const PString & id,
+bool PMail::GetMessageHeader(const PString & id,
                              Header & hdrInfo)
 {
 #if P_HAS_CMC
@@ -491,7 +491,7 @@ PBoolean PMail::GetMessageHeader(const PString & id,
 }
 
 
-PBoolean PMail::GetMessageBody(const PString & id, PString & body, PBoolean markAsRead)
+bool PMail::GetMessageBody(const PString & id, PString & body, bool markAsRead)
 {
   body = PString();
 
@@ -513,7 +513,7 @@ PBoolean PMail::GetMessageBody(const PString & id, PString & body, PBoolean mark
     if (message->text_note != NULL)
       body = message->text_note;
 
-    PBoolean ok = (message->message_flags&CMC_MSG_TEXT_NOTE_AS_FILE) == 0;
+    bool ok = (message->message_flags&CMC_MSG_TEXT_NOTE_AS_FILE) == 0;
     cmc.free_buf(message);
 
     return ok;
@@ -544,10 +544,10 @@ PBoolean PMail::GetMessageBody(const PString & id, PString & body, PBoolean mark
 }
 
 
-PBoolean PMail::GetMessageAttachments(const PString & id,
+bool PMail::GetMessageAttachments(const PString & id,
                                   PStringArray & filenames,
-                                  PBoolean includeBody,
-                                  PBoolean markAsRead)
+                                  bool includeBody,
+                                  bool markAsRead)
 {
   filenames.SetSize(0);
 
@@ -617,7 +617,7 @@ PBoolean PMail::GetMessageAttachments(const PString & id,
 }
 
 
-PBoolean PMail::MarkMessageRead(const PString & id)
+bool PMail::MarkMessageRead(const PString & id)
 {
 #if P_HAS_CMC
   if (cmc.IsLoaded()) {
@@ -655,7 +655,7 @@ PBoolean PMail::MarkMessageRead(const PString & id)
 }
 
 
-PBoolean PMail::DeleteMessage(const PString & id)
+bool PMail::DeleteMessage(const PString & id)
 {
 #if P_HAS_CMC
   if (cmc.IsLoaded()) {

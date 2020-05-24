@@ -3,7 +3,7 @@
  *
  * Time and date class.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -174,7 +174,7 @@ class PTime : public PObject
 
        In practice this means the time is > 13 hours to allow for time zones.
       */
-    PBoolean IsValid() const;
+    bool IsValid() const;
 
     /**Set the the objects time with the current time in the current time zone.
       */
@@ -187,14 +187,14 @@ class PTime : public PObject
        @return
        NTP format time.
      */
-    PUInt64 GetNTP() const;
+    uint64_t GetNTP() const;
 
     /**Set the Network Time Protocol value.
        The upper 32 bits are seconds since 1st January 1900 and the lower 32
        bits are 2^32'th of a second, or 0.23ns.
      */
     PTime & SetNTP(
-      PUInt64 ntp
+      uint64_t ntp
     );
 
     /**Get the total microseconds since the epoch. The epoch is the 1st
@@ -203,7 +203,7 @@ class PTime : public PObject
        @return
        microseconds.
      */
-    PInt64 GetTimestamp() const;
+    int64_t GetTimestamp() const;
 
     /**Set the time in seconds and microseconds.
       */

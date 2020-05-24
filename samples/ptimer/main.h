@@ -15,7 +15,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Indranet Technologies Ltd.
  *
@@ -71,7 +71,7 @@ class DelayThread : public PThread
   PCLASSINFO(DelayThread, PThread);
   
 public:
-  DelayThread(PINDEX _delay, PBoolean _checkTimer);
+  DelayThread(PINDEX _delay, bool _checkTimer);
     
   ~DelayThread();
 
@@ -80,7 +80,7 @@ public:
  protected:
   PINDEX delay;
 
-  PBoolean checkTimer;
+  bool checkTimer;
 
   MyTimer localPTimer;
 
@@ -148,7 +148,7 @@ public:
  protected:
   PINDEX iteration;
   PTime startTime;
-  PBoolean  keepGoing;
+  bool  keepGoing;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -166,7 +166,7 @@ class PTimerTest : public PProcess
 
     PINDEX Interval()   { return interval; }
 
-    PBoolean   CheckTimer() { return checkTimer; }
+    bool   CheckTimer() { return checkTimer; }
 
     static PTimerTest & Current()
       { return (PTimerTest &)PProcess::Current(); }
@@ -179,7 +179,7 @@ class PTimerTest : public PProcess
 
     PINDEX interval;
 
-    PBoolean   checkTimer;
+    bool   checkTimer;
 
 
     /**Code to run the second test supported by this application. */

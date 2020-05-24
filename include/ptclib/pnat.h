@@ -1,7 +1,7 @@
 /*
  * pnat.h
  *
- * NAT Strategy support for Portable Windows Library.
+ * NAT Strategy support for Portable Tools Library.
  *
  * Virteos is a Trade Mark of ISVO (Asia) Pte Ltd.
  *
@@ -195,7 +195,7 @@ class PNatMethod  : public PObject
       */
     bool GetServerAddress(
       PIPSocket::Address & address,   ///< Address of server
-      WORD & port                     ///< Port server is using.
+      uint16_t & port                     ///< Port server is using.
     ) const;
     bool GetServerAddress(
       PIPSocketAddressAndPort & externalAddressAndPort 
@@ -278,10 +278,10 @@ class PNatMethod  : public PObject
        The socket pointer is set to NULL if the function fails and returns
        false.
       */
-    virtual PBoolean CreateSocket(
+    virtual bool CreateSocket(
       PUDPSocket * & socket,
       const PIPSocket::Address & binding = PIPSocket::GetDefaultIpAny(),
-      WORD localPort = 0,
+      uint16_t localPort = 0,
       PObject * context = NULL,
       Component component = eComponent_Unknown
     );
@@ -331,10 +331,10 @@ class PNatMethod  : public PObject
     base + 99.
     */
     virtual void SetPortRanges(
-      WORD portBase,          ///< Single socket port number base
-      WORD portMax = 0,       ///< Single socket port number max
-      WORD portPairBase = 0,  ///< Socket pair port number base
-      WORD portPairMax = 0    ///< Socket pair port number max
+      uint16_t portBase,          ///< Single socket port number base
+      uint16_t portMax = 0,       ///< Single socket port number max
+      uint16_t portPairBase = 0,  ///< Socket pair port number base
+      uint16_t portPairMax = 0    ///< Socket pair port number max
     );
   //@}
 
@@ -591,10 +591,10 @@ class PNatMethods : public PSortedList<PNatMethod>
         base + 99.
       */
     void SetPortRanges(
-      WORD portBase,          ///< Single socket port number base
-      WORD portMax = 0,       ///< Single socket port number max
-      WORD portPairBase = 0,  ///< Socket pair port number base
-      WORD portPairMax = 0    ///< Socket pair port number max
+      uint16_t portBase,          ///< Single socket port number base
+      uint16_t portMax = 0,       ///< Single socket port number max
+      uint16_t portPairBase = 0,  ///< Socket pair port number base
+      uint16_t portPairMax = 0    ///< Socket pair port number max
     );
     //@}
 

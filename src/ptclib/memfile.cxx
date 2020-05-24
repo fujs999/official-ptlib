@@ -3,7 +3,7 @@
  *
  * memory file I/O channel class.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 2002 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -72,14 +72,14 @@ bool PMemoryFile::InternalOpen(OpenMode, OpenOptions, PFileInfo::Permissions)
 }
 
 
-PBoolean PMemoryFile::Close()
+bool PMemoryFile::Close()
 {
   os_handle = -1;
   return true;
 }
 
 
-PBoolean PMemoryFile::Read(void * buf, PINDEX len)
+bool PMemoryFile::Read(void * buf, PINDEX len)
 {
   if (CheckNotOpen())
     return false;
@@ -92,18 +92,18 @@ PBoolean PMemoryFile::Read(void * buf, PINDEX len)
   if ((m_position + len) > m_data.GetSize())
     len = m_data.GetSize() - m_position;
 
-  memcpy(buf, m_position + (const BYTE * )m_data, len);
+  memcpy(buf, m_position + (const uint8_t * )m_data, len);
   m_position += len;
   return SetLastReadCount(len) > 0;
 }
 
 
-PBoolean PMemoryFile::Write(const void * buf, PINDEX len)
+bool PMemoryFile::Write(const void * buf, PINDEX len)
 {
   if (CheckNotOpen())
     return false;
 
-  BYTE * ptr = m_data.GetPointer(m_position+len);
+  uint8_t * ptr = m_data.GetPointer(m_position+len);
   if (ptr == NULL)
     return SetErrorValues(DiskFull, ENOMEM);
 
@@ -120,13 +120,13 @@ off_t PMemoryFile::GetLength() const
 }
       
 
-PBoolean PMemoryFile::SetLength(off_t len)
+bool PMemoryFile::SetLength(off_t len)
 {
   return m_data.SetSize(len);
 }
 
 
-PBoolean PMemoryFile::SetPosition(off_t pos, FilePositionOrigin origin)
+bool PMemoryFile::SetPosition(off_t pos, FilePositionOrigin origin)
 {
   switch (origin) {
     case Start:

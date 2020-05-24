@@ -160,13 +160,13 @@ protected:
     PMutex m_writeMutex;
 
   private:
-    virtual PBoolean Read(void * buf, PINDEX len);
+    virtual bool Read(void * buf, PINDEX len);
     virtual int ReadChar();
-    virtual PBoolean ReadBlock(void * buf,PINDEX len);
+    virtual bool ReadBlock(void * buf,PINDEX len);
     virtual PString ReadString(PINDEX len);
-    virtual PBoolean Write(const void * buf, PINDEX len);
-    PBoolean WriteChar(int c);
-    virtual PBoolean WriteString(const PString & str);
+    virtual bool Write(const void * buf, PINDEX len);
+    bool WriteChar(int c);
+    virtual bool WriteString(const PString & str);
 };
 
 

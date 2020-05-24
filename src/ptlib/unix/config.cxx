@@ -3,7 +3,7 @@
  *
  * System/application configuration class implementation
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -421,7 +421,7 @@ void PConfig::DeleteKey(const PString & theSection, const PString & theKey)
 }
 
 
-PBoolean PConfig::HasKey(const PString & theSection, const PString & theKey) const
+bool PConfig::HasKey(const PString & theSection, const PString & theKey) const
 {
   PAssert(m_config != NULL, "config instance not set");
   PWaitAndSignal(m_config->m_mutex);

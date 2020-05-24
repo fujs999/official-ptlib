@@ -3,7 +3,7 @@
  *
  * SOAP client / server classes.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 2003 Andreas Sikkema
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Andreas Sikkema
  *
@@ -68,19 +68,19 @@ public:
   void AddParameter( PString name, PString type, PString value );
 
   //! Add a parameter using a PXMLElement
-  void AddParameter( PXMLElement* parameter, PBoolean dirty = true );
+  void AddParameter( PXMLElement* parameter, bool dirty = true );
 
   //! Get parameter "name" with type "string"
-  PBoolean GetParameter( const PString & name, PString & value );
+  bool GetParameter( const PString & name, PString & value );
 
   //! Get parameter "name" with type "int"
-  PBoolean GetParameter( const PString & name, int & value );
+  bool GetParameter( const PString & name, int & value );
 
   //! Get parameter "name"
   PXMLElement* GetParameter( const PString & name );
 
   //! Parse a string for a valid SOAP message
-  PBoolean Load(const PString & str);
+  bool Load(const PString & str);
 
   //! State of the PSOAPMessage when used as a response
   enum 
@@ -157,13 +157,13 @@ class PSOAPServerResource : public PHTTPResource
     );
 
     // overrides from PHTTPResource
-    PBoolean LoadHeaders( PHTTPRequest & request );
-    PBoolean OnPOSTData( PHTTPRequest & request, const PStringToString & data );
+    bool LoadHeaders( PHTTPRequest & request );
+    bool OnPOSTData( PHTTPRequest & request, const PStringToString & data );
 
     // new functions
-    virtual PBoolean OnSOAPRequest( const PString & body, PString & reply );
-    virtual PBoolean SetMethod( const PString & methodName, const PNotifier & func );
-    PBoolean OnSOAPRequest( const PString & methodName, PSOAPMessage & request, PString & reply );
+    virtual bool OnSOAPRequest( const PString & body, PString & reply );
+    virtual bool SetMethod( const PString & methodName, const PNotifier & func );
+    bool OnSOAPRequest( const PString & methodName, PSOAPMessage & request, PString & reply );
 
     virtual PSOAPMessage FormatFault( PINDEX code, const PString & str );
 
@@ -194,9 +194,9 @@ class PSOAPClient : public PObject
 
     void SetTimeout( const PTimeInterval & _timeout ) { timeout = _timeout; }
 
-    PBoolean MakeRequest( const PString & method, const PString & nameSpace );
-    PBoolean MakeRequest( const PString & method, const PString & nameSpace,  PSOAPMessage & response );
-    PBoolean MakeRequest( PSOAPMessage  & request, PSOAPMessage & response );
+    bool MakeRequest( const PString & method, const PString & nameSpace );
+    bool MakeRequest( const PString & method, const PString & nameSpace,  PSOAPMessage & response );
+    bool MakeRequest( PSOAPMessage  & request, PSOAPMessage & response );
 
     PString GetFaultText() const { return faultText; }
     PINDEX  GetFaultCode() const { return faultCode; }
@@ -204,7 +204,7 @@ class PSOAPClient : public PObject
     //! Set a specific SOAPAction field in the HTTTP header, default = " " 
     void setSOAPAction( PString saction ) { soapAction = saction; }
   protected:
-    PBoolean PerformRequest( PSOAPMessage & request, PSOAPMessage & response );
+    bool PerformRequest( PSOAPMessage & request, PSOAPMessage & response );
 
     PURL url;
     PINDEX  faultCode;

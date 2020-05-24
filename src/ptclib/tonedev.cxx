@@ -3,7 +3,7 @@
  *
  * Implementation of generated tones sound device
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (C) 2007 Post Increment
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is
  * Robert Jongbloed <robertj@postincrement.com>
@@ -56,8 +56,8 @@ class PSoundChannel_Tones : public PSoundChannelEmulation
 
     bool Open(const Params & params);
     virtual PString GetName() const;
-    PBoolean Close();
-    PBoolean IsOpen() const;
+    bool Close();
+    bool IsOpen() const;
 
 protected:
     virtual bool RawWrite(const void * data, PINDEX size);
@@ -140,13 +140,13 @@ bool PSoundChannel_Tones::Open(const Params & params)
 }
 
 
-PBoolean PSoundChannel_Tones::IsOpen() const
+bool PSoundChannel_Tones::IsOpen() const
 { 
   return !m_tones.IsEmpty();
 }
 
 
-PBoolean PSoundChannel_Tones::Close()
+bool PSoundChannel_Tones::Close()
 {
   if (CheckNotOpen())
     return false;

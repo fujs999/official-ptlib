@@ -54,18 +54,18 @@ class PVideoOutputDevice_SDL : public PVideoOutputDevice
   
     /**Open the device given the device name.
     */
-    virtual PBoolean Open(
+    virtual bool Open(
       const PString & /*deviceName*/,   ///< Device name to open
-      PBoolean /*startImmediate*/ = true    ///< Immediately start device
+      bool /*startImmediate*/ = true    ///< Immediately start device
     );
   
     /**Synonymous with the destructor.
     */
-    virtual PBoolean Close();
+    virtual bool Close();
   
     /**Global test function to determine if this video rendering
     class is open.*/
-    virtual PBoolean IsOpen();
+    virtual bool IsOpen();
   
     /**Set the colour format to be used.
        Note that this function does not do any conversion. If it returns true
@@ -77,7 +77,7 @@ class PVideoOutputDevice_SDL : public PVideoOutputDevice
        Default behaviour sets the value of the colourFormat variable and then
        returns true.
     */
-    virtual PBoolean SetColourFormat(
+    virtual bool SetColourFormat(
       const PString & colourFormat ///< New colour format for device.
     );
 
@@ -89,14 +89,14 @@ class PVideoOutputDevice_SDL : public PVideoOutputDevice
        Default behaviour sets the frameWidth and frameHeight variables and
        returns true.
     */
-    virtual PBoolean SetFrameSize(
+    virtual bool SetFrameSize(
       unsigned width,   ///< New width of frame
       unsigned height   ///< New height of frame
     );
 
     /**Set a section of the output frame buffer.
       */
-    virtual PBoolean SetFrameData(const FrameData & frameData);
+    virtual bool SetFrameData(const FrameData & frameData);
 
 #ifdef P_MACOSX
     virtual bool ApplicationMain();

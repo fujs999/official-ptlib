@@ -3,7 +3,7 @@
  *
  * XML parser support
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 2002 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -85,7 +85,7 @@ class PXMLBase : public PObject
     void SetMaxEntityLength(unsigned len) { m_maxEntityLength = len; }
     unsigned GetMaxEntityLength() const { return m_maxEntityLength; }
 
-    virtual PBoolean IsNoIndentElement(const PString & /*elementName*/) const
+    virtual bool IsNoIndentElement(const PString & /*elementName*/) const
       { return false; }
 
     virtual bool OutputProgress() const { return true; }
@@ -137,7 +137,7 @@ class PXML : public PXMLBase
 
     void RemoveAll();
 
-    virtual PBoolean IsNoIndentElement(
+    virtual bool IsNoIndentElement(
       const PString & elementName
     ) const;
 
@@ -269,7 +269,7 @@ class PXML_HTTP : public PXML
     bool StopAutoReloadURL();
     PString GetAutoReloadStatus() const;
     bool AutoLoadURL();
-    virtual void OnAutoLoad(PBoolean ok);
+    virtual void OnAutoLoad(bool ok);
 
     bool LoadURL(const PURL & url);
     bool LoadURL(const PURL & url, const PTimeInterval & timeout, Options options = NoOptions);
@@ -330,7 +330,7 @@ class PXMLObject : public PObject
 
     virtual void Output(ostream & strm, const PXMLBase & xml, int indent) const = 0;
 
-    virtual PBoolean IsElement() const = 0;
+    virtual bool IsElement() const = 0;
 
     void SetDirty();
     bool IsDirty() const { return m_dirty; }
@@ -373,7 +373,7 @@ class PXMLData : public PXMLObject
     PXMLData(const PString & data);
     PXMLData(const char * data, int len);
 
-    PBoolean IsElement() const    { return false; }
+    bool IsElement() const    { return false; }
 
     void SetString(const PString & str, bool dirty = true);
 
@@ -404,7 +404,7 @@ class PXMLElement : public PXMLObject
 
     virtual PINDEX GetObjectCount() const;
 
-    PBoolean IsElement() const { return true; }
+    bool IsElement() const { return true; }
 
     void PrintOn(ostream & strm) const;
     void Output(ostream & strm, const PXMLBase & xml, int indent) const;

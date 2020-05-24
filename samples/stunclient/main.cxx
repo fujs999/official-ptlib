@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -76,10 +76,10 @@ void StunClient::Main()
   nat->SetCredentials(args.GetOptionString("username", "toto"),
                       args.GetOptionString("password", "password"),
                       args.GetOptionString("realm", "opalvoip.org"));
-  nat->SetPortRanges((WORD)args.GetOptionString("portbase").AsUnsigned(),
-                     (WORD)args.GetOptionString("portmax").AsUnsigned(),
-                     (WORD)args.GetOptionString("pairbase").AsUnsigned(),
-                     (WORD)args.GetOptionString("pairmax").AsUnsigned());
+  nat->SetPortRanges((uint16_t)args.GetOptionString("portbase").AsUnsigned(),
+                     (uint16_t)args.GetOptionString("portmax").AsUnsigned(),
+                     (uint16_t)args.GetOptionString("pairbase").AsUnsigned(),
+                     (uint16_t)args.GetOptionString("pairmax").AsUnsigned());
 
   if (!nat->SetServer(args[0])) {
     cerr << "Cannot set server \"" << args[0] << "\" for " << methodName << endl;
@@ -107,7 +107,7 @@ void StunClient::Main()
   }
 
   PIPSocket::Address addr;
-  WORD port;
+  uint16_t port;
   udp->GetLocalAddress(addr, port);
   cout << "Socket local address reported as " << addr << ":" << port << endl;
 

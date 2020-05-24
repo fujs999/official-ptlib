@@ -71,9 +71,9 @@ PINDEX PSNMP_Message::GetDataLength() const
 }
 
 
-PBoolean PSNMP_Message::Decode(PASN_Stream & strm)
+bool PSNMP_Message::Decode(PASN_Stream & strm)
 {
-  PBoolean rslt = true;
+  bool rslt = true;
   PBER_Stream stm = strm;
 
   if (!PreambleDecodeBER(stm))
@@ -248,7 +248,7 @@ PSNMP_PDUs::operator const PSNMP_Trap_PDU &() const
 }
 
 
-PBoolean PSNMP_PDUs::CreateObject()
+bool PSNMP_PDUs::CreateObject()
 {
   switch (m_tag) {
     case e_get_request :
@@ -281,7 +281,7 @@ PObject * PSNMP_PDUs::Clone() const
   return new PSNMP_PDUs(*this);
 }
 
-PBoolean PSNMP_PDUs::Decode(PASN_Stream & strm)
+bool PSNMP_PDUs::Decode(PASN_Stream & strm)
 {
   if (choice != NULL)
 	return choice->Decode(strm);
@@ -346,7 +346,7 @@ PINDEX PSNMP_VarBind::GetDataLength() const
 }
 
 
-PBoolean PSNMP_VarBind::Decode(PASN_Stream & strm)
+bool PSNMP_VarBind::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
     return false;
@@ -468,7 +468,7 @@ PINDEX PSNMP_PDU::GetDataLength() const
 }
 
 
-PBoolean PSNMP_PDU::Decode(PASN_Stream & strm)
+bool PSNMP_PDU::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
     return false;
@@ -573,7 +573,7 @@ PINDEX PSNMP_Trap_PDU::GetDataLength() const
 }
 
 
-PBoolean PSNMP_Trap_PDU::Decode(PASN_Stream & strm)
+bool PSNMP_Trap_PDU::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
     return false;

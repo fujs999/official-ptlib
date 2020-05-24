@@ -3,7 +3,7 @@
  *
  * Asynchronous Serial I/O channel class.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-2002 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -43,8 +43,8 @@ PModem::PModem()
 }
 
 
-PModem::PModem(const PString & port, DWORD speed, BYTE data,
-      Parity parity, BYTE stop, FlowControl inputFlow, FlowControl outputFlow)
+PModem::PModem(const PString & port, uint32_t speed, uint8_t data,
+      Parity parity, uint8_t stop, FlowControl inputFlow, FlowControl outputFlow)
   : PSerialChannel(port, speed, data, parity, stop, inputFlow, outputFlow)
 {
   status = IsOpen() ? Uninitialised : Unopened;
@@ -145,15 +145,15 @@ PModem::Status PModem::GetStatus() const
 }
 
 
-PBoolean PModem::Close()
+bool PModem::Close()
 {
   status = Unopened;
   return PSerialChannel::Close();
 }
 
 
-PBoolean PModem::Open(const PString & port, DWORD speed, BYTE data,
-      Parity parity, BYTE stop, FlowControl inputFlow, FlowControl outputFlow)
+bool PModem::Open(const PString & port, uint32_t speed, uint8_t data,
+      Parity parity, uint8_t stop, FlowControl inputFlow, FlowControl outputFlow)
 {
   if (!PSerialChannel::Open(port,
                             speed, data, parity, stop, inputFlow, outputFlow))
@@ -175,7 +175,7 @@ static const char ModemNoCarrier[] = "ModemNoCarrier";
 static const char ModemConnect[] = "ModemConnect";
 static const char ModemHangUp[] = "ModemHangUp";
 
-PBoolean PModem::Open(PConfig & cfg)
+bool PModem::Open(PConfig & cfg)
 {
   initCmd = cfg.GetString(ModemInit, "ATZ\\r\\w2sOK\\w100m");
   deinitCmd = cfg.GetString(ModemDeinit, "\\d2s+++\\d2sATH0\\r");
@@ -209,7 +209,7 @@ void PModem::SaveSettings(PConfig & cfg)
 #endif // P_CONFIG_FILE
 
 
-PBoolean PModem::CanInitialise() const
+bool PModem::CanInitialise() const
 {
   switch (status) {
     case Unopened :
@@ -227,7 +227,7 @@ PBoolean PModem::CanInitialise() const
 }
 
 
-PBoolean PModem::Initialise()
+bool PModem::Initialise()
 {
   if (CanInitialise()) {
     status = Initialising;
@@ -241,7 +241,7 @@ PBoolean PModem::Initialise()
 }
 
 
-PBoolean PModem::CanDeinitialise() const
+bool PModem::CanDeinitialise() const
 {
   switch (status) {
     case Unopened :
@@ -260,7 +260,7 @@ PBoolean PModem::CanDeinitialise() const
 }
 
 
-PBoolean PModem::Deinitialise()
+bool PModem::Deinitialise()
 {
   if (CanDeinitialise()) {
     status = Deinitialising;
@@ -274,7 +274,7 @@ PBoolean PModem::Deinitialise()
 }
 
 
-PBoolean PModem::CanDial() const
+bool PModem::CanDial() const
 {
   switch (status) {
     case Unopened :
@@ -296,7 +296,7 @@ PBoolean PModem::CanDial() const
 }
 
 
-PBoolean PModem::Dial(const PString & number)
+bool PModem::Dial(const PString & number)
 {
   if (!CanDial())
     return false;
@@ -338,7 +338,7 @@ PBoolean PModem::Dial(const PString & number)
 }
 
 
-PBoolean PModem::CanHangUp() const
+bool PModem::CanHangUp() const
 {
   switch (status) {
     case Unopened :
@@ -358,7 +358,7 @@ PBoolean PModem::CanHangUp() const
 }
 
 
-PBoolean PModem::HangUp()
+bool PModem::HangUp()
 {
   if (CanHangUp()) {
     status = HangingUp;
@@ -372,7 +372,7 @@ PBoolean PModem::HangUp()
 }
 
 
-PBoolean PModem::CanSendUser() const
+bool PModem::CanSendUser() const
 {
   switch (status) {
     case Unopened :
@@ -392,7 +392,7 @@ PBoolean PModem::CanSendUser() const
 }
 
 
-PBoolean PModem::SendUser(const PString & str)
+bool PModem::SendUser(const PString & str)
 {
   if (CanSendUser()) {
     Status oldStatus = status;
@@ -429,7 +429,7 @@ void PModem::Abort()
 }
 
 
-PBoolean PModem::CanRead() const
+bool PModem::CanRead() const
 {
   switch (status) {
     case Unopened :

@@ -3,7 +3,7 @@
  *
  * Secure Sockets Layer channel interface class.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-2002 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -91,7 +91,7 @@ class PSSLPrivateKey : public PObject
     /**Create private key from the binary ASN1 DER encoded data specified.
       */
     PSSLPrivateKey(
-      const BYTE * keyData,   ///< Private key data
+      const uint8_t * keyData,   ///< Private key data
       PINDEX keySize          ///< Size of private key data
     );
 
@@ -134,7 +134,7 @@ class PSSLPrivateKey : public PObject
 
     /**Create a new private key.
      */
-    PBoolean Create(
+    bool Create(
       unsigned modulus,   ///< Number of bits
       void (*callback)(int,int,void *) = NULL,  ///< Progress callback function
       void *cb_arg = NULL                       ///< Argument passed to callback
@@ -169,7 +169,7 @@ class PSSLPrivateKey : public PObject
        PSSLFileTypeDEFAULT it will be determined from the file extension,
        ".pem" is a text file, anything else eg ".der" is a binary ASN1 file.
       */
-    PBoolean Load(
+    bool Load(
       const PFilePath & keyFile,  ///< Private key file
       PSSLFileTypes fileType = PSSLFileTypeDEFAULT,  ///< Type of file to read
       const PSSLPasswordNotifier & notifier = PSSLPasswordNotifier()  ///< Call back for asking of password
@@ -180,9 +180,9 @@ class PSSLPrivateKey : public PObject
        PSSLFileTypeDEFAULT it will be determined from the file extension,
        ".pem" is a text file, anything else eg ".der" is a binary ASN1 file.
       */
-    PBoolean Save(
+    bool Save(
       const PFilePath & keyFile,  ///< Private key file
-      PBoolean append = false,        ///< Append to file
+      bool append = false,        ///< Append to file
       PSSLFileTypes fileType = PSSLFileTypeDEFAULT  ///< Type of file to write
     );
 
@@ -218,7 +218,7 @@ class PSSLCertificate : public PObject
     /**Create certificate from the binary ASN1 DER encoded data specified.
       */
     PSSLCertificate(
-      const BYTE * certData,  ///< Certificate data
+      const uint8_t * certData,  ///< Certificate data
       PINDEX certSize        ///< Size of certificate data
     );
 
@@ -310,7 +310,7 @@ class PSSLCertificate : public PObject
        PSSLFileTypeDEFAULT it will be determined from the file extension,
        ".pem" is a text file, anything else eg ".der" is a binary ASN1 file.
       */
-    PBoolean Load(
+    bool Load(
       const PFilePath & certFile, ///< Certificate file
       PSSLFileTypes fileType = PSSLFileTypeDEFAULT  ///< Type of file to read
     );
@@ -320,9 +320,9 @@ class PSSLCertificate : public PObject
        PSSLFileTypeDEFAULT it will be determined from the file extension,
        ".pem" is a text file, anything else eg ".der" is a binary ASN1 file.
       */
-    PBoolean Save(
+    bool Save(
       const PFilePath & keyFile,  ///< Certificate key file
-      PBoolean append = false,        ///< Append to file
+      bool append = false,        ///< Append to file
       PSSLFileTypes fileType = PSSLFileTypeDEFAULT  ///< Type of file to write
     );
 
@@ -465,9 +465,9 @@ class PSSLDiffieHellman : public PObject
       */
     PSSLDiffieHellman(
       PINDEX numBits,            ///< Number of bits
-      const BYTE * pData,        ///< Modulus data (numBits/8 bytes)
-      const BYTE * gData,        ///< Generator data (numBits/8 bytes)
-      const BYTE * pubKey = NULL ///< Public key data (numBits/8 bytes)
+      const uint8_t * pData,        ///< Modulus data (numBits/8 bytes)
+      const uint8_t * gData,        ///< Generator data (numBits/8 bytes)
+      const uint8_t * pubKey = NULL ///< Public key data (numBits/8 bytes)
     );
 
     /**Create a set of Diffie-Hellman parameters.
@@ -508,7 +508,7 @@ class PSSLDiffieHellman : public PObject
        PSSLFileTypeDEFAULT it will be determined from the file extension,
        ".pem" is a text file, anything else eg ".der" is a binary ASN1 file.
       */
-    PBoolean Load(
+    bool Load(
       const PFilePath & dhFile, ///< Diffie-Hellman parameters file
       PSSLFileTypes fileType = PSSLFileTypeDEFAULT  ///< Type of file to read
     );
@@ -538,9 +538,9 @@ class PSSLDiffieHellman : public PObject
     const PBYTEArray & GetSessionKey() const { return m_sessionKey; }
 
   protected:
-    bool Construct(const BYTE * pData, PINDEX pSize,
-                   const BYTE * gData, PINDEX gSize,
-                   const BYTE * kData, PINDEX kSize);
+    bool Construct(const uint8_t * pData, PINDEX pSize,
+                   const uint8_t * gData, PINDEX gSize,
+                   const uint8_t * kData, PINDEX kSize);
 
     dh_st    * m_dh;
     PBYTEArray m_sessionKey;
@@ -601,12 +601,12 @@ class PSSLCipherContext : public PObject
     /** Set encryption/decryption key.
       */
     bool SetKey(const PBYTEArray & key) { return SetKey(key, key.GetSize()); }
-    bool SetKey(const BYTE * keyPtr, PINDEX keyLen);
+    bool SetKey(const uint8_t * keyPtr, PINDEX keyLen);
 
     /** Set encryption/decryption initial vector.
       */
     bool SetIV(const PBYTEArray & iv) { return SetIV(iv, iv.GetSize()); }
-    bool SetIV(const BYTE * ivPtr, PINDEX ivLen);
+    bool SetIV(const uint8_t * ivPtr, PINDEX ivLen);
 
     enum PadMode {
       NoPadding,
@@ -634,9 +634,9 @@ class PSSLCipherContext : public PObject
       PBYTEArray & out        ///< Encrypted data
     );
     bool Process(
-      const BYTE * inPtr,     ///< Data to be encrypted
+      const uint8_t * inPtr,     ///< Data to be encrypted
       PINDEX inLen,           ///< Length of data to be encrypted
-      BYTE * outPtr,          ///< Encrypted data
+      uint8_t * outPtr,          ///< Encrypted data
       PINDEX & outLen,        ///< Max output space on input, then actual output data size
       bool partial = false    ///< Partial data, more to come
     );
@@ -695,7 +695,7 @@ class PSHA1Context : public PObject
     void Update(const void * data, PINDEX length);
     void Update(const PString & str) { Update((const char *)str, str.GetLength()); }
 
-    typedef BYTE Digest[20];
+    typedef uint8_t Digest[20];
     void Finalise(Digest result);
 
     static void Process(const void * data, PINDEX length, Digest result);
@@ -883,7 +883,7 @@ class PSSLChannel : public PIndirectChannel
       */
     PSSLChannel(
       PSSLContext * context = NULL,   ///< Context for SSL channel
-      PBoolean autoDeleteContext = false  ///< Flag for context to be automatically deleted.
+      bool autoDeleteContext = false  ///< Flag for context to be automatically deleted.
     );
     PSSLChannel(
       PSSLContext & context           ///< Context for SSL channel
@@ -894,31 +894,31 @@ class PSSLChannel : public PIndirectChannel
     ~PSSLChannel();
 
     // Overrides from PChannel
-    virtual PBoolean Read(void * buf, PINDEX len);
-    virtual PBoolean Write(const void * buf, PINDEX len);
-    virtual PBoolean Close();
-    virtual PBoolean Shutdown(ShutdownValue);
+    virtual bool Read(void * buf, PINDEX len);
+    virtual bool Write(const void * buf, PINDEX len);
+    virtual bool Close();
+    virtual bool Shutdown(ShutdownValue);
     virtual PString GetErrorText(ErrorGroup group = NumErrorGroups) const;
-    virtual PBoolean ConvertOSError(P_INT_PTR libcReturnValue, ErrorGroup group = LastGeneralError);
+    virtual bool ConvertOSError(P_INT_PTR libcReturnValue, ErrorGroup group = LastGeneralError);
 
     // New functions
     /**Accept a new inbound connection (server).
        This version expects that the indirect channel has already been opened
        using Open() beforehand.
       */
-    PBoolean Accept();
+    bool Accept();
 
     /**Accept a new inbound connection (server).
       */
-    PBoolean Accept(
+    bool Accept(
       PChannel & channel  ///< Channel to attach to.
     );
 
     /**Accept a new inbound connection (server).
       */
-    PBoolean Accept(
+    bool Accept(
       PChannel * channel,     ///< Channel to attach to.
-      PBoolean autoDelete = true  ///< Flag for if channel should be automatically deleted.
+      bool autoDelete = true  ///< Flag for if channel should be automatically deleted.
     );
 
 
@@ -926,19 +926,19 @@ class PSSLChannel : public PIndirectChannel
        This version expects that the indirect channel has already been opened
        using Open() beforehand.
       */
-    PBoolean Connect();
+    bool Connect();
 
     /**Connect to remote server.
       */
-    PBoolean Connect(
+    bool Connect(
       PChannel & channel  ///< Channel to attach to.
     );
 
     /**Connect to remote server.
       */
-    PBoolean Connect(
+    bool Connect(
       PChannel * channel,     ///< Channel to attach to.
-      PBoolean autoDelete = true  ///< Flag for if channel should be automatically deleted.
+      bool autoDelete = true  ///< Flag for if channel should be automatically deleted.
     );
 
     /**Set the CA certificate(s) to send to client from server.
@@ -952,13 +952,13 @@ class PSSLChannel : public PIndirectChannel
 
     /**Use the certificate specified.
       */
-    PBoolean UseCertificate(
+    bool UseCertificate(
       const PSSLCertificate & certificate
     );
 
     /**Use the private key file specified.
       */
-    PBoolean UsePrivateKey(
+    bool UsePrivateKey(
       const PSSLPrivateKey & key
     );
 
@@ -1026,7 +1026,7 @@ class PSSLChannel : public PIndirectChannel
 
 
   protected:
-    void Construct(PSSLContext * ctx, PBoolean autoDel);
+    void Construct(PSSLContext * ctx, bool autoDel);
     virtual bool InternalAccept();
     virtual bool InternalConnect();
 
@@ -1049,7 +1049,7 @@ class PSSLChannel : public PIndirectChannel
     VerifyNotifier m_verifyNotifier;
     PDECLARE_MUTEX(m_writeMutex);
 
-    P_REMOVE_VIRTUAL(PBoolean,RawSSLRead(void *, PINDEX &),false);
+    P_REMOVE_VIRTUAL(bool,RawSSLRead(void *, PINDEX &),false);
     P_REMOVE_VIRTUAL(bool,OnVerify(bool,const PSSLCertificate&),false);
 };
 
@@ -1076,8 +1076,8 @@ class PSSLChannelDTLS : public PSSLChannel
     ~PSSLChannelDTLS();
 
     // Overrides from PChannel
-    virtual PBoolean Read(void * buf, PINDEX len);
-    virtual PBoolean Write(const void * buf, PINDEX len);
+    virtual bool Read(void * buf, PINDEX len);
+    virtual bool Write(const void * buf, PINDEX len);
 
     /** Set the MTU for DTLS handshake.
         Note, should be done before calling ExecuteHandshake().

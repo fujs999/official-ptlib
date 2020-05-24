@@ -3,7 +3,7 @@
  *
  * Class for secure service applications using HTTPS as the user interface.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-2001 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -82,7 +82,7 @@ class PSecureHTTPServiceProcess : public PHTTPServiceProcess
       const PString & ca      ///< Certificate authority file, directory or text string
     );
 
-    virtual PBoolean OnDetectedNonSSLConnection(PChannel * chan, const PString & line);
+    virtual bool OnDetectedNonSSLConnection(PChannel * chan, const PString & line);
 
     virtual PString CreateNonSSLMessage(const PString & url);
     virtual PString CreateRedirectMessage(const PString & url);

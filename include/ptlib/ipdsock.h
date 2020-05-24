@@ -3,7 +3,7 @@
  *
  * IP Datagram socket I/O channel class.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -54,25 +54,25 @@ class PIPDatagramSocket : public PIPSocket
        
        @return true if any bytes were sucessfully read.
      */
-    virtual PBoolean ReadFrom(
+    virtual bool ReadFrom(
       void * buf,     ///< Data to be written as URGENT TCP data.
       PINDEX len,     ///< Number of bytes pointed to by <code>buf</code>.
       Address & addr, ///< Address from which the datagram was received.
-      WORD & port     ///< Port from which the datagram was received.
+      uint16_t & port     ///< Port from which the datagram was received.
     );
-    virtual PBoolean ReadFrom(
+    virtual bool ReadFrom(
       void * buf,     ///< Data to be written as URGENT TCP data.
       PINDEX len,     ///< Number of bytes pointed to by <code>buf</code>.
       PIPSocketAddressAndPort & ipAndPort
     );
 
-    virtual PBoolean ReadFrom(
+    virtual bool ReadFrom(
       Slice * slices,         ///< Data to be written as URGENT TCP data.
       size_t sliceCount,
       Address & addr,         ///< Address from which the datagram was received.
-      WORD & port             ///< Port from which the datagram was received.
+      uint16_t & port             ///< Port from which the datagram was received.
     );
-    virtual PBoolean ReadFrom(
+    virtual bool ReadFrom(
       Slice * slices,         ///< Data to be written as URGENT TCP data.
       size_t sliceCount,
       PIPSocketAddressAndPort & ipAndPort
@@ -82,25 +82,25 @@ class PIPDatagramSocket : public PIPSocket
 
        @return true if all the bytes were sucessfully written.
      */
-    virtual PBoolean WriteTo(
+    virtual bool WriteTo(
       const void * buf,     ///< Data to be written as URGENT TCP data.
       PINDEX len,           ///< Number of bytes pointed to by <code>buf</code>.
       const Address & addr, ///< Address to which the datagram is sent.
-      WORD port             ///< Port to which the datagram is sent.
+      uint16_t port             ///< Port to which the datagram is sent.
     );
-    virtual PBoolean WriteTo(
+    virtual bool WriteTo(
       const void * buf,     ///< Data to be written as URGENT TCP data.
       PINDEX len,           ///< Number of bytes pointed to by <code>buf</code>.
       const PIPSocketAddressAndPort & ipAndPort
     );
 
-    virtual PBoolean WriteTo(
+    virtual bool WriteTo(
       const Slice * slices,         ///< Data to be written as URGENT TCP data.
       size_t sliceCount,
       const Address & addr,         ///< Address to which the datagram is sent.
-      WORD port                     ///< Port to which the datagram is sent.
+      uint16_t port                     ///< Port to which the datagram is sent.
     );
-    virtual PBoolean WriteTo(
+    virtual bool WriteTo(
       const Slice * slices,         ///< Data to be written as URGENT TCP data.
       size_t sliceCount,
       const PIPSocketAddressAndPort & ipAndPort

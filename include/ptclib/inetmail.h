@@ -4,7 +4,7 @@
  * Internet Mail channel classes
  * Simple Mail Transport Protocol & Post Office Protocol v3
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-2002 Equivalence Pty. Ltd.
  *
@@ -18,7 +18,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -89,7 +89,7 @@ class PSMTP : public PInternetProtocol
       }
 
       PString     m_hostname;    ///< SMTP server host name
-      WORD        m_port;        ///< SMTP port, zero is default for protocol
+      uint16_t        m_port;        ///< SMTP port, zero is default for protocol
       PString     m_username;    ///< Username of credentials required
       PString     m_password;    ///< Password if credentials required
       PString     m_from;        ///< Mail address of sender.
@@ -156,7 +156,7 @@ class PSMTPClient : public PSMTP
        @return
        true if the channel was closed and the QUIT accepted by the server.
      */
-    virtual PBoolean Close();
+    virtual bool Close();
 
 
   // New functions for class.
@@ -183,7 +183,7 @@ class PSMTPClient : public PSMTP
     bool BeginMessage(
       const PString & from,        ///< User name of sender.
       const PString & to,          ///< User name of recipient.
-      PBoolean eightBitMIME = false    ///< Mesage will be 8 bit MIME.
+      bool eightBitMIME = false    ///< Mesage will be 8 bit MIME.
     );
     bool BeginMessage(
       const PString & from,        ///< User name of sender.
@@ -196,11 +196,11 @@ class PSMTPClient : public PSMTP
        @return
        true if message was accepted by remote server, false if an error occurs.
      */
-    PBoolean EndMessage();
+    bool EndMessage();
 
 
   protected:
-    PBoolean OnOpen();
+    bool OnOpen();
 
     bool            m_haveHello;
     PStringToString m_extensions;
@@ -263,7 +263,7 @@ class PSMTPServer : public PSMTP
        true if more processing may be done, false if the QUIT command was
        received or the <A>OnUnknown()</A> function returns false.
      */
-    PBoolean ProcessCommand();
+    bool ProcessCommand();
 
     void ServerReset();
     // Reset the state of the SMTP server socket.
@@ -315,16 +315,16 @@ class PSMTPServer : public PSMTP
        @return
        true if message was handled, false if an error occurs.
      */
-    virtual PBoolean HandleMessage(
+    virtual bool HandleMessage(
       PCharArray & buffer,  ///< Buffer containing message data received.
-      PBoolean starting,        ///< This is the first call for the message.
-      PBoolean completed        ///< This is the last call for the message.
+      bool starting,        ///< This is the first call for the message.
+      bool completed        ///< This is the last call for the message.
       ///< Indication that the entire message has been received.
     );
 
 
   protected:
-    PBoolean OnOpen();
+    bool OnOpen();
 
     virtual void OnHELO(
       const PCaselessString & remoteHost  ///< Name of remote host.
@@ -395,7 +395,7 @@ class PSMTPServer : public PSMTP
        true if more processing may be done, false if the
        <A>ProcessCommand()</A> function is to return false.
      */
-    virtual PBoolean OnUnknown(
+    virtual bool OnUnknown(
       const PCaselessString & command  ///< Complete command line received.
     );
 
@@ -415,7 +415,7 @@ class PSMTPServer : public PSMTP
        true if partial message received, false if the end of the data was
        received.
      */
-    virtual PBoolean OnTextData(PCharArray & buffer, PBoolean & completed);
+    virtual bool OnTextData(PCharArray & buffer, bool & completed);
 
     /** Read an eight bit MIME message that is being received by the socket. The
        MIME message is terminated by the CR/LF/./CR/LF sequence.
@@ -428,12 +428,12 @@ class PSMTPServer : public PSMTP
        true if partial message received, false if the end of the data was
        received.
      */
-    virtual PBoolean OnMIMEData(PCharArray & buffer, PBoolean & completed);
+    virtual bool OnMIMEData(PCharArray & buffer, bool & completed);
 
 
   // Member variables
-    PBoolean        extendedHello;
-    PBoolean        eightBitMIME;
+    bool        extendedHello;
+    bool        eightBitMIME;
     PString     fromAddress;
     PString     fromPath;
     PStringList toNames;
@@ -572,7 +572,7 @@ class PPOP3Client : public PPOP3
        @return
        true if the channel was closed and the QUIT accepted by the server.
      */
-    virtual PBoolean Close();
+    virtual bool Close();
 
 
   // New functions for class.
@@ -590,7 +590,7 @@ class PPOP3Client : public PPOP3
        @return
        true if logged in.
      */
-    PBoolean LogIn(
+    bool LogIn(
       const PString & username,       ///< User name on remote system.
       const PString & password,       ///< Password for user name.
       int options = AllowUserPass     ///< See LoginOptions above
@@ -631,7 +631,7 @@ class PPOP3Client : public PPOP3
        @return
        Array of strings continaing message headers.
      */
-    PBoolean BeginMessage(
+    bool BeginMessage(
       PINDEX messageNumber
         /** Number of message to retrieve. This is an integer from 1 to the
            maximum number of messages available.
@@ -643,7 +643,7 @@ class PPOP3Client : public PPOP3
        @return
        Array of strings continaing message headers.
      */
-    PBoolean DeleteMessage(
+    bool DeleteMessage(
       PINDEX messageNumber
         /* Number of message to retrieve. This is an integer from 1 to the
            maximum number of messages available.
@@ -652,10 +652,10 @@ class PPOP3Client : public PPOP3
 
 
   protected:
-    PBoolean OnOpen();
+    bool OnOpen();
 
   // Member variables
-    PBoolean loggedIn;
+    bool loggedIn;
     PString apopBanner;
 };
 
@@ -694,7 +694,7 @@ class PPOP3Server : public PPOP3
        true if more processing may be done, false if the QUIT command was
        received or the <A>OnUnknown()</A> function returns false.
      */
-    PBoolean ProcessCommand();
+    bool ProcessCommand();
 
     /** Log the specified user into the mail system and return sizes of each
        message in mail box.
@@ -705,7 +705,7 @@ class PPOP3Server : public PPOP3
        @return
        true if user and password were valid.
      */
-    virtual PBoolean HandleOpenMailbox(
+    virtual bool HandleOpenMailbox(
       const PString & username,  ///< User name for mail box
       const PString & password   ///< Password for user name
     );
@@ -737,7 +737,7 @@ class PPOP3Server : public PPOP3
     
 
   protected:
-    PBoolean OnOpen();
+    bool OnOpen();
 
     virtual void OnUSER(
       const PString & name  ///< Name of user.
@@ -797,7 +797,7 @@ class PPOP3Server : public PPOP3
        true if more processing may be done, false if the
        <A>ProcessCommand()</A> function is to return false.
      */
-    virtual PBoolean OnUnknown(
+    virtual bool OnUnknown(
       const PCaselessString & command  ///< Complete command line received.
     );
 
@@ -859,7 +859,7 @@ class PRFC822Channel : public PIndirectChannel
        This assures that all mime fields etc are closed off before closing
        the underliying channel.
       */
-    PBoolean Close();
+    bool Close();
 
     /** Low level write to the channel.
 
@@ -869,7 +869,7 @@ class PRFC822Channel : public PIndirectChannel
        @return
        true if at least len bytes were written to the channel.
      */
-    virtual PBoolean Write(
+    virtual bool Write(
       const void * buf, ///< Pointer to a block of memory to write.
       PINDEX len        ///< Number of bytes to write.
     );
@@ -903,7 +903,7 @@ class PRFC822Channel : public PIndirectChannel
        Note this must be called before any writes are done to the message or
        part.
       */
-    PBoolean MultipartMessage(
+    bool MultipartMessage(
       const PString & boundary
     );
 
@@ -990,7 +990,7 @@ class PRFC822Channel : public PIndirectChannel
       */
     void SetTransferEncoding(
       const PString & encoding,   ///< Encoding type
-      PBoolean autoTranslate = true   ///< Automatically convert to encoding type
+      bool autoTranslate = true   ///< Automatically convert to encoding type
     );
 
 
@@ -1020,7 +1020,7 @@ class PRFC822Channel : public PIndirectChannel
 
 
   protected:
-    PBoolean OnOpen();
+    bool OnOpen();
 
     bool        writeHeaders;
     PMIMEInfo   headers;

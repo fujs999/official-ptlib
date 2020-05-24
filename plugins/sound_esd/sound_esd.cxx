@@ -3,7 +3,7 @@
  *
  * Sound driver implementation to use ESound.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 2001 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is
  * Shawn Pai-Hsiang Hsiao <shawn@eecs.harvard.edu>
@@ -127,7 +127,7 @@ bool PSoundChannelESD::Open(const Params & params)
   return SetFormat(params.m_channels, params.m_sampleRate, params.m_bitsPerSample);
 }
 
-PBoolean PSoundChannelESD::SetVolume(unsigned newVal)
+bool PSoundChannelESD::SetVolume(unsigned newVal)
 {
   if (os_handle <= 0)  //Cannot set volume in loop back mode.
     return false;
@@ -135,7 +135,7 @@ PBoolean PSoundChannelESD::SetVolume(unsigned newVal)
   return false;
 }
 
-PBoolean  PSoundChannelESD::GetVolume(unsigned &devVol)
+bool  PSoundChannelESD::GetVolume(unsigned &devVol)
 {
   if (os_handle <= 0)  //Cannot get volume in loop back mode.
     return false;
@@ -146,7 +146,7 @@ PBoolean  PSoundChannelESD::GetVolume(unsigned &devVol)
   
 
 
-PBoolean PSoundChannelESD::Close()
+bool PSoundChannelESD::Close()
 {
   /* I think there is a bug here. We should be testing for loopback mode
    * and NOT calling PChannel::Close() when we are in loopback mode.
@@ -157,7 +157,7 @@ PBoolean PSoundChannelESD::Close()
 }
 
 
-PBoolean PSoundChannelESD::SetFormat(unsigned numChannels,
+bool PSoundChannelESD::SetFormat(unsigned numChannels,
                               unsigned sampleRate,
                               unsigned bitsPerSample)
 {
@@ -168,7 +168,7 @@ PBoolean PSoundChannelESD::SetFormat(unsigned numChannels,
 }
 
 
-PBoolean PSoundChannelESD::SetBuffers(PINDEX size, PINDEX count)
+bool PSoundChannelESD::SetBuffers(PINDEX size, PINDEX count)
 {
   Abort();
 
@@ -178,13 +178,13 @@ PBoolean PSoundChannelESD::SetBuffers(PINDEX size, PINDEX count)
 }
 
 
-PBoolean PSoundChannelESD::GetBuffers(PINDEX & size, PINDEX & count)
+bool PSoundChannelESD::GetBuffers(PINDEX & size, PINDEX & count)
 {
   return true;
 }
 
 
-PBoolean PSoundChannelESD::Write(const void * buf, PINDEX len)
+bool PSoundChannelESD::Write(const void * buf, PINDEX len)
 {
   int rval;
 
@@ -206,19 +206,19 @@ PBoolean PSoundChannelESD::Write(const void * buf, PINDEX len)
 }
 
 
-PBoolean PSoundChannelESD::HasPlayCompleted()
+bool PSoundChannelESD::HasPlayCompleted()
 {
   return false;
 }
 
 
-PBoolean PSoundChannelESD::WaitForPlayCompletion()
+bool PSoundChannelESD::WaitForPlayCompletion()
 {
   return true;
 }
 
 
-PBoolean PSoundChannelESD::Read(void * buf, PINDEX len)
+bool PSoundChannelESD::Read(void * buf, PINDEX len)
 {
   if (os_handle < 0) 
     return false;
@@ -238,25 +238,25 @@ PBoolean PSoundChannelESD::Read(void * buf, PINDEX len)
 }
 
 
-PBoolean PSoundChannelESD::StartRecording()
+bool PSoundChannelESD::StartRecording()
 {
   return (true);
 }
 
 
-PBoolean PSoundChannelESD::IsRecordBufferFull()
+bool PSoundChannelESD::IsRecordBufferFull()
 {
   return (true);
 }
 
 
-PBoolean PSoundChannelESD::AreAllRecordBuffersFull()
+bool PSoundChannelESD::AreAllRecordBuffersFull()
 {
   return true;
 }
 
 
-PBoolean PSoundChannelESD::WaitForRecordBufferFull()
+bool PSoundChannelESD::WaitForRecordBufferFull()
 {
   if (os_handle < 0) {
     return false;
@@ -266,13 +266,13 @@ PBoolean PSoundChannelESD::WaitForRecordBufferFull()
 }
 
 
-PBoolean PSoundChannelESD::WaitForAllRecordBuffersFull()
+bool PSoundChannelESD::WaitForAllRecordBuffersFull()
 {
   return false;
 }
 
 
-PBoolean PSoundChannelESD::Abort()
+bool PSoundChannelESD::Abort()
 {
   return true;
 }

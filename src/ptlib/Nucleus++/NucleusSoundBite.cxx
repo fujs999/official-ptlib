@@ -55,7 +55,7 @@ PString PSoundChannel::GetName() const
   }
 }
 
-PBoolean PSoundChannel::Open(const PString & device,
+bool PSoundChannel::Open(const PString & device,
                          Directions dir,
                          unsigned numChannels,
                          unsigned sampleRate,
@@ -76,7 +76,7 @@ PBoolean PSoundChannel::Open(const PString & device,
     return true;
 }
 
-PBoolean PSoundChannel::Read(void *buf, PINDEX len)
+bool PSoundChannel::Read(void *buf, PINDEX len)
 {
 // len should be 8 bytes. It if isnt, yell.
    if(len!=8) PTRACE(0, "Asked for "<<len<<" bytes.");
@@ -115,7 +115,7 @@ PBoolean PSoundChannel::Read(void *buf, PINDEX len)
 //    PTRACE(1, "PSoundChannel::Read(bye)");*/
 }
 
-PBoolean PSoundChannel::Write(const void *buf, PINDEX len)
+bool PSoundChannel::Write(const void *buf, PINDEX len)
 {
     if(!len) return true;
 //    PTRACE(9, "PSoundChannel::Write");
@@ -128,7 +128,7 @@ PBoolean PSoundChannel::Write(const void *buf, PINDEX len)
     return true;
 }
 
-PBoolean PSoundChannel::Close()
+bool PSoundChannel::Close()
 {
     PTRACE(2, "PSoundChannel::Close");
     if(m_Direction==Recorder)
@@ -138,30 +138,30 @@ PBoolean PSoundChannel::Close()
     return true;
 }
 
-PBoolean PSoundChannel::Abort()
+bool PSoundChannel::Abort()
 {
     return false;
 }
 
-PBoolean PSoundChannel::SetBuffers(PINDEX size, PINDEX count)
+bool PSoundChannel::SetBuffers(PINDEX size, PINDEX count)
 {
 //    PTRACE(1, "PSoundChannel::SetBuffers("<<size<<","<<count<<")");
     return true;
 }
 
-PBoolean PSoundChannel::GetBuffers(PINDEX &size, PINDEX &count)
+bool PSoundChannel::GetBuffers(PINDEX &size, PINDEX &count)
 {
 //    PTRACE(1, "PSoundChannel::GetBuffers");
     return true;
 }
 
-PBoolean PSoundChannel::SetVolume(int newVal)
+bool PSoundChannel::SetVolume(int newVal)
 {
   cerr << __FILE__ << "PSoundChannel :: SetVolume called in error. Please fix"<<endl;
   return false;
 }
 
-PBoolean  PSoundChannel::GetVolume(int &devVol)
+bool  PSoundChannel::GetVolume(int &devVol)
 {
  cerr << __FILE__ << "PSoundChannel :: GetVolume called in error. Please fix"<<endl;
   return false;

@@ -105,7 +105,7 @@ PVideoInputDevice_Application::~PVideoInputDevice_Application()
 }
 
 
-PBoolean PVideoInputDevice_Application::Close()
+bool PVideoInputDevice_Application::Close()
 {
   if (!IsOpen())
     return false;
@@ -147,7 +147,7 @@ PStringArray PVideoInputDevice_Application::GetInputDeviceNames()
 }
 
 
-PBoolean PVideoInputDevice_Application::Open(const PString & deviceName, PBoolean /*startImmediate*/)
+bool PVideoInputDevice_Application::Open(const PString & deviceName, bool /*startImmediate*/)
 {
   Close();
 
@@ -171,31 +171,31 @@ PBoolean PVideoInputDevice_Application::Open(const PString & deviceName, PBoolea
 }
 
 
-PBoolean PVideoInputDevice_Application::IsOpen()
+bool PVideoInputDevice_Application::IsOpen()
 {
   return m_hWnd != NULL;
 }
 
 
-PBoolean PVideoInputDevice_Application::Start()
+bool PVideoInputDevice_Application::Start()
 {
   return true;
 }
 
 
-PBoolean PVideoInputDevice_Application::Stop()
+bool PVideoInputDevice_Application::Stop()
 {
   return true;
 }
 
 
-PBoolean PVideoInputDevice_Application::IsCapturing()
+bool PVideoInputDevice_Application::IsCapturing()
 {
   return IsOpen();
 }
 
 
-PBoolean PVideoInputDevice_Application::SetColourFormat(const PString & colourFormat)
+bool PVideoInputDevice_Application::SetColourFormat(const PString & colourFormat)
 {
   BITMAP bitmap;
 
@@ -228,7 +228,7 @@ PINDEX PVideoInputDevice_Application::GetMaxFrameBytes()
 }
 
 
-bool PVideoInputDevice_Application::InternalGetFrameData(BYTE * buffer, PINDEX & bytesReturned, bool & keyFrame, bool wait)
+bool PVideoInputDevice_Application::InternalGetFrameData(uint8_t * buffer, PINDEX & bytesReturned, bool & keyFrame, bool wait)
 {
   if (wait)
     m_grabDelay.Delay(1000/GetFrameRate());
@@ -284,7 +284,7 @@ struct PWrapHGDIOBJ
 };
 
 
-bool PVideoInputDevice_Application::GetWindowBitmap(BITMAP & bitmap, BYTE * pixels, bool useTemp)
+bool PVideoInputDevice_Application::GetWindowBitmap(BITMAP & bitmap, uint8_t * pixels, bool useTemp)
 {
   if (m_hWnd == NULL) {
     PTRACE(2, "AppInput\tNo window selected.");

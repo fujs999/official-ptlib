@@ -13,37 +13,37 @@ class PSoundChannelALSA : public PSoundChannel {
   static PString GetDefaultDevice(PSoundChannel::Directions);
   bool Open(const Params & params);
   PString GetName() const { return device; }
-  PBoolean Close();
-  PBoolean Write(const void * buf, PINDEX len);
-  PBoolean Read(void * buf, PINDEX len);
-  PBoolean SetFormat(unsigned numChannels, unsigned sampleRate, unsigned bitsPerSample);
+  bool Close();
+  bool Write(const void * buf, PINDEX len);
+  bool Read(void * buf, PINDEX len);
+  bool SetFormat(unsigned numChannels, unsigned sampleRate, unsigned bitsPerSample);
   unsigned GetChannels() const;
   unsigned GetSampleRate() const;
   unsigned GetSampleSize() const;
-  PBoolean SetBuffers(PINDEX size, PINDEX count);
-  PBoolean GetBuffers(PINDEX & size, PINDEX & count);
-  PBoolean HasPlayCompleted();
-  PBoolean WaitForPlayCompletion();
-  PBoolean StartRecording();
-  PBoolean IsRecordBufferFull();
-  PBoolean AreAllRecordBuffersFull();
-  PBoolean WaitForRecordBufferFull();
-  PBoolean WaitForAllRecordBuffersFull();
-  PBoolean Abort();
-  PBoolean SetVolume(unsigned);
-  PBoolean GetVolume(unsigned &);
-  PBoolean IsOpen() const;
+  bool SetBuffers(PINDEX size, PINDEX count);
+  bool GetBuffers(PINDEX & size, PINDEX & count);
+  bool HasPlayCompleted();
+  bool WaitForPlayCompletion();
+  bool StartRecording();
+  bool IsRecordBufferFull();
+  bool AreAllRecordBuffersFull();
+  bool WaitForRecordBufferFull();
+  bool WaitForAllRecordBuffersFull();
+  bool Abort();
+  bool SetVolume(unsigned);
+  bool GetVolume(unsigned &);
+  bool IsOpen() const;
 
  private:
   static void UpdateDictionary(PSoundChannel::Directions);
   bool SetHardwareParams();
-  PBoolean Volume(PBoolean, unsigned, unsigned &);
+  bool Volume(bool, unsigned, unsigned &);
 
   PString device;
   unsigned mNumChannels;
   unsigned mSampleRate;
   unsigned mBitsPerSample;
-  PBoolean isInitialised;
+  bool isInitialised;
 
   snd_pcm_t *pcm_handle; /* Handle, different from the PChannel handle */
   int card_nr;

@@ -46,19 +46,19 @@ public:
   PVideoInputDevice_BSDCAPTURE();
   ~PVideoInputDevice_BSDCAPTURE();
 
-  PBoolean Open(
+  bool Open(
     const PString &deviceName,
-    PBoolean startImmediate = true
+    bool startImmediate = true
   );
 
-  PBoolean IsOpen();
+  bool IsOpen();
 
-  PBoolean Close();
+  bool Close();
 
-  PBoolean Start();
-  PBoolean Stop();
+  bool Start();
+  bool Stop();
 
-  PBoolean IsCapturing();
+  bool IsCapturing();
 
   static PStringList GetInputDeviceNames();
 
@@ -67,28 +67,28 @@ public:
 
   PINDEX GetMaxFrameBytes();
 
-  PBoolean GetFrameSizeLimits(unsigned int&, unsigned int&,
+  bool GetFrameSizeLimits(unsigned int&, unsigned int&,
 			  unsigned int&, unsigned int&);
 
-  PBoolean TestAllFormats();
+  bool TestAllFormats();
 
-  PBoolean SetFrameSize(unsigned int, unsigned int);
-  PBoolean SetFrameRate(unsigned int);
-  PBoolean VerifyHardwareFrameSize(unsigned int, unsigned int);
+  bool SetFrameSize(unsigned int, unsigned int);
+  bool SetFrameRate(unsigned int);
+  bool VerifyHardwareFrameSize(unsigned int, unsigned int);
 
-  PBoolean SetColourFormat(const PString&);
+  bool SetColourFormat(const PString&);
 
-//  PBoolean SetVideoChannelFormat(int, PVideoDevice::VideoFormat);
-  PBoolean SetVideoFormat(PVideoDevice::VideoFormat);
+//  bool SetVideoChannelFormat(int, PVideoDevice::VideoFormat);
+  bool SetVideoFormat(PVideoDevice::VideoFormat);
   int GetNumChannels();
-  PBoolean SetChannel(int);
+  bool SetChannel(int);
 
-  PBoolean NormalReadProcess(BYTE*, PINDEX*);
+  bool NormalReadProcess(uint8_t*, PINDEX*);
 
   void ClearMapping();
 
 protected:
-  virtual bool InternalGetFrameData(BYTE * buffer, PINDEX & bytesReturned, bool & keyFrame, bool wait);
+  virtual bool InternalGetFrameData(uint8_t * buffer, PINDEX & bytesReturned, bool & keyFrame, bool wait);
 
   struct video_capability
   {
@@ -102,7 +102,7 @@ protected:
   int    videoFd;
   struct video_capability videoCapability;
   int    canMap;  // -1 = don't know, 0 = no, 1 = yes
-  BYTE * videoBuffer;
+  uint8_t * videoBuffer;
   PINDEX frameBytes;
   int    mmap_size;
   PAdaptiveDelay m_pacing;

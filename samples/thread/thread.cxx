@@ -3,7 +3,7 @@
  *
  * Sample program to test PWLib threads.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 2001,2002 Roger Hardiman
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Roger Hardiman
  *
@@ -108,7 +108,7 @@ class MyThread2 : public PThread
 
     protected:
       PMutex exitMutex;
-      PBoolean exitFlag;
+      bool exitFlag;
 };
 
 

@@ -3,7 +3,7 @@
  *
  * HTTP server classes.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-2002 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -98,7 +98,7 @@ PHTTPSpace::Node::~Node()
 }
 
 
-PBoolean PHTTPSpace::AddResource(PHTTPResource * res, AddOptions overwrite)
+bool PHTTPSpace::AddResource(PHTTPResource * res, AddOptions overwrite)
 {
   PAssert(res != NULL, PInvalidParameter);
   const PStringArray & path = res->GetURL().GetPath();
@@ -136,7 +136,7 @@ PBoolean PHTTPSpace::AddResource(PHTTPResource * res, AddOptions overwrite)
 }
 
 
-PBoolean PHTTPSpace::DelResource(const PURL & url)
+bool PHTTPSpace::DelResource(const PURL & url)
 {
   const PStringArray & path = url.GetPath();
   Node * node = root;
@@ -231,7 +231,7 @@ void PHTTPServer::Construct()
 }
 
 
-PBoolean PHTTPServer::ProcessCommand()
+bool PHTTPServer::ProcessCommand()
 {
   PString args;
   PINDEX cmd;
@@ -272,7 +272,7 @@ PBoolean PHTTPServer::ProcessCommand()
   m_nextTimeout = m_connectInfo.GetPersistenceTimeout();
 
   PIPSocket * socket = GetSocket();
-  WORD myPort = (WORD)(socket != NULL ? socket->GetPort() : 80);
+  uint16_t myPort = (uint16_t)(socket != NULL ? socket->GetPort() : 80);
 
   // the URL that comes with Connect requests is not quite kosher, so 
   // mangle it into a proper URL and do NOT close the connection.
@@ -570,7 +570,7 @@ bool PHTTPServer::OnOPTIONS(const PHTTPConnectionInfo & conInfo)
 }
 
 
-PBoolean PHTTPServer::OnProxy(const PHTTPConnectionInfo & connectInfo)
+bool PHTTPServer::OnProxy(const PHTTPConnectionInfo & connectInfo)
 {
   return OnError(BadGateway, "Proxy not implemented.", connectInfo) &&
          connectInfo.GetCommandCode() != CONNECT;
@@ -580,7 +580,7 @@ PBoolean PHTTPServer::OnProxy(const PHTTPConnectionInfo & connectInfo)
 struct httpStatusCodeStruct {
   const char * text;
   int  code;
-  PBoolean allowedBody;
+  bool allowedBody;
   int  majorVersion;
   int  minorVersion;
 };
@@ -657,7 +657,7 @@ bool PHTTPServer::StartResponse(StatusCode code,
   *this << "HTTP/" << m_connectInfo.majorVersion << '.' << m_connectInfo.minorVersion
         << ' ' << statusInfo->code << ' ' << statusInfo->text << "\r\n";
 
-  PBoolean chunked = false;
+  bool chunked = false;
 
   // If do not have user set content length, decide if we should add one
   if (!headers.Contains(ContentLengthTag())) {
@@ -730,7 +730,7 @@ void PHTTPServer::SetDefaultMIMEInfo(PMIMEInfo & info, const PHTTPConnectionInfo
 
 
 
-PBoolean PHTTPServer::OnUnknown(const PCaselessString & cmd, 
+bool PHTTPServer::OnUnknown(const PCaselessString & cmd, 
                         const PHTTPConnectionInfo & connectInfo)
 {
   return OnError(NotImplemented, cmd, connectInfo);
@@ -759,7 +759,7 @@ static PString FormatAsHTML(const PCaselessString & message, const httpStatusCod
 }
 
 
-PBoolean PHTTPServer::OnError(StatusCode code,
+bool PHTTPServer::OnError(StatusCode code,
              const PCaselessString & extra,
          const PHTTPConnectionInfo & connectInfo)
 {
@@ -802,13 +802,13 @@ PHTTPListener::~PHTTPListener()
 }
 
 
-bool PHTTPListener::ListenForHTTP(WORD port, PSocket::Reusability reuse, unsigned queueSize)
+bool PHTTPListener::ListenForHTTP(uint16_t port, PSocket::Reusability reuse, unsigned queueSize)
 {
   return ListenForHTTP(PString::Empty(), port, reuse, queueSize);
 }
 
 
-bool PHTTPListener::ListenForHTTP(const PString & interfaces, WORD port, PSocket::Reusability reuse, unsigned queueSize)
+bool PHTTPListener::ListenForHTTP(const PString & interfaces, uint16_t port, PSocket::Reusability reuse, unsigned queueSize)
 {
   if (m_listenerInterfaces == interfaces && m_listenerPort == port)
     return true;
@@ -1029,7 +1029,7 @@ void PHTTPAuthority::DecodeBasicAuthority(const PString & authInfo,
 }
 
 
-PBoolean PHTTPAuthority::IsActive() const
+bool PHTTPAuthority::IsActive() const
 {
   return true;
 }
@@ -1055,7 +1055,7 @@ PObject * PHTTPSimpleAuth::Clone() const
 }
 
 
-PBoolean PHTTPSimpleAuth::IsActive() const
+bool PHTTPSimpleAuth::IsActive() const
 {
   return !m_username.IsEmpty() || !m_password.IsEmpty();
 }
@@ -1067,7 +1067,7 @@ PString PHTTPSimpleAuth::GetRealm(const PHTTPRequest &) const
 }
 
 
-PBoolean PHTTPSimpleAuth::Validate(const PHTTPRequest &,
+bool PHTTPSimpleAuth::Validate(const PHTTPRequest &,
                                const PString & authInfo) const
 {
   PString user, pass;
@@ -1100,7 +1100,7 @@ PObject * PHTTPMultiSimpAuth::Clone() const
 }
 
 
-PBoolean PHTTPMultiSimpAuth::IsActive() const
+bool PHTTPMultiSimpAuth::IsActive() const
 {
   return !m_users.IsEmpty();
 }
@@ -1112,7 +1112,7 @@ PString PHTTPMultiSimpAuth::GetRealm(const PHTTPRequest &) const
 }
 
 
-PBoolean PHTTPMultiSimpAuth::Validate(const PHTTPRequest &,
+bool PHTTPMultiSimpAuth::Validate(const PHTTPRequest &,
                                   const PString & authInfo) const
 {
   PString user, pass;
@@ -1198,7 +1198,7 @@ PWebSocket::PWebSocket()
 }
 
 
-PBoolean PWebSocket::Read(void * buf, PINDEX len)
+bool PWebSocket::Read(void * buf, PINDEX len)
 {
   if (CheckNotOpen())
     return false;
@@ -1237,7 +1237,7 @@ PBoolean PWebSocket::Read(void * buf, PINDEX len)
     goto badRead;
 
   if (m_currentMask >= 0) {
-    BYTE * ptr = (BYTE *)buf;
+    uint8_t * ptr = (uint8_t *)buf;
     PINDEX count = GetLastReadCount();
     while (count >= 4) {
       *(uint32_t *)ptr ^= m_currentMask;
@@ -1246,7 +1246,7 @@ PBoolean PWebSocket::Read(void * buf, PINDEX len)
     }
     switch (count) {
       case 1 :
-        *(BYTE *)ptr ^= m_currentMask;
+        *(uint8_t *)ptr ^= m_currentMask;
         m_currentMask = uint32_t(m_currentMask << 24) | (m_currentMask >> 8);
         break;
       case 2:
@@ -1255,7 +1255,7 @@ PBoolean PWebSocket::Read(void * buf, PINDEX len)
         break;
       case 3:
         *(uint16_t *)ptr ^= m_currentMask;
-        *(BYTE *)(ptr+2) ^= m_currentMask>>16;
+        *(uint8_t *)(ptr+2) ^= m_currentMask>>16;
         m_currentMask = uint32_t(m_currentMask << 8) | (m_currentMask >> 24);
         break;
     }
@@ -1306,7 +1306,7 @@ bool PWebSocket::IsMessageComplete() const
 }
 
 
-PBoolean PWebSocket::Write(const void * buf, PINDEX len)
+bool PWebSocket::Write(const void * buf, PINDEX len)
 {
   if (CheckNotOpen())
     return false;
@@ -1420,7 +1420,7 @@ bool PWebSocket::ReadHeader(OpCodes  & opCode,
                             uint64_t & payloadLength,
                             int64_t  & masking)
 {
-  BYTE header1;
+  uint8_t header1;
   if (!Read(&header1, 1))
     return false;
 
@@ -1431,7 +1431,7 @@ bool PWebSocket::ReadHeader(OpCodes  & opCode,
   SetReadTimeout(1000);
   bool ok = false;
 
-  BYTE header2;
+  uint8_t header2;
   if (!Read(&header2, 1))
     goto badHeader;
 
@@ -1481,16 +1481,16 @@ bool PWebSocket::WriteHeader(OpCodes  opCode,
                              uint64_t payloadLength,
                              int64_t  masking)
 {
-  BYTE header[14];
+  uint8_t header[14];
   PUInt64b * pLen = (PUInt64b *)&header[2];
   PINDEX len = 2;
 
-  header[0] = (BYTE)opCode;
+  header[0] = (uint8_t)opCode;
   if (!fragment)
     header[0] |= 0x80;
 
   if (payloadLength < 126)
-    header[1] = (BYTE)payloadLength;
+    header[1] = (uint8_t)payloadLength;
   else if (payloadLength < 65536) {
     header[1] = 126;
     *(PUInt16b *)pLen = (uint16_t)payloadLength;
@@ -1540,7 +1540,7 @@ PHTTPConnectionInfo::PHTTPConnectionInfo()
 }
 
 
-PBoolean PHTTPConnectionInfo::Initialise(PHTTPServer & server, PString & args)
+bool PHTTPConnectionInfo::Initialise(PHTTPServer & server, PString & args)
 {
   // if only one argument, then it must be a version 0.9 simple request
   PINDEX lastSpacePos = args.FindLast(' ');
@@ -1640,7 +1640,7 @@ void PHTTPConnectionInfo::SetMIME(const PString & tag, const PString & value)
 }
 
 
-PBoolean PHTTPConnectionInfo::IsCompatible(int major, int minor) const
+bool PHTTPConnectionInfo::IsCompatible(int major, int minor) const
 {
   if (minor == 0 && major == 0)
     return true;
@@ -1778,7 +1778,7 @@ bool PHTTPResource::InternalOnCommand(PHTTPServer & server,
 }
 
 
-PBoolean PHTTPResource::OnGETData(PHTTPRequest & request)
+bool PHTTPResource::OnGETData(PHTTPRequest & request)
 {
   SendData(request);
   return request.outMIME.Contains(PHTTP::ContentLengthTag()) ||
@@ -1804,10 +1804,10 @@ bool PHTTPResource::OnPOST(PHTTPServer & server, const PHTTPConnectionInfo & con
 }
 
 
-PBoolean PHTTPResource::OnPOSTData(PHTTPRequest & request, const PStringToString & data)
+bool PHTTPResource::OnPOSTData(PHTTPRequest & request, const PStringToString & data)
 {
   PHTML msg;
-  PBoolean persist = Post(request, data, msg);
+  bool persist = Post(request, data, msg);
 
   if (msg.Is(PHTML::InBody))
     msg << PHTML::Body();
@@ -1828,7 +1828,7 @@ PBoolean PHTTPResource::OnPOSTData(PHTTPRequest & request, const PStringToString
 }
 
 
-PBoolean PHTTPResource::CheckAuthority(PHTTPServer & server,
+bool PHTTPResource::CheckAuthority(PHTTPServer & server,
                             const PHTTPRequest & request,
                      const PHTTPConnectionInfo & connectInfo)
 {
@@ -1839,7 +1839,7 @@ PBoolean PHTTPResource::CheckAuthority(PHTTPServer & server,
 }
     
     
-PBoolean PHTTPResource::CheckAuthority(PHTTPAuthority & authority,
+bool PHTTPResource::CheckAuthority(PHTTPAuthority & authority,
                                       PHTTPServer & server,
                                const PHTTPRequest & request,
                         const PHTTPConnectionInfo & connectInfo)
@@ -1901,13 +1901,13 @@ void PHTTPResource::ClearAuthority()
 }
 
 
-PBoolean PHTTPResource::IsModifiedSince(const PTime &)
+bool PHTTPResource::IsModifiedSince(const PTime &)
 {
   return true;
 }
 
 
-PBoolean PHTTPResource::GetExpirationDate(PTime &)
+bool PHTTPResource::GetExpirationDate(PTime &)
 {
   return false;
 }
@@ -1931,7 +1931,7 @@ static void WriteChunkedDataToServer(PHTTPServer & server, PCharArray & data)
 }
 
 
-PBoolean PHTTPResource::LoadHeaders(PHTTPRequest & request)
+bool PHTTPResource::LoadHeaders(PHTTPRequest & request)
 {
 	request.code = PHTTP::MethodNotAllowed;
 	return false;
@@ -1970,7 +1970,7 @@ void PHTTPResource::SendData(PHTTPRequest & request)
 }
 
 
-PBoolean PHTTPResource::LoadData(PHTTPRequest & request, PCharArray & data)
+bool PHTTPResource::LoadData(PHTTPRequest & request, PCharArray & data)
 {
   PString text = LoadText(request);
   OnLoadedText(request, text);
@@ -1993,7 +1993,7 @@ void PHTTPResource::OnLoadedText(PHTTPRequest &, PString &)
 }
 
 
-PBoolean PHTTPResource::Post(PHTTPRequest & request,
+bool PHTTPResource::Post(PHTTPRequest & request,
                          const PStringToString &,
                          PHTML & msg)
 {
@@ -2078,7 +2078,7 @@ PHTTPString::PHTTPString(const PURL & url,
 }
 
 
-PBoolean PHTTPString::LoadHeaders(PHTTPRequest & request)
+bool PHTTPString::LoadHeaders(PHTTPRequest & request)
 {
   request.contentSize = m_string.GetLength();
   return true;
@@ -2163,7 +2163,7 @@ PHTTPRequest * PHTTPFile::CreateRequest(PHTTPServer & server, const PHTTPConnect
 }
 
 
-PBoolean PHTTPFile::LoadHeaders(PHTTPRequest & request)
+bool PHTTPFile::LoadHeaders(PHTTPRequest & request)
 {
   PFile & file = ((PHTTPFileRequest&)request).m_file;
 
@@ -2178,7 +2178,7 @@ PBoolean PHTTPFile::LoadHeaders(PHTTPRequest & request)
 }
 
 
-PBoolean PHTTPFile::LoadData(PHTTPRequest & request, PCharArray & data)
+bool PHTTPFile::LoadData(PHTTPRequest & request, PCharArray & data)
 {
   PFile & file = ((PHTTPFileRequest&)request).m_file;
 
@@ -2266,7 +2266,7 @@ PHTTPTailFile::PHTTPTailFile(const PURL & url,
 }
 
 
-PBoolean PHTTPTailFile::LoadHeaders(PHTTPRequest & request)
+bool PHTTPTailFile::LoadHeaders(PHTTPRequest & request)
 {
   if (!PHTTPFile::LoadHeaders(request))
     return false;
@@ -2276,7 +2276,7 @@ PBoolean PHTTPTailFile::LoadHeaders(PHTTPRequest & request)
 }
 
 
-PBoolean PHTTPTailFile::LoadData(PHTTPRequest & request, PCharArray & data)
+bool PHTTPTailFile::LoadData(PHTTPRequest & request, PCharArray & data)
 {
   PFile & file = ((PHTTPFileRequest&)request).m_file;
 
@@ -2350,11 +2350,11 @@ void PHTTPDirectory::EnableAuthorisation(const PString & realm)
 }
 
 
-PBoolean PHTTPDirectory::FindAuthorisations(const PDirectory & dir, PString & realm, PStringToString & authorisations)
+bool PHTTPDirectory::FindAuthorisations(const PDirectory & dir, PString & realm, PStringToString & authorisations)
 {
   PFilePath fn = dir + accessFilename;
   PTextFile file;
-  PBoolean first = true;
+  bool first = true;
   if (file.Open(fn, PFile::ReadOnly)) {
     PString line;
     while (file.ReadLine(line)) {
@@ -2376,7 +2376,7 @@ PBoolean PHTTPDirectory::FindAuthorisations(const PDirectory & dir, PString & re
   return FindAuthorisations(dir.GetParent(), realm, authorisations);
 }
 
-PBoolean PHTTPDirectory::CheckAuthority(PHTTPServer & server,
+bool PHTTPDirectory::CheckAuthority(PHTTPServer & server,
                              const PHTTPRequest & request,
                       const PHTTPConnectionInfo & conInfo)
 {
@@ -2392,7 +2392,7 @@ PBoolean PHTTPDirectory::CheckAuthority(PHTTPServer & server,
   return PHTTPResource::CheckAuthority(authority, server, request, conInfo);
 }
 
-PBoolean PHTTPDirectory::LoadHeaders(PHTTPRequest & request)
+bool PHTTPDirectory::LoadHeaders(PHTTPRequest & request)
 {
   PFilePath & realPath = dynamic_cast<PHTTPDirRequest&>(request).m_realPath;
     

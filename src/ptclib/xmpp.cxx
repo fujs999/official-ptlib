@@ -3,7 +3,7 @@
  *
  * Extensible Messaging and Presence Protocol (XMPP) Core
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 2004 Reitek S.p.A.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Post Increment
  *
@@ -208,7 +208,7 @@ XMPP::Stream::~Stream()
 }
 
 
-PBoolean XMPP::Stream::Close()
+bool XMPP::Stream::Close()
 {
   if (IsOpen()) {
     OnClose();
@@ -219,21 +219,21 @@ PBoolean XMPP::Stream::Close()
 }
 
 
-PBoolean XMPP::Stream::Write(const void * buf, PINDEX len)
+bool XMPP::Stream::Write(const void * buf, PINDEX len)
 {
   PTRACE(5, "XMPP\tSND: " << (const char *)buf);
   return PIndirectChannel::Write(buf, len);
 }
 
 
-PBoolean XMPP::Stream::Write(const PString& data)
+bool XMPP::Stream::Write(const PString& data)
 {
   return Write((const char *)data, data.GetLength());
 }
 
 
 #if 0
-PBoolean XMPP::Stream::Write(const PXMLElement & pdu)
+bool XMPP::Stream::Write(const PXMLElement & pdu)
 {
   PStringStream os;
   pdu.Output(os, m_Document, 0);
@@ -242,7 +242,7 @@ PBoolean XMPP::Stream::Write(const PXMLElement & pdu)
 #endif
 
 
-PBoolean XMPP::Stream::Write(const PXML & pdu)
+bool XMPP::Stream::Write(const PXML & pdu)
 {
   if (!pdu.IsLoaded())
     return false;
@@ -282,7 +282,7 @@ XMPP::BaseStreamHandler::~BaseStreamHandler()
 }
 
 
-PBoolean XMPP::BaseStreamHandler::Start(XMPP::Transport * transport)
+bool XMPP::BaseStreamHandler::Start(XMPP::Transport * transport)
 {
   if (m_Stream != NULL)
     Stop();
@@ -307,7 +307,7 @@ PBoolean XMPP::BaseStreamHandler::Start(XMPP::Transport * transport)
 }
 
 
-PBoolean XMPP::BaseStreamHandler::Stop(const PString& _error)
+bool XMPP::BaseStreamHandler::Stop(const PString& _error)
 {
   if (m_Stream == NULL)
     return false;
@@ -342,14 +342,14 @@ void XMPP::BaseStreamHandler::OnClose(XMPP::Stream&, P_INT_PTR)
 }
 
 
-void XMPP::BaseStreamHandler::SetAutoReconnect(PBoolean b, long t)
+void XMPP::BaseStreamHandler::SetAutoReconnect(bool b, long t)
 {
   m_AutoReconnect = b;
   m_ReconnectTimeout = t;
 }
 
 
-PBoolean XMPP::BaseStreamHandler::Write(const void * buf, PINDEX len)
+bool XMPP::BaseStreamHandler::Write(const void * buf, PINDEX len)
 {
   if (m_Stream == NULL)
     return false;
@@ -358,7 +358,7 @@ PBoolean XMPP::BaseStreamHandler::Write(const void * buf, PINDEX len)
 }
 
 
-PBoolean XMPP::BaseStreamHandler::Write(const PString& data)
+bool XMPP::BaseStreamHandler::Write(const PString& data)
 {
   if (m_Stream == NULL)
     return false;
@@ -367,7 +367,7 @@ PBoolean XMPP::BaseStreamHandler::Write(const PString& data)
 }
 
 
-PBoolean XMPP::BaseStreamHandler::Write(const PXML & pdu)
+bool XMPP::BaseStreamHandler::Write(const PXML & pdu)
 {
   if (m_Stream == NULL)
     return false;
@@ -482,7 +482,7 @@ XMPP::Message::Message(PXMLElement & pdu)
 }
 
 
-PBoolean XMPP::Message::IsValid() const
+bool XMPP::Message::IsValid() const
 {
   return GetDocumentType() == XMPP::MessageStanzaTag();
 }
@@ -692,7 +692,7 @@ XMPP::Presence::Presence(PXMLElement & pdu)
 }
 
 
-PBoolean XMPP::Presence::IsValid() const
+bool XMPP::Presence::IsValid() const
 {
   return GetDocumentType() == XMPP::PresenceStanzaTag();
 }
@@ -775,13 +775,13 @@ XMPP::Presence::ShowType XMPP::Presence::GetShow(PString * showName) const
 }
 
 
-BYTE XMPP::Presence::GetPriority() const
+uint8_t XMPP::Presence::GetPriority() const
 {
   if (PAssertNULL(m_rootElement) != NULL)
     return 0;
 
   PXMLElement * elem = m_rootElement->GetElement(XMPP::Presence::PriorityTag());
-  return elem == NULL ? (BYTE)0 : (BYTE)elem->GetData().AsInteger();
+  return elem == NULL ? (uint8_t)0 : (uint8_t)elem->GetData().AsInteger();
 }
 
 
@@ -901,7 +901,7 @@ void XMPP::Presence::SetShow(const PString& show)
 }
 
 
-void XMPP::Presence::SetPriority(BYTE priority)
+void XMPP::Presence::SetPriority(uint8_t priority)
 {
   if (PAssertNULL(m_rootElement) != NULL)
     return;
@@ -961,7 +961,7 @@ XMPP::IQ::~IQ()
 }
 
 
-PBoolean XMPP::IQ::IsValid() const
+bool XMPP::IQ::IsValid() const
 {
   if (GetDocumentType() != XMPP::IQStanzaTag())
     return false;

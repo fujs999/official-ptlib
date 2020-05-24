@@ -3,7 +3,7 @@
  *
  * Sound driver implementation.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-2001 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -93,7 +93,7 @@ PSound::PSound(unsigned channels,
                unsigned samplesPerSecond,
                unsigned bitsPerSample,
                PINDEX   bufferSize,
-               const BYTE * buffer)
+               const uint8_t * buffer)
 {
 	encoding = 0;
 	SetFormat(channels, samplesPerSecond, bitsPerSample);
@@ -140,13 +140,13 @@ void PSound::SetFormat(unsigned channels,
 	encoding = 1;
 	
 	// The formatInfo member to us is a media_format structure.
-	PBoolean setsize_formatInfo=formatInfo.SetSize(sizeof(media_format));
+	bool setsize_formatInfo=formatInfo.SetSize(sizeof(media_format));
 	PAssert(setsize_formatInfo, "Unable to set size for sound info array");
 	
 	// Initialize the media_format struct
 	// The numbers of bits that we support here are 8, 16 or 32 bits (signed),
 	// results for other sizes are not defined.
-	media_format &format=*(media_format*)(const BYTE *)formatInfo;
+	media_format &format=*(media_format*)(const uint8_t *)formatInfo;
 
 	format.type = B_MEDIA_RAW_AUDIO;
 	format.u.raw_audio = media_raw_audio_format::wildcard;
@@ -157,12 +157,12 @@ void PSound::SetFormat(unsigned channels,
 	format.u.raw_audio.buffer_size=(channels * samplesPerSecond * (bitsPerSample/8))/10; // 1/10 sec buffer
 }
 
-PBoolean PSound::Load(const PFilePath & filename)
+bool PSound::Load(const PFilePath & filename)
 {
 	// format is a reference to the formatInfo member which stores info
 	// about the media format. This is needed for writing the data back
 	// or for playing the sound.
-	media_format 	   &format=*(media_format *)(const BYTE *)formatInfo;
+	media_format 	   &format=*(media_format *)(const uint8_t *)formatInfo;
 
 	// Create BEntry from file name
 	BEntry entry(filename, true);
@@ -268,7 +268,7 @@ PBoolean PSound::Load(const PFilePath & filename)
 	}
 	
 	// Read all frames into memory. NOTE: not thread safe!
-	BYTE* dest = GetPointer();		// destination pointer
+	uint8_t* dest = GetPointer();		// destination pointer
 	int64 framecount = numframes;	// number of frames left to read
 	int64 framesread;				// number of actual frames done
 	while ((framecount!=0) && (dwLastError==B_OK))
@@ -284,12 +284,12 @@ PBoolean PSound::Load(const PFilePath & filename)
 }
 
 
-PBoolean PSound::Save(const PFilePath & filename)
+bool PSound::Save(const PFilePath & filename)
 {
 	// format is a reference to the formatInfo member which stores info
 	// about the media format. This is needed for writing the data back
 	// or for playing the sound.
-	media_format 	   &format=*(media_format *)(const BYTE *)formatInfo;
+	media_format 	   &format=*(media_format *)(const uint8_t *)formatInfo;
 
 	// Get the file type from the file name's extension; if none, use wav
 	PFilePathString filetype=filename.GetType(); // e.g. ".wav"
@@ -428,7 +428,7 @@ PBoolean PSound::Save(const PFilePath & filename)
 	int32 framesize = numChannels * (sampleSize/8);
 	int32 numframes = numbytes / framesize; // divide by zero possibility ignored.
 		
-	if ((dwLastError=ptrack->WriteFrames((const BYTE *)*this, numframes))!=B_OK)
+	if ((dwLastError=ptrack->WriteFrames((const uint8_t *)*this, numframes))!=B_OK)
 	{
 		STATUS("ptrack->WriteFrames()");
 		return false; // BMediaFile will destroy ptrack
@@ -437,7 +437,7 @@ PBoolean PSound::Save(const PFilePath & filename)
 	return (file.CloseFile()==B_OK); // BMediaFile will destroy ptrack
 }
 
-PBoolean PSound::Play()
+bool PSound::Play()
 {
 	PSoundChannelBeOS player(PSoundChannelBeOS::GetDefaultDevice(PSoundChannelBeOS::Player), PSoundChannelBeOS::Player, numChannels, sampleRate, sampleSize);
 	
@@ -450,7 +450,7 @@ PBoolean PSound::Play()
 	return player.PlaySound(*this, true);
 }
 
-PBoolean PSound::PlayFile(const PFilePath & file, PBoolean wait)
+bool PSound::PlayFile(const PFilePath & file, bool wait)
 {
 	entry_ref 			ref;
 	status_t			err; // can't use dwLastError because this function is static
@@ -553,7 +553,7 @@ public:
 protected:
 	friend class ResamplingBuffer; // needed for one of their constructors
 
-	BYTE		   *mBuffer;			// the buffer
+	uint8_t		   *mBuffer;			// the buffer
 	PINDEX			mSize;				// size of the buffer in bytes
 	
 	volatile PINDEX	mHead;				// index where to start reading
@@ -618,8 +618,8 @@ protected:
 	}
 
 	virtual size_t Write(
-		BYTE *dest,					// destination
-		const BYTE **extbuf,		// source, to be updated
+		uint8_t *dest,					// destination
+		const uint8_t **extbuf,		// source, to be updated
 		size_t size,				// space in destination
 		size_t *extsize)			// data in source, to be updated
 	{
@@ -632,8 +632,8 @@ protected:
 	}
 	
 	virtual size_t Read(
-		BYTE **extbuf,				// destination, to be updated
-		const BYTE *src,			// source
+		uint8_t **extbuf,				// destination, to be updated
+		const uint8_t *src,			// source
 		size_t *extsize,			// space in destination, to be updated
 		size_t size)				// data in source
 	{
@@ -670,7 +670,7 @@ public:
 		
 		PAssert(mSemInUse>=0 && mSemStateChange>=0, "Unable to create semaphores");
 		
-		mBuffer=new BYTE[(mSize=size)];
+		mBuffer=new uint8_t[(mSize=size)];
 		
 		Reset();
 	}
@@ -729,7 +729,7 @@ public:
 	}
 	
 	// Fill buffer with data.
-	void Fill(const BYTE **extbuf, size_t *extsize)
+	void Fill(const uint8_t **extbuf, size_t *extsize)
 	{
 		PRINTCB(("start: head %d tail %d headroom %d tailroom %d extsize %d buffer %p this %p", mHead, mTail, mHeadRoom, mTailRoom, *extsize, mBuffer, this));
 
@@ -802,7 +802,7 @@ public:
 	}
 
 	// Empty data out of buffer
-	void Drain(BYTE **extbuf, size_t *extsize)
+	void Drain(uint8_t **extbuf, size_t *extsize)
 	{
 		PTRACE(7, "Drain: head " << mHead 
 	    << " tail " << mTail 
@@ -890,8 +890,8 @@ protected:
 	
 protected:
 	virtual size_t Write(
-		BYTE *dest,					// destination
-		const BYTE **extbuf,		// source, to be updated
+		uint8_t *dest,					// destination
+		const uint8_t **extbuf,		// source, to be updated
 		size_t size,				// space in destination
 		size_t *extsize)			// data in source, to be updated
 	{
@@ -941,7 +941,7 @@ static void PlayBuffer(void *cookie, void *buffer, size_t size, const media_raw_
 	// data to play.
 	DETECTVARS(buffer, size/2)
 
-	((CircularBuffer *)cookie)->Drain((BYTE **)&buffer, &size);
+	((CircularBuffer *)cookie)->Drain((uint8_t **)&buffer, &size);
 	
 	DETECTSOUND();
 }
@@ -953,7 +953,7 @@ static void RecordBuffer(void *cookie, const void *buffer, size_t size, const me
 	DETECTVARS(buffer, size/2)
 	DETECTSOUND();
 
-	((CircularBuffer *)cookie)->Fill((const BYTE **)&buffer, &size);
+	((CircularBuffer *)cookie)->Fill((const uint8_t **)&buffer, &size);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1124,10 +1124,10 @@ PString PSoundChannelBeOS::GetDefaultDevice(Directions dir)
 	}
 }
 
-PBoolean PSoundChannelBeOS::OpenPlayer(void)
+bool PSoundChannelBeOS::OpenPlayer(void)
 {
 	// We're using cascaded "if result"s here for clarity
-	PBoolean result = true;
+	bool result = true;
 
 #ifdef FILEDUMP
 	media_format format;
@@ -1184,10 +1184,10 @@ PBoolean PSoundChannelBeOS::OpenPlayer(void)
 	return result;
 }
 
-PBoolean PSoundChannelBeOS::OpenRecorder(const PString &dev)
+bool PSoundChannelBeOS::OpenRecorder(const PString &dev)
 {
 	// We're using cascaded "if result"s here for clarity
-	PBoolean result=true;
+	bool result=true;
 
 	{
 		if (!mBuffer)
@@ -1346,14 +1346,14 @@ PBoolean PSoundChannelBeOS::OpenRecorder(const PString &dev)
 	return result;		
 }
 
-PBoolean PSoundChannelBeOS::Open(const PString & dev,
+bool PSoundChannelBeOS::Open(const PString & dev,
                          Directions dir,
                          unsigned numChannels,
                          unsigned sampleRate,
                          unsigned bitsPerSample)
 {
 	// We're using cascaded "if result"s here for clarity
-	PBoolean result = true;
+	bool result = true;
 	PRINT(("%s %u %u %u", dir==Player?"Player":"Recorder", numChannels, sampleRate, bitsPerSample));
 	
 	// Close the channel first, just in case	
@@ -1399,13 +1399,13 @@ PBoolean PSoundChannelBeOS::Open(const PString & dev,
    	return result;
 }
 
-PBoolean PSoundChannelBeOS::Abort()
+bool PSoundChannelBeOS::Abort()
 {
 	return false;
 }
 
 
-PBoolean PSoundChannelBeOS::SetFormat(unsigned numChannels,
+bool PSoundChannelBeOS::SetFormat(unsigned numChannels,
                               unsigned sampleRate,
                               unsigned bitsPerSample)
 {
@@ -1456,7 +1456,7 @@ unsigned PSoundChannelBeOS::GetSampleSize() const
 }
 
 
-PBoolean PSoundChannelBeOS::Read(void *buf, PINDEX len)
+bool PSoundChannelBeOS::Read(void *buf, PINDEX len)
 {
     PINDEX bufSize = len;
 
@@ -1485,7 +1485,7 @@ PBoolean PSoundChannelBeOS::Read(void *buf, PINDEX len)
             break;
 
 		  // Get data from the buffer
-		  mBuffer->Drain((BYTE**)&buf, (size_t*) &len);
+		  mBuffer->Drain((uint8_t**)&buf, (size_t*) &len);
 
 		  lastReadCount += len;
 		}
@@ -1502,7 +1502,7 @@ PBoolean PSoundChannelBeOS::Read(void *buf, PINDEX len)
 	return false;
 }
 
-PBoolean PSoundChannelBeOS::Write(const void *buf, PINDEX len)
+bool PSoundChannelBeOS::Write(const void *buf, PINDEX len)
 {
 	// can only write to a player
   	if (mPlayer!=NULL)
@@ -1519,7 +1519,7 @@ PBoolean PSoundChannelBeOS::Write(const void *buf, PINDEX len)
 #endif
 	
 		// Store data into the buffer
-		mBuffer->Fill((const BYTE **)&buf, (size_t*) &len);
+		mBuffer->Fill((const uint8_t **)&buf, (size_t*) &len);
 
 		SetLastWriteCount(ilen - len);
 		return true;
@@ -1529,7 +1529,7 @@ PBoolean PSoundChannelBeOS::Write(const void *buf, PINDEX len)
 }
 
 
-PBoolean PSoundChannelBeOS::Close()
+bool PSoundChannelBeOS::Close()
 {
 	PRINT((""));
 	
@@ -1577,13 +1577,13 @@ PBoolean PSoundChannelBeOS::Close()
 }
 
 
-PBoolean PSoundChannelBeOS::SetBuffers(PINDEX size, PINDEX count)
+bool PSoundChannelBeOS::SetBuffers(PINDEX size, PINDEX count)
 {
       return InternalSetBuffers(size*(mNumBuffers=count),size);
 }
 
 
-PBoolean PSoundChannelBeOS::InternalSetBuffers(PINDEX size, PINDEX threshold)
+bool PSoundChannelBeOS::InternalSetBuffers(PINDEX size, PINDEX threshold)
 {
   if (mPlayer)
   {
@@ -1658,7 +1658,7 @@ PBoolean PSoundChannelBeOS::InternalSetBuffers(PINDEX size, PINDEX threshold)
 }
 
 
-PBoolean PSoundChannelBeOS::GetBuffers(PINDEX &size, PINDEX &count)
+bool PSoundChannelBeOS::GetBuffers(PINDEX &size, PINDEX &count)
 {
 	if (mBuffer)
 	{
@@ -1671,7 +1671,7 @@ PBoolean PSoundChannelBeOS::GetBuffers(PINDEX &size, PINDEX &count)
 }
 
 
-PBoolean PSoundChannelBeOS::PlaySound(const PSound &sound, PBoolean wait)
+bool PSoundChannelBeOS::PlaySound(const PSound &sound, bool wait)
 {
 	PRINT(("wait=%s", wait?"true":"false"));
 	
@@ -1682,13 +1682,13 @@ PBoolean PSoundChannelBeOS::PlaySound(const PSound &sound, PBoolean wait)
 	}
 
 #ifdef FILEDUMP
-	playwriter->writewavfile((void *)(const BYTE*)sound, sound.GetSize());
+	playwriter->writewavfile((void *)(const uint8_t*)sound, sound.GetSize());
 #endif
 
 	// create a local buffer that references the PSound
 	// NOTE: no conversion between the PSound's format and the
 	// PSoundChannelBeOS's format is done.
-	const BYTE *buf=(const BYTE *)sound;
+	const uint8_t *buf=(const uint8_t *)sound;
 	PINDEX size=sound.GetSize();
 	
 	// Play the sound by doing successive Writes until the sound is done.
@@ -1716,7 +1716,7 @@ PBoolean PSoundChannelBeOS::PlaySound(const PSound &sound, PBoolean wait)
 }
 
 
-PBoolean PSoundChannelBeOS::PlayFile(const PFilePath &file, PBoolean wait)
+bool PSoundChannelBeOS::PlayFile(const PFilePath &file, bool wait)
 {
 	entry_ref 			ref;
 	status_t			err;
@@ -1752,7 +1752,7 @@ PBoolean PSoundChannelBeOS::PlayFile(const PFilePath &file, PBoolean wait)
 }
 
 
-PBoolean PSoundChannelBeOS::HasPlayCompleted()
+bool PSoundChannelBeOS::HasPlayCompleted()
 {
 	if (mPlayer!=NULL)
 	{
@@ -1763,7 +1763,7 @@ PBoolean PSoundChannelBeOS::HasPlayCompleted()
 }
 
 
-PBoolean PSoundChannelBeOS::WaitForPlayCompletion()
+bool PSoundChannelBeOS::WaitForPlayCompletion()
 {
 	if (mPlayer!=NULL)
 	{
@@ -1774,7 +1774,7 @@ PBoolean PSoundChannelBeOS::WaitForPlayCompletion()
 }
 
 
-PBoolean PSoundChannelBeOS::RecordSound(PSound &sound)
+bool PSoundChannelBeOS::RecordSound(PSound &sound)
 {
 	PRINT((""));
 	
@@ -1810,7 +1810,7 @@ PBoolean PSoundChannelBeOS::RecordSound(PSound &sound)
 	
 	// Resize the sound and set up local buffer references
 	PINDEX size=mBuffer->GetSize();
-	BYTE *buf=sound.GetPointer(size);
+	uint8_t *buf=sound.GetPointer(size);
 
 #ifdef FILEDUMP
 	void *dumpbuf=buf;
@@ -1829,14 +1829,14 @@ PBoolean PSoundChannelBeOS::RecordSound(PSound &sound)
 }
 
 
-PBoolean PSoundChannelBeOS::RecordFile(const PFilePath & filename)
+bool PSoundChannelBeOS::RecordFile(const PFilePath & filename)
 {
 	// Not implemented for now
 	return false;
 }
 
 
-PBoolean PSoundChannelBeOS::StartRecording()
+bool PSoundChannelBeOS::StartRecording()
 {
 	if (mRecorder==NULL) 
 	{
@@ -1858,7 +1858,7 @@ PBoolean PSoundChannelBeOS::StartRecording()
 }
 
 
-PBoolean PSoundChannelBeOS::IsRecordBufferFull()
+bool PSoundChannelBeOS::IsRecordBufferFull()
 {
 	if (mRecorder)
 	{
@@ -1869,7 +1869,7 @@ PBoolean PSoundChannelBeOS::IsRecordBufferFull()
 }
 
 
-PBoolean PSoundChannelBeOS::AreAllRecordBuffersFull()
+bool PSoundChannelBeOS::AreAllRecordBuffersFull()
 {
 	if (mRecorder)
 	{
@@ -1880,7 +1880,7 @@ PBoolean PSoundChannelBeOS::AreAllRecordBuffersFull()
 }
 
 
-PBoolean PSoundChannelBeOS::WaitForRecordBufferFull()
+bool PSoundChannelBeOS::WaitForRecordBufferFull()
 {
 	if (mRecorder==NULL)
 	{
@@ -1894,7 +1894,7 @@ PBoolean PSoundChannelBeOS::WaitForRecordBufferFull()
 }
 
 
-PBoolean PSoundChannelBeOS::WaitForAllRecordBuffersFull()
+bool PSoundChannelBeOS::WaitForAllRecordBuffersFull()
 {
 	if (mRecorder==NULL)
 	{
@@ -1908,16 +1908,16 @@ PBoolean PSoundChannelBeOS::WaitForAllRecordBuffersFull()
 }
 
 
-PBoolean PSoundChannelBeOS::IsOpen() const
+bool PSoundChannelBeOS::IsOpen() const
 {
-	PBoolean result=((mPlayer!=NULL) || (mRecorder!=NULL));
+	bool result=((mPlayer!=NULL) || (mRecorder!=NULL));
 	PRINT(("returning %s, player 0x%X recorder 0x%X", result?"true":"false", mPlayer, mRecorder));
 	return result;
 }
 
 
 
-PBoolean PSoundChannelBeOS::SetVolume(unsigned newVolume)
+bool PSoundChannelBeOS::SetVolume(unsigned newVolume)
 {
   #ifdef TODO
   cerr << __FILE__<< "PSoundChannelBeOS :: SetVolume called in error. Please fix" << endl;
@@ -1926,7 +1926,7 @@ PBoolean PSoundChannelBeOS::SetVolume(unsigned newVolume)
   return true;
 }
 
-PBoolean  PSoundChannelBeOS::GetVolume(unsigned & volume)
+bool  PSoundChannelBeOS::GetVolume(unsigned & volume)
 {
   #ifdef TODO
   cerr << __FILE__<< "PSoundChannelBeOS :: GetVolume called in error. Please fix" << endl;

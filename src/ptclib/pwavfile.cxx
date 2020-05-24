@@ -3,7 +3,7 @@
  *
  * WAV file I/O channel class.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 2001 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is
  * Roger Hardiman <roger@freebsd.org>
@@ -51,7 +51,7 @@ const char WAVLabelFMT_[4] = { 'f', 'm', 't', ' ' };
 const char WAVLabelDATA[4] = { 'd', 'a', 't', 'a' };
 
 
-inline PBoolean ReadAndCheck(PWAVFile & file, void * buf, PINDEX len)
+inline bool ReadAndCheck(PWAVFile & file, void * buf, PINDEX len)
 {
   return file.PFile::Read(buf, len) && (file.PFile::GetLastReadCount() == len);
 }
@@ -178,7 +178,7 @@ bool PWAVFile::InternalOpen(OpenMode mode, OpenOptions opts, PFileInfo::Permissi
 }
 
 
-PBoolean PWAVFile::Close()
+bool PWAVFile::Close()
 {
   if (m_status == e_Writing)
     UpdateHeader();
@@ -209,17 +209,17 @@ bool PWAVFile::SetAutoconvert(bool convert)
     return true;
 
   if ((m_autoConverter = PWAVFileConverterFactory::CreateInstance(m_wavFmtChunk.format)) != NULL) {
-    PTRACE(4, "Set format converter for type " << (WORD)m_wavFmtChunk.format);
+    PTRACE(4, "Set format converter for type " << (uint16_t)m_wavFmtChunk.format);
     return true;
   }
 
-  PTRACE(2, "No format converter for type " << (WORD)m_wavFmtChunk.format);
+  PTRACE(2, "No format converter for type " << (uint16_t)m_wavFmtChunk.format);
   return false;
 }
 
 
 // Performs necessary byte-order swapping on for big-endian platforms.
-PBoolean PWAVFile::Read(void * buf, PINDEX len)
+bool PWAVFile::Read(void * buf, PINDEX len)
 {
   if (CheckNotOpen())
     return false;
@@ -281,7 +281,7 @@ bool PWAVFile::RawRead(void * buf, PINDEX len)
 
 
 // Performs necessary byte-order swapping on for big-endian platforms.
-PBoolean PWAVFile::Write(const void * buf, PINDEX len)
+bool PWAVFile::Write(const void * buf, PINDEX len)
 {
   if (CheckNotOpen())
     return false;
@@ -325,14 +325,14 @@ off_t PWAVFile::GetLength() const
 }
 
 
-PBoolean PWAVFile::SetLength(off_t)
+bool PWAVFile::SetLength(off_t)
 {
   PAssertAlways("PWAVFile::SetLength() is not allowed");
   return false;
 }
 
 
-PBoolean PWAVFile::SetPosition(off_t pos, FilePositionOrigin origin)
+bool PWAVFile::SetPosition(off_t pos, FilePositionOrigin origin)
 {
   if (m_autoConverter != NULL)
     return m_autoConverter->SetPosition(*this, pos, origin);
@@ -385,7 +385,7 @@ bool PWAVFile::SetChannels(unsigned channels)
 
     case e_PreWrite :
       if (m_formatHandler == NULL || m_formatHandler->CanSetChannels(channels)) {
-        m_wavFmtChunk.numChannels = (WORD)channels;
+        m_wavFmtChunk.numChannels = (uint16_t)channels;
         if (m_wavFmtChunk.format == fmt_PCM) {
           m_wavFmtChunk.bytesPerSample = (m_wavFmtChunk.bitsPerSample/8) * m_wavFmtChunk.numChannels;
           m_wavFmtChunk.bytesPerSec = m_wavFmtChunk.sampleRate * m_wavFmtChunk.bytesPerSample;
@@ -419,7 +419,7 @@ bool PWAVFile::SetSampleRate(unsigned rate)
       break;
 
     case e_PreWrite :
-      m_wavFmtChunk.sampleRate = (WORD)rate;
+      m_wavFmtChunk.sampleRate = (uint16_t)rate;
       if (m_wavFmtChunk.format == fmt_PCM)
         m_wavFmtChunk.bytesPerSec = m_wavFmtChunk.sampleRate * m_wavFmtChunk.bytesPerSample;
       break;
@@ -435,7 +435,7 @@ bool PWAVFile::SetSampleRate(unsigned rate)
 
 unsigned PWAVFile::GetSampleSize() const
 {
-  return m_autoConverter != NULL ? 16 : (WORD)m_wavFmtChunk.bitsPerSample;
+  return m_autoConverter != NULL ? 16 : (uint16_t)m_wavFmtChunk.bitsPerSample;
 }
 
 
@@ -450,11 +450,11 @@ bool PWAVFile::SetSampleSize(unsigned v)
   if (m_status != e_PreWrite)
     return false;
 
-  m_wavFmtChunk.bitsPerSample = (WORD)v;
+  m_wavFmtChunk.bitsPerSample = (uint16_t)v;
   if (m_wavFmtChunk.format != fmt_PCM)
     return (v/8) == m_wavFmtChunk.bytesPerSample;
 
-  m_wavFmtChunk.bytesPerSample = (WORD)(v/8);
+  m_wavFmtChunk.bytesPerSample = (uint16_t)(v/8);
   m_wavFmtChunk.bytesPerSec    = v*m_wavFmtChunk.sampleRate;
   return true;
 }
@@ -469,17 +469,17 @@ unsigned PWAVFile::GetBytesPerSecond() const
 void PWAVFile::SetBytesPerSecond(unsigned v)
 {
   if (m_status == e_PreWrite)
-    m_wavFmtChunk.bytesPerSec = (WORD)v;
+    m_wavFmtChunk.bytesPerSec = (uint16_t)v;
 }
 
 
-PBoolean PWAVFile::SetFormat(unsigned fmt)
+bool PWAVFile::SetFormat(unsigned fmt)
 {
   return SelectFormat(PWAVFileFormatByIDFactory::CreateInstance(fmt));
 }
 
 
-PBoolean PWAVFile::SetFormat(const PString & format)
+bool PWAVFile::SetFormat(const PString & format)
 {
   PWAVFileFormat * handler = PWAVFileFormatByFormatFactory::CreateInstance(format);
   if (handler == NULL)
@@ -498,7 +498,7 @@ bool PWAVFile::SelectFormat(PWAVFileFormat * handler)
 
   switch (m_status) {
     case e_PreWrite:
-      m_wavFmtChunk.format = (WORD)m_formatHandler->GetFormat();
+      m_wavFmtChunk.format = (uint16_t)m_formatHandler->GetFormat();
       break;
     case e_Reading:
       m_formatHandler->ProcessHeader(m_wavFmtChunk, m_wavHeaderData);
@@ -510,7 +510,7 @@ bool PWAVFile::SelectFormat(PWAVFileFormat * handler)
 }
 
 
-PBoolean PWAVFile::ProcessHeader() 
+bool PWAVFile::ProcessHeader() 
 {
   // Process the header information
   // This comes in 3 or 4 chunks, either RIFF, FORMAT and DATA
@@ -605,7 +605,7 @@ PBoolean PWAVFile::ProcessHeader()
     if (m_readChannels > 1)
       trace << 's';
     if (m_autoConverter != NULL)
-      trace << ", converted from type " << (WORD)m_wavFmtChunk.format;
+      trace << ", converted from type " << (uint16_t)m_wavFmtChunk.format;
     trace << ", " << PString(PString::ScaleSI, m_dataLength, 4) << "bytes."
           << PTrace::End;
   }
@@ -670,7 +670,7 @@ bool PWAVFile::GenerateHeader()
 
 
 // Update the WAV header according to the file length
-PBoolean PWAVFile::UpdateHeader()
+bool PWAVFile::UpdateHeader()
 {
   if (m_formatHandler == NULL){
     PTRACE(1,"GenerateHeader: format handler is null!");
@@ -685,13 +685,13 @@ PBoolean PWAVFile::UpdateHeader()
   m_dataLength = PFile::GetLength() - m_headerLength;
 
   // rewrite the length in the RIFF chunk
-  PInt32l riffChunkLen = (m_headerLength - 8) + m_dataLength; // size does not include first 8 bytes
+  int32_tl riffChunkLen = (m_headerLength - 8) + m_dataLength; // size does not include first 8 bytes
   PFile::SetPosition(4);
   if (!PFile::Write(&riffChunkLen, sizeof(riffChunkLen)))
     return false;
 
   // rewrite the data length field in the data chunk
-  PInt32l dataChunkLen = m_dataLength;
+  int32_tl dataChunkLen = m_dataLength;
   PFile::SetPosition(m_headerLength - 4);
   if (!PFile::Write(&dataChunkLen, sizeof(dataChunkLen)))
     return false;
@@ -719,7 +719,7 @@ PBoolean PWAVFile::UpdateHeader()
     if (m_readChannels > 1)
       trace << 's';
     if (m_autoConverter != NULL)
-      trace << ", converted to type " << (WORD)m_wavFmtChunk.format;
+      trace << ", converted to type " << (uint16_t)m_wavFmtChunk.format;
     trace << ", " << PString(PString::ScaleSI, m_dataLength, 4) << "bytes."
           << PTrace::End;
   }
@@ -730,7 +730,7 @@ PBoolean PWAVFile::UpdateHeader()
 
 //////////////////////////////////////////////////////////////////
 
-PBoolean PWAVFileFormat::Read(PWAVFile & file, void * buf, PINDEX & len)
+bool PWAVFileFormat::Read(PWAVFile & file, void * buf, PINDEX & len)
 { 
   if (!file.PFile::Read(buf, len))
     return false;
@@ -739,7 +739,7 @@ PBoolean PWAVFileFormat::Read(PWAVFile & file, void * buf, PINDEX & len)
   return true;
 }
 
-PBoolean PWAVFileFormat::Write(PWAVFile & file, const void * buf, PINDEX & len)
+bool PWAVFileFormat::Write(PWAVFile & file, const void * buf, PINDEX & len)
 { 
   if (!file.PFile::Write(buf, len))
     return false;
@@ -753,7 +753,7 @@ PBoolean PWAVFileFormat::Write(PWAVFile & file, const void * buf, PINDEX & len)
 
 class PWAVFileFormatPCM : public PWAVFileFormat
 {
-    WORD m_bitsPerSample;
+    uint16_t m_bitsPerSample;
   public:
     PWAVFileFormatPCM()
       : m_bitsPerSample(16)
@@ -802,7 +802,7 @@ class PWAVFileFormatPCM : public PWAVFileFormat
       m_bitsPerSample = wavFmtChunk.bitsPerSample;
     }
 
-    PBoolean Read(PWAVFile & file, void * buf, PINDEX & len)
+    bool Read(PWAVFile & file, void * buf, PINDEX & len)
     {
       if (!PWAVFileFormat::Read(file, buf, len))
         return false;
@@ -817,7 +817,7 @@ class PWAVFileFormatPCM : public PWAVFileFormat
       return true;
     }
 
-    PBoolean Write(PWAVFile & file, const void * buf, PINDEX & len)
+    bool Write(PWAVFile & file, const void * buf, PINDEX & len)
     {
       // WAV files are little-endian. So swap the bytes if this is
       // a big endian machine and we have 16 bit samples
@@ -842,7 +842,7 @@ class PWAVFileFormatG7231 : public PWAVFileFormat
       : g7231(_g7231) { }
 
     void CreateHeader(PWAV::FMTChunk & wavFmtChunk, PBYTEArray & extendedHeader);
-    PBoolean WriteExtraChunks(PWAVFile & file);
+    bool WriteExtraChunks(PWAVFile & file);
 
     bool CanSetChannels(unsigned channels) const
     { return channels == 1; }
@@ -851,12 +851,12 @@ class PWAVFileFormatG7231 : public PWAVFileFormat
     { return "G.723.1"; }   // must match string in mediafmt.h
 
     void OnStart();
-    PBoolean Read(PWAVFile & file, void * buf, PINDEX & len);
-    PBoolean Write(PWAVFile & file, const void * buf, PINDEX & len);
+    bool Read(PWAVFile & file, void * buf, PINDEX & len);
+    bool Write(PWAVFile & file, const void * buf, PINDEX & len);
 
   protected:
     unsigned short g7231;
-    BYTE cacheBuffer[24];
+    uint8_t cacheBuffer[24];
     PINDEX cacheLen;
     PINDEX cachePos;
 };
@@ -878,7 +878,7 @@ void PWAVFileFormatG7231::CreateHeader(PWAV::FMTChunk & wavFmtChunk, PBYTEArray 
   g7231Info->data2 = 480;
 }
 
-PBoolean PWAVFileFormatG7231::WriteExtraChunks(PWAVFile & file)
+bool PWAVFileFormatG7231::WriteExtraChunks(PWAVFile & file)
 {
   // write the fact chunk
   PWAV::G7231FACTChunk factChunk;
@@ -895,7 +895,7 @@ void PWAVFileFormatG7231::OnStart()
   cacheLen = cachePos = 0;
 }
 
-PBoolean PWAVFileFormatG7231::Read(PWAVFile & file, void * origData, PINDEX & origLen)
+bool PWAVFileFormatG7231::Read(PWAVFile & file, void * origData, PINDEX & origLen)
 {
   // Note that Microsoft && VivoActive G.2723.1 codec cannot do SID frames, so
   // we must parse the data and remove SID frames
@@ -930,14 +930,14 @@ PBoolean PWAVFileFormatG7231::Read(PWAVFile & file, void * origData, PINDEX & or
   return true;
 }
 
-PBoolean PWAVFileFormatG7231::Write(PWAVFile & file, const void * origData, PINDEX & len)
+bool PWAVFileFormatG7231::Write(PWAVFile & file, const void * origData, PINDEX & len)
 {
   // Note that Microsoft && VivoActive G.2723.1 codec cannot do SID frames, so
   // we must parse the data and remove SID frames
   // also note that frames are always written as 24 byte frames, so each frame must be padded
   PINDEX written = 0;
 
-  BYTE frameBuffer[24];
+  uint8_t frameBuffer[24];
   while (len > 0) {
 
     // calculate actual length of frame
@@ -1012,11 +1012,11 @@ class PWAVFileConverterPCM : public PWAVFileConverter
     virtual ~PWAVFileConverterPCM() {}
     unsigned GetFormat    (const PWAVFile & file) const;
     off_t GetPosition     (const PWAVFile & file) const;
-    PBoolean SetPosition      (PWAVFile & file, off_t pos, PFile::FilePositionOrigin origin);
+    bool SetPosition      (PWAVFile & file, off_t pos, PFile::FilePositionOrigin origin);
     unsigned GetSampleSize(const PWAVFile & file) const;
     off_t GetDataLength   (PWAVFile & file);
-    PBoolean Read             (PWAVFile & file, void * buf, PINDEX len);
-    PBoolean Write            (PWAVFile & file, const void * buf, PINDEX len);
+    bool Read             (PWAVFile & file, void * buf, PINDEX len);
+    bool Write            (PWAVFile & file, const void * buf, PINDEX len);
 };
 
 unsigned PWAVFileConverterPCM::GetFormat(const PWAVFile &) const
@@ -1030,7 +1030,7 @@ off_t PWAVFileConverterPCM::GetPosition(const PWAVFile & file) const
   return pos * 2;
 }
 
-PBoolean PWAVFileConverterPCM::SetPosition(PWAVFile & file, off_t pos, PFile::FilePositionOrigin origin)
+bool PWAVFileConverterPCM::SetPosition(PWAVFile & file, off_t pos, PFile::FilePositionOrigin origin)
 {
   pos /= 2;
   return file.SetPosition(pos, origin);
@@ -1046,7 +1046,7 @@ off_t PWAVFileConverterPCM::GetDataLength(PWAVFile & file)
   return file.RawGetDataLength() * 2;
 }
 
-PBoolean PWAVFileConverterPCM::Read(PWAVFile & file, void * buf, PINDEX len)
+bool PWAVFileConverterPCM::Read(PWAVFile & file, void * buf, PINDEX len)
 {
   if (file.GetRawSampleSize() == 16)
     return file.RawRead(buf, len);
@@ -1075,7 +1075,7 @@ PBoolean PWAVFileConverterPCM::Read(PWAVFile & file, void * buf, PINDEX len)
 }
 
 
-PBoolean PWAVFileConverterPCM::Write(PWAVFile & file, const void * buf, PINDEX len)
+bool PWAVFileConverterPCM::Write(PWAVFile & file, const void * buf, PINDEX len)
 {
   if (file.GetRawSampleSize() == 16)
     return file.PWAVFile::RawWrite(buf, len);

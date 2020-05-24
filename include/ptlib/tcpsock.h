@@ -3,7 +3,7 @@
  *
  * Transmission Control Protocol socket channel class.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -51,14 +51,14 @@ class PTCPSocket : public PIPSocket
        version constructor.
      */
     PTCPSocket(
-      WORD port = 0             ///< Port number to use for the connection.
+      uint16_t port = 0             ///< Port number to use for the connection.
     );
     PTCPSocket(
       const PString & service   ///< Service name to use for the connection.
     );
     PTCPSocket(
       const PString & address,  ///< Address of remote machine to connect to.
-      WORD port                 ///< Port number to use for the connection.
+      uint16_t port                 ///< Port number to use for the connection.
     );
     PTCPSocket(
       const PString & address,  ///< Address of remote machine to connect to.
@@ -105,7 +105,7 @@ class PTCPSocket : public PIPSocket
        @return
        true if at least len bytes were written to the channel.
      */
-    virtual PBoolean Write(
+    virtual bool Write(
       const void * buf, ///< Pointer to a block of memory to write.
       PINDEX len        ///< Number of bytes to write.
     );
@@ -127,7 +127,7 @@ class PTCPSocket : public PIPSocket
        @return
        true if the channel was successfully opened.
      */
-    virtual PBoolean Accept(
+    virtual bool Accept(
       PSocket & socket          ///< Listening socket making the connection.
     );
   //@}
@@ -145,7 +145,7 @@ class PTCPSocket : public PIPSocket
        @return
        true if all the bytes were sucessfully written.
      */
-    virtual PBoolean WriteOutOfBand(
+    virtual bool WriteOutOfBand(
       const void * buf,   ///< Data to be written as URGENT TCP data.
       PINDEX len          ///< Number of bytes pointed to by <code>buf</code>.
     );
@@ -165,14 +165,14 @@ class PTCPSocket : public PIPSocket
 
   protected:
     // Open an IPv4 socket (for backward compatibility)
-    virtual PBoolean OpenSocket();
+    virtual bool OpenSocket();
 
     // Open an IPv4 or IPv6 socket
-    virtual PBoolean OpenSocket(
+    virtual bool OpenSocket(
       int ipAdressFamily
     );
 
-    virtual bool InternalListen(const Address & bind, unsigned queueSize, WORD port, Reusability reuse);
+    virtual bool InternalListen(const Address & bind, unsigned queueSize, uint16_t port, Reusability reuse);
 
     virtual const char * GetProtocolName() const;
 

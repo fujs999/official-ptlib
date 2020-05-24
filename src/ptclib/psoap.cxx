@@ -3,7 +3,7 @@
  *
  * SOAP client / server classes.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 2003 Andreas Sikkema
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Andreas Sikkema
  *
@@ -125,7 +125,7 @@ void PSOAPMessage::AddParameter( PString name, PString type, PString value )
   }
 }
 
-void PSOAPMessage::AddParameter( PXMLElement* parameter, PBoolean dirty )
+void PSOAPMessage::AddParameter( PXMLElement* parameter, bool dirty )
 {
   if ( pSOAPMethod )
   {
@@ -177,7 +177,7 @@ PINDEX stringToFaultCode( PString & faultStr )
   return PSOAPMessage::Server;
 }
 
-PBoolean PSOAPMessage::GetParameter( const PString & name, PString & value )
+bool PSOAPMessage::GetParameter( const PString & name, PString & value )
 {
   PXMLElement* pElement = GetParameter( name );
   if(pElement == NULL)
@@ -194,7 +194,7 @@ PBoolean PSOAPMessage::GetParameter( const PString & name, PString & value )
   return false;
 }
 
-PBoolean PSOAPMessage::GetParameter( const PString & name, int & value )
+bool PSOAPMessage::GetParameter( const PString & name, int & value )
 {
   PXMLElement* pElement = GetParameter( name );
   if(pElement == NULL)
@@ -218,7 +218,7 @@ PXMLElement* PSOAPMessage::GetParameter( const PString & name )
   return 0;
 }
 
-PBoolean PSOAPMessage::Load( const PString & str )
+bool PSOAPMessage::Load( const PString & str )
 {
   if (!PXML::Load(str))
     return false;
@@ -299,7 +299,7 @@ PSOAPServerResource::PSOAPServerResource(
 {
 }
 
-PBoolean PSOAPServerResource::SetMethod(const PString & methodName, const PNotifier & func)
+bool PSOAPServerResource::SetMethod(const PString & methodName, const PNotifier & func)
 {
   // Set the method for the notifier function and add it to the list
   PWaitAndSignal m( methodMutex );
@@ -324,19 +324,19 @@ PBoolean PSOAPServerResource::SetMethod(const PString & methodName, const PNotif
   return true;
 }
 
-PBoolean PSOAPServerResource::LoadHeaders( PHTTPRequest& /* request */ )    // Information on this request.
+bool PSOAPServerResource::LoadHeaders( PHTTPRequest& /* request */ )    // Information on this request.
 {
   return true;
 }
 
-PBoolean PSOAPServerResource::OnPOSTData( PHTTPRequest & request,
+bool PSOAPServerResource::OnPOSTData( PHTTPRequest & request,
                                 const PStringToString & /*data*/)
 {
   PTRACE(4, "PSOAPServerResource\tReceived post data, request: " << request.entityBody );
 
   PString reply;
 
-  PBoolean ok = false;
+  bool ok = false;
 
   // Check for the SOAPAction header
   PString* pSOAPAction = request.inMIME.GetAt( "SOAPAction" );
@@ -387,11 +387,11 @@ PBoolean PSOAPServerResource::OnPOSTData( PHTTPRequest & request,
 }
 
 
-PBoolean PSOAPServerResource::OnSOAPRequest( const PString & body, PString & reply )
+bool PSOAPServerResource::OnSOAPRequest( const PString & body, PString & reply )
 {
   // Load the HTTP body into the SOAP (XML) parser
   PSOAPMessage request;
-  PBoolean ok = request.Load( body );
+  bool ok = request.Load( body );
 
   // If parsing the XML to SOAP failed reply with an error
   if ( !ok ) 
@@ -412,7 +412,7 @@ PBoolean PSOAPServerResource::OnSOAPRequest( const PString & body, PString & rep
   return OnSOAPRequest( method, request, reply );
 }
 
-PBoolean PSOAPServerResource::OnSOAPRequest( const PString & methodName, 
+bool PSOAPServerResource::OnSOAPRequest( const PString & methodName, 
                                             PSOAPMessage & request,
                                             PString & reply )
 {
@@ -476,7 +476,7 @@ PSOAPClient::PSOAPClient( const PURL & _url )
   timeout = 10000;
 }
 
-PBoolean PSOAPClient::MakeRequest( const PString & method, const PString & nameSpace )
+bool PSOAPClient::MakeRequest( const PString & method, const PString & nameSpace )
 {
   PSOAPMessage request( method, nameSpace );
   PSOAPMessage response;
@@ -484,19 +484,19 @@ PBoolean PSOAPClient::MakeRequest( const PString & method, const PString & nameS
   return MakeRequest( request, response );
 }
 
-PBoolean PSOAPClient::MakeRequest( const PString & method, const PString & nameSpace, PSOAPMessage & response )
+bool PSOAPClient::MakeRequest( const PString & method, const PString & nameSpace, PSOAPMessage & response )
 {
   PSOAPMessage request( method, nameSpace );
 
   return MakeRequest( request, response );
 }
 
-PBoolean PSOAPClient::MakeRequest( PSOAPMessage & request, PSOAPMessage & response )
+bool PSOAPClient::MakeRequest( PSOAPMessage & request, PSOAPMessage & response )
 {
   return  PerformRequest( request, response );
 }
 
-PBoolean PSOAPClient::PerformRequest( PSOAPMessage & request, PSOAPMessage & response )
+bool PSOAPClient::PerformRequest( PSOAPMessage & request, PSOAPMessage & response )
 {
   // create SOAP request
 

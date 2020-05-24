@@ -3,7 +3,7 @@
  *
  * Lightweight Directory Access Protocol interface class.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-2003 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -66,7 +66,7 @@ PLDAPSession::~PLDAPSession()
 }
 
 
-PBoolean PLDAPSession::Open(const PString & server, WORD port)
+bool PLDAPSession::Open(const PString & server, uint16_t port)
 {
   Close();
 
@@ -86,7 +86,7 @@ PBoolean PLDAPSession::Open(const PString & server, WORD port)
 }
 
 
-PBoolean PLDAPSession::Close()
+bool PLDAPSession::Close()
 {
   if (!IsOpen())
     return false;
@@ -97,7 +97,7 @@ PBoolean PLDAPSession::Close()
 }
 
 
-PBoolean PLDAPSession::SetOption(int optcode, int value)
+bool PLDAPSession::SetOption(int optcode, int value)
 {
   if (!IsOpen())
     return false;
@@ -106,7 +106,7 @@ PBoolean PLDAPSession::SetOption(int optcode, int value)
 }
 
 
-PBoolean PLDAPSession::SetOption(int optcode, void * value)
+bool PLDAPSession::SetOption(int optcode, void * value)
 {
   if (!IsOpen())
     return false;
@@ -114,7 +114,7 @@ PBoolean PLDAPSession::SetOption(int optcode, void * value)
   return ldap_set_option(m_ldapContext, optcode, value);
 }
 
-PBoolean PLDAPSession::StartTLS()
+bool PLDAPSession::StartTLS()
 {
 #ifdef LDAP_EXOP_START_TLS
   m_errorNumber = ldap_start_tls_s(m_ldapContext, NULL, NULL);
@@ -124,7 +124,7 @@ PBoolean PLDAPSession::StartTLS()
 #endif
 }
 
-PBoolean PLDAPSession::Bind(const PString & who,
+bool PLDAPSession::Bind(const PString & who,
                         const PString & passwd,
                         AuthenticationMethod authMethod)
 {
@@ -212,7 +212,7 @@ void PLDAPSession::StringModAttrib::AddValue(const PString & value)
 }
 
 
-PBoolean PLDAPSession::StringModAttrib::IsBinary() const
+bool PLDAPSession::StringModAttrib::IsBinary() const
 {
   return false;
 }
@@ -267,7 +267,7 @@ void PLDAPSession::BinaryModAttrib::AddValue(const PBYTEArray & value)
 }
 
 
-PBoolean PLDAPSession::BinaryModAttrib::IsBinary() const
+bool PLDAPSession::BinaryModAttrib::IsBinary() const
 {
   return true;
 }
@@ -354,7 +354,7 @@ static PArray<PLDAPSession::ModAttrib> AttribsFromStruct(const PLDAPStructBase &
 }
 
 
-PBoolean PLDAPSession::Add(const PString & dn, const PArray<ModAttrib> & attributes)
+bool PLDAPSession::Add(const PString & dn, const PArray<ModAttrib> & attributes)
 {
   if (!IsOpen())
     return false;
@@ -380,25 +380,25 @@ PBoolean PLDAPSession::Add(const PString & dn, const PArray<ModAttrib> & attribu
 }
 
 
-PBoolean PLDAPSession::Add(const PString & dn, const PStringToString & attributes)
+bool PLDAPSession::Add(const PString & dn, const PStringToString & attributes)
 {
   return Add(dn, AttribsFromDict(attributes));
 }
 
 
-PBoolean PLDAPSession::Add(const PString & dn, const PStringArray & attributes)
+bool PLDAPSession::Add(const PString & dn, const PStringArray & attributes)
 {
   return Add(dn, AttribsFromArray(attributes));
 }
 
 
-PBoolean PLDAPSession::Add(const PString & dn, const PLDAPStructBase & attributes)
+bool PLDAPSession::Add(const PString & dn, const PLDAPStructBase & attributes)
 {
   return Add(dn, AttribsFromStruct(attributes));
 }
 
 
-PBoolean PLDAPSession::Modify(const PString & dn, const PArray<ModAttrib> & attributes)
+bool PLDAPSession::Modify(const PString & dn, const PArray<ModAttrib> & attributes)
 {
   if (!IsOpen())
     return false;
@@ -424,25 +424,25 @@ PBoolean PLDAPSession::Modify(const PString & dn, const PArray<ModAttrib> & attr
 }
 
 
-PBoolean PLDAPSession::Modify(const PString & dn, const PStringToString & attributes)
+bool PLDAPSession::Modify(const PString & dn, const PStringToString & attributes)
 {
   return Modify(dn, AttribsFromDict(attributes));
 }
 
 
-PBoolean PLDAPSession::Modify(const PString & dn, const PStringArray & attributes)
+bool PLDAPSession::Modify(const PString & dn, const PStringArray & attributes)
 {
   return Modify(dn, AttribsFromArray(attributes));
 }
 
 
-PBoolean PLDAPSession::Modify(const PString & dn, const PLDAPStructBase & attributes)
+bool PLDAPSession::Modify(const PString & dn, const PLDAPStructBase & attributes)
 {
   return Modify(dn, AttribsFromStruct(attributes));
 }
 
 
-PBoolean PLDAPSession::Delete(const PString & dn)
+bool PLDAPSession::Delete(const PString & dn)
 {
   if (!IsOpen())
     return false;
@@ -481,7 +481,7 @@ PLDAPSession::SearchContext::~SearchContext()
 }
 
 
-PBoolean PLDAPSession::Search(SearchContext & context,
+bool PLDAPSession::Search(SearchContext & context,
                           const PString & filter,
                           const PStringArray & attributes,
                           const PString & baseDN,
@@ -529,7 +529,7 @@ PBoolean PLDAPSession::Search(SearchContext & context,
 }
 
 
-PBoolean PLDAPSession::GetSearchResult(SearchContext & context, PStringToString & data)
+bool PLDAPSession::GetSearchResult(SearchContext & context, PStringToString & data)
 {
   data.RemoveAll();
 
@@ -572,7 +572,7 @@ PBoolean PLDAPSession::GetSearchResult(SearchContext & context, PStringToString 
 }
 
 
-PBoolean PLDAPSession::GetSearchResult(SearchContext & context,
+bool PLDAPSession::GetSearchResult(SearchContext & context,
                                    const PString & attribute,
                                    PString & data)
 {
@@ -605,7 +605,7 @@ PBoolean PLDAPSession::GetSearchResult(SearchContext & context,
 }
 
 
-PBoolean PLDAPSession::GetSearchResult(SearchContext & context,
+bool PLDAPSession::GetSearchResult(SearchContext & context,
                                    const PString & attribute,
                                    PStringArray & data)
 {
@@ -637,7 +637,7 @@ PBoolean PLDAPSession::GetSearchResult(SearchContext & context,
 }
 
 
-PBoolean PLDAPSession::GetSearchResult(SearchContext & context,
+bool PLDAPSession::GetSearchResult(SearchContext & context,
                                    const PString & attribute,
                                    PArray<PBYTEArray> & data)
 {
@@ -648,7 +648,7 @@ PBoolean PLDAPSession::GetSearchResult(SearchContext & context,
 
   if (attribute == "dn") {
     char * dn = ldap_get_dn(m_ldapContext, context.m_message);
-    data.Append(new PBYTEArray((const BYTE *)dn, ::strlen(dn)));
+    data.Append(new PBYTEArray((const uint8_t *)dn, ::strlen(dn)));
     ldap_memfree(dn);
     return true;
   }
@@ -663,7 +663,7 @@ PBoolean PLDAPSession::GetSearchResult(SearchContext & context,
     PBYTEArray* dataPtr = new PBYTEArray(values[i]->bv_len);
     data.SetAt(i, dataPtr);
     
-    memcpy(data[i].GetPointer(), (const BYTE *)values[i]->bv_val, values[i]->bv_len); 
+    memcpy(data[i].GetPointer(), (const uint8_t *)values[i]->bv_val, values[i]->bv_len); 
   }
 
   ldap_value_free_len(values);
@@ -671,13 +671,13 @@ PBoolean PLDAPSession::GetSearchResult(SearchContext & context,
 }
 
 
-PBoolean PLDAPSession::GetSearchResult(SearchContext & context,
+bool PLDAPSession::GetSearchResult(SearchContext & context,
                                    PLDAPStructBase & data)
 {
   if (!IsOpen())
     return false;
 
-  PBoolean atLeastOne = false;
+  bool atLeastOne = false;
 
   for (PLDAPStructBase::AttribDict::iterator it = data.GetAttributes().begin(); it != data.GetAttributes().end(); ++it) {
     PLDAPAttributeBase & attr = it->second;
@@ -717,7 +717,7 @@ PString PLDAPSession::GetSearchResultDN(SearchContext & context)
 }
 
 
-PBoolean PLDAPSession::GetNextSearchResult(SearchContext & context)
+bool PLDAPSession::GetNextSearchResult(SearchContext & context)
 {
   if (!IsOpen())
     return false;
@@ -824,7 +824,7 @@ void PLDAPAttributeBase::FromString(const PString & str)
 
 PBYTEArray PLDAPAttributeBase::ToBinary() const
 {
-  return PBYTEArray((const BYTE *)m_pointer, m_size, false);
+  return PBYTEArray((const uint8_t *)m_pointer, m_size, false);
 }
 
 
@@ -944,7 +944,7 @@ void PLDAPSchema::OnReceivedAttribute(const PString & attribute, const PString &
    SetAttribute(attribute,value);
 }
 
-PBoolean PLDAPSchema::SetAttribute(const PString & attribute, const PString & value)
+bool PLDAPSchema::SetAttribute(const PString & attribute, const PString & value)
 {
 
 	for (std::list<Attribute>::const_iterator r = m_attributelist.begin(); r != m_attributelist.end(); ++r) {
@@ -958,7 +958,7 @@ PBoolean PLDAPSchema::SetAttribute(const PString & attribute, const PString & va
 	return false;
 }
 
-PBoolean PLDAPSchema::SetAttribute(const PString & attribute, const PBYTEArray & value)
+bool PLDAPSchema::SetAttribute(const PString & attribute, const PBYTEArray & value)
 {
 	for (std::list<Attribute>::const_iterator r = m_attributelist.begin(); r != m_attributelist.end(); ++r) {
 		if ((r->m_name == attribute) && (r->m_type == AttributeBinary)) {
@@ -971,7 +971,7 @@ PBoolean PLDAPSchema::SetAttribute(const PString & attribute, const PBYTEArray &
 	return false;
 }
 
-PBoolean PLDAPSchema::GetAttribute(const PString & attribute, PString & value)
+bool PLDAPSchema::GetAttribute(const PString & attribute, PString & value)
 {
 	for (ldapAttributes::const_iterator r = m_attributes.begin(); r != m_attributes.end(); ++r) {
 		if (r->first == attribute) {
@@ -982,7 +982,7 @@ PBoolean PLDAPSchema::GetAttribute(const PString & attribute, PString & value)
 	return false; 
 }
 
-PBoolean PLDAPSchema::GetAttribute(const PString & attribute, PBYTEArray & value)
+bool PLDAPSchema::GetAttribute(const PString & attribute, PBYTEArray & value)
 {
 	for (ldapBinAttributes::const_iterator r = m_binattributes.begin(); r != m_binattributes.end(); ++r) {
 		if (r->first == attribute) {
@@ -1002,7 +1002,7 @@ PStringList PLDAPSchema::GetAttributeList()
 	return att;
 }
 
-PBoolean PLDAPSchema::Exists(const PString & attribute)
+bool PLDAPSchema::Exists(const PString & attribute)
 {
 	for (std::list<Attribute>::const_iterator itList = m_attributelist.begin(); itList != m_attributelist.end(); ++itList) {
 	  if (itList->m_name == attribute) {

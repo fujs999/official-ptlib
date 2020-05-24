@@ -33,10 +33,10 @@ class MySNMPServer : public PSNMPServer
     MySNMPServer();
     ~MySNMPServer();
 
-    virtual PBoolean Authorise(const PIPSocket::Address & received);
-	virtual PBoolean ConfirmCommunity(PASN_OctetString & community);
-	virtual PBoolean OnGetRequest(PINDEX reqID, PSNMP::BindingList & vars, PSNMP::ErrorType & errCode);
-    virtual PBoolean ConfirmVersion(PASN_Integer vers);
+    virtual bool Authorise(const PIPSocket::Address & received);
+	virtual bool ConfirmCommunity(PASN_OctetString & community);
+	virtual bool OnGetRequest(PINDEX reqID, PSNMP::BindingList & vars, PSNMP::ErrorType & errCode);
+    virtual bool ConfirmVersion(PASN_Integer vers);
 
   protected:
     PRFC1155_SimpleSyntax sys_description;

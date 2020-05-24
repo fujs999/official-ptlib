@@ -1,7 +1,7 @@
 /*
  * pdns.cxx
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 2003 Equivalence Pty. Ltd.
  *
@@ -15,7 +15,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -63,7 +63,7 @@ static DNSCache g_dnsCache;
 
 #ifdef P_HAS_RESOLV_H
 
-static PBoolean GetDN(const BYTE * reply, const BYTE * replyEnd, BYTE * & cp, char * buff)
+static bool GetDN(const uint8_t * reply, const uint8_t * replyEnd, uint8_t * & cp, char * buff)
 {
   int len = dn_expand(reply, replyEnd, cp, buff, MAXDNAME);
   if (len < 0)
@@ -72,10 +72,10 @@ static PBoolean GetDN(const BYTE * reply, const BYTE * replyEnd, BYTE * & cp, ch
   return true;
 }
 
-static PBoolean ProcessDNSRecords(
-        const BYTE * reply,
-        const BYTE * replyEnd,
-              BYTE * cp,
+static bool ProcessDNSRecords(
+        const uint8_t * reply,
+        const uint8_t * replyEnd,
+              uint8_t * cp,
             PINDEX anCount,
             PINDEX nsCount,
             PINDEX arCount,
@@ -104,24 +104,24 @@ static PBoolean ProcessDNSRecords(
       return false;
 
     // get other common parts of the record
-    WORD  type;
-    //WORD  dnsClass;
-    //DWORD ttl;
-    WORD  dlen;
+    uint16_t  type;
+    //uint16_t  dnsClass;
+    //uint32_t ttl;
+    uint16_t  dlen;
 
     GETSHORT(type, cp);
     cp += 2; // GETSHORT(dnsClass, cp);
     cp += 4; // GETLONG (ttl,      cp);
     GETSHORT(dlen, cp);
 
-    BYTE * data = cp;
+    uint8_t * data = cp;
     cp += dlen;
 
     PDNS_RECORD newRecord  = NULL;
 
     switch (type) {
       default:
-        newRecord = (PDNS_RECORD)malloc(sizeof(DnsRecord) + sizeof(DWORD) + dlen);
+        newRecord = (PDNS_RECORD)malloc(sizeof(DnsRecord) + sizeof(uint32_t) + dlen);
         newRecord->Data.Null.dwByteCount = dlen;
         memcpy(&newRecord->Data, data, dlen);
         break;
@@ -195,8 +195,8 @@ static PBoolean ProcessDNSRecords(
 }
 
 DNS_STATUS DnsQuery_A(const char * service,
-                              WORD requestType,
-                             DWORD options,
+                              uint16_t requestType,
+                             uint32_t options,
                             void *,
                      PDNS_RECORD * results,
                             void *)
@@ -222,7 +222,7 @@ DNS_STATUS DnsQuery_A(const char * service,
 
   union {
     HEADER hdr;
-    BYTE buf[PACKETSZ];
+    uint8_t buf[PACKETSZ];
   } reply;
 
 #if P_HAS_RES_NINIT
@@ -232,18 +232,18 @@ DNS_STATUS DnsQuery_A(const char * service,
 #else
       &_res,
 #endif
-      service, C_IN, requestType, (BYTE *)&reply, sizeof(reply));
+      service, C_IN, requestType, (uint8_t *)&reply, sizeof(reply));
 #else
-  int replyLen = res_search(service, C_IN, requestType, (BYTE *)&reply, sizeof(reply));
+  int replyLen = res_search(service, C_IN, requestType, (uint8_t *)&reply, sizeof(reply));
   dns_mutex.Signal();
 #endif
 
   if (replyLen < 1)
     return -1;
 
-  BYTE * replyStart = reply.buf;
-  BYTE * replyEnd   = reply.buf + replyLen;
-  BYTE * cp         = reply.buf + sizeof(HEADER);
+  uint8_t * replyStart = reply.buf;
+  uint8_t * replyEnd   = reply.buf + replyLen;
+  uint8_t * cp         = reply.buf + sizeof(HEADER);
 
   // ignore questions in response
   uint16_t i;
@@ -358,7 +358,7 @@ PDNS::SRVRecord * PDNS::SRVRecordList::HandleDNSRecord(PDNS_RECORD dnsRecord, PD
         break;
       }
       if ((dnsRecord->Flags.S.Section == DnsSectionAdditional) && (dnsRecord->wType == DNS_TYPE_AAAA)) {
-        record->hostAddress = PIPSocket::Address(16, (BYTE *)&dnsRecord->Data.AAAA.Ip6Address);
+        record->hostAddress = PIPSocket::Address(16, (uint8_t *)&dnsRecord->Data.AAAA.Ip6Address);
         break;
       }
       aRecord = aRecord->pNext;
@@ -391,7 +391,7 @@ PDNS::SRVRecord * PDNS::SRVRecordList::GetFirst()
   PINDEX i;
   if (GetSize() > 0) {
     priList.SetSize(1);
-    WORD lastPri = (*this)[0].priority;
+    uint16_t lastPri = (*this)[0].priority;
     priList[0] = lastPri;
     (*this)[0].used = false;
     for (i = 1; i < GetSize(); i++) {
@@ -416,7 +416,7 @@ PDNS::SRVRecord * PDNS::SRVRecordList::GetNext()
 
   while (priPos < priList.GetSize()) {
 
-    WORD currentPri = priList[priPos];
+    uint16_t currentPri = priList[priPos];
 
     // find first record at current priority
     PINDEX firstPos;
@@ -478,7 +478,7 @@ PDNS::SRVRecord * PDNS::SRVRecordList::GetNext()
   return NULL;
 }
 
-PBoolean PDNS::GetSRVRecords(
+bool PDNS::GetSRVRecords(
   const PString & _service,
   const PString & type,
   const PString & domain,
@@ -500,12 +500,12 @@ PBoolean PDNS::GetSRVRecords(
 
 #if P_URL
 
-PBoolean PDNS::LookupSRV(
+bool PDNS::LookupSRV(
            const PURL & url,
         const PString & service,
           PStringList & returnList)
 {
-  WORD defaultPort = url.GetPort();
+  uint16_t defaultPort = url.GetPort();
   PIPSocketAddressAndPortVector info;
 
   if (!LookupSRV(url.GetHostName(), service, defaultPort, info)) {
@@ -531,10 +531,10 @@ PBoolean PDNS::LookupSRV(
 #endif // P_URL
 
 
-PBoolean PDNS::LookupSRV(
+bool PDNS::LookupSRV(
          const PString & domain,            ///< domain to lookup
          const PString & service,           ///< service to use
-                    WORD defaultPort,       ///< default port to use
+                    uint16_t defaultPort,       ///< default port to use
          PIPSocketAddressAndPortVector & addrList  ///< list of sockets and ports
 )
 {
@@ -561,9 +561,9 @@ PBoolean PDNS::LookupSRV(
   return LookupSRV(srvLookupStr, defaultPort, addrList);
 }
 
-PBoolean PDNS::LookupSRV(
+bool PDNS::LookupSRV(
               const PString & srvLookupStr,
-              WORD defaultPort,
+              uint16_t defaultPort,
               PIPSocketAddressAndPortVector & addrList
 )
 {
@@ -629,7 +629,7 @@ PDNS::MXRecord * PDNS::MXRecordList::HandleDNSRecord(PDNS_RECORD dnsRecord, PDNS
         break;
       }
       if ((dnsRecord->Flags.S.Section == DnsSectionAdditional) && (dnsRecord->wType == DNS_TYPE_AAAA)) {
-        record->hostAddress = PIPSocket::Address(16, (BYTE *)&dnsRecord->Data.AAAA.Ip6Address);
+        record->hostAddress = PIPSocket::Address(16, (uint8_t *)&dnsRecord->Data.AAAA.Ip6Address);
         break;
       }
       aRecord = aRecord->pNext;
@@ -676,8 +676,8 @@ PDNS::MXRecord * PDNS::MXRecordList::GetNext()
 
 DNS_STATUS PDNS::Cached_DnsQuery(
     const char * name,
-    WORD       type,
-    DWORD      options,
+    uint16_t       type,
+    uint32_t      options,
     void *     ,
     PDNS_RECORD * queryResults,
     void * )

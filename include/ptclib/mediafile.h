@@ -3,7 +3,7 @@
  *
  * Media file declaration
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (C) 2017 Vox Lucida Pty. Ltd.
  *
@@ -276,8 +276,8 @@ class PMediaFile : public PSmartObject
 
         virtual bool Open(const Params & params);
         virtual PString GetName() const;
-        virtual PBoolean Close();
-        virtual PBoolean IsOpen() const;
+        virtual bool Close();
+        virtual bool IsOpen() const;
 
       protected:
         virtual bool RawWrite(const void * buf, PINDEX len);
@@ -297,12 +297,12 @@ class PMediaFile : public PSmartObject
         ~VideoInputDevice();
 
         virtual PStringArray GetDeviceNames() const;
-        virtual PBoolean Open(const PString & deviceName, PBoolean startImmediate = true);
-        virtual PBoolean IsOpen();
-        virtual PBoolean Close();
+        virtual bool Open(const PString & deviceName, bool startImmediate = true);
+        virtual bool IsOpen();
+        virtual bool Close();
 
       protected:
-        virtual bool InternalReadFrameData(BYTE * frame);
+        virtual bool InternalReadFrameData(uint8_t * frame);
 
         Ptr            m_mediaFile;
         unsigned       m_track;
@@ -343,39 +343,39 @@ class PVideoOutputDevice_MediaFile : public PVideoOutputDevice
 
     /**Open the device given the device name.
       */
-    virtual PBoolean Open(
+    virtual bool Open(
       const PString & deviceName,   /// Device name to open
-      PBoolean startImmediate = true    /// Immediately start device
+      bool startImmediate = true    /// Immediately start device
     );
 
     /**Start the video device I/O.
       */
-    PBoolean Start();
+    bool Start();
 
     /**Stop the video device I/O capture.
       */
-    PBoolean Stop();
+    bool Stop();
 
     /**Close the device.
       */
-    virtual PBoolean Close();
+    virtual bool Close();
 
     /**Determine if the device is currently open.
       */
-    virtual PBoolean IsOpen();
+    virtual bool IsOpen();
 
     /**Set the colour format to be used.
 
        Default behaviour sets the value of the colourFormat variable and then
        returns the IsOpen() status.
     */
-    virtual PBoolean SetColourFormat(
+    virtual bool SetColourFormat(
       const PString & colourFormat   // New colour format for device.
     );
     
     /**Set a section of the output frame buffer.
       */
-    virtual PBoolean SetFrameData(const FrameData & frameData);
+    virtual bool SetFrameData(const FrameData & frameData);
 
   protected:  
    PMediaFile * m_file;

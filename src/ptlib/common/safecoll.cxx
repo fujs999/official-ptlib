@@ -3,7 +3,7 @@
  *
  * Thread safe collection classes.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 2002 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -85,7 +85,7 @@ PSafeObject::~PSafeObject()
 }
 
 
-PBoolean PSafeObject::SafeReference()
+bool PSafeObject::SafeReference()
 {
 #if PTRACING
   unsigned count = 0;
@@ -119,7 +119,7 @@ PBoolean PSafeObject::SafeReference()
 }
 
 
-PBoolean PSafeObject::SafeDereference()
+bool PSafeObject::SafeDereference()
 {
   bool mayBeDeleted = false;
 
@@ -210,7 +210,7 @@ void PSafeObject::SafeRemove()
 }
 
 
-PBoolean PSafeObject::SafelyCanBeDeleted() const
+bool PSafeObject::SafelyCanBeDeleted() const
 {
   PWaitAndSignal mutex(m_safetyMutex);
   return m_safelyBeingRemoved && m_safeReferenceCount == 0;
@@ -298,7 +298,7 @@ PSafeCollection::~PSafeCollection()
 }
 
 
-PBoolean PSafeCollection::SafeRemove(PSafeObject * obj)
+bool PSafeCollection::SafeRemove(PSafeObject * obj)
 {
   if (obj == NULL)
     return false;
@@ -312,7 +312,7 @@ PBoolean PSafeCollection::SafeRemove(PSafeObject * obj)
 }
 
 
-PBoolean PSafeCollection::SafeRemoveAt(PINDEX idx)
+bool PSafeCollection::SafeRemoveAt(PINDEX idx)
 {
   PWaitAndSignal mutex(m_collectionMutex);
   PSafeObject * obj = PDownCast(PSafeObject, m_collection->RemoveAt(idx));
@@ -333,7 +333,7 @@ void PSafeCollection::PrintOn(ostream &strm) const
 }
 
 
-void PSafeCollection::RemoveAll(PBoolean synchronous)
+void PSafeCollection::RemoveAll(bool synchronous)
 {
   m_collectionMutex.Wait();
 
@@ -391,7 +391,7 @@ void PSafeCollection::SafeRemoveObject(PSafeObject * obj)
 }
 
 
-PBoolean PSafeCollection::DeleteObjectsToBeRemoved()
+bool PSafeCollection::DeleteObjectsToBeRemoved()
 {
   {
     PWaitAndSignal lock(m_removalMutex);
@@ -714,7 +714,7 @@ void PSafePtrBase::SetNULL()
 }
 
 
-PBoolean PSafePtrBase::SetSafetyMode(PSafetyMode mode)
+bool PSafePtrBase::SetSafetyMode(PSafetyMode mode)
 {
   if (m_lockMode == mode)
     return true;
@@ -725,7 +725,7 @@ PBoolean PSafePtrBase::SetSafetyMode(PSafetyMode mode)
 }
 
 
-PBoolean PSafePtrBase::EnterSafetyMode(EnterSafetyModeOption ref)
+bool PSafePtrBase::EnterSafetyMode(EnterSafetyModeOption ref)
 {
   if (m_currentObject == NULL)
     return false;
@@ -883,7 +883,7 @@ void PSafePtrMultiThreaded::SetNULL()
 }
 
 
-PBoolean PSafePtrMultiThreaded::SetSafetyMode(PSafetyMode mode)
+bool PSafePtrMultiThreaded::SetSafetyMode(PSafetyMode mode)
 {
   PWaitAndSignal mutex(m_mutex);
   return PSafePtrBase::SetSafetyMode(mode);

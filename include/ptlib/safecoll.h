@@ -3,7 +3,7 @@
  *
  * Thread safe collection classes.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 2002 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -161,7 +161,7 @@ class PSafeObject : public PObject
        It is recommended that the PSafePtr<> class is used to manage this
        rather than the application calling this function directly.
       */
-    PBoolean SafeReference();
+    bool SafeReference();
 
     /**Decrement the reference count for object.
        This indicates that the thread no longer has anything to do with the
@@ -173,7 +173,7 @@ class PSafeObject : public PObject
        @return true if reference count has reached zero and is not being
                safely deleted elsewhere ie SafeRemove() not called
       */
-    PBoolean SafeDereference();
+    bool SafeDereference();
 
     /**Lock the object for Read Only access.
        This will lock the object in read only mode. Multiple threads may lock
@@ -265,7 +265,7 @@ class PSafeObject : public PObject
        This is typically used by the PSafeCollection class and is not expected
        to be used directly by an application.
       */
-    PBoolean SafelyCanBeDeleted() const;
+    bool SafelyCanBeDeleted() const;
 
     /**Do any garbage collection that may be required by the object so that it
        may be finally deleted. This is especially useful if there a references
@@ -433,7 +433,7 @@ class PSafeCollection : public PObject
        As for Append() full mutual exclusion locking on the collection itself
        is maintained.
       */
-    virtual PBoolean SafeRemove(
+    virtual bool SafeRemove(
       PSafeObject * obj   ///< Object to remove from collection
     );
 
@@ -445,7 +445,7 @@ class PSafeCollection : public PObject
        As for Append() full mutual exclusion locking on the collection itself
        is maintained.
       */
-    virtual PBoolean SafeRemoveAt(
+    virtual bool SafeRemoveAt(
       PINDEX idx    ///< Object index to remove
     );
 
@@ -463,7 +463,7 @@ class PSafeCollection : public PObject
     /**Remove all objects in collection.
       */
     virtual void RemoveAll(
-      PBoolean synchronous = false  ///< Wait till objects are deleted before returning
+      bool synchronous = false  ///< Wait till objects are deleted before returning
     );
 
     /**Disallow the automatic delete any objects that have been removed.
@@ -471,7 +471,7 @@ class PSafeCollection : public PObject
        deletion using PSafeObject::SafeRemove() and DeleteObject().
       */
     void AllowDeleteObjects(
-      PBoolean yes = true   ///< New value for flag for deleting objects
+      bool yes = true   ///< New value for flag for deleting objects
     ) { m_deleteObjects = yes; }
 
     /**Disallow the automatic delete any objects that have been removed.
@@ -484,7 +484,7 @@ class PSafeCollection : public PObject
        Returns true if all objects in the collection have been removed and
        their pending deletions carried out.
       */
-    virtual PBoolean DeleteObjectsToBeRemoved();
+    virtual bool DeleteObjectsToBeRemoved();
 
     /**Delete an objects that has been removed.
       */
@@ -504,7 +504,7 @@ class PSafeCollection : public PObject
        Note that usefulness of this function is limited as it is merely an
        instantaneous snapshot of the state of the collection.
       */
-    PBoolean IsEmpty() const { return GetSize() == 0; }
+    bool IsEmpty() const { return GetSize() == 0; }
 
     /**Get the mutex for the collection.
       */
@@ -665,7 +665,7 @@ class PSafePtrBase : public PObject
        deletion and the calling thread should immediately cease use of the
        object. This instance pointer will be set to NULL.
       */
-    virtual PBoolean SetSafetyMode(
+    virtual bool SetSafetyMode(
       PSafetyMode mode  ///< New locking mode
     );
   //@}
@@ -684,7 +684,7 @@ class PSafePtrBase : public PObject
       WithReference,
       AlreadyReferenced
     };
-    PBoolean EnterSafetyMode(EnterSafetyModeOption ref);
+    bool EnterSafetyMode(EnterSafetyModeOption ref);
 
     enum ExitSafetyModeOption {
       WithDereference,
@@ -797,7 +797,7 @@ class PSafePtrMultiThreaded : public PSafePtrBase
        deletion and the calling thread should immediately cease use of the
        object. This instance pointer will be set to NULL.
       */
-    virtual PBoolean SetSafetyMode(
+    virtual bool SetSafetyMode(
       PSafetyMode mode  ///< New locking mode
     );
   //@}
@@ -1108,7 +1108,7 @@ template <class Coll, class Base> class PSafeColl : public PSafeCollection
        As for Append() full mutual exclusion locking on the collection itself
        is maintained.
       */
-    virtual PBoolean Remove(
+    virtual bool Remove(
       Base * obj          ///< Object to remove from safe collection
     ) {
         return SafeRemove(obj);
@@ -1122,7 +1122,7 @@ template <class Coll, class Base> class PSafeColl : public PSafeCollection
        As for Append() full mutual exclusion locking on the collection itself
        is maintained.
       */
-    virtual PBoolean RemoveAt(
+    virtual bool RemoveAt(
       PINDEX idx     ///< Index to remove
     ) {
         return SafeRemoveAt(idx);
@@ -1260,7 +1260,7 @@ template <class Coll, class Key, class Base> class PSafeDictionaryBase : public 
        As for Append() full mutual exclusion locking on the collection itself
        is maintained.
       */
-    virtual PBoolean RemoveAt(
+    virtual bool RemoveAt(
       const Key & key   ///< Key to find object to delete
     ) {
         PWaitAndSignal mutex(this->m_collectionMutex);
@@ -1269,7 +1269,7 @@ template <class Coll, class Key, class Base> class PSafeDictionaryBase : public 
 
     /**Determine of the dictionary contains an entry for the key.
       */
-    virtual PBoolean Contains(
+    virtual bool Contains(
       const Key & key
     ) {
         PWaitAndSignal lock(this->m_collectionMutex);

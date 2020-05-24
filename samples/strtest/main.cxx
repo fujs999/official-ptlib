@@ -114,7 +114,7 @@ void Test3()
 #define SPECIALNAME     "openH323"
 #define COUNT_MAX       2000000
 
-PBoolean finishFlag;
+bool finishFlag;
 
 template <class S>
 struct StringConv {

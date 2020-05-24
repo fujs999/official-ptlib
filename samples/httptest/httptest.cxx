@@ -153,7 +153,7 @@ public:
       }
     }
 
-    PTCPSocket listener(args.GetOptionAs('p', (WORD)(sslContext != NULL ? 443 : 80)));
+    PTCPSocket listener(args.GetOptionAs('p', (uint16_t)(sslContext != NULL ? 443 : 80)));
 #else
     PTCPSocket listener(args.GetOptionAs('p', 80));
 #endif

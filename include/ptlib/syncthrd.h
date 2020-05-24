@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -118,7 +118,7 @@ class PCondMutex : public PMutex
     /** This is the condition that must be met for the WaitCondition() function
        to acquire the mutex.
      */
-    virtual PBoolean Condition() = 0;
+    virtual bool Condition() = 0;
 
     /** This function is called immediately before blocking on the condition in
        the WaitCondition() function. This could get called multiple times
@@ -179,7 +179,7 @@ class PIntCondMutex : public PCondMutex
 
        @return true if condition is met.
      */
-    virtual PBoolean Condition();
+    virtual bool Condition();
 
     /**Get the current value of the condition variable.
       @return Current condition variable value.
@@ -477,7 +477,7 @@ class PWriteWaitAndSignal : public PReadWriteWaitAndSignalBase
       */
     PWriteWaitAndSignal(
       const PReadWriteMutex & mutex,  ///< PReadWriteMutex descendent to wait/signal.
-      PBoolean start = true           ///< Start write operation on PReadWriteMutex before returning.
+      bool start = true           ///< Start write operation on PReadWriteMutex before returning.
     ) : PReadWriteWaitAndSignalBase(mutex, NULL, start ? &PReadWriteMutex::InternalStartWrite : NULL, &PReadWriteMutex::InternalEndWrite) { }
 };
 
@@ -558,7 +558,7 @@ class PWriteWaitAndSignal : public PReadWriteWaitAndSignalBase
       PInstrumentedWriteWaitAndSignal(
         const PReadWriteMutex & mutex,
         const PDebugLocation & location,
-        PBoolean start = true
+        bool start = true
       ) : PReadWriteWaitAndSignalBase(mutex, &location, start ? &PReadWriteMutex::InternalStartWrite : NULL, &PReadWriteMutex::InternalEndWrite) { }
   };
 

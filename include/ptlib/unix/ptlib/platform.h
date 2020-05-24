@@ -3,7 +3,7 @@
  *
  * Unix machine dependencies
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -29,16 +29,6 @@
 
 #ifndef PTLIB_PLATFORM_H
 #define PTLIB_PLATFORM_H
-
-#ifdef HAVE_STDINT_H
-  #include <stdint.h>
-#elif defined(HAVE_INTTYPES_H)
-  #include <inttypes.h>
-#endif
-
-#ifdef HAVE_LIMITS_H
-  #include <limits.h>
-#endif
 
 #ifdef HAVE_SYS_TYPES_H
   #include <sys/types.h>
@@ -451,31 +441,6 @@ typedef pid_t PUniqueThreadIdentifier;
 #endif
 
 
-///////////////////////////////////////////
-//
-//  define a macro for declaring classes so we can bolt
-//  extra things to class declarations
-//
-
-#define PEXPORT
-#define PSTATIC
-
-
-///////////////////////////////////////////
-//
-// define some basic types and their limits
-//
-
-typedef  int16_t  PInt16; // 16 bit
-typedef uint16_t PUInt16; // 16 bit
-typedef  int32_t  PInt32; // 32 bit
-typedef uint32_t PUInt32; // 32 bit
-typedef  int64_t  PInt64; // 64 bit
-typedef uint64_t PUInt64; // 64 bit
-
-// Integer type that is same size as a pointer type.
-typedef intptr_t      INT;
-
 // Create "Windows" style definitions.
 
 #if P_ODBC_DEFINES_WINDOWS_TYPES
@@ -484,9 +449,9 @@ typedef intptr_t      INT;
   #include <sqltypes.h>
 #else
   typedef void            VOID;
-  typedef uint8_t         BYTE;
-  typedef uint16_t        WORD;
-  typedef uint32_t        DWORD;
+  typedef uint8_t         uint8_t;
+  typedef uint16_t        uint16_t;
+  typedef uint32_t        uint32_t;
 
   typedef char            CHAR;
   typedef signed char     SCHAR;
@@ -507,7 +472,7 @@ typedef intptr_t      INT;
   typedef CHAR *          LPSTR;
 
   typedef const CHAR *    LPCSTR;
-  typedef DWORD *         LPDWORD;
+  typedef uint32_t *         LPDWORD;
   #define FAR
 
   typedef signed short    RETCODE;
@@ -521,11 +486,11 @@ typedef intptr_t      INT;
 
 
 #ifndef INT64_MAX
-#define INT64_MAX	std::numeric_limits<PInt64>::max()
+#define INT64_MAX	std::numeric_limits<int64_t>::max()
 #endif
 
 #ifndef UINT64_MAX
-#define UINT64_MAX	std::numeric_limits<PUInt64>::max()
+#define UINT64_MAX	std::numeric_limits<uint64_t>::max()
 #endif
 
 

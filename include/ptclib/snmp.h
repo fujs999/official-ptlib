@@ -74,10 +74,10 @@ class PSNMP_PDUs : public PASN_Choice
     operator const PSNMP_Trap_PDU &() const;
 #endif
 
-    virtual PBoolean Decode(PASN_Stream & strm);
+    virtual bool Decode(PASN_Stream & strm);
     virtual void Encode(PASN_Stream & strm) const;
 
-    PBoolean CreateObject();
+    bool CreateObject();
     PObject * Clone() const;
 };
 
@@ -98,7 +98,7 @@ class PSNMP_VarBind : public PASN_Sequence
     PRFC1155_ObjectSyntax m_value;
 
     PINDEX GetDataLength() const;
-    PBoolean Decode(PASN_Stream & strm);
+    bool Decode(PASN_Stream & strm);
     void Encode(PASN_Stream & strm) const;
 #ifndef PASN_NOPRINTON
     void PrintOn(ostream & strm) const;
@@ -146,7 +146,7 @@ class PSNMP_PDU : public PASN_Sequence
     PSNMP_VarBindList m_variable_bindings;
 
     PINDEX GetDataLength() const;
-    PBoolean Decode(PASN_Stream & strm);
+    bool Decode(PASN_Stream & strm);
     void Encode(PASN_Stream & strm) const;
 #ifndef PASN_NOPRINTON
     void PrintOn(ostream & strm) const;
@@ -176,7 +176,7 @@ class PSNMP_Trap_PDU : public PASN_Sequence
     PSNMP_VarBindList m_variable_bindings;
 
     PINDEX GetDataLength() const;
-    PBoolean Decode(PASN_Stream & strm);
+    bool Decode(PASN_Stream & strm);
     void Encode(PASN_Stream & strm) const;
 #ifndef PASN_NOPRINTON
     void PrintOn(ostream & strm) const;
@@ -268,7 +268,7 @@ class PSNMP_Message : public PASN_Sequence
     PASN_OctetString m_data;
 
     PINDEX GetDataLength() const;
-    PBoolean Decode(PASN_Stream & strm);
+    bool Decode(PASN_Stream & strm);
     void Encode(PASN_Stream & strm) const;
 #ifndef PASN_NOPRINTON
     void PrintOn(ostream & strm) const;

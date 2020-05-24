@@ -3,7 +3,7 @@
  *
  * Miscellaneous implementation of classes for Win32
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -79,7 +79,7 @@ PTime::PTime(const FILETIME & timestamp)
 
 
 // Magic constant to convert epoch from 1601 to 1970
-static const ULONGLONG Win332FileTimeDelta = ((PInt64)369*365+(369/4)-3)*24*60*60U*1000000;
+static const ULONGLONG Win332FileTimeDelta = ((int64_t)369*365+(369/4)-3)*24*60*60U*1000000;
 
 void PTime::SetFromFileTime(const FILETIME & timestamp)
 {
@@ -186,7 +186,7 @@ PTime::DateOrder PTime::GetDateOrder()
 bool PTime::IsDaylightSavings()
 {
   TIME_ZONE_INFORMATION tz;
-  DWORD result = GetTimeZoneInformation(&tz);
+  uint32_t result = GetTimeZoneInformation(&tz);
   PAssertOS(result != 0xffffffff);
   return result == TIME_ZONE_ID_DAYLIGHT;
 }
@@ -340,7 +340,7 @@ PFilePathString PFilePath::Canonicalise(const PFilePathString & path, bool isDir
   }
 
   LPSTR dummy;
-  DWORD len = (PINDEX)GetFullPathName(partialpath, 0, NULL, &dummy);
+  uint32_t len = (PINDEX)GetFullPathName(partialpath, 0, NULL, &dummy);
   if (len-- == 0)
      return PString::Empty();
    PString fullpath;
@@ -356,13 +356,13 @@ PFilePathString PFilePath::Canonicalise(const PFilePathString & path, bool isDir
 }
 
 
-typedef PBoolean (WINAPI *GetDiskFreeSpaceExType)(LPCTSTR lpDirectoryName,
+typedef bool (WINAPI *GetDiskFreeSpaceExType)(LPCTSTR lpDirectoryName,
                                               PULARGE_INTEGER lpFreeBytesAvailableToCaller,
                                               PULARGE_INTEGER lpTotalNumberOfBytes,
                                               PULARGE_INTEGER lpTotalNumberOfFreeBytes);
 
 
-bool PDirectory::GetVolumeSpace(PInt64 & total, PInt64 & free, DWORD & clusterSize) const
+bool PDirectory::GetVolumeSpace(int64_t & total, int64_t & free, uint32_t & clusterSize) const
 {
   clusterSize = 512;
   total = free = ULONG_MAX;
@@ -382,7 +382,7 @@ bool PDirectory::GetVolumeSpace(PInt64 & total, PInt64 & free, DWORD & clusterSi
   if (root.IsEmpty())
     return false;
 
-  PBoolean needTotalAndFree = true;
+  bool needTotalAndFree = true;
 
   static GetDiskFreeSpaceExType GetDiskFreeSpaceEx =
         (GetDiskFreeSpaceExType)GetProcAddress(LoadLibrary("KERNEL32.DLL"), "GetDiskFreeSpaceExA");
@@ -430,7 +430,7 @@ bool PDirectory::GetVolumeSpace(PInt64 & total, PInt64 & free, DWORD & clusterSi
         return false;
       drive[0]++;
     }
-    PBoolean ok = GetDiskFreeSpace(drive+'\\',
+    bool ok = GetDiskFreeSpace(drive+'\\',
                                &sectorsPerCluster,
                                &bytesPerSector,
                                &numberOfFreeClusters,
@@ -532,9 +532,9 @@ static VOID CALLBACK StaticOnIOComplete(DWORD dwErrorCode,
 
 void PChannel::AsyncContext::SetOffset(off_t offset)
 {
-  Offset = (DWORD)offset;
+  Offset = (uint32_t)offset;
 #if P_64BIT
-  OffsetHigh = (DWORD)((int64_t)offset>>32);
+  OffsetHigh = (uint32_t)((int64_t)offset>>32);
 #endif
 }
 
@@ -616,7 +616,7 @@ PString PChannel::GetErrorText(Errors lastError, int osError)
   osError &= ~PWIN32ErrorFlag;
 
   LPVOID lpMsgBuf;
-  DWORD count = FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+  uint32_t count = FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
                               NULL, osError, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&lpMsgBuf, 0, NULL);
 
   PString str((LPCSTR)lpMsgBuf, count);
@@ -626,7 +626,7 @@ PString PChannel::GetErrorText(Errors lastError, int osError)
 }
 
 
-PBoolean PChannel::ConvertOSError(P_INT_PTR libcReturnValue, ErrorGroup group)
+bool PChannel::ConvertOSError(P_INT_PTR libcReturnValue, ErrorGroup group)
 {
   int osError = GetErrorNumber(group);
 
@@ -843,7 +843,7 @@ bool PThread::CoInitialise()
 std::ostream & operator<<(std::ostream & strm, const PComResult & result)
 {
   TCHAR msg[MAX_ERROR_TEXT_LEN+1];
-  DWORD dwMsgLen = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+  uint32_t dwMsgLen = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
                                  NULL,
                                  result.m_result,
                                  MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
@@ -1002,7 +1002,7 @@ void PThread::Terminate()
 }
 
 
-PBoolean PThread::IsTerminated() const
+bool PThread::IsTerminated() const
 {
   return m_threadHandle.Wait(0);
 }
@@ -1014,7 +1014,7 @@ void PThread::WaitForTermination() const
 }
 
 
-PBoolean PThread::WaitForTermination(const PTimeInterval & maxWait) const
+bool PThread::WaitForTermination(const PTimeInterval & maxWait) const
 {
   if (!m_threadHandle.IsValid())
     return true;
@@ -1028,7 +1028,7 @@ PBoolean PThread::WaitForTermination(const PTimeInterval & maxWait) const
 }
 
 
-void PThread::Suspend(PBoolean susp)
+void PThread::Suspend(bool susp)
 {
   PAssert(!IsTerminated(), "Operation on terminated thread");
   if (susp)
@@ -1045,7 +1045,7 @@ void PThread::Resume()
 }
 
 
-PBoolean PThread::IsSuspended() const
+bool PThread::IsSuspended() const
 {
   if (GetThreadId() == GetCurrentThreadId())
     return false;
@@ -1267,7 +1267,7 @@ PString PProcess::GetOSVersion()
 {
   OSVERSIONINFOW info;
   RealGetVersion(&info);
-  WORD wBuildNumber = (WORD)info.dwBuildNumber;
+  uint16_t wBuildNumber = (uint16_t)info.dwBuildNumber;
   return psprintf(wBuildNumber > 0 ? "v%u.%u.%u" : "v%u.%u",
                   info.dwMajorVersion, info.dwMinorVersion, wBuildNumber);
 }
@@ -1286,7 +1286,7 @@ bool PProcess::IsOSVersion(unsigned major, unsigned minor, unsigned build)
 
   osvi.dwMajorVersion = major;
   osvi.dwMinorVersion = minor;
-  osvi.wServicePackMajor = (WORD)build;
+  osvi.wServicePackMajor = (uint16_t)build;
 
   return VerifyVersionInfoW(&osvi, VER_MAJORVERSION | VER_MINORVERSION | VER_SERVICEPACKMAJOR, dwlConditionMask) != FALSE;
 #else
@@ -1326,7 +1326,7 @@ PString PProcess::GetUserName() const
 }
 
 
-PBoolean PProcess::SetUserName(const PString & username, PBoolean)
+bool PProcess::SetUserName(const PString & username, bool)
 {
   if (username.IsEmpty())
     return false;
@@ -1362,7 +1362,7 @@ PString PProcess::GetGroupName() const
 }
 
 
-PBoolean PProcess::SetGroupName(const PString & groupname, PBoolean)
+bool PProcess::SetGroupName(const PString & groupname, bool)
 {
   if (groupname.IsEmpty())
     return false;
@@ -1435,14 +1435,14 @@ static BOOL CALLBACK EnumWindowsProc(HWND hWnd, LPARAM thisProcess)
 
   DWORD wndProcess;
   GetWindowThreadProcessId(hWnd, &wndProcess);
-  if (wndProcess != (DWORD)thisProcess)
+  if (wndProcess != (uint32_t)thisProcess)
     return TRUE;
 
   s_IsGUIProcess = false;
   return FALSE;
 }
 
-PBoolean PProcess::IsGUIProcess() const
+bool PProcess::IsGUIProcess() const
 {
   if (!s_checkGUIProcess.exchange(true)) {
     USEROBJECTFLAGS uof = { FALSE, FALSE, 0 };     
@@ -1608,7 +1608,7 @@ void PSemaphore::Wait()
 }
 
 
-PBoolean PSemaphore::Wait(const PTimeInterval & timeout)
+bool PSemaphore::Wait(const PTimeInterval & timeout)
 {
   return m_handle.Wait(timeout.GetInterval());
 }
@@ -1643,7 +1643,7 @@ void PTimedMutex::PlatformConstruct()
 }
 
 
-PBoolean PTimedMutex::PlatformWait(const PTimeInterval & timeout)
+bool PTimedMutex::PlatformWait(const PTimeInterval & timeout)
 {
   return m_handle.Wait(timeout.GetInterval());
 }
@@ -1675,7 +1675,7 @@ void PSyncPoint::Wait()
 }
 
 
-PBoolean PSyncPoint::Wait(const PTimeInterval & timeout)
+bool PSyncPoint::Wait(const PTimeInterval & timeout)
 {
   return m_handle.Wait(timeout.GetInterval());
 }
@@ -1720,11 +1720,11 @@ PWin32Handle & PWin32Handle::operator=(HANDLE h)
 }
 
 
-bool PWin32Handle::Wait(DWORD timeout) const
+bool PWin32Handle::Wait(uint32_t timeout) const
 {
   int retry = 0;
   while (retry < 10) {
-    DWORD tick = ::GetTickCount();
+    uint32_t tick = ::GetTickCount();
     switch (::WaitForSingleObjectEx(m_handle, timeout, TRUE)) {
       case WAIT_OBJECT_0 :
         return true;
@@ -1749,7 +1749,7 @@ bool PWin32Handle::Wait(DWORD timeout) const
 }
 
 
-bool PWin32Handle::Duplicate(HANDLE h, DWORD flags, DWORD access)
+bool PWin32Handle::Duplicate(HANDLE h, uint32_t flags, uint32_t access)
 {
   Close();
   return DuplicateHandle(GetCurrentProcess(), h, GetCurrentProcess(), &m_handle, access, 0, flags);
@@ -1783,7 +1783,7 @@ PString PDynaLink::GetExtension()
 }
 
 
-PBoolean PDynaLink::Open(const PString & names)
+bool PDynaLink::Open(const PString & names)
 {
   m_lastError.MakeEmpty();
 
@@ -1810,13 +1810,13 @@ void PDynaLink::Close()
 }
 
 
-PBoolean PDynaLink::IsLoaded() const
+bool PDynaLink::IsLoaded() const
 {
   return m_hDLL != NULL;
 }
 
 
-PString PDynaLink::GetName(PBoolean full) const
+PString PDynaLink::GetName(bool full) const
 {
   PFilePathString str;
   if (m_hDLL != NULL) {
@@ -1834,7 +1834,7 @@ PString PDynaLink::GetName(PBoolean full) const
 }
 
 
-PBoolean PDynaLink::GetFunction(PINDEX index, Function & func, bool compulsory)
+bool PDynaLink::GetFunction(PINDEX index, Function & func, bool compulsory)
 {
   m_lastError.MakeEmpty();
   func = NULL;
@@ -1855,7 +1855,7 @@ PBoolean PDynaLink::GetFunction(PINDEX index, Function & func, bool compulsory)
 }
 
 
-PBoolean PDynaLink::GetFunction(const PString & name, Function & func, bool compulsory)
+bool PDynaLink::GetFunction(const PString & name, Function & func, bool compulsory)
 {
   m_lastError.MakeEmpty();
   func = NULL;

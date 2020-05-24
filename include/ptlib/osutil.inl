@@ -3,7 +3,7 @@
  *
  * Operating System Classes Inline Function Definitions
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -34,7 +34,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // PTimeInterval
 
-PINLINE PTimeInterval::PTimeInterval(PInt64 millisecs)
+PINLINE PTimeInterval::PTimeInterval(int64_t millisecs)
   : m_nanoseconds(millisecs*MilliToNano) { }
 
 PINLINE PTimeInterval::PTimeInterval(const PTimeInterval & other)
@@ -58,22 +58,22 @@ PINLINE PTimeInterval PTimeInterval::MicroSeconds(int64_t usecs, int secs)
 PINLINE PTimeInterval PTimeInterval::Seconds(double secs)
   { PTimeInterval t; t.SetSeconds(secs); return t; }
 
-PINLINE PInt64 PTimeInterval::GetNanoSeconds() const
+PINLINE int64_t PTimeInterval::GetNanoSeconds() const
   { return InternalGet(); }
 
-PINLINE void PTimeInterval::SetNanoSeconds(PInt64 nsecs, int secs)
+PINLINE void PTimeInterval::SetNanoSeconds(int64_t nsecs, int secs)
   { InternalSet(nsecs+secs*SecsToNano); }
 
-PINLINE PInt64 PTimeInterval::GetMicroSeconds() const
+PINLINE int64_t PTimeInterval::GetMicroSeconds() const
   { return InternalGet()/MicroToNano; }
 
-PINLINE void PTimeInterval::SetMicroSeconds(PInt64 usecs, int secs)
+PINLINE void PTimeInterval::SetMicroSeconds(int64_t usecs, int secs)
   { InternalSet(usecs*MicroToNano+secs*SecsToNano); }
 
-PINLINE PInt64 PTimeInterval::GetMilliSeconds() const
+PINLINE int64_t PTimeInterval::GetMilliSeconds() const
   { return InternalGet()/MilliToNano; }
 
-PINLINE void PTimeInterval::SetMilliSeconds(PInt64 msecs)
+PINLINE void PTimeInterval::SetMilliSeconds(int64_t msecs)
   { InternalSet(msecs*MilliToNano); }
 
 PINLINE double PTimeInterval::GetFrequency() const
@@ -163,22 +163,22 @@ PINLINE bool PTimeInterval::operator<=(const PTimeInterval & t) const
   { return GetNanoSeconds() <= t.GetNanoSeconds(); }
 
 PINLINE bool PTimeInterval::operator==(long msecs) const
-  { return GetMilliSeconds() == (PInt64)msecs; }
+  { return GetMilliSeconds() == (int64_t)msecs; }
 
 PINLINE bool PTimeInterval::operator!=(long msecs) const
-  { return GetMilliSeconds() != (PInt64)msecs; }
+  { return GetMilliSeconds() != (int64_t)msecs; }
 
 PINLINE bool PTimeInterval::operator> (long msecs) const
-  { return GetMilliSeconds() > (PInt64)msecs; }
+  { return GetMilliSeconds() > (int64_t)msecs; }
 
 PINLINE bool PTimeInterval::operator>=(long msecs) const
-  { return GetMilliSeconds() >= (PInt64)msecs; }
+  { return GetMilliSeconds() >= (int64_t)msecs; }
 
 PINLINE bool PTimeInterval::operator< (long msecs) const
-  { return GetMilliSeconds() < (PInt64)msecs; }
+  { return GetMilliSeconds() < (int64_t)msecs; }
 
 PINLINE bool PTimeInterval::operator<=(long msecs) const
-  { return GetMilliSeconds() <= (PInt64)msecs; }
+  { return GetMilliSeconds() <= (int64_t)msecs; }
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -193,10 +193,10 @@ PINLINE PTime & PTime::operator=(const PTime & other)
 PINLINE PObject * PTime::Clone() const
   { return PNEW PTime(*this); }
 
-PINLINE PBoolean PTime::IsValid() const
+PINLINE bool PTime::IsValid() const
   { return m_microSecondsSinceEpoch.load() > 46800000000LL; }
 
-PINLINE PInt64 PTime::GetTimestamp() const
+PINLINE int64_t PTime::GetTimestamp() const
   { return m_microSecondsSinceEpoch.load(); }
 
 PINLINE PTime & PTime::SetTimestamp(time_t seconds, int64_t usecs)
@@ -403,7 +403,7 @@ PINLINE bool PFile::Touch(const PTime & accessTime)
 PINLINE bool PFile::Touch(const PTime & accessTime, const PTime & modTime)
   { return ConvertOSError(Touch(m_path, accessTime, modTime) ? 0 : -1); }
 
-PINLINE bool PFile::Remove(PBoolean force)
+PINLINE bool PFile::Remove(bool force)
   { Close(); return ConvertOSError(Remove(m_path, force) ? 0 : -1); }
 
 PINLINE bool PFile::Copy(const PFilePath & newname, bool force, bool recurse)
@@ -486,7 +486,7 @@ PINLINE void PConfig::DeleteSection()
 PINLINE void PConfig::DeleteKey(const PString & key)
   { DeleteKey(defaultSection, key); }
 
-PINLINE PBoolean PConfig::HasKey(const PString & key) const
+PINLINE bool PConfig::HasKey(const PString & key) const
   { return HasKey(defaultSection, key); }
 
 PINLINE PString PConfig::GetString(const PString & key) const
@@ -498,10 +498,10 @@ PINLINE PString PConfig::GetString(const PString & key, const PString & dflt) co
 PINLINE void PConfig::SetString(const PString & key, const PString & value)
   { SetString(defaultSection, key, value); }
 
-PINLINE PBoolean PConfig::GetBoolean(const PString & key, PBoolean dflt) const
+PINLINE bool PConfig::GetBoolean(const PString & key, bool dflt) const
   { return GetBoolean(defaultSection, key, dflt); }
 
-PINLINE void PConfig::SetBoolean(const PString & key, PBoolean value)
+PINLINE void PConfig::SetBoolean(const PString & key, bool value)
   { SetBoolean(defaultSection, key, value); }
 
 PINLINE long PConfig::GetInteger(const PString & key, long dflt) const
@@ -510,10 +510,10 @@ PINLINE long PConfig::GetInteger(const PString & key, long dflt) const
 PINLINE void PConfig::SetInteger(const PString & key, long value)
   { SetInteger(defaultSection, key, value); }
 
-PINLINE PInt64 PConfig::GetInt64(const PString & key, PInt64 dflt) const
+PINLINE int64_t PConfig::GetInt64(const PString & key, int64_t dflt) const
   { return GetInt64(defaultSection, key, dflt); }
 
-PINLINE void PConfig::SetInt64(const PString & key, PInt64 value)
+PINLINE void PConfig::SetInt64(const PString & key, int64_t value)
   { SetInt64(defaultSection, key, value); }
 
 PINLINE double PConfig::GetReal(const PString & key, double dflt) const
@@ -541,16 +541,16 @@ PINLINE void PConfig::SetTime(const PString & key, const PTime & value)
 PINLINE void PArgList::SetArgs(int argc, char ** argv)
   { SetArgs(PStringArray(argc, argv)); }
 
-PINLINE bool PArgList::Parse(const PString & theArgumentSpec, PBoolean optionsBeforeParams)
+PINLINE bool PArgList::Parse(const PString & theArgumentSpec, bool optionsBeforeParams)
   { return Parse((const char *)theArgumentSpec, optionsBeforeParams); }
 
-PINLINE PBoolean PArgList::HasOption(char option) const
+PINLINE bool PArgList::HasOption(char option) const
   { return GetOptionCount(option) != 0; }
 
-PINLINE PBoolean PArgList::HasOption(const char * option) const
+PINLINE bool PArgList::HasOption(const char * option) const
   { return GetOptionCount(option) != 0; }
 
-PINLINE PBoolean PArgList::HasOption(const PString & option) const
+PINLINE bool PArgList::HasOption(const PString & option) const
   { return GetOptionCount(option) != 0; }
 
 PINLINE PINDEX PArgList::GetCount() const

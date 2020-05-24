@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Vox Lucida Pty. Ltd.
  *
@@ -35,7 +35,7 @@
 
 
 static const PIPSocket::Address ssdpMulticast(239,255,255,250);
-static const WORD ssdpPort = 1900;
+static const uint16_t ssdpPort = 1900;
 
 const PCaselessString & PSSDP::MXTag()       { static const PConstCaselessString s("MX");       return s; }
 const PCaselessString & PSSDP::STTag()       { static const PConstCaselessString s("ST");       return s; }

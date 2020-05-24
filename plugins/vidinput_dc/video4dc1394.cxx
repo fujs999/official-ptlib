@@ -150,7 +150,7 @@ PCREATE_VIDINPUT_PLUGIN(1394DC);
 
 #ifdef ESTIMATE_CAPTURE_PERFORMANCE
 // for debugging
-static PInt64 start_time;
+static int64_t start_time;
 static int num_captured;
 #endif
 
@@ -200,7 +200,7 @@ static int kernel_version_ok(void)
     return minorminor_ver >= 9;
 }
 
-PBoolean PVideoInputDevice_1394DC::Open(const PString & devName, PBoolean startImmediate)
+bool PVideoInputDevice_1394DC::Open(const PString & devName, bool startImmediate)
 {
   if (!kernel_version_ok()) {
     PTRACE(0, "The Linux kernel version is too old.");
@@ -294,13 +294,13 @@ PBoolean PVideoInputDevice_1394DC::Open(const PString & devName, PBoolean startI
 }
 
 
-PBoolean PVideoInputDevice_1394DC::IsOpen() 
+bool PVideoInputDevice_1394DC::IsOpen() 
 {
   return handle != NULL;
 }
 
 
-PBoolean PVideoInputDevice_1394DC::Close()
+bool PVideoInputDevice_1394DC::Close()
 {
   if (IsOpen()) {
     if (IsCapturing())
@@ -312,7 +312,7 @@ PBoolean PVideoInputDevice_1394DC::Close()
     return false;
 }
 
-PBoolean PVideoInputDevice_1394DC::Start()
+bool PVideoInputDevice_1394DC::Start()
 {
   int dc1394_mode;
   if (!IsOpen()) return false;
@@ -425,7 +425,7 @@ PBoolean PVideoInputDevice_1394DC::Start()
 }
 
 
-PBoolean PVideoInputDevice_1394DC::Stop()
+bool PVideoInputDevice_1394DC::Stop()
 {
   if (IsCapturing()) {
 #if 0      
@@ -448,7 +448,7 @@ PBoolean PVideoInputDevice_1394DC::Stop()
 }
 
 
-PBoolean PVideoInputDevice_1394DC::IsCapturing()
+bool PVideoInputDevice_1394DC::IsCapturing()
 {
   return is_capturing;
 }
@@ -479,7 +479,7 @@ PStringList PVideoInputDevice_1394DC::GetInputDeviceNames()
 }
 
 
-PBoolean PVideoInputDevice_1394DC::SetVideoFormat(VideoFormat newFormat)
+bool PVideoInputDevice_1394DC::SetVideoFormat(VideoFormat newFormat)
 {
   if (!PVideoDevice::SetVideoFormat(newFormat)) {
     PTRACE(3,"PVideoDevice::SetVideoFormat\t failed for format "<<newFormat);
@@ -495,7 +495,7 @@ int PVideoInputDevice_1394DC::GetNumChannels()
 }
 
 
-PBoolean PVideoInputDevice_1394DC::SetChannel(int newChannel)
+bool PVideoInputDevice_1394DC::SetChannel(int newChannel)
 {
   if (PVideoDevice::SetChannel(newChannel) == false)
     return false;
@@ -508,7 +508,7 @@ PBoolean PVideoInputDevice_1394DC::SetChannel(int newChannel)
 
 
 
-PBoolean PVideoInputDevice_1394DC::SetFrameRate(unsigned rate)
+bool PVideoInputDevice_1394DC::SetFrameRate(unsigned rate)
 {
   if (!PVideoDevice::SetFrameRate(rate))
     return false;
@@ -517,7 +517,7 @@ PBoolean PVideoInputDevice_1394DC::SetFrameRate(unsigned rate)
 }
 
 
-PBoolean PVideoInputDevice_1394DC::GetFrameSizeLimits(unsigned & minWidth,
+bool PVideoInputDevice_1394DC::GetFrameSizeLimits(unsigned & minWidth,
                                            unsigned & minHeight,
                                            unsigned & maxWidth,
                                            unsigned & maxHeight) 
@@ -536,7 +536,7 @@ PINDEX PVideoInputDevice_1394DC::GetMaxFrameBytes()
 }
 
 
-bool PVideoInputDevice_1394DC::InternalGetFrameData(BYTE * buffer, PINDEX & bytesReturned, bool & keyFrame, bool wait)
+bool PVideoInputDevice_1394DC::InternalGetFrameData(uint8_t * buffer, PINDEX & bytesReturned, bool & keyFrame, bool wait)
 {
   if (wait)
     m_pacing.Delay(1000/GetFrameRate());
@@ -556,7 +556,7 @@ bool PVideoInputDevice_1394DC::InternalGetFrameData(BYTE * buffer, PINDEX & byte
   // If converting on the fly do it from frame store to output buffer, otherwise do
   // straight copy.
   if (converter != NULL)
-    converter->Convert((const BYTE *)camera.capture_buffer, buffer, &bytesReturned);
+    converter->Convert((const uint8_t *)camera.capture_buffer, buffer, &bytesReturned);
   else {
     PTRACE(1, "Converter must exist. Something goes wrong.");
     return false;
@@ -592,19 +592,19 @@ void PVideoInputDevice_1394DC::ClearMapping()
 }
 
 
-PBoolean PVideoInputDevice_1394DC::TestAllFormats()
+bool PVideoInputDevice_1394DC::TestAllFormats()
 {
   return true;
 }
 
 
-PBoolean PVideoInputDevice_1394DC::SetColourFormat(const PString & newFormat)
+bool PVideoInputDevice_1394DC::SetColourFormat(const PString & newFormat)
 {
   return newFormat == colourFormat;
 }
 
 
-PBoolean PVideoInputDevice_1394DC::SetFrameSize(unsigned width, unsigned height)
+bool PVideoInputDevice_1394DC::SetFrameSize(unsigned width, unsigned height)
 {
   if (width == 320 && height == 240) {
     if (!(supportedFormat & DC1394_FORMAT_320x240))

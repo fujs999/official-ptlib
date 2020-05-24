@@ -3,7 +3,7 @@
  *
  * Video Channel implementation.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -78,7 +78,7 @@ PString PVideoChannel::GetDefaultDevice(Directions /*dir*/)
 }
 
 
-PBoolean PVideoChannel::Open(const PString & dev,
+bool PVideoChannel::Open(const PString & dev,
                          Directions dir)
 {
   PWaitAndSignal m(accessMutex);
@@ -93,29 +93,29 @@ PBoolean PVideoChannel::Open(const PString & dev,
 
 
 
-PBoolean PVideoChannel::Read(void * buf, PINDEX  len)
+bool PVideoChannel::Read(void * buf, PINDEX  len)
 {
   PWaitAndSignal m(accessMutex);
 
   if (mpInput == NULL)  
     return false;
 
-  BYTE * dataBuf;
+  uint8_t * dataBuf;
   PINDEX dataLen;
-  dataBuf = (BYTE *)buf;
+  dataBuf = (uint8_t *)buf;
   dataLen = len;
   return mpInput->GetFrameData(dataBuf, &dataLen);
 
   // CHANGED  return true;
 }
 
-PBoolean PVideoChannel::Write(const void * buf,  //image data to be rendered
+bool PVideoChannel::Write(const void * buf,  //image data to be rendered
                           PINDEX len )
 {
 	return Write(buf, len, 0);
 }
 
-PBoolean PVideoChannel::Write(const void * buf, PINDEX /*len*/, void * mark)
+bool PVideoChannel::Write(const void * buf, PINDEX /*len*/, void * mark)
 {
   PWaitAndSignal m(accessMutex);
 
@@ -132,7 +132,7 @@ PBoolean PVideoChannel::Write(const void * buf, PINDEX /*len*/, void * mark)
     frameData.height = mpOutput->GetFrameHeight();
     frameData.sarWidth = mpOutput->GetSarWidth();
     frameData.sarHeight = mpOutput->GetSarHeight();
-    frameData.pixels = (const BYTE *)buf;
+    frameData.pixels = (const uint8_t *)buf;
     frameData.mark = mark;
     return mpOutput->SetFrameData(frameData);
   }
@@ -145,13 +145,13 @@ PBoolean PVideoChannel::Write(const void * buf, PINDEX /*len*/, void * mark)
   frameData.height = mpInput->GetFrameHeight();
   frameData.sarWidth = mpInput->GetSarWidth();
   frameData.sarHeight = mpInput->GetSarHeight();
-  frameData.pixels = (const BYTE *)buf;
+  frameData.pixels = (const uint8_t *)buf;
   frameData.mark = mark;
   return mpOutput->SetFrameData(frameData);  
 
 }
 
-PBoolean PVideoChannel::Close()
+bool PVideoChannel::Close()
 {
   PWaitAndSignal m(accessMutex);
 
@@ -162,7 +162,7 @@ PBoolean PVideoChannel::Close()
 }
 
 /*returns true if either input or output is open */
-PBoolean PVideoChannel::IsOpen() const 
+bool PVideoChannel::IsOpen() const 
 {
    PWaitAndSignal m(accessMutex);
 
@@ -175,7 +175,7 @@ PString PVideoChannel::GetName() const
   return deviceName;
 }
 
-void PVideoChannel::AttachVideoPlayer(PVideoOutputDevice * device, PBoolean keepCurrent)
+void PVideoChannel::AttachVideoPlayer(PVideoOutputDevice * device, bool keepCurrent)
 {
   PWaitAndSignal m(accessMutex);
 
@@ -187,7 +187,7 @@ void PVideoChannel::AttachVideoPlayer(PVideoOutputDevice * device, PBoolean keep
   mpOutput = device;
 }
 
-void PVideoChannel::AttachVideoReader(PVideoInputDevice * device, PBoolean keepCurrent)
+void PVideoChannel::AttachVideoReader(PVideoInputDevice * device, bool keepCurrent)
 {
   PWaitAndSignal m(accessMutex);
 
@@ -239,7 +239,7 @@ PINDEX  PVideoChannel::GetGrabWidth()
      return 0;
 }
 
-PBoolean PVideoChannel::IsGrabberOpen()
+bool PVideoChannel::IsGrabberOpen()
 {
   PWaitAndSignal m(accessMutex);
 
@@ -249,7 +249,7 @@ PBoolean PVideoChannel::IsGrabberOpen()
     return false; 
 }
 
-PBoolean PVideoChannel::IsRenderOpen()      
+bool PVideoChannel::IsRenderOpen()      
 {
   PWaitAndSignal m(accessMutex);
 
@@ -259,7 +259,7 @@ PBoolean PVideoChannel::IsRenderOpen()
     return false; 
 }
 
-PBoolean PVideoChannel::DisableDecode()
+bool PVideoChannel::DisableDecode()
 {
   if (mpOutput != NULL)
     return mpOutput->DisableDecode();
@@ -267,7 +267,7 @@ PBoolean PVideoChannel::DisableDecode()
     return false; 
 }
 
-PBoolean PVideoChannel::DisplayRawData(void *videoBuffer)
+bool PVideoChannel::DisplayRawData(void *videoBuffer)
 {
   PWaitAndSignal m(accessMutex);
 
@@ -326,7 +326,7 @@ PVideoOutputDevice *PVideoChannel::GetVideoPlayer()
   return mpOutput;
 }
 
-PBoolean  PVideoChannel::Redraw(const void * frame) 
+bool  PVideoChannel::Redraw(const void * frame) 
 { 
   PTRACE(6,"PVC\t::Redraw a frame");
   return Write(frame, 0);
@@ -364,7 +364,7 @@ void PVideoChannel::EnableAccess()
 }
 
 
-PBoolean PVideoChannel::ToggleVFlipInput()
+bool PVideoChannel::ToggleVFlipInput()
 {
   PWaitAndSignal m(accessMutex);
 

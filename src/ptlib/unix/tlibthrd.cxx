@@ -3,7 +3,7 @@
  *
  * Routines for pre-emptive threading system
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -484,7 +484,7 @@ bool PThread::PX_kill(PThreadIdentifier tid, PUniqueThreadIdentifier uid, int si
 void PThread::PX_Suspended()
 {
   while (PX_suspendCount > 0) {
-    BYTE ch;
+    uint8_t ch;
     if (::read(unblockPipe[0], &ch, 1) == 1 || errno != EINTR)
     return;
 
@@ -503,7 +503,7 @@ void PX_SuspendSignalHandler(int)
 }
 
 
-void PThread::Suspend(PBoolean susp)
+void PThread::Suspend(bool susp)
 {
   PAssertWithRetry(pthread_mutex_lock, &PX_suspendMutex);
 
@@ -558,7 +558,7 @@ void PThread::Resume()
 }
 
 
-PBoolean PThread::IsSuspended() const
+bool PThread::IsSuspended() const
 {
   PAssertWithRetry(pthread_mutex_lock, &PX_suspendMutex);
   bool suspended = PX_state == PX_starting || (PX_suspendCount != 0 && !IsTerminated());
@@ -836,7 +836,7 @@ void PThread::Terminate()
 }
 
 
-PBoolean PThread::IsTerminated() const
+bool PThread::IsTerminated() const
 {
   if (m_type == e_IsProcess)
     return false; // Process is always still running
@@ -886,7 +886,7 @@ void PThread::WaitForTermination() const
 }
 
 
-PBoolean PThread::WaitForTermination(const PTimeInterval & maxWait) const
+bool PThread::WaitForTermination(const PTimeInterval & maxWait) const
 {
   pthread_t id = m_threadId;
   if (id == PNullThreadIdentifier || this == Current()) {
@@ -959,7 +959,7 @@ int PThread::PXBlockOnIO(int handle, int type, const PTimeInterval & timeout)
     retval = ::poll(pfd, PARRAYSIZE(pfd), timeout.GetInterval());
   } while (retval < 0 && errno == EINTR);
 
-  BYTE dummy;
+  uint8_t dummy;
   if (retval > 0 && pfd[1].revents != 0 && ::read(unblockPipe[0], &dummy, 1) == 1) {
     errno = ECANCELED;
     retval = -1;
@@ -1005,7 +1005,7 @@ int PThread::PXBlockOnIO(int handle, int type, const PTimeInterval & timeout)
     );
   } while (retval < 0 && errno == EINTR);
 
-  BYTE dummy;
+  uint8_t dummy;
   if (retval > 0 && read_fds.IsPresent(unblockPipe[0]) && ::read(unblockPipe[0], &ch, 1) == 1) {
     errno = ECANCELED;
     retval =  -1;
@@ -1019,7 +1019,7 @@ int PThread::PXBlockOnIO(int handle, int type, const PTimeInterval & timeout)
 
 void PThread::PXAbortBlock() const
 {
-  static BYTE ch = 0;
+  static uint8_t ch = 0;
   PAssertOS(::write(unblockPipe[1], &ch, 1) == 1);
   PTRACE(6, "PTLib\tUnblocking I/O fd=" << unblockPipe[0] << " thread=" << GetThreadName());
 }
@@ -1128,7 +1128,7 @@ void PSemaphore::Wait()
 }
 
 
-PBoolean PSemaphore::Wait(const PTimeInterval & waitTime) 
+bool PSemaphore::Wait(const PTimeInterval & waitTime) 
 {
   if (waitTime == PMaxTimeInterval) {
     Wait();
@@ -1195,7 +1195,7 @@ PBoolean PSemaphore::Wait(const PTimeInterval & waitTime)
   thread->PXSetWaitingSemaphore(this);
   queuedLocks++;
 
-  PBoolean ok = true;
+  bool ok = true;
   while (currentCount == 0) {
     int err = pthread_cond_timedwait(&condVar, &mutex, &absTime);
     if (err == ETIMEDOUT) {
@@ -1307,7 +1307,7 @@ void PTimedMutex::PrintOn(ostream &strm) const
 }
 
 
-PBoolean PTimedMutex::PlatformWait(const PTimeInterval & waitTime) 
+bool PTimedMutex::PlatformWait(const PTimeInterval & waitTime) 
 {
 #if !P_HAS_RECURSIVE_MUTEX
   // if we already have the mutex, return immediately
@@ -1433,7 +1433,7 @@ void PSyncPoint::Wait()
 }
 
 
-PBoolean PSyncPoint::Wait(const PTimeInterval & waitTime)
+bool PSyncPoint::Wait(const PTimeInterval & waitTime)
 {
   PPROFILE_PRE_SYSTEM();
 

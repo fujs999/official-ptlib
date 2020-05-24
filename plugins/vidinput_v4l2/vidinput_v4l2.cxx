@@ -3,7 +3,7 @@
  *
  * Classes to support streaming video input (grabbing) and output.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1998-2000 Equivalence Pty. Ltd.
  * Copyright (c) 2003 March Networks
@@ -18,7 +18,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -102,7 +102,7 @@ V4L2Names::Update()
     PString thisDevice = PString("/dev/video") + PString(i);
     int videoFd=::v4l2_open((const char *)thisDevice, O_RDONLY | O_NONBLOCK);
     if ((videoFd > 0) || (errno == EBUSY)) {
-      PBoolean valid = false;
+      bool valid = false;
       struct v4l2_capability videoCaps;
       CLEAR(videoCaps);
       if ((errno == EBUSY) ||
@@ -150,7 +150,7 @@ V4L2Names::Update()
           PString thisDevice = "/dev/" + entry;
           int videoFd=::v4l2_open((const char *)thisDevice, O_RDONLY | O_NONBLOCK);
           if ((videoFd > 0) || (errno == EBUSY)) {
-            PBoolean valid = false;
+            bool valid = false;
             struct v4l2_capability videoCaps;
             CLEAR(videoCaps);
             if ((errno == EBUSY) ||
@@ -271,7 +271,7 @@ static struct {
 };
 
 
-PBoolean PVideoInputDevice_V4L2::Open(const PString & devName, PBoolean /* startImmediate */)
+bool PVideoInputDevice_V4L2::Open(const PString & devName, bool /* startImmediate */)
 {
   if (isOpen) {
     PTRACE(1,"V4L2\tClosing " << m_deviceName << " already open on this instance, fd:" << videoFd);
@@ -336,7 +336,7 @@ PBoolean PVideoInputDevice_V4L2::Open(const PString & devName, PBoolean /* start
     if (canSetFrameRate) {
       if (videoStreamParm.parm.capture.timeperframe.numerator == 0) {
         PTRACE(1,"V4L2\tDriver/webcam bug: numerator is zero and denominator is " << videoStreamParm.parm.capture.timeperframe.denominator << ", I assume it cannot set frame rate");
-        canSetFrameRate = PFalse;
+        canSetFrameRate = false;
       } else {
         unsigned rate = videoStreamParm.parm.capture.timeperframe.denominator / videoStreamParm.parm.capture.timeperframe.numerator;
         if(rate <= 0 || rate > 1000)
@@ -353,13 +353,13 @@ PBoolean PVideoInputDevice_V4L2::Open(const PString & devName, PBoolean /* start
 }
 
 
-PBoolean PVideoInputDevice_V4L2::IsOpen()
+bool PVideoInputDevice_V4L2::IsOpen()
 {
   return isOpen;
 }
 
 
-PBoolean PVideoInputDevice_V4L2::Close()
+bool PVideoInputDevice_V4L2::Close()
 {
   PWaitAndSignal m(inCloseMutex);
   PTRACE(1,"V4L2\tClose()\tvideoFd:" << videoFd << "  started:" << started << "  isOpen:" << isOpen);
@@ -378,7 +378,7 @@ PBoolean PVideoInputDevice_V4L2::Close()
 }
 
 
-PBoolean PVideoInputDevice_V4L2::Start()
+bool PVideoInputDevice_V4L2::Start()
 {
   PTRACE(8, "V4L2\tStarting " << m_deviceName);
 
@@ -415,7 +415,7 @@ PBoolean PVideoInputDevice_V4L2::Start()
 }
 
 
-PBoolean PVideoInputDevice_V4L2::Stop()
+bool PVideoInputDevice_V4L2::Stop()
 {
   if (started) {
     readyToReadMutex.Wait();
@@ -432,7 +432,7 @@ PBoolean PVideoInputDevice_V4L2::Stop()
 }
 
 
-PBoolean PVideoInputDevice_V4L2::IsCapturing()
+bool PVideoInputDevice_V4L2::IsCapturing()
 {
   return started;
 }
@@ -443,12 +443,12 @@ PStringList PVideoInputDevice_V4L2::GetInputDeviceNames()
 }
 
 
-PBoolean PVideoInputDevice_V4L2::SetVideoFormat(VideoFormat newFormat)
+bool PVideoInputDevice_V4L2::SetVideoFormat(VideoFormat newFormat)
 {
   PTRACE(8,"V4L2\tSet video format " << newFormat);
 
   if (newFormat == Auto) {
-    PBoolean videoStandardSetCorrectly = false;
+    bool videoStandardSetCorrectly = false;
     if (true == (videoStandardSetCorrectly = SetVideoFormat(PAL))) {
       return videoStandardSetCorrectly;
     }
@@ -523,7 +523,7 @@ int PVideoInputDevice_V4L2::GetNumChannels()
 }
 
 
-PBoolean PVideoInputDevice_V4L2::SetChannel(int newChannel)
+bool PVideoInputDevice_V4L2::SetChannel(int newChannel)
 {
   PTRACE(8,"V4L2\tSet channel #" << newChannel);
 
@@ -544,7 +544,7 @@ PBoolean PVideoInputDevice_V4L2::SetChannel(int newChannel)
 }
 
 
-PBoolean PVideoInputDevice_V4L2::SetVideoChannelFormat (int newChannel, VideoFormat videoFormat) 
+bool PVideoInputDevice_V4L2::SetVideoChannelFormat (int newChannel, VideoFormat videoFormat) 
 {
   PTRACE(8,"V4L2\tSet channel #" << newChannel << " format \"" << videoFormat << "\"");
 
@@ -556,7 +556,7 @@ PBoolean PVideoInputDevice_V4L2::SetVideoChannelFormat (int newChannel, VideoFor
 }
 
 
-PBoolean PVideoInputDevice_V4L2::SetColourFormat(const PString & newFormat)
+bool PVideoInputDevice_V4L2::SetColourFormat(const PString & newFormat)
 {
   PTRACE(8,"V4L2\tSet colour format \"" << newFormat << "\"");
 
@@ -617,7 +617,7 @@ PBoolean PVideoInputDevice_V4L2::SetColourFormat(const PString & newFormat)
   videoFormat.fmt.pix.pixelformat = colourFormatTab[colourFormatIndex].code;
 
   {
-    PBoolean resume = started;
+    bool resume = started;
     if (started == true) {
       Stop();
     }
@@ -675,7 +675,7 @@ PBoolean PVideoInputDevice_V4L2::SetColourFormat(const PString & newFormat)
 }
 
 
-PBoolean PVideoInputDevice_V4L2::SetFrameRate(unsigned rate)
+bool PVideoInputDevice_V4L2::SetFrameRate(unsigned rate)
 {
   unsigned originalFrameRate = m_frameRate;
   if (!PVideoDevice::SetFrameRate(rate)) {
@@ -714,7 +714,7 @@ PBoolean PVideoInputDevice_V4L2::SetFrameRate(unsigned rate)
 }
 
 
-PBoolean PVideoInputDevice_V4L2::GetFrameSizeLimits(unsigned & minWidth,
+bool PVideoInputDevice_V4L2::GetFrameSizeLimits(unsigned & minWidth,
                                                 unsigned & minHeight,
                                                 unsigned & maxWidth,
                                                 unsigned & maxHeight) 
@@ -747,7 +747,7 @@ PBoolean PVideoInputDevice_V4L2::GetFrameSizeLimits(unsigned & minWidth,
   return true;
 }
 
-PBoolean PVideoInputDevice_V4L2::SetFrameSize(unsigned width, unsigned height) {
+bool PVideoInputDevice_V4L2::SetFrameSize(unsigned width, unsigned height) {
   unsigned requestedWidth = width;
   unsigned requestedHeight = height;
 
@@ -783,7 +783,7 @@ PBoolean PVideoInputDevice_V4L2::SetFrameSize(unsigned width, unsigned height) {
   return true;
 }
 
-PBoolean PVideoInputDevice_V4L2::SetNearestFrameSize(unsigned width, unsigned height) {
+bool PVideoInputDevice_V4L2::SetNearestFrameSize(unsigned width, unsigned height) {
   unsigned requestedWidth = width;
   unsigned requestedHeight = height;
 
@@ -812,7 +812,7 @@ PINDEX PVideoInputDevice_V4L2::GetMaxFrameBytes()
 }
 
 
-PBoolean PVideoInputDevice_V4L2::SetMapping()
+bool PVideoInputDevice_V4L2::SetMapping()
 {
   if (isMapped) {
     PTRACE(2, "V4L2\tVideo buffers already mapped! Do ClearMapping() first!");
@@ -857,7 +857,7 @@ PBoolean PVideoInputDevice_V4L2::SetMapping()
       return isMapped;
     }
 
-    if ((videoBuffer[buf.index] = (BYTE *)v4l2_mmap(0, buf.length, PROT_READ|PROT_WRITE, MAP_SHARED, videoFd, buf.m.offset)) == MAP_FAILED) {
+    if ((videoBuffer[buf.index] = (uint8_t *)v4l2_mmap(0, buf.length, PROT_READ|PROT_WRITE, MAP_SHARED, videoFd, buf.m.offset)) == MAP_FAILED) {
       PTRACE(3,"V4L2\tmmap failed for buffer " << buf.index << " with error " << ::strerror(errno) << "(" << errno << ")");
       return isMapped;
     }
@@ -898,7 +898,7 @@ void PVideoInputDevice_V4L2::ClearMapping()
 }
 
 
-bool PVideoInputDevice_V4L2::InternalGetFrameData(BYTE * buffer, PINDEX & bytesReturned, bool & keyFrame, bool wait)
+bool PVideoInputDevice_V4L2::InternalGetFrameData(uint8_t * buffer, PINDEX & bytesReturned, bool & keyFrame, bool wait)
 {
   if (wait)
     m_pacing.Delay(1000/GetFrameRate());
@@ -907,19 +907,19 @@ bool PVideoInputDevice_V4L2::InternalGetFrameData(BYTE * buffer, PINDEX & bytesR
   {
     PWaitAndSignal m(inCloseMutex);
     if (!isOpen)
-      return PFalse;
+      return false;
   }
 
   PWaitAndSignal m(readyToReadMutex);
   if (!started)
-    return PFalse;
+    return false;
 
   if (!canStream)
     return NormalReadProcess(buffer, &bytesReturned);
 
   // Using streaming here. Return false, if streaming wasn't started, yet
   if(!isStreaming)
-    return PFalse;
+    return false;
 
   // use select() here, because VIDIOC_DQBUF seems to block with some drivers
   // and does never return.
@@ -935,10 +935,10 @@ bool PVideoInputDevice_V4L2::InternalGetFrameData(BYTE * buffer, PINDEX & bytesR
 
   if(ret == -1){
     PTRACE(1,"V4L2\tselect() failed : " << ::strerror(errno));
-    return PFalse;
+    return false;
   } else if(ret == 0){
     PTRACE(4,"V4L2\tNo data in outgoing queue. Skip frame (@" << GetFrameRate() << "fps)");
-    return PTrue;
+    return true;
   }
 
   struct v4l2_buffer buf;
@@ -988,7 +988,7 @@ bool PVideoInputDevice_V4L2::InternalGetFrameData(BYTE * buffer, PINDEX & bytesR
 
 // This video device does not support memory mapping - so use
 // normal read process to extract a frame of video data.
-PBoolean PVideoInputDevice_V4L2::NormalReadProcess(BYTE * buffer, PINDEX * bytesReturned)
+bool PVideoInputDevice_V4L2::NormalReadProcess(uint8_t * buffer, PINDEX * bytesReturned)
 { 
   if (!canRead)
     return false;
@@ -1018,7 +1018,7 @@ PBoolean PVideoInputDevice_V4L2::NormalReadProcess(BYTE * buffer, PINDEX * bytes
   return true;
 }
 
-PBoolean PVideoInputDevice_V4L2::TryFrameSize(unsigned& width, unsigned& height){
+bool PVideoInputDevice_V4L2::TryFrameSize(unsigned& width, unsigned& height){
 
   struct v4l2_format videoFormat;
   CLEAR(videoFormat);
@@ -1044,7 +1044,7 @@ PBoolean PVideoInputDevice_V4L2::TryFrameSize(unsigned& width, unsigned& height)
 
 }
 
-PBoolean PVideoInputDevice_V4L2::VerifyHardwareFrameSize(unsigned & width, unsigned & height)
+bool PVideoInputDevice_V4L2::VerifyHardwareFrameSize(unsigned & width, unsigned & height)
 {
   struct v4l2_format videoFormat;
   CLEAR(videoFormat);
@@ -1074,7 +1074,7 @@ PBoolean PVideoInputDevice_V4L2::VerifyHardwareFrameSize(unsigned & width, unsig
   videoFormat.fmt.pix.height = height;
 
   {
-    PBoolean resume = started;
+    bool resume = started;
 
     if (started == true) {
       Stop();
@@ -1123,9 +1123,9 @@ PBoolean PVideoInputDevice_V4L2::VerifyHardwareFrameSize(unsigned & width, unsig
   return true;
 }
 
-PBoolean PVideoInputDevice_V4L2::DoIOCTL(unsigned long int r, void * s, int structSize, PBoolean retryOnBusy)
+bool PVideoInputDevice_V4L2::DoIOCTL(unsigned long int r, void * s, int structSize, bool retryOnBusy)
 {
-  PBoolean retval = false;
+  bool retval = false;
   void *structCopy = NULL;
 
   if(!(structCopy = malloc(structSize)))
@@ -1199,7 +1199,7 @@ bool PVideoInputDevice_V4L2::GetAttributes(Attributes & attrib)
  *                  -1 Set the default value
  * @return false, if an error occur or the control is not supported
  */
-PBoolean PVideoInputDevice_V4L2::SetControlCommon(unsigned int control, int newValue)
+bool PVideoInputDevice_V4L2::SetControlCommon(unsigned int control, int newValue)
 {
   if (!IsOpen())
     return false;
@@ -1234,7 +1234,7 @@ bool PVideoInputDevice_V4L2::SetAttributes(const Attributes & attrib)
          SetControlCommon(V4L2_CID_EXPOSURE, attrib.m_exposure);
 }
 
-PBoolean PVideoInputDevice_V4L2::QueueAllBuffers()
+bool PVideoInputDevice_V4L2::QueueAllBuffers()
 {
   if (true == areBuffersQueued) {
     PTRACE(3, "V4L2\tVideo buffers already queued!");
@@ -1270,7 +1270,7 @@ PBoolean PVideoInputDevice_V4L2::QueueAllBuffers()
 }
 
 
-PBoolean PVideoInputDevice_V4L2::StartStreaming()
+bool PVideoInputDevice_V4L2::StartStreaming()
 {
   PTRACE(8, "V4L2\tStart streaming for \"" << m_deviceName << "\" with fd=" << videoFd);
 
@@ -1335,12 +1335,12 @@ void PVideoInputDevice_V4L2::Reset(){
   CLEAR(videoBuffer);
 }
 
-PBoolean PVideoInputDevice_V4L2::EnumControls(Capabilities & capabilities) const {
+bool PVideoInputDevice_V4L2::EnumControls(Capabilities & capabilities) const {
   //TODO: get control capabilities
   return true;
 }
 
-PBoolean PVideoInputDevice_V4L2::EnumFrameFormats(Capabilities & capabilities) const {
+bool PVideoInputDevice_V4L2::EnumFrameFormats(Capabilities & capabilities) const {
   int retFmt, retSize, retFps;
   struct v4l2_fmtdesc fmt;
   struct v4l2_frmsizeenum fsize;
@@ -1424,7 +1424,7 @@ PBoolean PVideoInputDevice_V4L2::EnumFrameFormats(Capabilities & capabilities) c
   return true;
 }
 
-PBoolean PVideoInputDevice_V4L2::GetDeviceCapabilities(
+bool PVideoInputDevice_V4L2::GetDeviceCapabilities(
     Capabilities * caps
     ) const
 {
@@ -1440,7 +1440,7 @@ PBoolean PVideoInputDevice_V4L2::GetDeviceCapabilities(
   return true;
 }
 
-PBoolean PVideoInputDevice_V4L2::GetDeviceCapabilities(
+bool PVideoInputDevice_V4L2::GetDeviceCapabilities(
     const PString & m_deviceName,
     Capabilities * capabilities,
     PPluginManager * pluginMgr)

@@ -115,7 +115,7 @@ void SyncPoints::Main()
     allDone.Wait();
   }
   PTime b;
-  PInt64 c = b.GetTimestamp() - a.GetTimestamp();
+  int64_t c = b.GetTimestamp() - a.GetTimestamp();
   PTimeInterval g = b-a;
 
   cerr << "Number of SyncPoint operations is " << syncPointsSignalled << endl << endl;

@@ -3,7 +3,7 @@
  *
  * Code for pluigns sound device
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 2003 Post Increment
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Post Increment
  *
@@ -60,10 +60,10 @@ class PSoundChannelNull : public PSoundChannelEmulation
     static PStringArray GetDeviceNames(PSoundChannel::Directions = Player);
     bool Open(const Params & params);
     virtual PString GetName() const;
-    PBoolean Close();
-    PBoolean IsOpen() const;
-    PBoolean Write(const void *, PINDEX len);
-    PBoolean Read(void * buf, PINDEX len);
+    bool Close();
+    bool IsOpen() const;
+    bool Write(const void *, PINDEX len);
+    bool Read(void * buf, PINDEX len);
 };
 
 
@@ -291,7 +291,7 @@ PSoundChannel::PSoundChannel(const PString & device,
 }
 
 
-PBoolean PSoundChannel::Open(const PString & devSpec,
+bool PSoundChannel::Open(const PString & devSpec,
                          Directions dir,
                          unsigned numChannels,
                          unsigned sampleRate,
@@ -313,14 +313,14 @@ bool PSoundChannel::Open(const Params & params)
 }
 
 
-PBoolean PSoundChannel::Abort()
+bool PSoundChannel::Abort()
 {
   PReadWaitAndSignal mutex(channelPointerMutex);
   return readChannel == NULL || GetSoundChannel()->Abort();
 }
 
 
-PBoolean PSoundChannel::SetFormat(unsigned numChannels, unsigned sampleRate, unsigned bitsPerSample)
+bool PSoundChannel::SetFormat(unsigned numChannels, unsigned sampleRate, unsigned bitsPerSample)
 {
   PReadWaitAndSignal mutex(channelPointerMutex);
   return readChannel != NULL && GetSoundChannel()->SetFormat(numChannels, sampleRate, bitsPerSample);
@@ -348,49 +348,49 @@ unsigned PSoundChannel::GetSampleSize() const
 }
 
 
-PBoolean PSoundChannel::SetBuffers(PINDEX size, PINDEX count)
+bool PSoundChannel::SetBuffers(PINDEX size, PINDEX count)
 {
   PReadWaitAndSignal mutex(channelPointerMutex);
   return readChannel != NULL && GetSoundChannel()->SetBuffers(size, count);
 }
 
 
-PBoolean PSoundChannel::GetBuffers(PINDEX & size, PINDEX & count)
+bool PSoundChannel::GetBuffers(PINDEX & size, PINDEX & count)
 {
   PReadWaitAndSignal mutex(channelPointerMutex);
   return readChannel != NULL && GetSoundChannel()->GetBuffers(size, count);
 }
 
 
-PBoolean PSoundChannel::SetVolume(unsigned volume)
+bool PSoundChannel::SetVolume(unsigned volume)
 {
   PReadWaitAndSignal mutex(channelPointerMutex);
   return readChannel != NULL && GetSoundChannel()->SetVolume(volume);
 }
 
 
-PBoolean PSoundChannel::GetMute(bool & mute)
+bool PSoundChannel::GetMute(bool & mute)
 {
   PReadWaitAndSignal mutex(channelPointerMutex);
   return readChannel != NULL && GetSoundChannel()->GetMute(mute);
 }
 
 
-PBoolean PSoundChannel::SetMute(bool mute)
+bool PSoundChannel::SetMute(bool mute)
 {
   PReadWaitAndSignal mutex(channelPointerMutex);
   return readChannel != NULL && GetSoundChannel()->SetMute(mute);
 }
 
 
-PBoolean PSoundChannel::GetVolume(unsigned & volume)
+bool PSoundChannel::GetVolume(unsigned & volume)
 {
   PReadWaitAndSignal mutex(channelPointerMutex);
   return readChannel != NULL && GetSoundChannel()->GetVolume(volume);
 }
 
 
-PBoolean PSoundChannel::PlaySound(const PSound & sound, PBoolean wait)
+bool PSoundChannel::PlaySound(const PSound & sound, bool wait)
 {
   PAssert(m_activeDirection == Player, PLogicError);
   PReadWaitAndSignal mutex(channelPointerMutex);
@@ -399,7 +399,7 @@ PBoolean PSoundChannel::PlaySound(const PSound & sound, PBoolean wait)
 
   Abort();
 
-  if (!Write((const BYTE *)sound, sound.GetSize()))
+  if (!Write((const uint8_t *)sound, sound.GetSize()))
     return false;
 
   if (wait)
@@ -477,7 +477,7 @@ bool PSoundChannel::PlayFile(const PFilePath & filename, bool wait, unsigned vol
 }
 
 
-PBoolean PSoundChannel::HasPlayCompleted()
+bool PSoundChannel::HasPlayCompleted()
 {
   PAssert(m_activeDirection == Player, PLogicError);
   PReadWaitAndSignal mutex(channelPointerMutex);
@@ -485,7 +485,7 @@ PBoolean PSoundChannel::HasPlayCompleted()
 }
 
 
-PBoolean PSoundChannel::WaitForPlayCompletion() 
+bool PSoundChannel::WaitForPlayCompletion() 
 {
   PAssert(m_activeDirection == Player, PLogicError);
   PReadWaitAndSignal mutex(channelPointerMutex);
@@ -493,7 +493,7 @@ PBoolean PSoundChannel::WaitForPlayCompletion()
 }
 
 
-PBoolean PSoundChannel::RecordSound(PSound & sound)
+bool PSoundChannel::RecordSound(PSound & sound)
 {
   PAssert(m_activeDirection == Recorder, PLogicError);
   PReadWaitAndSignal mutex(channelPointerMutex);
@@ -501,7 +501,7 @@ PBoolean PSoundChannel::RecordSound(PSound & sound)
 }
 
 
-PBoolean PSoundChannel::RecordFile(const PFilePath & file)
+bool PSoundChannel::RecordFile(const PFilePath & file)
 {
   PAssert(m_activeDirection == Recorder, PLogicError);
   PReadWaitAndSignal mutex(channelPointerMutex);
@@ -509,7 +509,7 @@ PBoolean PSoundChannel::RecordFile(const PFilePath & file)
 }
 
 
-PBoolean PSoundChannel::StartRecording()
+bool PSoundChannel::StartRecording()
 {
   PAssert(m_activeDirection == Recorder, PLogicError);
   PReadWaitAndSignal mutex(channelPointerMutex);
@@ -517,7 +517,7 @@ PBoolean PSoundChannel::StartRecording()
 }
 
 
-PBoolean PSoundChannel::IsRecordBufferFull() 
+bool PSoundChannel::IsRecordBufferFull() 
 {
   PAssert(m_activeDirection == Recorder, PLogicError);
   PReadWaitAndSignal mutex(channelPointerMutex);
@@ -525,7 +525,7 @@ PBoolean PSoundChannel::IsRecordBufferFull()
 }
 
 
-PBoolean PSoundChannel::AreAllRecordBuffersFull() 
+bool PSoundChannel::AreAllRecordBuffersFull() 
 {
   PAssert(m_activeDirection == Recorder, PLogicError);
   PReadWaitAndSignal mutex(channelPointerMutex);
@@ -533,7 +533,7 @@ PBoolean PSoundChannel::AreAllRecordBuffersFull()
 }
 
 
-PBoolean PSoundChannel::WaitForRecordBufferFull() 
+bool PSoundChannel::WaitForRecordBufferFull() 
 {
   PAssert(m_activeDirection == Recorder, PLogicError);
   PReadWaitAndSignal mutex(channelPointerMutex);
@@ -541,7 +541,7 @@ PBoolean PSoundChannel::WaitForRecordBufferFull()
 }
 
 
-PBoolean PSoundChannel::WaitForAllRecordBuffersFull() 
+bool PSoundChannel::WaitForAllRecordBuffersFull() 
 {
   PAssert(m_activeDirection == Recorder, PLogicError);
   PReadWaitAndSignal mutex(channelPointerMutex);
@@ -754,7 +754,7 @@ PSound::PSound(unsigned channels,
                unsigned samplesPerSecond,
                unsigned bitsPerSample,
                PINDEX   bufferSize,
-               const BYTE * buffer)
+               const uint8_t * buffer)
 {
   encoding = 0;
   numChannels = channels;
@@ -795,25 +795,25 @@ void PSound::SetFormat(unsigned channels,
 }
 
 
-PBoolean PSound::Load(const PFilePath & /*filename*/)
+bool PSound::Load(const PFilePath & /*filename*/)
 {
   return false;
 }
 
 
-PBoolean PSound::Save(const PFilePath & /*filename*/)
+bool PSound::Save(const PFilePath & /*filename*/)
 {
   return false;
 }
 
 
-PBoolean PSound::Play()
+bool PSound::Play()
 {
   return Play(PSoundChannel::GetDefaultDevice(PSoundChannel::Player));
 }
 
 
-PBoolean PSound::Play(const PString & device)
+bool PSound::Play(const PString & device)
 {
 
   PSoundChannel channel(device, PSoundChannel::Player);
@@ -826,7 +826,7 @@ PBoolean PSound::Play(const PString & device)
 #endif //_WIN32
 
 
-PBoolean PSound::PlayFile(const PFilePath & file, bool wait, unsigned volume)
+bool PSound::PlayFile(const PFilePath & file, bool wait, unsigned volume)
 {
   PSoundChannel channel(PSoundChannel::GetDefaultDevice(PSoundChannel::Player), PSoundChannel::Player);
   return channel.IsOpen() && channel.PlayFile(file, wait, volume);
@@ -880,7 +880,7 @@ bool PSoundChannelEmulation::InternalFlush()
 }
 
 
-PBoolean PSoundChannelEmulation::Write(const void * data, PINDEX size)
+bool PSoundChannelEmulation::Write(const void * data, PINDEX size)
 {
   if (m_muted) {
     if (!InternalFlush())
@@ -916,7 +916,7 @@ PBoolean PSoundChannelEmulation::Write(const void * data, PINDEX size)
 }
 
 
-PBoolean PSoundChannelEmulation::Read(void * data, PINDEX size)
+bool PSoundChannelEmulation::Read(void * data, PINDEX size)
 {
   for (int retry = 0; retry < 2; ++retry) {
     if (RawRead(data, size)) {
@@ -949,7 +949,7 @@ PBoolean PSoundChannelEmulation::Read(void * data, PINDEX size)
 }
 
 
-PBoolean PSoundChannelEmulation::SetFormat(unsigned numChannels, unsigned sampleRate, unsigned bitsPerSample)
+bool PSoundChannelEmulation::SetFormat(unsigned numChannels, unsigned sampleRate, unsigned bitsPerSample)
 {
   if (bitsPerSample % 8 != 0) {
     PTRACE(1, "NullAudio\tBits per sample must even bytes.");
@@ -981,7 +981,7 @@ unsigned PSoundChannelEmulation::GetSampleSize() const
 }
 
 
-PBoolean PSoundChannelEmulation::SetBuffers(PINDEX size, PINDEX count)
+bool PSoundChannelEmulation::SetBuffers(PINDEX size, PINDEX count)
 {
   m_bufferSize = size;
   m_bufferCount = count;
@@ -994,7 +994,7 @@ PBoolean PSoundChannelEmulation::SetBuffers(PINDEX size, PINDEX count)
 }
 
 
-PBoolean PSoundChannelEmulation::GetBuffers(PINDEX & size, PINDEX & count)
+bool PSoundChannelEmulation::GetBuffers(PINDEX & size, PINDEX & count)
 {
   size = m_bufferSize;
   count = m_bufferCount;
@@ -1002,49 +1002,49 @@ PBoolean PSoundChannelEmulation::GetBuffers(PINDEX & size, PINDEX & count)
 }
 
 
-PBoolean PSoundChannelEmulation::HasPlayCompleted()
+bool PSoundChannelEmulation::HasPlayCompleted()
 {
   return true;
 }
 
 
-PBoolean PSoundChannelEmulation::WaitForPlayCompletion()
+bool PSoundChannelEmulation::WaitForPlayCompletion()
 {
   return true;
 }
 
 
-PBoolean PSoundChannelEmulation::StartRecording()
+bool PSoundChannelEmulation::StartRecording()
 {
   return true;
 }
 
 
-PBoolean PSoundChannelEmulation::IsRecordBufferFull()
+bool PSoundChannelEmulation::IsRecordBufferFull()
 {
   return true;
 }
 
 
-PBoolean PSoundChannelEmulation::AreAllRecordBuffersFull()
+bool PSoundChannelEmulation::AreAllRecordBuffersFull()
 {
   return true;
 }
 
 
-PBoolean PSoundChannelEmulation::WaitForRecordBufferFull()
+bool PSoundChannelEmulation::WaitForRecordBufferFull()
 {
   return true;
 }
 
 
-PBoolean PSoundChannelEmulation::WaitForAllRecordBuffersFull()
+bool PSoundChannelEmulation::WaitForAllRecordBuffersFull()
 {
   return true;
 }
 
 
-PBoolean PSoundChannelEmulation::SetVolume(unsigned volume)
+bool PSoundChannelEmulation::SetVolume(unsigned volume)
 {
   if (volume > 100)
     return false;
@@ -1054,7 +1054,7 @@ PBoolean PSoundChannelEmulation::SetVolume(unsigned volume)
 }
 
 
-PBoolean PSoundChannelEmulation::GetVolume(unsigned & volume)
+bool PSoundChannelEmulation::GetVolume(unsigned & volume)
 {
   volume = m_muted ? 0 : 100;
   return true;
@@ -1097,18 +1097,18 @@ PString PSoundChannelNull::GetName() const
   return PPlugin_PSoundChannel_NullAudio::ServiceName();
 }
 
-PBoolean PSoundChannelNull::Close()
+bool PSoundChannelNull::Close()
 {
   m_sampleRate = 0;
   return true;
 }
 
-PBoolean PSoundChannelNull::IsOpen() const
+bool PSoundChannelNull::IsOpen() const
 {
   return m_sampleRate > 0;
 }
 
-PBoolean PSoundChannelNull::Write(const void *, PINDEX len)
+bool PSoundChannelNull::Write(const void *, PINDEX len)
 {
   if (m_sampleRate <= 0)
     return false;
@@ -1118,7 +1118,7 @@ PBoolean PSoundChannelNull::Write(const void *, PINDEX len)
   return true;
 }
 
-PBoolean PSoundChannelNull::Read(void * buf, PINDEX len)
+bool PSoundChannelNull::Read(void * buf, PINDEX len)
 {
   if (m_sampleRate <= 0)
     return false;

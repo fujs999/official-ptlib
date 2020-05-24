@@ -3,7 +3,7 @@
  *
  * Sample program to query the network interfaces.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 2001 Roger Hardiman
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Roger Hardiman
  *

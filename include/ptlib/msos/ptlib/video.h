@@ -3,7 +3,7 @@
  *
  * Video class.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -33,7 +33,7 @@
   public:
     // Overrides from class PChannel
       
-    virtual PBoolean Close();
+    virtual bool Close();
       // Close the channel.
 
     virtual PString GetName() const;

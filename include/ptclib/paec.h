@@ -63,11 +63,11 @@ public:
   //@{
   /**Recording Channel. Should be called prior to encoding audio
    */
-    void Send(BYTE * buffer, unsigned & length);
+    void Send(uint8_t * buffer, unsigned & length);
 
   /**Playing Channel  Should be called after decoding and prior to playing.
    */
-    void Receive(BYTE * buffer, unsigned & length);
+    void Receive(uint8_t * buffer, unsigned & length);
   //@}
 
 protected:
@@ -77,12 +77,12 @@ protected:
   SpeexPreprocessState *preprocessState;
   int clockrate;                      // Frame Rate default 8000hz for narrowband audio
   int bufferTime;                     // Time between receiving and Transmitting   
-  PInt64 minbuffer;                   // minbuffer (in milliseconds)
-  PInt64 maxbuffer;                   // maxbuffer (in milliseconds)
+  int64_t minbuffer;                   // minbuffer (in milliseconds)
+  int64_t maxbuffer;                   // maxbuffer (in milliseconds)
   int sampleTime;                     // Length of each sample
   ReceiveTimeQueue rectime;           // Queue of timestamps for ensure read/write in sync
   PTimeInterval lastTimeStamp;        // LastTimeStamp of recieved data
-  PBoolean receiveReady;
+  bool receiveReady;
   void *ref_buf;
   void *echo_buf;
   void *e_buf;

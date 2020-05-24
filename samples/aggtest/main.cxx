@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Post Increment
  *
@@ -40,9 +40,9 @@ AggTest::AggTest()
 class MyUDPSocket : public PUDPSocket
 {
   public:
-    PBoolean OnRead()
+    bool OnRead()
     {
-      BYTE buffer[1024];
+      uint8_t buffer[1024];
       Read(buffer, 1024);
       return true;
     }

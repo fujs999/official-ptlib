@@ -3,7 +3,7 @@
  *
  * Sound interface class.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -68,7 +68,7 @@ class PSound : public PBYTEArray
       unsigned sampleRate = 8000,  ///< Samples per second
       unsigned bitsPerSample = 16, ///< Number of bits per sample
       PINDEX   bufferSize = 0,     ///< Size of data
-      const BYTE * data = NULL     ///< Pointer to initial data
+      const uint8_t * data = NULL     ///< Pointer to initial data
     );
 
     /**Create a new sound, reading from a platform dependent file.
@@ -95,7 +95,7 @@ class PSound : public PBYTEArray
        @return
        true if the sound is loaded successfully.
      */
-    PBoolean Load(
+    bool Load(
       const PFilePath & filename   ///< Sound file to load.
     );
 
@@ -105,7 +105,7 @@ class PSound : public PBYTEArray
        @return
        true if the sound is saved successfully.
      */
-    PBoolean Save(
+    bool Save(
       const PFilePath & filename   ///< Sound file to load.
     );
   //@}
@@ -113,10 +113,10 @@ class PSound : public PBYTEArray
   /**@name Access functions */
   //@{
     /// Play the sound on the default sound device.
-    PBoolean Play();
+    bool Play();
 
     /// Play the sound to the specified sound device.
-    PBoolean Play(const PString & device);
+    bool Play(const PString & device);
 
     /**Set the internal sound format to linear PCM at the specification in
        the parameters.
@@ -142,13 +142,13 @@ class PSound : public PBYTEArray
     unsigned GetSampleSize() const { return sampleSize; }
 
     /// Get the platform dependent error code from the last file load.
-    DWORD    GetErrorCode()  const { return dwLastError; }
+    uint32_t    GetErrorCode()  const { return dwLastError; }
 
     /// Get the size of the platform dependent format info.
     PINDEX   GetFormatInfoSize()  const { return formatInfo.GetSize(); }
 
     /// Get pointer to the platform dependent format info.
-    const void * GetFormatInfoData() const { return (const BYTE *)formatInfo; }
+    const void * GetFormatInfoData() const { return (const uint8_t *)formatInfo; }
   //@}
 
   /**@name Miscellaneous functions */
@@ -195,7 +195,7 @@ class PSound : public PBYTEArray
     /// Number of bits per sample
     unsigned   sampleSize;    
     /// Last error code for Load()/Save() functions
-    DWORD      dwLastError;   
+    uint32_t      dwLastError;   
     /// Full info on the format (platform dependent)
     PBYTEArray formatInfo;    
 };
@@ -468,7 +468,7 @@ class PSoundChannel : public PIndirectChannel
        @return
        true if the sound has successfully been aborted.
      */
-    virtual PBoolean Abort();
+    virtual bool Abort();
   //@}
 
   /**@name Channel set up functions */
@@ -482,7 +482,7 @@ class PSoundChannel : public PIndirectChannel
        @return
        true if the format is valid.
      */
-    virtual PBoolean SetFormat(
+    virtual bool SetFormat(
       unsigned numChannels = 1,     ///< Number of channels eg mono/stereo
       unsigned sampleRate = 8000,   ///< Samples per second
       unsigned bitsPerSample = 16   ///< Number of bits per sample
@@ -505,7 +505,7 @@ class PSoundChannel : public PIndirectChannel
        @return
        true if the sound device is valid for playing/recording.
      */
-    virtual PBoolean SetBuffers(
+    virtual bool SetBuffers(
       PINDEX size,      ///< Size of each buffer in bytes
       PINDEX count = 2  ///< Number of buffers
     );
@@ -515,7 +515,7 @@ class PSoundChannel : public PIndirectChannel
        @return
        true if the buffer size were obtained.
      */
-    virtual PBoolean GetBuffers(
+    virtual bool GetBuffers(
       PINDEX & size,    // Size of each buffer in bytes
       PINDEX & count    // Number of buffers
     );
@@ -532,7 +532,7 @@ class PSoundChannel : public PIndirectChannel
        @return
        true if there were no errors.
     */
-    virtual PBoolean SetVolume(
+    virtual bool SetVolume(
       unsigned volume   ///< New volume level
     );
 
@@ -544,7 +544,7 @@ class PSoundChannel : public PIndirectChannel
        @return
        true if there were no errors.
     */
-    virtual PBoolean GetVolume(
+    virtual bool GetVolume(
       unsigned & volume   ///< Variable to receive volume level.
     );
 
@@ -586,9 +586,9 @@ class PSoundChannel : public PIndirectChannel
        true if the sound is playing or has played.
      */
 
-    virtual PBoolean PlaySound(
+    virtual bool PlaySound(
       const PSound & sound,   ///< Sound to play.
-      PBoolean wait = true        ///< Flag to play sound synchronously.
+      bool wait = true        ///< Flag to play sound synchronously.
     );
 
     /**Play a sound file to the open device. If the <code>wait</code>
@@ -618,7 +618,7 @@ class PSoundChannel : public PIndirectChannel
        @return
        true if the sound has completed playing.
      */
-    virtual PBoolean HasPlayCompleted();
+    virtual bool HasPlayCompleted();
 
     /**Block calling thread until the sound play begun with PlaySound() or
        PlayFile() has completed. 
@@ -626,7 +626,7 @@ class PSoundChannel : public PIndirectChannel
        @return
        true if the sound has successfully completed playing.
      */
-    virtual PBoolean WaitForPlayCompletion();
+    virtual bool WaitForPlayCompletion();
 
     /**Test the specified device for playing.
        A series of tones are played to the channel and the result return as a
@@ -663,7 +663,7 @@ class PSoundChannel : public PIndirectChannel
        @return
        true if the sound has been recorded.
      */
-    virtual PBoolean RecordSound(
+    virtual bool RecordSound(
       PSound & sound ///< Sound recorded
     );
 
@@ -679,7 +679,7 @@ class PSoundChannel : public PIndirectChannel
        @return
        true if the sound has been recorded.
      */
-    virtual PBoolean RecordFile(
+    virtual bool RecordFile(
       const PFilePath & file ///< Sound file recorded
     );
 
@@ -689,7 +689,7 @@ class PSoundChannel : public PIndirectChannel
        @return
        true if the sound driver has successfully started recording.
      */
-    virtual PBoolean StartRecording();
+    virtual bool StartRecording();
 
     /**Determine if a record buffer has been filled, so that the next Read()
        call will not block. Provided that the amount of data read is less than
@@ -698,7 +698,7 @@ class PSoundChannel : public PIndirectChannel
        @return
        true if the sound driver has filled a buffer.
      */
-    virtual PBoolean IsRecordBufferFull();
+    virtual bool IsRecordBufferFull();
 
     /**Determine if all of the record buffer allocated has been filled. There
        is an implicit Abort() of the recording if this occurs and recording is
@@ -708,7 +708,7 @@ class PSoundChannel : public PIndirectChannel
        @return
        true if the sound driver has filled a buffer.
      */
-    virtual PBoolean AreAllRecordBuffersFull();
+    virtual bool AreAllRecordBuffersFull();
 
     /**Block the thread until a record buffer has been filled, so that the
        next Read() call will not block. Provided that the amount of data read
@@ -717,7 +717,7 @@ class PSoundChannel : public PIndirectChannel
        @return
        true if the sound driver has filled a buffer.
      */
-    virtual PBoolean WaitForRecordBufferFull();
+    virtual bool WaitForRecordBufferFull();
 
     /**Block the thread until all of the record buffer allocated has been
        filled. There is an implicit Abort() of the recording if this occurs
@@ -727,7 +727,7 @@ class PSoundChannel : public PIndirectChannel
        @return
        true if the sound driver has filled a buffer.
      */
-    virtual PBoolean WaitForAllRecordBuffersFull();
+    virtual bool WaitForAllRecordBuffersFull();
 
     /**Test the specified device for playing.
        A recording of a number of seconds of audio is made, and is played back
@@ -753,7 +753,7 @@ class PSoundChannel : public PIndirectChannel
        an assert happens. */
     Directions m_activeDirection;
 
-    P_REMOVE_VIRTUAL(PBoolean, Open(const PString &,Directions,unsigned,unsigned,unsigned),false);
+    P_REMOVE_VIRTUAL(bool, Open(const PString &,Directions,unsigned,unsigned,unsigned),false);
 };
 
 
@@ -765,26 +765,26 @@ class PSoundChannelEmulation : public PSoundChannel
   public:
     PSoundChannelEmulation();
 
-    PBoolean Write(const void * buf, PINDEX len);
-    PBoolean Read(void * buf, PINDEX len);
+    bool Write(const void * buf, PINDEX len);
+    bool Read(void * buf, PINDEX len);
 
-    virtual PBoolean SetFormat(unsigned numChannels, unsigned sampleRate, unsigned bitsPerSample);
+    virtual bool SetFormat(unsigned numChannels, unsigned sampleRate, unsigned bitsPerSample);
     virtual unsigned GetChannels() const;
     virtual unsigned GetSampleRate() const;
     virtual unsigned GetSampleSize() const;
-    virtual PBoolean SetBuffers(PINDEX size, PINDEX);
-    virtual PBoolean GetBuffers(PINDEX & size, PINDEX & count);
+    virtual bool SetBuffers(PINDEX size, PINDEX);
+    virtual bool GetBuffers(PINDEX & size, PINDEX & count);
 
-    virtual PBoolean HasPlayCompleted();
-    virtual PBoolean WaitForPlayCompletion();
-    virtual PBoolean StartRecording();
-    virtual PBoolean IsRecordBufferFull();
-    virtual PBoolean AreAllRecordBuffersFull();
-    virtual PBoolean WaitForRecordBufferFull();
-    virtual PBoolean WaitForAllRecordBuffersFull();
+    virtual bool HasPlayCompleted();
+    virtual bool WaitForPlayCompletion();
+    virtual bool StartRecording();
+    virtual bool IsRecordBufferFull();
+    virtual bool AreAllRecordBuffersFull();
+    virtual bool WaitForRecordBufferFull();
+    virtual bool WaitForAllRecordBuffersFull();
 
-    virtual PBoolean SetVolume(unsigned volume);
-    virtual PBoolean GetVolume(unsigned & volume);
+    virtual bool SetVolume(unsigned volume);
+    virtual bool GetVolume(unsigned & volume);
     virtual bool SetMute(bool mute);
     virtual bool GetMute(bool & mute);
 

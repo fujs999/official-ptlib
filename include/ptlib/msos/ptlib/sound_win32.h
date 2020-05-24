@@ -3,7 +3,7 @@
  *
  * Sound class.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -56,7 +56,7 @@ class PWaveFormat : public PObject
     void SetFormat(unsigned numChannels, unsigned sampleRate, unsigned bitsPerSample);
     void SetFormat(const void * data, PINDEX size);
 
-    PBoolean           SetSize   (PINDEX sz);
+    bool           SetSize   (PINDEX sz);
     PINDEX         GetSize   () const { return  size;       }
     void         * GetPointer() const { return  waveFormat; }
     WAVEFORMATEX * operator->() const { return  waveFormat; }
@@ -75,26 +75,26 @@ class PMultiMediaFile
     PMultiMediaFile();
     ~PMultiMediaFile();
 
-    PBoolean CreateWaveFile(const PFilePath & filename,
+    bool CreateWaveFile(const PFilePath & filename,
                         const PWaveFormat & waveFormat,
-                        DWORD dataSize);
-    PBoolean OpenWaveFile(const PFilePath & filename,
+                        uint32_t dataSize);
+    bool OpenWaveFile(const PFilePath & filename,
                       PWaveFormat & waveFormat,
-                      DWORD & dataSize);
+                      uint32_t & dataSize);
 
-    PBoolean Open(const PFilePath & filename, DWORD dwOpenFlags, LPMMIOINFO lpmmioinfo = NULL);
-    PBoolean Close(UINT wFlags = 0);
-    PBoolean Ascend(MMCKINFO & ckinfo, UINT wFlags = 0);
-    PBoolean Descend(UINT wFlags, MMCKINFO & ckinfo, LPMMCKINFO lpckParent = NULL);
-    PBoolean Read(void * data, PINDEX len);
-    PBoolean CreateChunk(MMCKINFO & ckinfo, UINT wFlags = 0);
-    PBoolean Write(const void * data, PINDEX len);
+    bool Open(const PFilePath & filename, uint32_t dwOpenFlags, LPMMIOINFO lpmmioinfo = NULL);
+    bool Close(UINT wFlags = 0);
+    bool Ascend(MMCKINFO & ckinfo, UINT wFlags = 0);
+    bool Descend(UINT wFlags, MMCKINFO & ckinfo, LPMMCKINFO lpckParent = NULL);
+    bool Read(void * data, PINDEX len);
+    bool CreateChunk(MMCKINFO & ckinfo, UINT wFlags = 0);
+    bool Write(const void * data, PINDEX len);
 
-    DWORD GetLastError() const { return dwLastError; }
+    uint32_t GetLastError() const { return dwLastError; }
 
   protected:
     HMMIO hmmio;
-    DWORD dwLastError;
+    uint32_t dwLastError;
 };
 
 
@@ -107,9 +107,9 @@ class PWaveBuffer : public PBYTEArray
 
     PWaveBuffer & operator=(const PSound & sound);
 
-    DWORD Prepare(HWAVEOUT hWaveOut, PINDEX & count);
-    DWORD Prepare(HWAVEIN hWaveIn);
-    DWORD Release();
+    uint32_t Prepare(HWAVEOUT hWaveOut, PINDEX & count);
+    uint32_t Prepare(HWAVEIN hWaveIn);
+    uint32_t Release();
 
     void PrepareCommon(PINDEX count);
 
@@ -132,34 +132,34 @@ class PSoundChannelWin32: public PSoundChannel
     static PString GetDefaultDevice(Directions dir);
     static PStringArray GetDeviceNames(PSoundChannel::Directions = Player);
     bool Open(const Params & params);
-    PBoolean Setup();
-    PBoolean Close();
-    PBoolean IsOpen() const;
-    PBoolean Write(const void * buf, PINDEX len);
-    PBoolean Read(void * buf, PINDEX len);
-    PBoolean SetFormat(unsigned numChannels,
+    bool Setup();
+    bool Close();
+    bool IsOpen() const;
+    bool Write(const void * buf, PINDEX len);
+    bool Read(void * buf, PINDEX len);
+    bool SetFormat(unsigned numChannels,
                    unsigned sampleRate,
                    unsigned bitsPerSample);
     unsigned GetChannels() const;
     unsigned GetSampleRate() const;
     unsigned GetSampleSize() const;
-    PBoolean SetBuffers(PINDEX size, PINDEX count);
-    PBoolean GetBuffers(PINDEX & size, PINDEX & count);
-    PBoolean PlaySound(const PSound & sound, PBoolean wait);
-    PBoolean HasPlayCompleted();
-    PBoolean WaitForPlayCompletion();
-    PBoolean RecordSound(PSound & sound);
-    PBoolean RecordFile(const PFilePath & filename);
-    PBoolean StartRecording();
-    PBoolean IsRecordBufferFull();
-    PBoolean AreAllRecordBuffersFull();
-    PBoolean WaitForRecordBufferFull();
-    PBoolean WaitForAllRecordBuffersFull();
-    PBoolean Abort();
-    PBoolean SetVolume(unsigned newVal);
-    PBoolean GetVolume(unsigned &devVol);
-    PBoolean SetMute(bool mute);
-    PBoolean GetMute(bool & mute);
+    bool SetBuffers(PINDEX size, PINDEX count);
+    bool GetBuffers(PINDEX & size, PINDEX & count);
+    bool PlaySound(const PSound & sound, bool wait);
+    bool HasPlayCompleted();
+    bool WaitForPlayCompletion();
+    bool RecordSound(PSound & sound);
+    bool RecordFile(const PFilePath & filename);
+    bool StartRecording();
+    bool IsRecordBufferFull();
+    bool AreAllRecordBuffersFull();
+    bool WaitForRecordBufferFull();
+    bool WaitForAllRecordBuffersFull();
+    bool Abort();
+    bool SetVolume(unsigned newVal);
+    bool GetVolume(unsigned &devVol);
+    bool SetMute(bool mute);
+    bool GetMute(bool & mute);
 
   public:
     // Overrides from class PChannel
@@ -170,9 +170,9 @@ class PSoundChannelWin32: public PSoundChannel
     PString GetErrorText(ErrorGroup group = NumErrorGroups) const;
     // Get a text form of the last error encountered.
 
-    PBoolean SetFormat(const PWaveFormat & format);
+    bool SetFormat(const PWaveFormat & format);
 
-    PBoolean Open(const PString & device, Directions dir,const PWaveFormat & format);
+    bool Open(const PString & device, Directions dir,const PWaveFormat & format);
     // Open with format other than PCM
 
   protected:
@@ -193,8 +193,8 @@ class PSoundChannelWin32: public PSoundChannel
     PDECLARE_MUTEX(  bufferMutex);
 
   private:
-    PBoolean OpenDevice(P_INT_PTR id);
-    PBoolean GetDeviceID(const PString & device, Directions dir, unsigned& id);
+    bool OpenDevice(P_INT_PTR id);
+    bool GetDeviceID(const PString & device, Directions dir, unsigned& id);
     int WaitEvent(ErrorGroup group);
 };
 

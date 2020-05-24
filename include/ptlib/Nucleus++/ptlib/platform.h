@@ -3,7 +3,7 @@
  *
  * Unix machine dependencies
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -114,70 +114,18 @@ extern "C"
 #define	FALSE		0
 #endif
 
-///////////////////////////////////////////
-//
-//  define a macro for declaring classes so we can bolt
-//  extra things to class declarations
-//
-
-#define	PEXPORT
-#define	PSTATIC
-
-
-///////////////////////////////////////////
-//
-// define some basic types and their limits
-//
-
-typedef unsigned char	   BYTE;	// 1 byte
-
-typedef	signed short	   PInt16;	// 16 bit
-typedef unsigned short	   WORD;
-
-typedef	signed int         PInt32;	// 32 bit
-#ifndef __NUCLEUS_MNT__
-typedef unsigned int 	   DWORD;
-#else // __NUCLEUS_MNT__
-typedef unsigned long 	   DWORD;
-typedef long int 	   int32;
-#if 0 // Shouldn't be necessary now we're VNET 4.2
-typedef int16 INT16;
-typedef uint16 UINT16;
-#endif
-#endif
-
-#define P_HAS_INT64
-
-#ifdef _MSC_VER  // MS compiler should set MSC_VER
-typedef signed __int64 PInt64;
-typedef unsigned __int64 PUInt64;
-
-#include <iostream>
-//class ostream;
-//class istream;
-
-ostream & operator<<(ostream & s, PInt64 v);
-ostream & operator<<(ostream & s, PUInt64 v);
-
-istream & operator>>(istream & s, PInt64 & v);
-istream & operator>>(istream & s, PUInt64 & v);
-#endif           // Diab compiler uses long long for 64-bit
-#ifdef __GNUC__
-typedef   signed long long int PInt64;
-typedef unsigned long long int PUInt64;
-
 #include <istream>
 #include <ostream>
 
-ostream & operator<<(ostream & s, PInt64 v);
-ostream & operator<<(ostream & s, PUInt64 v);
+ostream & operator<<(ostream & s, int64_t v);
+ostream & operator<<(ostream & s, uint64_t v);
 
-istream & operator>>(istream & s, PInt64 & v);
-istream & operator>>(istream & s, PUInt64 & v);
+istream & operator>>(istream & s, int64_t & v);
+istream & operator>>(istream & s, uint64_t & v);
 #endif
 #ifdef __DIAB
-typedef   signed long long int PInt64;
-typedef unsigned long long int PUInt64;	// 64 bit
+typedef   signed long long int int64_t;
+typedef unsigned long long int uint64_t;	// 64 bit
 #endif
 
 // Integer type that is same size as a pointer type.

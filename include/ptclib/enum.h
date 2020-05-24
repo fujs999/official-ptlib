@@ -3,7 +3,7 @@
  *
  * PWLib library for ENUM lookup
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (C) 2004 Post Increment
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Post Increment
  *
@@ -50,8 +50,8 @@ class NAPTRRecord : public PObject
     Comparison Compare(const PObject & obj) const;
     void PrintOn(ostream & strm) const;
 
-    WORD order;
-    WORD preference;
+    uint16_t order;
+    uint16_t preference;
     PString flags;
     PString service;
     PString regex;
@@ -74,10 +74,10 @@ class NAPTRRecordList : public PSortedList<PDNS::NAPTRRecord>
   protected:
     PINDEX     currentPos;
     int        lastOrder;
-    PBoolean       orderLocked;
+    bool       orderLocked;
 };
 
-inline PBoolean GetRecords(const PString & domain, NAPTRRecordList & recordList)
+inline bool GetRecords(const PString & domain, NAPTRRecordList & recordList)
 { return Lookup<NAPTR_SRV, NAPTRRecordList, NAPTRRecord>(domain, recordList); }
 
 /**
@@ -91,7 +91,7 @@ void SetENUMServers(const PStringArray & serverlist);
   *
   * @return true if the DN could be resolved, else false
   */
-PBoolean ENUMLookup(
+bool ENUMLookup(
                 const PString & dn,             ///< DN to lookup
                 const PString & service,        ///< ENUM service to use
                 const PStringArray & domains,   ///< list of ENUM domains to search
@@ -106,7 +106,7 @@ PBoolean ENUMLookup(
   *
   * @return true if the DN could be resolved, else false
   */
-PBoolean ENUMLookup(const PString & dn,             ///< DN to lookup
+bool ENUMLookup(const PString & dn,             ///< DN to lookup
                 const PString & service,        ///< ENUM service to use
                 PString & URL                   ///< resolved URL, if return value is true
 );   
@@ -143,7 +143,7 @@ void SetRDSServers(const PStringArray & servers);
   * @return true if the url could be resolved, else false
   */
 
-PBoolean RDSLookup(const PURL & url,           ///< URL to lookup
+bool RDSLookup(const PURL & url,           ///< URL to lookup
             const PString & service,       ///< Service to use
 			  PStringList & dn             ///< resolved addresses, if return value is true
 );
@@ -156,7 +156,7 @@ PBoolean RDSLookup(const PURL & url,           ///< URL to lookup
   * @return true if the url could be resolved, else false
   */
 
-PBoolean RDSLookup(const PURL & url,            ///< URL to lookup
+bool RDSLookup(const PURL & url,            ///< URL to lookup
             const PString & service,        ///< Service to use
        const PStringArray & naptrSpaces,    ///< RDS Servers to lookup
               PStringList & returnStr       ///< resolved addresses, if return value is true

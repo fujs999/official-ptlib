@@ -3,7 +3,7 @@
  *
  * Abstract Syntax Notation Encoding Rules classes
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-2002 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -67,13 +67,13 @@ class PASN_Object : public PObject
 
     PINDEX GetObjectLength() const;
     virtual PINDEX GetDataLength() const = 0;
-    virtual PBoolean IsPrimitive() const { return true; }
+    virtual bool IsPrimitive() const { return true; }
 
-    virtual PBoolean Decode(PASN_Stream &) = 0;
+    virtual bool Decode(PASN_Stream &) = 0;
     virtual void Encode(PASN_Stream &) const = 0;
 
-    PBoolean IsExtendable() const { return m_extendable; }
-    void SetExtendable(PBoolean ext = true) { m_extendable = ext; }
+    bool IsExtendable() const { return m_extendable; }
+    void SetExtendable(bool ext = true) { m_extendable = ext; }
 
     enum TagClass {
       UniversalTagClass,
@@ -147,10 +147,10 @@ class PASN_Object : public PObject
     static void SetMaximumStringSize(PINDEX sz);
 
   protected:
-    PASN_Object(unsigned tag, TagClass tagClass, PBoolean extend = false);
+    PASN_Object(unsigned tag, TagClass tagClass, bool extend = false);
 
    
-    PBoolean m_extendable;  ///< PER extension capability
+    bool m_extendable;  ///< PER extension capability
     TagClass m_tagClass;    ///< BER tag class
     unsigned m_tag;         ///< ASN object tag
 };
@@ -162,14 +162,14 @@ class PASN_ConstrainedObject : public PASN_Object
 {
     PCLASSINFO(PASN_ConstrainedObject, PASN_Object);
   public:
-    PBoolean IsConstrained() const { return constraint != Unconstrained; }
+    bool IsConstrained() const { return constraint != Unconstrained; }
     int GetLowerLimit() const { return lowerLimit; }
     unsigned GetUpperLimit() const { return upperLimit; }
 
-    PBoolean ConstrainedLengthDecode(PPER_Stream & strm, unsigned & length);
+    bool ConstrainedLengthDecode(PPER_Stream & strm, unsigned & length);
     void ConstrainedLengthEncode(PPER_Stream & strm, unsigned length) const;
 
-    PBoolean ConstraintEncode(PPER_Stream & strm, unsigned value) const;
+    bool ConstraintEncode(PPER_Stream & strm, unsigned value) const;
 
   protected:
     virtual void SetConstraintBounds(ConstraintType type, int lower, unsigned upper);
@@ -196,7 +196,7 @@ class PASN_Null : public PASN_Object
 
     virtual PString GetTypeAsString() const;
     virtual PINDEX GetDataLength() const;
-    virtual PBoolean Decode(PASN_Stream &);
+    virtual bool Decode(PASN_Stream &);
     virtual void Encode(PASN_Stream &) const;
 };
 
@@ -207,13 +207,13 @@ class PASN_Boolean : public PASN_Object
 {
     PCLASSINFO(PASN_Boolean, PASN_Object);
   public:
-    PASN_Boolean(PBoolean val = false);
-    PASN_Boolean(unsigned tag, TagClass tagClass, PBoolean val = false);
+    PASN_Boolean(bool val = false);
+    PASN_Boolean(unsigned tag, TagClass tagClass, bool val = false);
 
-    PASN_Boolean & operator=(PBoolean v) { value = v; return *this; }
-    operator PBoolean() const { return value; }
-    PBoolean GetValue() const { return value; }
-    void SetValue(PBoolean v) { value = v; }
+    PASN_Boolean & operator=(bool v) { value = v; return *this; }
+    operator bool() const { return value; }
+    bool GetValue() const { return value; }
+    void SetValue(bool v) { value = v; }
 
     virtual Comparison Compare(const PObject & obj) const;
     virtual PObject * Clone() const;
@@ -221,11 +221,11 @@ class PASN_Boolean : public PASN_Object
 
     virtual PString GetTypeAsString() const;
     virtual PINDEX GetDataLength() const;
-    virtual PBoolean Decode(PASN_Stream &);
+    virtual bool Decode(PASN_Stream &);
     virtual void Encode(PASN_Stream &) const;
 
   protected:
-    PBoolean value;
+    bool value;
 };
 
 
@@ -250,15 +250,15 @@ class PASN_Integer : public PASN_ConstrainedObject
     virtual void SetConstraintBounds(ConstraintType type, int lower, unsigned upper);
     virtual PString GetTypeAsString() const;
     virtual PINDEX GetDataLength() const;
-    virtual PBoolean Decode(PASN_Stream &);
+    virtual bool Decode(PASN_Stream &);
     virtual void Encode(PASN_Stream &) const;
 
 #ifdef P_INCLUDE_PER
-    PBoolean DecodePER(PPER_Stream & strm);
+    bool DecodePER(PPER_Stream & strm);
     void EncodePER(PPER_Stream & strm) const;
 #endif
 
-    PBoolean IsUnsigned() const;
+    bool IsUnsigned() const;
 
   protected:
     unsigned value;
@@ -279,12 +279,12 @@ class PASN_Enumeration : public PASN_Object
     PASN_Enumeration(unsigned tag,
                      TagClass tagClass,
                      unsigned nEnums = UINT_MAX,
-                     PBoolean extendable = false,
+                     bool extendable = false,
                      unsigned val = 0);
     PASN_Enumeration(unsigned tag,
                      TagClass tagClass,
                      unsigned nEnums,
-                     PBoolean extendable,
+                     bool extendable,
                      const PASN_Names * nameSpec,
                      unsigned namesCnt,
                      unsigned val = 0);
@@ -302,16 +302,16 @@ class PASN_Enumeration : public PASN_Object
 
     virtual PString GetTypeAsString() const;
     virtual PINDEX GetDataLength() const;
-    virtual PBoolean Decode(PASN_Stream &);
+    virtual bool Decode(PASN_Stream &);
     virtual void Encode(PASN_Stream &) const;
 
 #ifdef P_INCLUDE_PER
-    PBoolean DecodePER(PPER_Stream & strm);
+    bool DecodePER(PPER_Stream & strm);
     void EncodePER(PPER_Stream & strm) const;
 #endif
 
 #ifdef P_INCLUDE_XER
-    virtual PBoolean DecodeXER(PXER_Stream & strm);
+    virtual bool DecodeXER(PXER_Stream & strm);
     virtual void EncodeXER(PXER_Stream & strm) const;
 #endif
 
@@ -344,7 +344,7 @@ class PASN_Real : public PASN_Object
 
     virtual PString GetTypeAsString() const;
     virtual PINDEX GetDataLength() const;
-    virtual PBoolean Decode(PASN_Stream &);
+    virtual bool Decode(PASN_Stream &);
     virtual void Encode(PASN_Stream &) const;
 
   protected:
@@ -388,10 +388,10 @@ class PASN_ObjectId : public PASN_Object
 
     virtual PString GetTypeAsString() const;
     virtual PINDEX GetDataLength() const;
-    virtual PBoolean Decode(PASN_Stream &);
+    virtual bool Decode(PASN_Stream &);
     virtual void Encode(PASN_Stream &) const;
 
-    PBoolean CommonDecode(PASN_Stream & strm, unsigned dataLen);
+    bool CommonDecode(PASN_Stream & strm, unsigned dataLen);
     void CommonEncode(PBYTEArray & eObjId) const;
 
   protected:
@@ -405,22 +405,22 @@ class PASN_BitString : public PASN_ConstrainedObject
 {
     PCLASSINFO(PASN_BitString, PASN_ConstrainedObject);
   public:
-    PASN_BitString(unsigned nBits = 0, const BYTE * buf = NULL);
+    PASN_BitString(unsigned nBits = 0, const uint8_t * buf = NULL);
     PASN_BitString(unsigned tag, TagClass tagClass, unsigned nBits = 0);
 
     PASN_BitString(const PASN_BitString & other);
     PASN_BitString & operator=(const PASN_BitString & other);
 
     void SetData(const PBYTEArray & bytes) { SetData(bytes.GetSize()*8, bytes); }
-    void SetData(const BYTE * buf, PINDEX size) { SetData(size*8, buf, size); }
+    void SetData(const uint8_t * buf, PINDEX size) { SetData(size*8, buf, size); }
     void SetData(unsigned nBits, const PBYTEArray & bytes);
-    void SetData(unsigned nBits, const BYTE * buf, PINDEX size = 0);
+    void SetData(unsigned nBits, const uint8_t * buf, PINDEX size = 0);
 
     const PBYTEArray & GetData() const { return bitData; }
-    const BYTE * GetDataPointer() const { return bitData; }
+    const uint8_t * GetDataPointer() const { return bitData; }
 
     unsigned GetSize() const { return totalBits; }
-    PBoolean SetSize(unsigned nBits);
+    bool SetSize(unsigned nBits);
 
     bool operator[](PINDEX bit) const;
     void Set(unsigned bit);
@@ -434,20 +434,20 @@ class PASN_BitString : public PASN_ConstrainedObject
     virtual void SetConstraintBounds(ConstraintType type, int lower, unsigned upper);
     virtual PString GetTypeAsString() const;
     virtual PINDEX GetDataLength() const;
-    virtual PBoolean Decode(PASN_Stream &);
+    virtual bool Decode(PASN_Stream &);
     virtual void Encode(PASN_Stream &) const;
 
 #ifdef P_INCLUDE_BER
-    PBoolean DecodeBER(PBER_Stream & strm, unsigned len);
+    bool DecodeBER(PBER_Stream & strm, unsigned len);
     void EncodeBER(PBER_Stream & strm) const;
 #endif
 
 #ifdef P_INCLUDE_PER
-    PBoolean DecodePER(PPER_Stream & strm);
+    bool DecodePER(PPER_Stream & strm);
     void EncodePER(PPER_Stream & strm) const;
 #endif
 
-    PBoolean DecodeSequenceExtensionBitmap(PPER_Stream & strm);
+    bool DecodeSequenceExtensionBitmap(PPER_Stream & strm);
     void EncodeSequenceExtensionBitmap(PPER_Stream & strm) const;
 
   protected:
@@ -474,17 +474,17 @@ class PASN_OctetString : public PASN_ConstrainedObject
     void SetValue(const char * str) { operator=(str); }
     void SetValue(const PString & str) { operator=(str); }
     void SetValue(const PBYTEArray & arr) { operator=(arr); }
-    void SetValue(const BYTE * data, PINDEX len);
+    void SetValue(const uint8_t * data, PINDEX len);
     const PBYTEArray & GetValue() const { return value; }
     PBYTEArray & GetWritableValue() { return value; }
     operator const PBYTEArray &() const { return value; }
-    operator const BYTE *() const { return value; }
+    operator const uint8_t *() const { return value; }
     PString AsString() const;
-    BYTE operator[](PINDEX i) const { return value[i]; }
-    BYTE & operator[](PINDEX i) { return value[i]; }
-    BYTE * GetPointer(PINDEX sz = 0) { return value.GetPointer(sz); }
+    uint8_t operator[](PINDEX i) const { return value[i]; }
+    uint8_t & operator[](PINDEX i) { return value[i]; }
+    uint8_t * GetPointer(PINDEX sz = 0) { return value.GetPointer(sz); }
     PINDEX GetSize() const { return value.GetSize(); }
-    PBoolean SetSize(PINDEX newSize);
+    bool SetSize(PINDEX newSize);
 
     virtual Comparison Compare(const PObject & obj) const;
     virtual PObject * Clone() const;
@@ -493,15 +493,15 @@ class PASN_OctetString : public PASN_ConstrainedObject
     virtual void SetConstraintBounds(ConstraintType type, int lower, unsigned upper);
     virtual PString GetTypeAsString() const;
     virtual PINDEX GetDataLength() const;
-    virtual PBoolean Decode(PASN_Stream &);
+    virtual bool Decode(PASN_Stream &);
     virtual void Encode(PASN_Stream &) const;
 
 #ifdef P_INCLUDE_PER
-    PBoolean DecodePER(PPER_Stream & strm);
+    bool DecodePER(PPER_Stream & strm);
     void EncodePER(PPER_Stream & strm) const;
 #endif
 
-    PBoolean DecodeSubType(PASN_Object &) const;
+    bool DecodeSubType(PASN_Object &) const;
     void EncodeSubType(const PASN_Object &);
 
   protected:
@@ -532,16 +532,16 @@ class PASN_ConstrainedString : public PASN_ConstrainedObject
 
     virtual void SetConstraintBounds(ConstraintType type, int lower, unsigned upper);
     virtual PINDEX GetDataLength() const;
-    virtual PBoolean Decode(PASN_Stream &);
+    virtual bool Decode(PASN_Stream &);
     virtual void Encode(PASN_Stream &) const;
 
 #ifdef P_INCLUDE_BER
-    PBoolean DecodeBER(PBER_Stream & strm, unsigned len);
+    bool DecodeBER(PBER_Stream & strm, unsigned len);
     void EncodeBER(PBER_Stream & strm) const;
 #endif
 
 #ifdef P_INCLUDE_PER
-    PBoolean DecodePER(PPER_Stream & strm);
+    bool DecodePER(PPER_Stream & strm);
     void EncodePER(PPER_Stream & strm) const;
 #endif
 
@@ -615,22 +615,22 @@ class PASN_BMPString : public PASN_ConstrainedObject
 
     virtual PString GetTypeAsString() const;
     virtual PINDEX GetDataLength() const;
-    virtual PBoolean Decode(PASN_Stream &);
+    virtual bool Decode(PASN_Stream &);
     virtual void Encode(PASN_Stream &) const;
 
 #ifdef P_INCLUDE_BER
-    PBoolean DecodeBER(PBER_Stream & strm, unsigned len);
+    bool DecodeBER(PBER_Stream & strm, unsigned len);
     void EncodeBER(PBER_Stream & strm) const;
 #endif
 
 #ifdef P_INCLUDE_PER
-    PBoolean DecodePER(PPER_Stream & strm);
+    bool DecodePER(PPER_Stream & strm);
     void EncodePER(PPER_Stream & strm) const;
 #endif
 
   protected:
     void Construct();
-    PBoolean IsLegalCharacter(WORD ch);
+    bool IsLegalCharacter(uint16_t ch);
 
     PWCharArray value;
     PWCharArray characterSet;
@@ -687,7 +687,7 @@ class PASN_Choice : public PASN_Object
     virtual void SetTag(unsigned newTag, TagClass tagClass = DefaultTagClass);
     PString GetTagName() const;
     PASN_Object & GetObject() const;
-    PBoolean IsValid() const { return choice != NULL; }
+    bool IsValid() const { return choice != NULL; }
 
 #if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
 
@@ -743,24 +743,24 @@ class PASN_Choice : public PASN_Object
 
 #endif
 
-    virtual PBoolean CreateObject() = 0;
+    virtual bool CreateObject() = 0;
 
     virtual Comparison Compare(const PObject & obj) const;
     virtual void PrintOn(ostream & strm) const;
 
     virtual PString GetTypeAsString() const;
     virtual PINDEX GetDataLength() const;
-    virtual PBoolean IsPrimitive() const;
-    virtual PBoolean Decode(PASN_Stream &);
+    virtual bool IsPrimitive() const;
+    virtual bool Decode(PASN_Stream &);
     virtual void Encode(PASN_Stream &) const;
 
 #ifdef P_INCLUDE_PER
-    virtual PBoolean DecodePER(PPER_Stream &);
+    virtual bool DecodePER(PPER_Stream &);
     virtual void EncodePER(PPER_Stream &) const;
 #endif
 
 #ifdef P_INCLUDE_XER
-    PBoolean DecodeXER(PXER_Stream &);
+    bool DecodeXER(PXER_Stream &);
     void EncodeXER(PXER_Stream &) const;
 #endif
 
@@ -768,13 +768,13 @@ class PASN_Choice : public PASN_Object
 
     PINDEX GetValueByName(PString name) const;
   protected:
-    PASN_Choice(unsigned nChoices = 0, PBoolean extend = false);
-    PASN_Choice(unsigned tag, TagClass tagClass, unsigned nChoices, PBoolean extend);
-    PASN_Choice(unsigned tag, TagClass tagClass, unsigned nChoices, PBoolean extend, const PASN_Names * nameSpec,unsigned namesCnt);
+    PASN_Choice(unsigned nChoices = 0, bool extend = false);
+    PASN_Choice(unsigned tag, TagClass tagClass, unsigned nChoices, bool extend);
+    PASN_Choice(unsigned tag, TagClass tagClass, unsigned nChoices, bool extend, const PASN_Names * nameSpec,unsigned namesCnt);
 
     PASN_Choice(const PASN_Choice & other);
 
-    PBoolean CheckCreate() const;
+    bool CheckCreate() const;
 
     unsigned numChoices;
     PASN_Object * choice;
@@ -794,16 +794,16 @@ class PASN_Sequence : public PASN_Object
   public:
     PASN_Sequence(unsigned tag = UniversalSequence,
                   TagClass tagClass = UniversalTagClass,
-                  unsigned nOpts = 0, PBoolean extend = false, unsigned nExtend = 0);
+                  unsigned nOpts = 0, bool extend = false, unsigned nExtend = 0);
 
     PASN_Sequence(const PASN_Sequence & other);
     PASN_Sequence & operator=(const PASN_Sequence & other);
 
     PINDEX GetSize() const { return fields.GetSize(); }
-    PBoolean SetSize(PINDEX newSize);
+    bool SetSize(PINDEX newSize);
     PASN_Object & operator[](PINDEX i) const { return fields[i]; }
 
-    PBoolean HasOptionalField(PINDEX opt) const;
+    bool HasOptionalField(PINDEX opt) const;
     void IncludeOptionalField(PINDEX opt);
     void RemoveOptionalField(PINDEX opt);
 
@@ -813,47 +813,47 @@ class PASN_Sequence : public PASN_Object
 
     virtual PString GetTypeAsString() const;
     virtual PINDEX GetDataLength() const;
-    virtual PBoolean IsPrimitive() const;
-    virtual PBoolean Decode(PASN_Stream &);
+    virtual bool IsPrimitive() const;
+    virtual bool Decode(PASN_Stream &);
     virtual void Encode(PASN_Stream &) const;
 
-    PBoolean PreambleDecode(PASN_Stream & strm);
+    bool PreambleDecode(PASN_Stream & strm);
     void PreambleEncode(PASN_Stream & strm) const;
-    PBoolean KnownExtensionDecode(PASN_Stream & strm, PINDEX fld, PASN_Object & field);
+    bool KnownExtensionDecode(PASN_Stream & strm, PINDEX fld, PASN_Object & field);
     void KnownExtensionEncode(PASN_Stream & strm, PINDEX fld, const PASN_Object & field) const;
-    PBoolean UnknownExtensionsDecode(PASN_Stream & strm);
+    bool UnknownExtensionsDecode(PASN_Stream & strm);
     void UnknownExtensionsEncode(PASN_Stream & strm) const;
 
 #ifdef P_INCLUDE_BER
-    PBoolean PreambleDecodeBER(PBER_Stream & strm);
+    bool PreambleDecodeBER(PBER_Stream & strm);
     void PreambleEncodeBER(PBER_Stream & strm) const;
-    PBoolean KnownExtensionDecodeBER(PBER_Stream & strm, PINDEX fld, PASN_Object & field);
+    bool KnownExtensionDecodeBER(PBER_Stream & strm, PINDEX fld, PASN_Object & field);
     void KnownExtensionEncodeBER(PBER_Stream & strm, PINDEX fld, const PASN_Object & field) const;
-    PBoolean UnknownExtensionsDecodeBER(PBER_Stream & strm);
+    bool UnknownExtensionsDecodeBER(PBER_Stream & strm);
     void UnknownExtensionsEncodeBER(PBER_Stream & strm) const;
 #endif
 
 #ifdef P_INCLUDE_PER
-    PBoolean PreambleDecodePER(PPER_Stream & strm);
+    bool PreambleDecodePER(PPER_Stream & strm);
     void PreambleEncodePER(PPER_Stream & strm) const;
-    PBoolean KnownExtensionDecodePER(PPER_Stream & strm, PINDEX fld, PASN_Object & field);
+    bool KnownExtensionDecodePER(PPER_Stream & strm, PINDEX fld, PASN_Object & field);
     void KnownExtensionEncodePER(PPER_Stream & strm, PINDEX fld, const PASN_Object & field) const;
-    PBoolean UnknownExtensionsDecodePER(PPER_Stream & strm);
+    bool UnknownExtensionsDecodePER(PPER_Stream & strm);
     void UnknownExtensionsEncodePER(PPER_Stream & strm) const;
 #endif
 
 #ifdef P_INCLUDE_XER
-    virtual PBoolean PreambleDecodeXER(PXER_Stream & strm);
+    virtual bool PreambleDecodeXER(PXER_Stream & strm);
     virtual void PreambleEncodeXER(PXER_Stream & strm) const;
-    virtual PBoolean KnownExtensionDecodeXER(PXER_Stream & strm, PINDEX fld, PASN_Object & field);
+    virtual bool KnownExtensionDecodeXER(PXER_Stream & strm, PINDEX fld, PASN_Object & field);
     virtual void KnownExtensionEncodeXER(PXER_Stream & strm, PINDEX fld, const PASN_Object & field) const;
-    virtual PBoolean UnknownExtensionsDecodeXER(PXER_Stream & strm);
+    virtual bool UnknownExtensionsDecodeXER(PXER_Stream & strm);
     virtual void UnknownExtensionsEncodeXER(PXER_Stream & strm) const;
 #endif
 
   protected:
-    PBoolean NoExtensionsToDecode(PPER_Stream & strm);
-    PBoolean NoExtensionsToEncode(PPER_Stream & strm);
+    bool NoExtensionsToDecode(PPER_Stream & strm);
+    bool NoExtensionsToEncode(PPER_Stream & strm);
 
     PASN_ObjectArray fields;
     PASN_BitString optionMap;
@@ -872,7 +872,7 @@ class PASN_Set : public PASN_Sequence
   public:
     PASN_Set(unsigned tag = UniversalSet,
              TagClass tagClass = UniversalTagClass,
-             unsigned nOpts = 0, PBoolean extend = false, unsigned nExtend = 0);
+             unsigned nOpts = 0, bool extend = false, unsigned nExtend = 0);
 
     virtual PObject * Clone() const;
     virtual PString GetTypeAsString() const;
@@ -886,7 +886,7 @@ class PASN_Array : public PASN_ConstrainedObject
     PCLASSINFO(PASN_Array, PASN_ConstrainedObject);
   public:
     PINDEX GetSize() const { return array.GetSize(); }
-    PBoolean SetSize(PINDEX newSize);
+    bool SetSize(PINDEX newSize);
     PASN_Object & operator[](PINDEX i) const { return array[i]; }
     void Append(PASN_Object * obj) { array.SetAt(array.GetSize(), obj); }
     void RemoveAt(PINDEX i) { array.RemoveAt(i); }
@@ -898,8 +898,8 @@ class PASN_Array : public PASN_ConstrainedObject
     virtual void SetConstraintBounds(ConstraintType type, int lower, unsigned upper);
     virtual PString GetTypeAsString() const;
     virtual PINDEX GetDataLength() const;
-    virtual PBoolean IsPrimitive() const;
-    virtual PBoolean Decode(PASN_Stream &);
+    virtual bool IsPrimitive() const;
+    virtual bool Decode(PASN_Stream &);
     virtual void Encode(PASN_Stream &) const;
 
     virtual PASN_Object * CreateObject() const = 0;
@@ -926,56 +926,56 @@ class PASN_Stream : public PBYTEArray
   public:
     PASN_Stream();
     PASN_Stream(const PBYTEArray & bytes);
-    PASN_Stream(const BYTE * buf, PINDEX size);
+    PASN_Stream(const uint8_t * buf, PINDEX size);
 
     void PrintOn(ostream & strm) const;
 
     PINDEX GetPosition() const { return byteOffset; }
     void SetPosition(PINDEX newPos);
-    PBoolean IsAtEnd() { return byteOffset >= GetSize(); }
+    bool IsAtEnd() { return byteOffset >= GetSize(); }
     void ResetDecoder();
     void BeginEncoding();
     void CompleteEncoding();
 
-    virtual PBoolean Read(PChannel & chan) = 0;
-    virtual PBoolean Write(PChannel & chan) = 0;
+    virtual bool Read(PChannel & chan) = 0;
+    virtual bool Write(PChannel & chan) = 0;
 
-    virtual PBoolean NullDecode(PASN_Null &) = 0;
+    virtual bool NullDecode(PASN_Null &) = 0;
     virtual void NullEncode(const PASN_Null &) = 0;
-    virtual PBoolean BooleanDecode(PASN_Boolean &) = 0;
+    virtual bool BooleanDecode(PASN_Boolean &) = 0;
     virtual void BooleanEncode(const PASN_Boolean &) = 0;
-    virtual PBoolean IntegerDecode(PASN_Integer &) = 0;
+    virtual bool IntegerDecode(PASN_Integer &) = 0;
     virtual void IntegerEncode(const PASN_Integer &) = 0;
-    virtual PBoolean EnumerationDecode(PASN_Enumeration &) = 0;
+    virtual bool EnumerationDecode(PASN_Enumeration &) = 0;
     virtual void EnumerationEncode(const PASN_Enumeration &) = 0;
-    virtual PBoolean RealDecode(PASN_Real &) = 0;
+    virtual bool RealDecode(PASN_Real &) = 0;
     virtual void RealEncode(const PASN_Real &) = 0;
-    virtual PBoolean ObjectIdDecode(PASN_ObjectId &) = 0;
+    virtual bool ObjectIdDecode(PASN_ObjectId &) = 0;
     virtual void ObjectIdEncode(const PASN_ObjectId &) = 0;
-    virtual PBoolean BitStringDecode(PASN_BitString &) = 0;
+    virtual bool BitStringDecode(PASN_BitString &) = 0;
     virtual void BitStringEncode(const PASN_BitString &) = 0;
-    virtual PBoolean OctetStringDecode(PASN_OctetString &) = 0;
+    virtual bool OctetStringDecode(PASN_OctetString &) = 0;
     virtual void OctetStringEncode(const PASN_OctetString &) = 0;
-    virtual PBoolean ConstrainedStringDecode(PASN_ConstrainedString &) = 0;
+    virtual bool ConstrainedStringDecode(PASN_ConstrainedString &) = 0;
     virtual void ConstrainedStringEncode(const PASN_ConstrainedString &) = 0;
-    virtual PBoolean BMPStringDecode(PASN_BMPString &) = 0;
+    virtual bool BMPStringDecode(PASN_BMPString &) = 0;
     virtual void BMPStringEncode(const PASN_BMPString &) = 0;
-    virtual PBoolean ChoiceDecode(PASN_Choice &) = 0;
+    virtual bool ChoiceDecode(PASN_Choice &) = 0;
     virtual void ChoiceEncode(const PASN_Choice &) = 0;
-    virtual PBoolean ArrayDecode(PASN_Array &) = 0;
+    virtual bool ArrayDecode(PASN_Array &) = 0;
     virtual void ArrayEncode(const PASN_Array &) = 0;
-    virtual PBoolean SequencePreambleDecode(PASN_Sequence &) = 0;
+    virtual bool SequencePreambleDecode(PASN_Sequence &) = 0;
     virtual void SequencePreambleEncode(const PASN_Sequence &) = 0;
-    virtual PBoolean SequenceKnownDecode(PASN_Sequence &, PINDEX, PASN_Object &) = 0;
+    virtual bool SequenceKnownDecode(PASN_Sequence &, PINDEX, PASN_Object &) = 0;
     virtual void SequenceKnownEncode(const PASN_Sequence &, PINDEX, const PASN_Object &) = 0;
-    virtual PBoolean SequenceUnknownDecode(PASN_Sequence &) = 0;
+    virtual bool SequenceUnknownDecode(PASN_Sequence &) = 0;
     virtual void SequenceUnknownEncode(const PASN_Sequence &) = 0;
 
-    BYTE ByteDecode();
+    uint8_t ByteDecode();
     void ByteEncode(unsigned value);
 
-    unsigned BlockDecode(BYTE * bufptr, unsigned nBytes);
-    void BlockEncode(const BYTE * bufptr, PINDEX nBytes);
+    unsigned BlockDecode(uint8_t * bufptr, unsigned nBytes);
+    void BlockEncode(const uint8_t * bufptr, PINDEX nBytes);
 
     void ByteAlign();
 

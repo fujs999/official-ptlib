@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -85,7 +85,7 @@ class PAbstractArray : public PContainer
                                    ///< constructor will assert.
       const void *buffer,          ///< Pointer to an array of elements.
       PINDEX bufferSizeInElements, ///< Number of elements pointed to by buffer.
-      PBoolean dynamicAllocation   ///< Buffer is copied and dynamically allocated.
+      bool dynamicAllocation   ///< Buffer is copied and dynamically allocated.
     );
   //@}
 
@@ -145,7 +145,7 @@ class PAbstractArray : public PContainer
        @return
        <code>true</code> if the memory for the array was allocated successfully.
      */
-    virtual PBoolean SetSize(
+    virtual bool SetSize(
       PINDEX newSize  ///< New size of the array in elements.
     );
   //@}
@@ -198,13 +198,13 @@ class PAbstractArray : public PContainer
        @return
        <code>true</code> if the memory allocation succeeded.
      */
-    PBoolean Concatenate(
+    bool Concatenate(
       const PAbstractArray & array  ///< Array to concatenate.
     );
   //@}
 
   protected:
-    PBoolean InternalSetSize(PINDEX newSize, PBoolean force);
+    bool InternalSetSize(PINDEX newSize, bool force);
 
     virtual void PrintElementOn(
       ostream & stream,
@@ -227,7 +227,7 @@ class PAbstractArray : public PContainer
     char * theArray;
 
     /// Flag indicating the array was allocated on the heap.
-    PBoolean allocatedDynamically;
+    bool allocatedDynamically;
 
   friend class PArrayObjects;
 };
@@ -270,7 +270,7 @@ template <class T> class PBaseArray : public PAbstractArray
     PBaseArray(
       T const * buffer,   ///< Pointer to an array of the elements of type \b T.
       PINDEX length,      ///< Number of elements pointed to by \p buffer.
-      PBoolean dynamic = true ///< Buffer is copied and dynamically allocated.
+      bool dynamic = true ///< Buffer is copied and dynamically allocated.
     ) : PAbstractArray(sizeof(T), buffer, length, dynamic) { }
   //@}
 
@@ -292,7 +292,7 @@ template <class T> class PBaseArray : public PAbstractArray
        @return
        <code>true</code> if new memory for the array was successfully allocated.
      */
-    PBoolean SetAt(
+    bool SetAt(
       PINDEX index,   ///< Position in the array to set the new value.
       T val           ///< Value to set in the array.
     ) {
@@ -410,7 +410,7 @@ template <class T> class PBaseArray : public PAbstractArray
        @return
        <code>true</code> if the memory allocation succeeded.
      */
-    PBoolean Concatenate(
+    bool Concatenate(
       const PBaseArray & array  ///< Other array to concatenate
     ) {
       return PAbstractArray::Concatenate(array);
@@ -463,7 +463,7 @@ template <class T> class PScalarArray : public PBaseArray<T>
     PScalarArray(
       T const * buffer,   ///< Pointer to an array of the elements of type <b>T</b>.
       PINDEX length,      ///< Number of elements pointed to by <code>buffer</code>.
-      PBoolean dynamic = true ///< Buffer is copied and dynamically allocated.
+      bool dynamic = true ///< Buffer is copied and dynamically allocated.
     ) : PBaseArray<T>(buffer, length, dynamic) { }
   //@}
 
@@ -500,7 +500,7 @@ class PCharArray : public PBaseArray<char>
     PCharArray(
       char const * buffer,   ///< Pointer to an array of chars.
       PINDEX length,      ///< Number of elements pointed to by \p buffer.
-      PBoolean dynamic = true ///< Buffer is copied and dynamically allocated.
+      bool dynamic = true ///< Buffer is copied and dynamically allocated.
     ) : ParentClass(buffer, length, dynamic) { }
 
     PCharArray(PContainerReference & reference_)
@@ -534,9 +534,9 @@ typedef PScalarArray<int> PIntArray;
 typedef PScalarArray<long> PLongArray;
 
 /// Array of unsigned characters.
-class PBYTEArray : public PBaseArray<BYTE>
+class PBYTEArray : public PBaseArray<uint8_t>
 {
-    typedef PBaseArray<BYTE> ParentClass;
+    typedef PBaseArray<uint8_t> ParentClass;
     PCLASSINFO(PCharArray, ParentClass);
   public:
   /**@name Construction */
@@ -551,9 +551,9 @@ class PBYTEArray : public PBaseArray<BYTE>
     /**Construct a new dynamic array of unsigned chars.
      */
     PBYTEArray(
-      BYTE const * buffer,   ///< Pointer to an array of BYTEs.
+      uint8_t const * buffer,   ///< Pointer to an array of BYTEs.
       PINDEX length,      ///< Number of elements pointed to by \p buffer.
-      PBoolean dynamic = true ///< Buffer is copied and dynamically allocated.
+      bool dynamic = true ///< Buffer is copied and dynamically allocated.
     ) : ParentClass(buffer, length, dynamic) { }
 
     PBYTEArray(PContainerReference & reference_)
@@ -593,7 +593,7 @@ class PHexDump : public PBYTEArray
   PCLASSINFO(PHexDump, PBYTEArray)
 public:
   PHexDump(const void * data, PINDEX length, bool compact = true)
-    : PBYTEArray(static_cast<const BYTE *>(data), length, false)
+    : PBYTEArray(static_cast<const uint8_t *>(data), length, false)
     , m_compact(compact)
   { }
 
@@ -610,13 +610,13 @@ protected:
 
 
 /// Array of unsigned short integers.
-typedef PScalarArray<WORD> PWORDArray;
+typedef PScalarArray<uint16_t> PWORDArray;
 
 /// Array of unsigned integers.
 typedef PScalarArray<unsigned> PUnsignedArray;
 
 /// Array of unsigned long integers.
-typedef PScalarArray<DWORD> PDWORDArray;
+typedef PScalarArray<uint32_t> PDWORDArray;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -698,7 +698,7 @@ class PArrayObjects : public PCollection
        @return
        true if the memory for the array was allocated successfully.
      */
-    virtual PBoolean SetSize(
+    virtual bool SetSize(
       PINDEX newSize  ///< New size of the array in objects.
     );
   //@}
@@ -758,7 +758,7 @@ class PArrayObjects : public PCollection
        @return
        <code>true</code> if the object was in the collection.
      */
-    virtual PBoolean Remove(
+    virtual bool Remove(
       const PObject * obj   ///< Existing object to remove from the collection.
     );
 
@@ -784,7 +784,7 @@ class PArrayObjects : public PCollection
        @return
        <code>true</code> if the object was successfully added.
      */
-    virtual PBoolean SetAt(
+    virtual bool SetAt(
       PINDEX index,   ///< Index position in collection to set.
       PObject * val   ///< New value to place into the collection.
     );
@@ -911,7 +911,7 @@ class PBitArray : public PBYTEArray
     PBitArray(
       const void * buffer,   ///< Pointer to an array of the elements of type \b T.
       PINDEX length,         ///< Number of bits (not bytes!) pointed to by \p buffer.
-      PBoolean dynamic = true    ///< Buffer is copied and dynamically allocated.
+      bool dynamic = true    ///< Buffer is copied and dynamically allocated.
     );
   //@}
 
@@ -940,7 +940,7 @@ class PBitArray : public PBYTEArray
        @return
        true if the memory for the array was allocated successfully.
      */
-    virtual PBoolean SetSize(
+    virtual bool SetSize(
       PINDEX newSize  ///< New size of the array in bits, not bytes.
     );
 
@@ -950,9 +950,9 @@ class PBitArray : public PBYTEArray
        @return
        true if new memory for the array was successfully allocated.
      */
-    PBoolean SetAt(
+    bool SetAt(
       PINDEX index,   ///< Position in the array to set the new value.
-      PBoolean val           ///< Value to set in the array.
+      bool val           ///< Value to set in the array.
     );
 
     /**Get a bit from the array. If \p index is beyond the end
@@ -961,7 +961,7 @@ class PBitArray : public PBYTEArray
        @return
        Value at the array position.
      */
-    PBoolean GetAt(
+    bool GetAt(
       PINDEX index  ///< Position on the array to get value from.
     ) const;
 
@@ -991,7 +991,7 @@ class PBitArray : public PBYTEArray
        @return
        Pointer to the array memory.
      */
-    BYTE * GetPointer(
+    uint8_t * GetPointer(
       PINDEX minSize = 0    ///< Minimum size in bits (not bytes!) for returned buffer pointer.
     );
   //@}
@@ -1007,7 +1007,7 @@ class PBitArray : public PBYTEArray
        @return
        Value at the array position.
      */
-    PBoolean operator[](
+    bool operator[](
       PINDEX index  ///< Position on the array to get value from.
     ) const { return GetAt(index); }
 
@@ -1040,7 +1040,7 @@ class PBitArray : public PBYTEArray
        @return
        <code>true</code> if the memory allocation succeeded.
      */
-    PBoolean Concatenate(
+    bool Concatenate(
       const PBitArray & array  ///< Other array to concatenate
     );
   //@}

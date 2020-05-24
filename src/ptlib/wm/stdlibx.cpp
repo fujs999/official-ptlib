@@ -50,7 +50,7 @@ void __cdecl abort(void)
   static HANDLE mutex = CreateSemaphore(NULL, 1, 1, NULL);
   WaitForSingleObject(mutex, INFINITE);
 
-  switch (MessageBox(NULL, _T("Abort?"), _T("Portable Windows Library"),
+  switch (MessageBox(NULL, _T("Abort?"), _T("Portable Tools Library"),
     MB_ABORTRETRYIGNORE|MB_ICONHAND|MB_APPLMODAL)) {
       case IDABORT :
         ExitProcess(255);
@@ -72,7 +72,7 @@ void __cdecl perror(const char * s)
 
 long _lseek(int nHandle, long off, int orig)
 {
-  DWORD dwMoveMethod=FILE_BEGIN;
+  uint32_t dwMoveMethod=FILE_BEGIN;
   switch(orig)
   {
     case SEEK_SET:
@@ -98,7 +98,7 @@ int  _close(int nHandle)
 
 int  _read(int nHandle, void *p, unsigned int s)
 {
-  DWORD size=0;
+  uint32_t size=0;
   ReadFile((HANDLE)nHandle,p,s,&size,NULL);
   return size;
 }
@@ -106,7 +106,7 @@ int  _read(int nHandle, void *p, unsigned int s)
 
 int  _write(int nHandle, const void *p, unsigned int s)
 {
-  DWORD size=0;
+  uint32_t size=0;
   WriteFile((HANDLE)nHandle,p,s,&size,NULL);
   //[YG]???? FlushFileBuffers((HANDLE)nHandle);
   return size;
@@ -116,10 +116,10 @@ int  _write(int nHandle, const void *p, unsigned int s)
 int	_open(const char *filename, int oflag , int)
 {
   HANDLE	osfh;                    /* OS handle of opened file */
-  DWORD	fileaccess;               /* OS file access (requested) */
-  DWORD	fileshare;                /* OS file sharing mode */
-  DWORD	filecreate;               /* OS method of opening/creating */
-  DWORD	fileattrib;               /* OS file attribute flags */
+  uint32_t	fileaccess;               /* OS file access (requested) */
+  uint32_t	fileshare;                /* OS file sharing mode */
+  uint32_t	filecreate;               /* OS method of opening/creating */
+  uint32_t	fileattrib;               /* OS file attribute flags */
 
   /*
   * decode the access flags
@@ -249,7 +249,7 @@ int _sopen(const char *filename, int oflag , int pmode, ...)
 
 int	_chsize( int nHandle, long size )
 {
-  if ((DWORD)size!=SetFilePointer((HANDLE)nHandle,size,NULL,FILE_BEGIN))
+  if ((uint32_t)size!=SetFilePointer((HANDLE)nHandle,size,NULL,FILE_BEGIN))
     return -1;
 
   return (SetEndOfFile((HANDLE)nHandle)) ? 0 : -1;
@@ -318,7 +318,7 @@ int	remove(const char *name)
 int	_chmod( const char *filename, int pmode )
 {
   PString pstrFileName(filename);
-  DWORD attr = GetFileAttributes(pstrFileName.AsUCS2());
+  uint32_t attr = GetFileAttributes(pstrFileName.AsUCS2());
   if (pmode&_S_IWRITE)
     attr|=FILE_ATTRIBUTE_READONLY;
   else
@@ -649,14 +649,14 @@ LONG RegQueryValueEx( HKEY hKey, const char* lpValueName, LPDWORD lpReserved,
 }
 
 
-LONG RegSetValueEx( HKEY hKey, const char* lpValueName, DWORD Reserved, 
-                   DWORD dwType, const BYTE* lpData, DWORD cbData )
+LONG RegSetValueEx( HKEY hKey, const char* lpValueName, uint32_t Reserved, 
+                   uint32_t dwType, const uint8_t* lpData, uint32_t cbData )
 {
   return RegSetValueEx(hKey, PString(lpValueName).AsUCS2(), Reserved, dwType, lpData, cbData);
 }
 
 
-LONG RegCreateKeyEx( HKEY hKey, const char* lpSub, DWORD dwr, LPSTR lpcls, DWORD dwo, 
+LONG RegCreateKeyEx( HKEY hKey, const char* lpSub, uint32_t dwr, LPSTR lpcls, uint32_t dwo, 
                     REGSAM sam, LPSECURITY_ATTRIBUTES lpsa, PHKEY phk, LPDWORD lpdw )
 { 
   return RegCreateKeyEx( hKey, PString(lpSub).AsUCS2(), dwr, 
@@ -665,13 +665,13 @@ LONG RegCreateKeyEx( HKEY hKey, const char* lpSub, DWORD dwr, LPSTR lpcls, DWORD
 }
 
 
-LONG RegEnumKey(HKEY hKey, DWORD dwIndex, LPTSTR ptcsName, DWORD cbName)
-{	DWORD cb = cbName; 
+LONG RegEnumKey(HKEY hKey, uint32_t dwIndex, LPTSTR ptcsName, uint32_t cbName)
+{	uint32_t cb = cbName; 
 return RegEnumKeyEx( hKey, dwIndex, ptcsName, &cb, 0L, NULL, NULL, NULL ); 
 }
 
 
-LONG RegEnumValueCe( HKEY hKey, DWORD dwIndex, LPTSTR ptcsValueName, LPDWORD lpcbValueName, 
+LONG RegEnumValueCe( HKEY hKey, uint32_t dwIndex, LPTSTR ptcsValueName, LPDWORD lpcbValueName, 
                     LPDWORD lpReserved, LPDWORD lpType, LPBYTE lpData, LPDWORD lpcbData )
 { 
   return RegEnumValue( hKey, dwIndex, ptcsValueName, lpcbValueName, 
@@ -685,15 +685,15 @@ UINT GetWindowsDirectory( char* lpBuffer, UINT uSize )
 }
 
 
-DWORD GetPrivateProfileString(
+uint32_t GetPrivateProfileString(
                               const char*, // lpAppName,        // points to section name
                               const char*,  // lpKeyName,        // points to key name
                               const char*, // lpDefault,        // points to default string
                               char*, // lpReturnedString,  // points to destination buffer
-                              DWORD, // nSize,              // size of destination buffer
+                              uint32_t, // nSize,              // size of destination buffer
                               const char*  )        // points to initialization filename
 { 	
-  return (DWORD) -1L;
+  return (uint32_t) -1L;
 }
 
 
@@ -716,9 +716,9 @@ PServiceProcess::PServiceProcess(char const *,
 	enum PProcess::CodeStatus,unsigned short) {};
 PServiceProcess & PServiceProcess::Current(void) 
 { return (PServiceProcess &) PProcess::Current(); }
-PBoolean PServiceProcess::OnStart() { return true; }; 
+bool PServiceProcess::OnStart() { return true; }; 
 void PServiceProcess::OnStop() {}; 
-PBoolean PServiceProcess::OnPause() { return true; }; 
+bool PServiceProcess::OnPause() { return true; }; 
 void PServiceProcess::OnContinue() {}; 
 char const * PServiceProcess::GetServiceDependencies(void)const { return NULL; }
 

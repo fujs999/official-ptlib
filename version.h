@@ -15,7 +15,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  * Subsequenty renamed 
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.

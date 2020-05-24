@@ -3,7 +3,7 @@
  *
  * Thread of execution control class.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  * Copyright (c) 1999 ISDN Communications Ltd

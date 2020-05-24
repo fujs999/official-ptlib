@@ -3,7 +3,7 @@
  *
  * Dynamic Link Library abstraction class.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -76,7 +76,7 @@ class PDynaLink : public PObject
        @return
        true if the library was loaded.
      */
-    virtual PBoolean Open(
+    virtual bool Open(
       const PString & names    ///< Name(s) of the dynamically loadable module.
     );
 
@@ -86,7 +86,7 @@ class PDynaLink : public PObject
 
     /**Dyna-link module is loaded and may be accessed.
      */
-    virtual PBoolean IsLoaded() const;
+    virtual bool IsLoaded() const;
 
     /**Get the name of the loaded library. If the library is not loaded
        this may return an empty string.
@@ -98,7 +98,7 @@ class PDynaLink : public PObject
        String for the library name.
      */
     virtual PString GetName(
-      PBoolean full = false  ///< Flag for full or short path name
+      bool full = false  ///< Flag for full or short path name
     ) const;
 
     /**Get the extension used by this platform for dynamic link libraries.
@@ -120,7 +120,7 @@ class PDynaLink : public PObject
        @return
        true if function was found.
      */
-    PBoolean GetFunction(
+    bool GetFunction(
       PINDEX index,           ///< Ordinal number of the function to get.
       Function & func,        ///< Reference to point to function to get.
       bool compulsory = false ///< if true, close DLL if not present
@@ -131,7 +131,7 @@ class PDynaLink : public PObject
        @return
        true if function was found.
      */
-    PBoolean GetFunction(
+    bool GetFunction(
       const PString & name,  ///< Name of the function to get.
       Function & func,        ///< Reference to point to function to get.
       bool compulsory = false ///< if true, close DLL if not present

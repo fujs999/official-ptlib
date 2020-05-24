@@ -3,7 +3,7 @@
  *
  * FTP ancestor class.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-2002 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -53,7 +53,7 @@ PFTP::PFTP()
 }
 
 
-PBoolean PFTP::SendPORT(const PIPSocket::Address & addr, WORD port)
+bool PFTP::SendPORT(const PIPSocket::Address & addr, uint16_t port)
 {
   PString str(PString::Printf,
               "%i,%i,%i,%i,%i,%i",

@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Post Increment
  *
@@ -124,14 +124,14 @@ void IPV6Test::Main()
 
 
   // this is an IPV6 compatibility address
-  const BYTE ipv6Data[] = { 0x00, 0x00, 0x00, 0x00,
+  const uint8_t ipv6Data[] = { 0x00, 0x00, 0x00, 0x00,
                             0x00, 0x00, 0x00, 0x00,
                             0x00, 0x00, 0xff, 0xff,
                             220,  244,  81,   10 };
   const PIPSocket::Address ipv6Addr1(sizeof(ipv6Data), ipv6Data);
   {
     // test #2 - check V6 constructor
-    cout << "test #2: PIPSocket::Address(int, const BYTE *) ";
+    cout << "test #2: PIPSocket::Address(int, const uint8_t *) ";
     if (ipv6Addr1.GetVersion() == 6) 
         cout << "OK";
     else
@@ -269,7 +269,7 @@ void IPV6Test::Main()
     PIPSocket::Address addr;
     if (!PIPSocket::GetHostAddress(addrStr, addr))
       cout << "Could not get IP address for " << addrStr << endl;
-    WORD port = url.GetPort();
+    uint16_t port = url.GetPort();
     cout << "  host string = " << addrStr << " (should be [::ffff:220.244.81.10])\n"
          << "  address     = " << addr    << " (should be ::ffff:220.244.81.10)\n"
          << "  port        = " << port    << " (should be 1234)\n";

@@ -3,7 +3,7 @@
  *
  * Classes to support video output via SDL
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-2000 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -299,7 +299,7 @@ PStringArray PVideoOutputDevice_SDL::GetDeviceNames() const
 }
 
 
-PBoolean PVideoOutputDevice_SDL::Open(const PString & name, PBoolean /*startImmediate*/)
+bool PVideoOutputDevice_SDL::Open(const PString & name, bool /*startImmediate*/)
 {
   Close();
 
@@ -347,13 +347,13 @@ bool PVideoOutputDevice_SDL::InternalOpen()
 }
 
 
-PBoolean PVideoOutputDevice_SDL::IsOpen()
+bool PVideoOutputDevice_SDL::IsOpen()
 {
   return m_texture != NULL;
 }
 
 
-PBoolean PVideoOutputDevice_SDL::Close()
+bool PVideoOutputDevice_SDL::Close()
 {
   if (!IsOpen())
     return false;
@@ -374,7 +374,7 @@ void PVideoOutputDevice_SDL::InternalClose()
 }
 
 
-PBoolean PVideoOutputDevice_SDL::SetColourFormat(const PString & colourFormat)
+bool PVideoOutputDevice_SDL::SetColourFormat(const PString & colourFormat)
 {
   if (colourFormat *= PVideoFrameInfo::YUV420P())
     return PVideoOutputDevice::SetColourFormat(colourFormat);
@@ -383,7 +383,7 @@ PBoolean PVideoOutputDevice_SDL::SetColourFormat(const PString & colourFormat)
 }
 
 
-PBoolean PVideoOutputDevice_SDL::SetFrameSize(unsigned width, unsigned height)
+bool PVideoOutputDevice_SDL::SetFrameSize(unsigned width, unsigned height)
 {
   if (width == m_frameWidth && height == m_frameHeight)
     return true;
@@ -419,7 +419,7 @@ void PVideoOutputDevice_SDL::InternalSetFrameSize()
 }
 
 
-PBoolean PVideoOutputDevice_SDL::SetFrameData(const FrameData & frameData) 
+bool PVideoOutputDevice_SDL::SetFrameData(const FrameData & frameData) 
 {
   if (!IsOpen())
     return false;

@@ -3,7 +3,7 @@
  *
  * Application/System configuration access class.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -230,11 +230,11 @@ class PConfig : public PObject
        the default "DefVal" being used, or the user had explicitly saved the
        value "DefVal" into the PConfig.
      */
-    virtual PBoolean HasKey(
+    virtual bool HasKey(
       const PString & key       ///< Key of the variable.
     ) const;
     /**Determine if the particular variable in the section is actually present. */
-    virtual PBoolean HasKey(
+    virtual bool HasKey(
       const PString & section,  ///< Section to use instead of the default.
       const PString & key       ///< Key of the variable.
     ) const;
@@ -298,15 +298,15 @@ class PConfig : public PObject
 
        @return boolean value of the variable.
      */
-    virtual PBoolean GetBoolean(
+    virtual bool GetBoolean(
       const PString & key,      ///< The key name for the variable.
-      PBoolean dflt = false         ///< Default value for the variable.
+      bool dflt = false         ///< Default value for the variable.
     ) const;
     /** Get a boolean variable determined by the key in the section. */
-    virtual PBoolean GetBoolean(
+    virtual bool GetBoolean(
       const PString & section,  ///< Section to use instead of the default.
       const PString & key,      ///< The key name for the variable.
-      PBoolean dflt = false         ///< Default value for the variable.
+      bool dflt = false         ///< Default value for the variable.
     ) const;
 
     /** Set a boolean variable determined by the key in the section. If the
@@ -317,13 +317,13 @@ class PConfig : public PObject
      */
     virtual void SetBoolean(
       const PString & key,      ///< The key name for the variable.
-      PBoolean value                ///< New value to set for the variable.
+      bool value                ///< New value to set for the variable.
     );
     /** Set a boolean variable determined by the key in the section. */
     virtual void SetBoolean(
       const PString & section,  ///< Section to use instead of the default.
       const PString & key,      ///< The key name for the variable.
-      PBoolean value                ///< New value to set for the variable.
+      bool value                ///< New value to set for the variable.
     );
 
 
@@ -412,15 +412,15 @@ class PConfig : public PObject
 
        @return integer value of the variable.
      */
-    virtual PInt64 GetInt64(
+    virtual int64_t GetInt64(
       const PString & key,      ///< The key name for the variable.
-      PInt64 dflt = 0           ///< Default value for the variable.
+      int64_t dflt = 0           ///< Default value for the variable.
     ) const;
     /** Get a 64 bit integer variable determined by the key in the section. */
-    virtual PInt64 GetInt64(
+    virtual int64_t GetInt64(
       const PString & section,  ///< Section to use instead of the default.
       const PString & key,      ///< The key name for the variable.
-      PInt64 dflt = 0           ///< Default value for the variable.
+      int64_t dflt = 0           ///< Default value for the variable.
     ) const;
 
     /** Set a 64 bit integer variable determined by the key in the section. If the
@@ -431,13 +431,13 @@ class PConfig : public PObject
      */
     virtual void SetInt64(
       const PString & key,      ///< The key name for the variable.
-      PInt64 value              ///< New value to set for the variable.
+      int64_t value              ///< New value to set for the variable.
     );
     /** Set a 64 bit integer variable determined by the key in the section. */
     virtual void SetInt64(
       const PString & section,  ///< Section to use instead of the default.
       const PString & key,      ///< The key name for the variable.
-      PInt64 value              ///< New value to set for the variable.
+      int64_t value              ///< New value to set for the variable.
     );
 
 

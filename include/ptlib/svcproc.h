@@ -3,7 +3,7 @@
  *
  * Service Process (daemon) class.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -79,7 +79,7 @@ class PServiceProcess : public PProcess
        @return
        true if service may start, false if an initialisation failure occurred.
      */
-    virtual PBoolean OnStart() = 0;
+    virtual bool OnStart() = 0;
 
     /** Called by the system when the service is stopped. One return from this
        function there is no guarentee that any more user code will be executed.
@@ -97,7 +97,7 @@ class PServiceProcess : public PProcess
        @return
        true if the service was successfully paused.
      */
-    virtual PBoolean OnPause();
+    virtual bool OnPause();
 
     /** Resume after the service was paused.
      */

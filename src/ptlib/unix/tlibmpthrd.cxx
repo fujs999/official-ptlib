@@ -3,7 +3,7 @@
  *
  * Routines for Macintosh pre-emptive threading system
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -98,7 +98,7 @@ int PThread::PXBlockOnIO(int handle, int type, const PTimeInterval & timeout)
   }
 
   if ((retval == 1) && FD_ISSET(unblockPipe[0], read_fds)) {
-    BYTE ch;
+    uint8_t ch;
     ::read(unblockPipe[0], &ch, 1);
     errno = EINTR;
     retval =  -1;
@@ -110,7 +110,7 @@ int PThread::PXBlockOnIO(int handle, int type, const PTimeInterval & timeout)
 
 void PThread::PXAbortBlock() const
 {
-  BYTE ch;
+  uint8_t ch;
   ::write(unblockPipe[1], &ch, 1);
 }
 
@@ -134,7 +134,7 @@ static MPQueueID terminationNotificationQueue = 0;
 // kills the housekeeper before it can clean up all the other threads.
 // So the process thread has to poll the termination queue, but it does so
 // from PThread context, so it can't know there's no housekeeper.  yuck.
-static PBoolean noHousekeeper = 0;
+static bool noHousekeeper = 0;
 
 static void SetUpTermQueue() 
 {
@@ -176,7 +176,7 @@ static void SetUpTermQueue()
     }
 }
 
-static PBoolean PollNotificationQueue(Duration timeout)
+static bool PollNotificationQueue(Duration timeout)
 {
     OSStatus err = noErr;
     void *parm1, *parm2, *parm3;
@@ -334,7 +334,7 @@ void PThread::InternalDestroy()
 }
 
 
-void PThread::PX_NewThread(PBoolean startSuspended)
+void PThread::PX_NewThread(bool startSuspended)
 {
   OSErr err;
   // initialise suspend counter and create mutex
@@ -480,7 +480,7 @@ void PThread::PXSetWaitingSemaphore(PSemaphore * sem)
 }
 
 
-PBoolean PThread::IsTerminated() const
+bool PThread::IsTerminated() const
 {
   if (PX_threadId == 0) {
     //PTRACE(1, "tlibthrd\tIsTerminated(" << (void *)this << ") = 0");
@@ -517,7 +517,7 @@ PBoolean PThread::IsTerminated() const
 // but reject Suspend(true) calls with an Assertion. This will indicate
 // to a user that we cannot Suspend threads on Mac OS X
 
-void PThread::Suspend(PBoolean susp)
+void PThread::Suspend(bool susp)
 {
   OSStatus err;
   err = MPWaitOnSemaphore(PX_suspendMutex,kDurationForever);
@@ -546,7 +546,7 @@ void PThread::Resume()
 }
 
 
-PBoolean PThread::IsSuspended() const
+bool PThread::IsSuspended() const
 {
   OSStatus err;
 
@@ -555,7 +555,7 @@ PBoolean PThread::IsSuspended() const
 
   err = MPWaitOnSemaphore(PX_suspendMutex, kDurationForever);
   PAssert(err == 0, "MPWaitOnSemaphore failed");
-  PBoolean suspended = PX_suspendCount > 0;
+  bool suspended = PX_suspendCount > 0;
   err = MPSignalSemaphore(PX_suspendMutex);
   PAssert(err == 0, "MPSignalSemaphore failed");
   return suspended;
@@ -611,7 +611,7 @@ void PThread::WaitForTermination() const
 }
 
 
-PBoolean PThread::WaitForTermination(const PTimeInterval & maxWait) const
+bool PThread::WaitForTermination(const PTimeInterval & maxWait) const
 {
   PAssert(Current() != this, "Waiting for self termination!");
   
@@ -658,7 +658,7 @@ void PSemaphore::Wait()
 }
 
 
-PBoolean PSemaphore::Wait(const PTimeInterval & waitTime)
+bool PSemaphore::Wait(const PTimeInterval & waitTime)
 {
   OSErr err = 0;
     
@@ -700,7 +700,7 @@ void PMutex::Wait()
 	PSemaphore::Wait();
 }
 
-PBoolean PMutex::Wait(const PTimeInterval & timeout)
+bool PMutex::Wait(const PTimeInterval & timeout)
 {
 	return PSemaphore::Wait(timeout);
 }

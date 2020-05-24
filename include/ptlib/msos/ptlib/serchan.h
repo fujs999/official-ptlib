@@ -3,7 +3,7 @@
  *
  * Asynchronous serial I/O channel class.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -32,21 +32,21 @@
 // PSerialChannel
 
   public:
-    virtual PBoolean Read(void * buf, PINDEX len);
+    virtual bool Read(void * buf, PINDEX len);
       // Low level read from the channel. This function will block until the
       // requested number of characters were read.
 
-    virtual PBoolean Write(const void * buf, PINDEX len);
+    virtual bool Write(const void * buf, PINDEX len);
       // Low level write to the channel. This function will block until the
       // requested number of characters were written.
 
-    virtual PBoolean Close();
+    virtual bool Close();
       // Close the channel.
 
 
   private:
-    PBoolean SetCommsParam(DWORD speed, BYTE data, Parity parity,
-                     BYTE stop, FlowControl inputFlow, FlowControl outputFlow);
+    bool SetCommsParam(uint32_t speed, uint8_t data, Parity parity,
+                     uint8_t stop, FlowControl inputFlow, FlowControl outputFlow);
 
 
   // Member variables

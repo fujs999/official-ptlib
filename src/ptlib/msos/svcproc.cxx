@@ -3,7 +3,7 @@
  *
  * Service process implementation for Win95 and WinNT
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -149,7 +149,7 @@ static bool TrayIconRegistry(PServiceProcess * svc, TrayIconRegistryCommand cmd)
                    0, KEY_ALL_ACCESS, &key) != ERROR_SUCCESS)
     return false;
 
-  DWORD err = 1;
+  LSTATUS err = 1;
   DWORD type;
   DWORD len;
   PString str;
@@ -204,7 +204,7 @@ class PSystemLogToEvent : public PSystemLogTarget
     if (!PProcess::IsInitialised())
       return;
 
-    DWORD err = GetLastError();
+    uint32_t err = GetLastError();
 
     // Use event logging to log the error.
     HANDLE hEventSource = RegisterEventSource(NULL, PProcess::Current().GetName());
@@ -224,15 +224,15 @@ class PSystemLogToEvent : public PSystemLogTarget
     strings[2] = errbuf;
     strings[3] = level != PSystemLog::Fatal ? "" : " Program aborted.";
 
-    static const WORD levelType[PSystemLog::Info+1] = {
+    static const uint16_t levelType[PSystemLog::Info+1] = {
       EVENTLOG_INFORMATION_TYPE,
       EVENTLOG_ERROR_TYPE,
       EVENTLOG_ERROR_TYPE,
       EVENTLOG_WARNING_TYPE
     };
     ReportEvent(hEventSource, // handle of event source
-      (WORD)(level < PSystemLog::Info ? levelType[level+1] : EVENTLOG_INFORMATION_TYPE), // event type
-                (WORD)(level+1),      // event category
+      (uint16_t)(level < PSystemLog::Info ? levelType[level+1] : EVENTLOG_INFORMATION_TYPE), // event type
+                (uint16_t)(level+1),      // event category
                 0x1000,               // event ID
                 NULL,                 // current user's SID
                 PARRAYSIZE(strings),  // number of strings
@@ -291,7 +291,7 @@ static bool IsServiceRunning(PServiceProcess * svc)
 {
   HANDLE hEvent = OpenEvent(EVENT_MODIFY_STATE, false, svc->GetName());
   if (hEvent == NULL) {
-    DWORD error = ::GetLastError();
+    uint32_t error = ::GetLastError();
     return error == ERROR_ACCESS_DENIED;
   }
 
@@ -489,7 +489,7 @@ static const char WindowBottomKey[] = "Window Bottom";
 static const char SystemLogFileNameKey[] = "System Log File Name";
 
 
-PBoolean PServiceProcess::CreateControlWindow(PBoolean createDebugWindow)
+bool PServiceProcess::CreateControlWindow(bool createDebugWindow)
 {
   if (m_controlWindow != NULL)
     return true;
@@ -588,7 +588,7 @@ PBoolean PServiceProcess::CreateControlWindow(PBoolean createDebugWindow)
                                hInstance,
                                NULL);
     SendMessage(m_debugWindow, EM_SETLIMITTEXT, 128000, 0);
-    DWORD TabStops[] = {
+    uint32_t TabStops[] = {
       DATE_WIDTH,
       DATE_WIDTH+THREAD_WIDTH,
       DATE_WIDTH+THREAD_WIDTH+LEVEL_WIDTH,
@@ -698,7 +698,7 @@ LPARAM PServiceProcess::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPara
       EnableMenuItem((HMENU)wParam, SvcCmdBaseMenuID+SvcCmdPause, enableItems);
       EnableMenuItem((HMENU)wParam, SvcCmdBaseMenuID+SvcCmdResume, enableItems);
 
-      DWORD start, finish;
+      uint32_t start, finish;
       if (m_debugWindow != NULL && m_debugWindow != (HWND)-1)
         SendMessage(m_debugWindow, EM_GETSEL, (WPARAM)&start, (LPARAM)&finish);
       else
@@ -782,7 +782,7 @@ LPARAM PServiceProcess::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPara
             fileDlgInfo.nMaxCustFilter = sizeof(customFilter);
             fileDlgInfo.nMaxFile = sizeof(fileBuffer);
             fileDlgInfo.Flags = OFN_ENABLEHOOK|OFN_HIDEREADONLY|OFN_NOVALIDATE|OFN_EXPLORER|OFN_CREATEPROMPT;
-            //fileDlgInfo.lCustData = (DWORD)this;
+            //fileDlgInfo.lCustData = (uint32_t)this;
             if (GetSaveFileName(&fileDlgInfo)) {
               PFilePath newLogFile = fileBuffer;
               if (!PIsDescendant(&PSystemLog::GetTarget(), PSystemLogToFile) ||
@@ -935,7 +935,7 @@ void PServiceProcess::DebugOutput(const char * out)
   size_t len = strlen(out);
   while (GetWindowTextLength(m_debugWindow)+len >= 128000) {
     SendMessage(m_debugWindow, WM_SETREDRAW, false, 0);
-    DWORD start, finish;
+    uint32_t start, finish;
     SendMessage(m_debugWindow, EM_GETSEL, (WPARAM)&start, (LPARAM)&finish);
     SendMessage(m_debugWindow, EM_SETSEL, 0,
                 SendMessage(m_debugWindow, EM_LINEINDEX, 1, 0));
@@ -969,7 +969,7 @@ void PServiceProcess::StaticMainEntry(DWORD argc, LPTSTR * argv)
 }
 
 
-void PServiceProcess::MainEntry(DWORD argc, LPTSTR * argv)
+void PServiceProcess::MainEntry(uint32_t argc, LPTSTR * argv)
 {
   // SERVICE_STATUS members that don't change
   m_status.dwServiceType = SERVICE_WIN32_OWN_PROCESS;
@@ -1059,7 +1059,7 @@ void PServiceProcess::StaticControlEntry(DWORD code)
 }
 
 
-void PServiceProcess::ControlEntry(DWORD code)
+void PServiceProcess::ControlEntry(uint32_t code)
 {
   switch (code) {
     case SERVICE_CONTROL_PAUSE : // Pause the service if it is running.
@@ -1092,10 +1092,10 @@ void PServiceProcess::ControlEntry(DWORD code)
 }
 
 
-PBoolean PServiceProcess::ReportStatus(DWORD dwCurrentState,
-                                   DWORD dwWin32ExitCode,
-                                   DWORD dwCheckPoint,
-                                   DWORD dwWaitHint)
+bool PServiceProcess::ReportStatus(uint32_t dwCurrentState,
+                                   uint32_t dwWin32ExitCode,
+                                   uint32_t dwCheckPoint,
+                                   uint32_t dwWaitHint)
 {
   // Disable control requests until the service is started.
   if (dwCurrentState == SERVICE_START_PENDING)
@@ -1135,7 +1135,7 @@ void PServiceProcess::OnStop()
 }
 
 
-PBoolean PServiceProcess::OnPause()
+bool PServiceProcess::OnPause()
 {
   SuspendThread(m_threadHandle);
   return true;
@@ -1176,16 +1176,16 @@ class NT_ServiceManager
     bool IsInstalled();
     bool IsRunning();
 
-    DWORD GetError() const { return m_error; }
+    uint32_t GetError() const { return m_error; }
 
   private:
     bool OpenManager();
     bool Open();
-    bool Control(DWORD command);
+    bool Control(uint32_t command);
 
     PServiceProcess & m_process;
     SC_HANDLE m_schSCManager, m_schService;
-    DWORD m_error;
+    uint32_t m_error;
 };
 
 
@@ -1293,11 +1293,11 @@ bool NT_ServiceManager::Create()
                              0, REG_EXPAND_SZ, fn, fnlen)) == ERROR_SUCCESS &&
       (m_error = RegSetValueEx(key, "CategoryMessageFile",
                              0, REG_EXPAND_SZ, fn, fnlen)) == ERROR_SUCCESS) {
-    DWORD dwData = EVENTLOG_ERROR_TYPE | EVENTLOG_WARNING_TYPE | EVENTLOG_INFORMATION_TYPE;
+    uint32_t dwData = EVENTLOG_ERROR_TYPE | EVENTLOG_WARNING_TYPE | EVENTLOG_INFORMATION_TYPE;
     if ((m_error = RegSetValueEx(key, "TypesSupported",
-                               0, REG_DWORD, (LPBYTE)&dwData, sizeof(DWORD))) == ERROR_SUCCESS) {
+                               0, REG_DWORD, (LPBYTE)&dwData, sizeof(uint32_t))) == ERROR_SUCCESS) {
       dwData = PSystemLog::NumLogLevels;
-      m_error = RegSetValueEx(key, "CategoryCount", 0, REG_DWORD, (LPBYTE)&dwData, sizeof(DWORD));
+      m_error = RegSetValueEx(key, "CategoryCount", 0, REG_DWORD, (LPBYTE)&dwData, sizeof(uint32_t));
     }
   }
 
@@ -1342,7 +1342,7 @@ bool NT_ServiceManager::Start()
 }
 
 
-bool NT_ServiceManager::Control(DWORD command)
+bool NT_ServiceManager::Control(uint32_t command)
 {
   if (!Open())
     return false;
@@ -1400,7 +1400,7 @@ bool NT_ServiceManager::IsRunning()
 
   // if pending periodicaly re-query the status
   while (serviceStatus.dwCurrentState == SERVICE_START_PENDING) {
-    DWORD waitTime = std::min(serviceStatus.dwWaitHint / 10, 10000UL);
+    uint32_t waitTime = std::min(serviceStatus.dwWaitHint / 10, 10000UL);
     Sleep(waitTime);
 
     if (!QueryServiceStatus(m_schService, &serviceStatus)) {

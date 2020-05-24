@@ -3,7 +3,7 @@
  *
  * Operating System classes implementation
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -54,7 +54,7 @@ PConsoleChannel::PConsoleChannel(ConsoleType type)
 }
 
 
-PBoolean PConsoleChannel::Open(ConsoleType type)
+bool PConsoleChannel::Open(ConsoleType type)
 {
   switch (type) {
     case StandardInput :
@@ -80,7 +80,7 @@ PString PConsoleChannel::GetName() const
 }
 
 #ifdef __NUCLEUS_MNT__
-PBoolean PConsoleChannel::Read(void * buffer, PINDEX length)
+bool PConsoleChannel::Read(void * buffer, PINDEX length)
   {
   flush();
   cin >> (char *)buffer;
@@ -91,7 +91,7 @@ PBoolean PConsoleChannel::Read(void * buffer, PINDEX length)
   }
 
 
-PBoolean PConsoleChannel::Write(const void * buffer, PINDEX length)
+bool PConsoleChannel::Write(const void * buffer, PINDEX length)
   {
   flush();
   cout << PString((const char *)buffer, length) << "\n";
@@ -99,7 +99,7 @@ PBoolean PConsoleChannel::Write(const void * buffer, PINDEX length)
   }
 #endif
 
-PBoolean PConsoleChannel::Close()
+bool PConsoleChannel::Close()
   {
   os_handle = -1;
   return true;

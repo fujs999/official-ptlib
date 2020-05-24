@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Indranet Technologies Ltd.
  *
@@ -178,7 +178,7 @@ void SafeTest::DelayThreadsDict::DeleteObject(PObject * object) const
   }
 }
 
-PBoolean SafeTest::UseOnThreadEnd()
+bool SafeTest::UseOnThreadEnd()
 {
   return useOnThreadEnd;
 }
@@ -202,7 +202,7 @@ void OnDelayThreadEnd::Main()
 
 /////////////////////////////////////////////////////////////////////////////
 
-DelayWorkerThread::DelayWorkerThread(DelayThread & _delayThread, PInt64 _iteration)
+DelayWorkerThread::DelayWorkerThread(DelayThread & _delayThread, int64_t _iteration)
   : PThread(10000, AutoDeleteThread), 
     delayThread(_delayThread),
     iteration(_iteration)
@@ -235,7 +235,7 @@ void DelayThreadTermination::Main()
 
 /////////////////////////////////////////////////////////////////////////////
 
-DelayThread::DelayThread(SafeTest &_safeTest, PINDEX _delay, PInt64 iteration)
+DelayThread::DelayThread(SafeTest &_safeTest, PINDEX _delay, int64_t iteration)
   : safeTest(_safeTest),
     delay(_delay)
 {
@@ -367,7 +367,7 @@ void LauncherThread::Main()
     while(safeTest.CurrentSize() < count) {
       iteration++;
       void * location = new DelayThread(safeTest, delay, iteration);
-      if (((PUInt64)location) < 0xffff) {
+      if (((uint64_t)location) < 0xffff) {
 	int a, b;
 	a = 1;
 	b = 0;
@@ -380,7 +380,7 @@ void LauncherThread::Main()
 
 void LauncherThread::ReportAverageTime()
 {
-  PInt64 i = GetIteration();
+  int64_t i = GetIteration();
   if (i == 0) {
     cout << "Have not completed an iteration yet, so time per "
 	 << "iteration is unavailable" << endl;

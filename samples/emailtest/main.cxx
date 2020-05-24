@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Post Increment
  *
@@ -71,7 +71,7 @@ void Test::Main()
 
   PSMTP::Parameters params;
   params.m_hostname = args.GetOptionString("host");
-  params.m_port = args.GetOptionAs<WORD>("port", 0);
+  params.m_port = args.GetOptionAs<uint16_t>("port", 0);
   params.m_username = args.GetOptionString("user");
   params.m_password = args.GetOptionString("pass");
   params.m_from = args.GetOptionString("from");

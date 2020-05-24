@@ -3,7 +3,7 @@
  *
  * Socket and interface bundle code
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (C) 2007 Post Increment
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Post Increment
  *
@@ -230,18 +230,18 @@ class PMonitoredSockets : public PSafeObject
 
         Returns true if all sockets are opened.
      */
-    virtual PBoolean Open(
-      WORD port
+    virtual bool Open(
+      uint16_t port
     ) = 0;
 
     /// Indicate if the socket(s) are open and ready for reads/writes.
-    PBoolean IsOpen() const { return m_opened; }
+    bool IsOpen() const { return m_opened; }
 
     /// Close all socket(s)
-    virtual PBoolean Close() = 0;
+    virtual bool Close() = 0;
 
     /// Return the local port number being used by the socket(s)
-    WORD GetPort() const { return m_localPort; }
+    uint16_t GetPort() const { return m_localPort; }
 
     /// Set the quality of service for sockets
     virtual bool SetQoS(
@@ -249,11 +249,11 @@ class PMonitoredSockets : public PSafeObject
     ) = 0;
 
     /// Get the local address for the given interface.
-    virtual PBoolean GetAddress(
+    virtual bool GetAddress(
       const PString & iface,        ///< Interface to get address for
       PIPSocket::Address & address, ///< Address of interface
-      WORD & port,                  ///< Port listening on
-      PBoolean usingNAT             ///< Require NAT address/port
+      uint16_t & port,                  ///< Port listening on
+      bool usingNAT             ///< Require NAT address/port
     ) const = 0;
 
     struct BundleParams {
@@ -270,7 +270,7 @@ class PMonitoredSockets : public PSafeObject
       void * m_buffer;              ///< Data to read/write
       PINDEX m_length;              ///< Maximum length of data
       PIPSocket::Address m_addr;    ///< Remote IP address data came from, or is written to
-      WORD m_port;                  ///< Remote port data came from, or is written to
+      uint16_t m_port;                  ///< Remote port data came from, or is written to
       PString m_iface;              ///< Interface to use for read or write, also then one data was read on
       PINDEX m_lastCount;           ///< Actual length of data read/written
       PTimeInterval m_timeout;      ///< Time to wait for data
@@ -362,7 +362,7 @@ class PMonitoredSockets : public PSafeObject
     bool GetSocketAddress(
       const SocketInfo & info,
       PIPSocket::Address & address,
-      WORD & port,
+      uint16_t & port,
       bool usingNAT
     ) const;
 
@@ -372,7 +372,7 @@ class PMonitoredSockets : public PSafeObject
       BundleParams & param
     );
 
-    WORD          m_localPort;
+    uint16_t          m_localPort;
     bool          m_reuseAddress;
 #if P_NAT
     PNatMethods * m_natMethods;
@@ -407,19 +407,19 @@ class PMonitoredSocketChannel : public PChannel
   /**@name Overrides from class PSocket */
   //@{
     virtual PString GetName() const;
-    virtual PBoolean IsOpen() const;
-    virtual PBoolean Close();
+    virtual bool IsOpen() const;
+    virtual bool Close();
 
     /** Override of PChannel functions to allow connectionless reads
      */
-    virtual PBoolean Read(
+    virtual bool Read(
       void * buffer,
       PINDEX length
     );
 
     /** Override of PChannel functions to allow connectionless writes
      */
-    virtual PBoolean Write(
+    virtual bool Write(
       const void * buffer,
       PINDEX length
     );
@@ -441,7 +441,7 @@ class PMonitoredSocketChannel : public PChannel
       */
     bool GetLocal(
       PIPSocket::Address & address, ///< IP address of local interface
-      WORD & port,                  ///< Port listening on
+      uint16_t & port,                  ///< Port listening on
       bool usingNAT                 ///< Require NAT address/port
     );
     bool GetLocal(
@@ -452,7 +452,7 @@ class PMonitoredSocketChannel : public PChannel
     /// Set the remote address/port for all Write() functions
     void SetRemote(
       const PIPSocket::Address & address, ///< Remote IP address
-      WORD port                           ///< Remote port number
+      uint16_t port                           ///< Remote port number
     ) { m_remoteAP.SetAddress(address, port); }
     void SetRemote(
       const PIPSocket::AddressAndPort & ap ///< Remote IP address and port
@@ -466,7 +466,7 @@ class PMonitoredSocketChannel : public PChannel
     /// Get the current remote address/port for all Write() functions
     void GetRemote(
       PIPSocket::Address & addr,  ///< Remote IP address
-      WORD & port                 ///< Remote port number
+      uint16_t & port                 ///< Remote port number
     ) const { addr = m_remoteAP.GetAddress(); port = m_remoteAP.GetPort(); }
     void GetRemote(
       PIPSocketAddressAndPort & ap  ///< Remote IP address and port
@@ -486,7 +486,7 @@ class PMonitoredSocketChannel : public PChannel
     /// Get the IP address and port of the last received UDP data.
     void GetLastReceived(
       PIPSocket::Address & addr,  ///< Remote IP address
-      WORD & port                 ///< Remote port number
+      uint16_t & port                 ///< Remote port number
     ) const { addr = m_lastReceivedAP.GetAddress(); port = m_lastReceivedAP.GetPort(); }
     void GetLastReceived(
       PIPSocketAddressAndPort & ap  ///< Remote IP address and port
@@ -547,12 +547,12 @@ class PMonitoredSocketBundle : public PMonitoredSockets
 
         Returns true if all sockets are opened.
      */
-    virtual PBoolean Open(
-      WORD port
+    virtual bool Open(
+      uint16_t port
     );
 
     /// Close all socket(s)
-    virtual PBoolean Close();
+    virtual bool Close();
 
     /// Set the quality of service for sockets
     virtual bool SetQoS(
@@ -560,11 +560,11 @@ class PMonitoredSocketBundle : public PMonitoredSockets
     );
 
     /// Get the local address for the given interface.
-    virtual PBoolean GetAddress(
+    virtual bool GetAddress(
       const PString & iface,        ///< Interface to get address for
       PIPSocket::Address & address, ///< Address of interface
-      WORD & port,                  ///< Port listening on
-      PBoolean usingNAT             ///< Require NAT address/port
+      uint16_t & port,                  ///< Port listening on
+      bool usingNAT             ///< Require NAT address/port
     ) const;
 
     /** Write to the remote address/port using the socket(s) available. If the
@@ -634,12 +634,12 @@ class PSingleMonitoredSocket : public PMonitoredSockets
 
         Returns true if all sockets are opened.
      */
-    virtual PBoolean Open(
-      WORD port
+    virtual bool Open(
+      uint16_t port
     );
 
     /// Close all socket(s)
-    virtual PBoolean Close();
+    virtual bool Close();
 
     /// Set the quality of service for sockets
     virtual bool SetQoS(
@@ -647,11 +647,11 @@ class PSingleMonitoredSocket : public PMonitoredSockets
     );
 
     /// Get the local address for the given interface.
-    virtual PBoolean GetAddress(
+    virtual bool GetAddress(
       const PString & iface,        ///< Interface to get address for
       PIPSocket::Address & address, ///< Address of interface
-      WORD & port,                  ///< Port listening on
-      PBoolean usingNAT             ///< Require NAT address/port
+      uint16_t & port,                  ///< Port listening on
+      bool usingNAT             ///< Require NAT address/port
     ) const;
 
     /** Write to the remote address/port using the socket(s) available. If the

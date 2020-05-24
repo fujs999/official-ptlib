@@ -3,7 +3,7 @@
  *
  * Direct Ethernet socket I/O channel class.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -73,22 +73,22 @@ class PEthSocket : public PSocket
     /** An ethernet MAC Address specification.
      */
     union Address {
-      BYTE b[6];
-      WORD w[3];
+      uint8_t b[6];
+      uint16_t w[3];
       struct {
-        DWORD l;
-        WORD  s;
+        uint32_t l;
+        uint16_t  s;
       } ls;
 
       Address();
-      Address(const BYTE * addr);
+      Address(const uint8_t * addr);
       Address(const Address & addr);
       Address(const PString & str);
       Address & operator=(const Address & addr);
       Address & operator=(const PString & str);
 
-      bool operator==(const BYTE * eth) const;
-      bool operator!=(const BYTE * eth) const;
+      bool operator==(const uint8_t * eth) const;
+      bool operator!=(const uint8_t * eth) const;
       bool operator==(const Address & eth) const { return ls.l == eth.ls.l && ls.s == eth.ls.s; }
       bool operator!=(const Address & eth) const { return ls.l != eth.ls.l || ls.s != eth.ls.s; }
 
@@ -113,7 +113,7 @@ class PEthSocket : public PSocket
        @return
        true if the channel successfully closed.
      */
-    virtual PBoolean Close();
+    virtual bool Close();
 
     /**Low level read from the channel. This function may block until the
        requested number of characters were read or the read timeout was
@@ -127,7 +127,7 @@ class PEthSocket : public PSocket
        true indicates that at least one character was read from the channel.
        false means no bytes were read due to timeout or some other I/O error.
      */
-    virtual PBoolean Read(
+    virtual bool Read(
       void * buf,   ///< Pointer to a block of memory to receive the read bytes.
       PINDEX len    ///< Maximum number of bytes to read into the buffer.
     );
@@ -143,7 +143,7 @@ class PEthSocket : public PSocket
        @return
        true if at least len bytes were written to the channel.
      */
-    virtual PBoolean Write(
+    virtual bool Write(
       const void * buf, ///< Pointer to a block of memory to write.
       PINDEX len        ///< Number of bytes to write.
     );
@@ -158,7 +158,7 @@ class PEthSocket : public PSocket
        @return
        true if the channel was successfully connected to the interface.
      */
-    virtual PBoolean Connect(
+    virtual bool Connect(
       const PString & address   ///< Name of interface to connect to.
     );
 
@@ -168,9 +168,9 @@ class PEthSocket : public PSocket
        @return
        true if the channel was successfully opened.
      */
-    virtual PBoolean Listen(
+    virtual bool Listen(
       unsigned queueSize = 5,  ///< Number of pending accepts that may be queued.
-      WORD port = 0,           ///< Port number to use for the connection.
+      uint16_t port = 0,           ///< Port number to use for the connection.
       Reusability reuse = AddressIsExclusive ///< Can/Cant listen more than once.
     );
   //@}
@@ -260,7 +260,7 @@ class PEthSocket : public PSocket
           Address & src,
           Address & dst
         );
-        BYTE * CreateDataLink(
+        uint8_t * CreateDataLink(
           const Address & src,
           const Address & dst,
           unsigned proto,
@@ -278,7 +278,7 @@ class PEthSocket : public PSocket
           PIPSocket::Address & src,
           PIPSocket::Address & dst
         );
-        BYTE * CreateIP(
+        uint8_t * CreateIP(
           const PIPSocket::Address & src,
           const PIPSocket::Address & dst,
           unsigned proto,
@@ -290,15 +290,15 @@ class PEthSocket : public PSocket
          */
         bool GetUDP(
           PBYTEArray & payload,
-          WORD & srcPort,
-          WORD & dstPort
+          uint16_t & srcPort,
+          uint16_t & dstPort
         );
         bool GetUDP(
           PBYTEArray & payload,
           PIPSocketAddressAndPort & src,
           PIPSocketAddressAndPort & dst
         );
-        BYTE * CreateUDP(
+        uint8_t * CreateUDP(
           const PIPSocketAddressAndPort & src,
           const PIPSocketAddressAndPort & dst,
           PINDEX length,
@@ -310,15 +310,15 @@ class PEthSocket : public PSocket
          */
         bool GetTCP(
           PBYTEArray & payload,
-          WORD & srcPort,
-          WORD & dstPort
+          uint16_t & srcPort,
+          uint16_t & dstPort
         );
         bool GetTCP(
           PBYTEArray & payload,
           PIPSocketAddressAndPort & src,
           PIPSocketAddressAndPort & dst
         );
-        BYTE * CreateTCP(
+        uint8_t * CreateTCP(
           const PIPSocketAddressAndPort & src,
           const PIPSocketAddressAndPort & dst,
           PINDEX length,
@@ -362,7 +362,7 @@ class PEthSocket : public PSocket
   //@}
 
   protected:
-    virtual PBoolean OpenSocket();
+    virtual bool OpenSocket();
     virtual const char * GetProtocolName() const;
 
     PString  m_channelName;

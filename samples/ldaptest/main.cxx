@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -73,7 +73,7 @@ void LDAPTest::Main()
 
   if (args.HasOption('I')) {
     PILSSession ils;
-    if (!ils.Open(args.GetOptionString('h'), (WORD)args.GetOptionString('p').AsUnsigned())) {
+    if (!ils.Open(args.GetOptionString('h'), (uint16_t)args.GetOptionString('p').AsUnsigned())) {
       cerr << "Could not open ILS server at " << args[1];
       return;
     }
@@ -95,7 +95,7 @@ void LDAPTest::Main()
   }
   else {
     PLDAPSession ldap;
-    if (!ldap.Open(args.GetOptionString('h'), (WORD)args.GetOptionString('p').AsUnsigned())) {
+    if (!ldap.Open(args.GetOptionString('h'), (uint16_t)args.GetOptionString('p').AsUnsigned())) {
       cerr << "Could not open LDAP server at " << args[1];
       return;
     }

@@ -262,7 +262,7 @@ void PTones::SetSampleRate(unsigned rate)
 }
 
 
-PBoolean PTones::SetSize(PINDEX newSize)
+bool PTones::SetSize(PINDEX newSize)
 {
   bool ok = PShortArray::SetSize(newSize);
   if (m_addPosition > GetSize())

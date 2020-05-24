@@ -3,7 +3,7 @@
  *
  * Sound class.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -37,24 +37,24 @@
       // Return the name of the channel.
 
       
-    virtual PBoolean Read(void * buf, PINDEX len);
+    virtual bool Read(void * buf, PINDEX len);
       // Low level read from the channel. This function will block until the
       // requested number of characters were read.
 
-    virtual PBoolean Write(const void * buf, PINDEX len);
+    virtual bool Write(const void * buf, PINDEX len);
       // Low level write to the channel. This function will block until the
       // requested number of characters were written.
 
-    virtual PBoolean Close();
+    virtual bool Close();
       // Close the channel.
 
 
     PString GetErrorText(ErrorGroup group = NumErrorGroups) const;
     // Get a text form of the last error encountered.
 
-    PBoolean SetFormat(const PWaveFormat & format);
+    bool SetFormat(const PWaveFormat & format);
 
-    PBoolean Open(const PString & device, Directions dir,const PWaveFormat & format);
+    bool Open(const PString & device, Directions dir,const PWaveFormat & format);
     // Open with format other than PCM
 
   protected:
@@ -71,7 +71,7 @@
     PMutex           bufferMutex;
 
   private:
-    PBoolean OpenDevice(unsigned id);
-    PBoolean GetDeviceID(const PString & device, Directions dir, unsigned& id);
+    bool OpenDevice(unsigned id);
+    bool GetDeviceID(const PString & device, Directions dir, unsigned& id);
 
 // End Of File ///////////////////////////////////////////////////////////////

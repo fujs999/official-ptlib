@@ -3,7 +3,7 @@
  *
  * Microsoft Internet Location Server Protocol interface class.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-2003 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -44,13 +44,13 @@
 // work as it assumes that any integer forms would be in host order.
 istream & operator>>(istream & s, PILSSession::MSIPAddress & a)
 {
-  DWORD u;
+  uint32_t u;
   s >> u;
 
 #if PBYTE_ORDER==PLITTLE_ENDIAN
   a = u;
 #else
-  a = PIPSocket::Address((BYTE)(u>>24),(BYTE)(u>>16),(BYTE)(u>>8),(BYTE)u);
+  a = PIPSocket::Address((uint8_t)(u>>24),(uint8_t)(u>>16),(uint8_t)(u>>8),(uint8_t)u);
 #endif
 
   return s;
@@ -60,9 +60,9 @@ istream & operator>>(istream & s, PILSSession::MSIPAddress & a)
 ostream & operator<<(ostream & s, PILSSession::MSIPAddress & a)
 {
 #if PBYTE_ORDER==PLITTLE_ENDIAN
-  DWORD u = a;
+  uint32_t u = a;
 #else
-  DWORD u = (a.Byte1()<<24)|(a.Byte2()<<16)|(a.Byte3()<<8)|a.Byte4();
+  uint32_t u = (a.Byte1()<<24)|(a.Byte2()<<16)|(a.Byte3()<<8)|a.Byte4();
 #endif
 
   return s << u;
@@ -78,25 +78,25 @@ PILSSession::PILSSession()
 }
 
 
-PBoolean PILSSession::AddPerson(const RTPerson & person)
+bool PILSSession::AddPerson(const RTPerson & person)
 {
   return Add(person.GetDN(), person);
 }
 
 
-PBoolean PILSSession::ModifyPerson(const RTPerson & person)
+bool PILSSession::ModifyPerson(const RTPerson & person)
 {
   return Modify(person.GetDN(), person);
 }
 
 
-PBoolean PILSSession::DeletePerson(const RTPerson & person)
+bool PILSSession::DeletePerson(const RTPerson & person)
 {
   return Delete(person.GetDN());
 }
 
 
-PBoolean PILSSession::SearchPerson(const PString & canonicalName, RTPerson & person)
+bool PILSSession::SearchPerson(const PString & canonicalName, RTPerson & person)
 {
   SearchContext context;
   if (!Search(context, "cn="+canonicalName))

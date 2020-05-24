@@ -3,7 +3,7 @@
  *
  * FTP server class.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-2002 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -73,7 +73,7 @@ PFTPServer::~PFTPServer()
 }
 
 
-PBoolean PFTPServer::OnOpen()
+bool PFTPServer::OnOpen()
 {
   // the default data port for a client is the same port
   PIPSocket * socket = GetSocket();
@@ -107,13 +107,13 @@ PString PFTPServer::GetSystemTypeString() const
 }
 
 
-PBoolean PFTPServer::AuthoriseUser(const PString &, const PString &, PBoolean &)
+bool PFTPServer::AuthoriseUser(const PString &, const PString &, bool &)
 {
   return true;
 }
 
 
-PBoolean PFTPServer::ProcessCommand()
+bool PFTPServer::ProcessCommand()
 {
   PString args;
   PINDEX code;
@@ -133,7 +133,7 @@ PBoolean PFTPServer::ProcessCommand()
 }
 
 
-PBoolean PFTPServer::DispatchCommand(PINDEX code, const PString & args)
+bool PFTPServer::DispatchCommand(PINDEX code, const PString & args)
 {
   switch (code) {
 
@@ -213,9 +213,9 @@ PBoolean PFTPServer::DispatchCommand(PINDEX code, const PString & args)
 }
 
 
-PBoolean PFTPServer::CheckLoginRequired(PINDEX cmd)
+bool PFTPServer::CheckLoginRequired(PINDEX cmd)
 {
-  static const BYTE RequiresLogin[NumCommands] = {
+  static const uint8_t RequiresLogin[NumCommands] = {
     1, // USER
     1, // PASS
     0, // ACCT
@@ -257,7 +257,7 @@ PBoolean PFTPServer::CheckLoginRequired(PINDEX cmd)
 }
 
 
-PBoolean PFTPServer::OnUnknown(const PCaselessString & command)
+bool PFTPServer::OnUnknown(const PCaselessString & command)
 {
   WriteResponse(500, "\"" + command + "\" command unrecognised.");
   return true;
@@ -294,7 +294,7 @@ void PFTPServer::OnCommandSuccessful(PINDEX cmdNum)
 
 // mandatory commands that can be performed without loggin in
 
-PBoolean PFTPServer::OnUSER(const PCaselessString & args)
+bool PFTPServer::OnUSER(const PCaselessString & args)
 {
   m_userName = args;
   m_state    = NeedPassword;
@@ -303,7 +303,7 @@ PBoolean PFTPServer::OnUSER(const PCaselessString & args)
 }
 
 
-PBoolean PFTPServer::OnPASS(const PCaselessString & args)
+bool PFTPServer::OnPASS(const PCaselessString & args)
 {
   bool replied = false;
   if (m_state != NeedPassword)
@@ -323,14 +323,14 @@ PBoolean PFTPServer::OnPASS(const PCaselessString & args)
 }
 
 
-PBoolean PFTPServer::OnQUIT(const PCaselessString & userName)
+bool PFTPServer::OnQUIT(const PCaselessString & userName)
 {
   WriteResponse(221, GetGoodbyeString(userName));
   return false;
 }
 
 
-PBoolean PFTPServer::OnPORT(const PCaselessString & args)
+bool PFTPServer::OnPORT(const PCaselessString & args)
 {
   PStringArray tokens = args.Tokenise(",");
 
@@ -350,9 +350,9 @@ PBoolean PFTPServer::OnPORT(const PCaselessString & args)
     if (socket == NULL)
       OnError(590, PORT, "not available on non-TCP transport.");
     else {
-      m_remoteHost = PIPSocket::Address((BYTE)values[0],
-                              (BYTE)values[1], (BYTE)values[2], (BYTE)values[3]);
-      m_remotePort = (WORD)(values[4]*256 + values[5]);
+      m_remoteHost = PIPSocket::Address((uint8_t)values[0],
+                              (uint8_t)values[1], (uint8_t)values[2], (uint8_t)values[3]);
+      m_remotePort = (uint16_t)(values[4]*256 + values[5]);
       if (m_remotePort < 1024 && m_remotePort != socket->GetPort()-1)
         OnError(590, PORT, "cannot access privileged port number.");
       else {
@@ -369,7 +369,7 @@ PBoolean PFTPServer::OnPORT(const PCaselessString & args)
 }
 
 
-PBoolean PFTPServer::OnPASV(const PCaselessString &)
+bool PFTPServer::OnPASV(const PCaselessString &)
 {
   if (m_passiveSocket != NULL)
     delete m_passiveSocket;
@@ -377,7 +377,7 @@ PBoolean PFTPServer::OnPASV(const PCaselessString &)
   m_passiveSocket = new PTCPSocket;
   m_passiveSocket->Listen();
 
-  WORD portNo = m_passiveSocket->GetPort();
+  uint16_t portNo = m_passiveSocket->GetPort();
   PIPSocket::Address ourAddr;
   PIPSocket * socket = GetSocket();
   if (socket != NULL)
@@ -394,7 +394,7 @@ PBoolean PFTPServer::OnPASV(const PCaselessString &)
 }
 
 
-PBoolean PFTPServer::OnTYPE(const PCaselessString & args)
+bool PFTPServer::OnTYPE(const PCaselessString & args)
 {
   if (args.IsEmpty())
     OnSyntaxError(TYPE);
@@ -421,7 +421,7 @@ PBoolean PFTPServer::OnTYPE(const PCaselessString & args)
 }
 
 
-PBoolean PFTPServer::OnMODE(const PCaselessString & args)
+bool PFTPServer::OnMODE(const PCaselessString & args)
 {
   if (args.IsEmpty())
     OnSyntaxError(MODE);
@@ -444,7 +444,7 @@ PBoolean PFTPServer::OnMODE(const PCaselessString & args)
 }
 
 
-PBoolean PFTPServer::OnSTRU(const PCaselessString & args)
+bool PFTPServer::OnSTRU(const PCaselessString & args)
 {
   if (args.IsEmpty())
     OnSyntaxError(STRU);
@@ -467,7 +467,7 @@ PBoolean PFTPServer::OnSTRU(const PCaselessString & args)
 }
 
 
-PBoolean PFTPServer::OnNOOP(const PCaselessString &)
+bool PFTPServer::OnNOOP(const PCaselessString &)
 {
   OnCommandSuccessful(NOOP);
   return true;
@@ -476,168 +476,168 @@ PBoolean PFTPServer::OnNOOP(const PCaselessString &)
 
 // mandatory commands that cannot be performed without logging in
 
-PBoolean PFTPServer::OnRETR(const PCaselessString &)
+bool PFTPServer::OnRETR(const PCaselessString &)
 {
   OnNotImplemented(RETR);
   return true;
 }
 
 
-PBoolean PFTPServer::OnSTOR(const PCaselessString &)
+bool PFTPServer::OnSTOR(const PCaselessString &)
 {
   OnNotImplemented(STOR);
   return true;
 }
 
 
-PBoolean PFTPServer::OnACCT(const PCaselessString &)
+bool PFTPServer::OnACCT(const PCaselessString &)
 {
   WriteResponse(532, "Need account for storing files");
   return true;
 }
 
 
-PBoolean PFTPServer::OnCWD(const PCaselessString &)
+bool PFTPServer::OnCWD(const PCaselessString &)
 {
   OnNotImplemented(CWD);
   return true;
 }
 
 
-PBoolean PFTPServer::OnCDUP(const PCaselessString &)
+bool PFTPServer::OnCDUP(const PCaselessString &)
 {
   OnNotImplemented(CDUP);
   return true;
 }
 
 
-PBoolean PFTPServer::OnSMNT(const PCaselessString &)
+bool PFTPServer::OnSMNT(const PCaselessString &)
 {
   OnNotImplemented(SMNT);
   return true;
 }
 
 
-PBoolean PFTPServer::OnREIN(const PCaselessString &)
+bool PFTPServer::OnREIN(const PCaselessString &)
 {
   OnNotImplemented(REIN);
   return true;
 }
 
 
-PBoolean PFTPServer::OnSTOU(const PCaselessString &)
+bool PFTPServer::OnSTOU(const PCaselessString &)
 {
   OnNotImplemented(STOU);
   return true;
 }
 
 
-PBoolean PFTPServer::OnAPPE(const PCaselessString &)
+bool PFTPServer::OnAPPE(const PCaselessString &)
 {
   OnNotImplemented(APPE);
   return true;
 }
 
 
-PBoolean PFTPServer::OnALLO(const PCaselessString &)
+bool PFTPServer::OnALLO(const PCaselessString &)
 {
   OnNotImplemented(ALLO);
   return true;
 }
 
 
-PBoolean PFTPServer::OnREST(const PCaselessString &)
+bool PFTPServer::OnREST(const PCaselessString &)
 {
   OnNotImplemented(REST);
   return true;
 }
 
 
-PBoolean PFTPServer::OnRNFR(const PCaselessString &)
+bool PFTPServer::OnRNFR(const PCaselessString &)
 {
   OnNotImplemented(RNFR);
   return true;
 }
 
 
-PBoolean PFTPServer::OnRNTO(const PCaselessString &)
+bool PFTPServer::OnRNTO(const PCaselessString &)
 {
   OnNotImplemented(RNTO);
   return true;
 }
 
 
-PBoolean PFTPServer::OnABOR(const PCaselessString &)
+bool PFTPServer::OnABOR(const PCaselessString &)
 {
   OnNotImplemented(ABOR);
   return true;
 }
 
 
-PBoolean PFTPServer::OnDELE(const PCaselessString &)
+bool PFTPServer::OnDELE(const PCaselessString &)
 {
   OnNotImplemented(DELE);
   return true;
 }
 
 
-PBoolean PFTPServer::OnRMD(const PCaselessString &)
+bool PFTPServer::OnRMD(const PCaselessString &)
 {
   OnNotImplemented(RMD);
   return true;
 }
 
 
-PBoolean PFTPServer::OnMKD(const PCaselessString &)
+bool PFTPServer::OnMKD(const PCaselessString &)
 {
   OnNotImplemented(MKD);
   return true;
 }
 
 
-PBoolean PFTPServer::OnPWD(const PCaselessString &)
+bool PFTPServer::OnPWD(const PCaselessString &)
 {
   OnNotImplemented(PWD);
   return true;
 }
 
 
-PBoolean PFTPServer::OnLIST(const PCaselessString &)
+bool PFTPServer::OnLIST(const PCaselessString &)
 {
   OnNotImplemented(LIST);
   return true;
 }
 
 
-PBoolean PFTPServer::OnNLST(const PCaselessString &)
+bool PFTPServer::OnNLST(const PCaselessString &)
 {
   OnNotImplemented(NLST);
   return true;
 }
 
 
-PBoolean PFTPServer::OnSITE(const PCaselessString &)
+bool PFTPServer::OnSITE(const PCaselessString &)
 {
   OnNotImplemented(SITE);
   return true;
 }
 
 
-PBoolean PFTPServer::OnSYST(const PCaselessString &)
+bool PFTPServer::OnSYST(const PCaselessString &)
 {
   WriteResponse(215, GetSystemTypeString());
   return true;
 }
 
 
-PBoolean PFTPServer::OnSTAT(const PCaselessString &)
+bool PFTPServer::OnSTAT(const PCaselessString &)
 {
   OnNotImplemented(STATcmd);
   return true;
 }
 
 
-PBoolean PFTPServer::OnHELP(const PCaselessString &)
+bool PFTPServer::OnHELP(const PCaselessString &)
 {
   OnNotImplemented(HELP);
   return true;
@@ -667,7 +667,7 @@ void PFTPServer::SendToClient(const PFilePath & filename)
           WriteResponse(150, PSTRSTRM("Opening ASCII data connection for "
                         << filename.GetFileName() << '(' << file.GetLength() << " bytes)"));
           PString line;
-          PBoolean ok = true;
+          bool ok = true;
           while (ok && file.ReadLine(line)) {
             if (!dataSocket->Write((const char *)line, line.GetLength())) {
               WriteResponse(426, "Connection closed - transfer aborted");
@@ -683,8 +683,8 @@ void PFTPServer::SendToClient(const PFilePath & filename)
         else {
           WriteResponse(150, PSTRSTRM("Opening BINARY data connection for "
                         << filename.GetFileName() << '(' << file.GetLength() << " bytes)"));
-          BYTE buffer[2048];
-          PBoolean ok = true;
+          uint8_t buffer[2048];
+          bool ok = true;
           while (ok && file.Read(buffer, 2048)) {
             if (!dataSocket->Write(buffer, file.GetLastReadCount())) {
               WriteResponse(426, "Connection closed - transfer aborted");

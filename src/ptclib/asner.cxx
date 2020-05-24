@@ -3,7 +3,7 @@
  *
  * Abstract Syntax Notation 1 Encoding Rules
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-2002 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -59,7 +59,7 @@ static PINDEX CountBits(unsigned range)
   return nBits;
 }
 
-inline PBoolean CheckByteOffset(PINDEX offset, PINDEX upper = MaximumStringSize)
+inline bool CheckByteOffset(PINDEX offset, PINDEX upper = MaximumStringSize)
 {
   // a 1mbit PDU has got to be an error
 #if PINDEX_SIGNED
@@ -82,7 +82,7 @@ static PINDEX FindNameByValue(const PASN_Names *names, PINDEX namesCount, unsign
 
 ///////////////////////////////////////////////////////////////////////
 
-PASN_Object::PASN_Object(unsigned theTag, TagClass theTagClass, PBoolean extend)
+PASN_Object::PASN_Object(unsigned theTag, TagClass theTagClass, bool extend)
 {
   m_extendable = extend;
 
@@ -228,7 +228,7 @@ PINDEX PASN_Null::GetDataLength() const
 }
 
 
-PBoolean PASN_Null::Decode(PASN_Stream & strm)
+bool PASN_Null::Decode(PASN_Stream & strm)
 {
   return strm.NullDecode(*this);
 }
@@ -242,14 +242,14 @@ void PASN_Null::Encode(PASN_Stream & strm) const
 
 ///////////////////////////////////////////////////////////////////////
 
-PASN_Boolean::PASN_Boolean(PBoolean val)
+PASN_Boolean::PASN_Boolean(bool val)
   : PASN_Object(UniversalBoolean, UniversalTagClass)
 {
   value = val;
 }
 
 
-PASN_Boolean::PASN_Boolean(unsigned tag, TagClass tagClass, PBoolean val)
+PASN_Boolean::PASN_Boolean(unsigned tag, TagClass tagClass, bool val)
   : PASN_Object(tag, tagClass)
 {
   value = val;
@@ -291,7 +291,7 @@ PINDEX PASN_Boolean::GetDataLength() const
 }
 
 
-PBoolean PASN_Boolean::Decode(PASN_Stream & strm)
+bool PASN_Boolean::Decode(PASN_Stream & strm)
 {
   return strm.BooleanDecode(*this);
 }
@@ -319,7 +319,7 @@ PASN_Integer::PASN_Integer(unsigned tag, TagClass tagClass, unsigned val)
 }
 
 
-PBoolean PASN_Integer::IsUnsigned() const
+bool PASN_Integer::IsUnsigned() const
 {
   return constraint != Unconstrained && lowerLimit >= 0;
 }
@@ -403,7 +403,7 @@ PString PASN_Integer::GetTypeAsString() const
 
 static PINDEX GetIntegerDataLength(int value)
 {
-  // create a mask which is the top nine bits of a DWORD, or 0xFF800000
+  // create a mask which is the top nine bits of a uint32_t, or 0xFF800000
   // on a big endian machine
   int shift = (sizeof(value)-1)*8-1;
 
@@ -421,7 +421,7 @@ PINDEX PASN_Integer::GetDataLength() const
 }
 
 
-PBoolean PASN_Integer::Decode(PASN_Stream & strm)
+bool PASN_Integer::Decode(PASN_Stream & strm)
 {
   return strm.IntegerDecode(*this);
 }
@@ -444,7 +444,7 @@ PASN_Enumeration::PASN_Enumeration(unsigned val)
 
 
 PASN_Enumeration::PASN_Enumeration(unsigned tag, TagClass tagClass,
-                                   unsigned maxEnum, PBoolean extend,
+                                   unsigned maxEnum, bool extend,
                                    unsigned val)
   : PASN_Object(tag, tagClass, extend),names(NULL),namesCount(0)
 {
@@ -455,7 +455,7 @@ PASN_Enumeration::PASN_Enumeration(unsigned tag, TagClass tagClass,
 
 
 PASN_Enumeration::PASN_Enumeration(unsigned tag, TagClass tagClass,
-                                   unsigned maxEnum, PBoolean extend,
+                                   unsigned maxEnum, bool extend,
                                    const PASN_Names * nameSpec,
                                    unsigned namesCnt,
                                    unsigned val)
@@ -513,7 +513,7 @@ PINDEX PASN_Enumeration::GetDataLength() const
 }
 
 
-PBoolean PASN_Enumeration::Decode(PASN_Stream & strm)
+bool PASN_Enumeration::Decode(PASN_Stream & strm)
 {
   return strm.EnumerationDecode(*this);
 }
@@ -591,7 +591,7 @@ PINDEX PASN_Real::GetDataLength() const
 }
 
 
-PBoolean PASN_Real::Decode(PASN_Stream & strm)
+bool PASN_Real::Decode(PASN_Stream & strm)
 {
   return strm.RealDecode(*this);
 }
@@ -720,7 +720,7 @@ PString PASN_ObjectId::GetTypeAsString() const
 }
 
 
-PBoolean PASN_ObjectId::CommonDecode(PASN_Stream & strm, unsigned dataLen)
+bool PASN_ObjectId::CommonDecode(PASN_Stream & strm, unsigned dataLen)
 {
   value.SetSize(0);
 
@@ -788,7 +788,7 @@ void PASN_ObjectId::CommonEncode(PBYTEArray & encodecObjectId) const
 
   while (--length > 0) {
     if (subId < 128)
-      encodecObjectId[outputPosition++] = (BYTE)subId;
+      encodecObjectId[outputPosition++] = (uint8_t)subId;
     else {
       unsigned mask = 0x7F; /* handle subid == 0 case */
       int bits = 0;
@@ -811,13 +811,13 @@ void PASN_ObjectId::CommonEncode(PBYTEArray & encodecObjectId) const
         if (mask == 0x1E00000)
           mask = 0xFE00000;
 
-        encodecObjectId[outputPosition++] = (BYTE)(((subId & mask) >> bits) | 0x80);
+        encodecObjectId[outputPosition++] = (uint8_t)(((subId & mask) >> bits) | 0x80);
 
         mask >>= 7;
         bits -= 7;
       }
 
-      encodecObjectId[outputPosition++] = (BYTE)(subId & mask);
+      encodecObjectId[outputPosition++] = (uint8_t)(subId & mask);
     }
 
     if (length > 1)
@@ -834,7 +834,7 @@ PINDEX PASN_ObjectId::GetDataLength() const
 }
 
 
-PBoolean PASN_ObjectId::Decode(PASN_Stream & strm)
+bool PASN_ObjectId::Decode(PASN_Stream & strm)
 {
   return strm.ObjectIdDecode(*this);
 }
@@ -848,7 +848,7 @@ void PASN_ObjectId::Encode(PASN_Stream & strm) const
 
 ///////////////////////////////////////////////////////////////////////
 
-PASN_BitString::PASN_BitString(unsigned nBits, const BYTE * buf)
+PASN_BitString::PASN_BitString(unsigned nBits, const uint8_t * buf)
   : PASN_ConstrainedObject(UniversalBitString, UniversalTagClass),
     totalBits(nBits),
     bitData((totalBits+7)/8)
@@ -893,7 +893,7 @@ void PASN_BitString::SetData(unsigned nBits, const PBYTEArray & bytes)
 }
 
 
-void PASN_BitString::SetData(unsigned nBits, const BYTE * buf, PINDEX size)
+void PASN_BitString::SetData(unsigned nBits, const uint8_t * buf, PINDEX size)
 {
   if ((PINDEX)nBits >= MaximumStringSize)
     return;
@@ -905,7 +905,7 @@ void PASN_BitString::SetData(unsigned nBits, const BYTE * buf, PINDEX size)
 }
 
 
-PBoolean PASN_BitString::SetSize(unsigned nBits)
+bool PASN_BitString::SetSize(unsigned nBits)
 {
   if (!CheckByteOffset(nBits))
     return false;
@@ -992,7 +992,7 @@ void PASN_BitString::PrintOn(ostream & strm) const
          << dec << setfill(' ') << resetiosflags(ios::floatfield);
   else {
     strm << "Bits: ";
-    BYTE mask = 0x80;
+    uint8_t mask = 0x80;
     PINDEX offset = 0;
     for (unsigned i = 0; i < totalBits; i++) {
       strm << ((bitData[offset]&mask) != 0 ? '1' : '0');
@@ -1030,7 +1030,7 @@ PINDEX PASN_BitString::GetDataLength() const
 }
 
 
-PBoolean PASN_BitString::Decode(PASN_Stream & strm)
+bool PASN_BitString::Decode(PASN_Stream & strm)
 {
   return strm.BitStringDecode(*this);
 }
@@ -1050,7 +1050,7 @@ PASN_OctetString::PASN_OctetString(const char * str, PINDEX size)
   if (str != NULL) {
     if (size == 0)
       size = ::strlen(str);
-    SetValue((const BYTE *)str, size);
+    SetValue((const uint8_t *)str, size);
   }
 }
 
@@ -1081,14 +1081,14 @@ PASN_OctetString & PASN_OctetString::operator=(const char * str)
   if (str == NULL)
     value.SetSize(lowerLimit);
   else
-    SetValue((const BYTE *)str, strlen(str));
+    SetValue((const uint8_t *)str, strlen(str));
   return *this;
 }
 
 
 PASN_OctetString & PASN_OctetString::operator=(const PString & str)
 {
-  SetValue((const BYTE *)(const char *)str, str.GetSize()-1);
+  SetValue((const uint8_t *)(const char *)str, str.GetSize()-1);
   return *this;
 }
 
@@ -1104,7 +1104,7 @@ PASN_OctetString & PASN_OctetString::operator=(const PBYTEArray & arr)
 }
 
 
-void PASN_OctetString::SetValue(const BYTE * data, PINDEX len)
+void PASN_OctetString::SetValue(const uint8_t * data, PINDEX len)
 {
   if ((unsigned)len > upperLimit)
     len = upperLimit;
@@ -1183,7 +1183,7 @@ PINDEX PASN_OctetString::GetDataLength() const
 }
 
 
-PBoolean PASN_OctetString::SetSize(PINDEX newSize)
+bool PASN_OctetString::SetSize(PINDEX newSize)
 {
   if (!CheckByteOffset(newSize, MaximumStringSize))
     return false;
@@ -1204,7 +1204,7 @@ PBoolean PASN_OctetString::SetSize(PINDEX newSize)
 }
 
 
-PBoolean PASN_OctetString::Decode(PASN_Stream & strm)
+bool PASN_OctetString::Decode(PASN_Stream & strm)
 {
   return strm.OctetStringDecode(*this);
 }
@@ -1341,7 +1341,7 @@ PINDEX PASN_ConstrainedString::GetDataLength() const
 }
 
 
-PBoolean PASN_ConstrainedString::Decode(PASN_Stream & strm)
+bool PASN_ConstrainedString::Decode(PASN_Stream & strm)
 {
   return strm.ConstrainedStringDecode(*this);
 }
@@ -1473,7 +1473,7 @@ PASN_BMPString & PASN_BMPString::operator=(const PASN_BMPString & other)
 }
 
 
-PBoolean PASN_BMPString::IsLegalCharacter(WORD ch)
+bool PASN_BMPString::IsLegalCharacter(uint16_t ch)
 {
   if (ch < firstChar)
     return false;
@@ -1507,7 +1507,7 @@ void PASN_BMPString::SetValueRaw(const wchar_t * array, PINDEX paramSize)
 
   PINDEX count = 0;
   for (PINDEX i = 0; i < paramSize; i++) {
-    WORD c = array[i];
+    uint16_t c = array[i];
     if (IsLegalCharacter(c))
       value[count++] = c;
   }
@@ -1538,7 +1538,7 @@ void PASN_BMPString::SetCharacterSet(ConstraintType ctype, const char * charSet)
 
   PINDEX count = 0;
   while (*charSet != '\0')
-    array[count++] = (BYTE)*charSet++;
+    array[count++] = (uint8_t)*charSet++;
 
   SetCharacterSet(ctype, array);
 }
@@ -1579,8 +1579,8 @@ void PASN_BMPString::SetCharacterSet(ConstraintType ctype, unsigned first, unsig
 {
   if (ctype != Unconstrained) {
     PAssert(first < 0x10000 && last < 0x10000 && last > first, PInvalidParameter);
-    firstChar = (WORD)first;
-    lastChar = (WORD)last;
+    firstChar = (uint16_t)first;
+    lastChar = (uint16_t)last;
   }
   SetCharacterSet(ctype, characterSet);
 }
@@ -1618,7 +1618,7 @@ void PASN_BMPString::PrintOn(ostream & strm) const
     strm << "  ";
     for (j = 0; j < 8; j++) {
       if (i+j < sz) {
-        WORD c = value[i+j];
+        uint16_t c = value[i+j];
         if (c < 128 && isprint(c))
           strm << (char)c;
         else
@@ -1644,7 +1644,7 @@ PINDEX PASN_BMPString::GetDataLength() const
 }
 
 
-PBoolean PASN_BMPString::Decode(PASN_Stream & strm)
+bool PASN_BMPString::Decode(PASN_Stream & strm)
 {
   return strm.BMPStringDecode(*this);
 }
@@ -1744,7 +1744,7 @@ PTime PASN_UniversalTime::GetValue() const
 
 ///////////////////////////////////////////////////////////////////////
 
-PASN_Choice::PASN_Choice(unsigned nChoices, PBoolean extend)
+PASN_Choice::PASN_Choice(unsigned nChoices, bool extend)
   : PASN_Object(0, ApplicationTagClass, extend),names(NULL),namesCount(0)
 {
   numChoices = nChoices;
@@ -1753,7 +1753,7 @@ PASN_Choice::PASN_Choice(unsigned nChoices, PBoolean extend)
 
 
 PASN_Choice::PASN_Choice(unsigned tag, TagClass tagClass,
-                         unsigned upper, PBoolean extend)
+                         unsigned upper, bool extend)
   : PASN_Object(tag, tagClass, extend),names(NULL),namesCount(0)
 {
   numChoices = upper;
@@ -1762,7 +1762,7 @@ PASN_Choice::PASN_Choice(unsigned tag, TagClass tagClass,
 
 
 PASN_Choice::PASN_Choice(unsigned tag, TagClass tagClass,
-                         unsigned upper, PBoolean extend, const PASN_Names * nameSpec,unsigned namesCnt)
+                         unsigned upper, bool extend, const PASN_Names * nameSpec,unsigned namesCnt)
   : PASN_Object(tag, tagClass, extend),
     names(nameSpec),namesCount(namesCnt)
 {
@@ -1839,7 +1839,7 @@ PString PASN_Choice::GetTagName() const
 }
 
 
-PBoolean PASN_Choice::CheckCreate() const
+bool PASN_Choice::CheckCreate() const
 {
   if (choice != NULL)
     return true;
@@ -1954,7 +1954,7 @@ PINDEX PASN_Choice::GetDataLength() const
 }
 
 
-PBoolean PASN_Choice::IsPrimitive() const
+bool PASN_Choice::IsPrimitive() const
 {
   if (CheckCreate())
     return choice->IsPrimitive();
@@ -1962,7 +1962,7 @@ PBoolean PASN_Choice::IsPrimitive() const
 }
 
 
-PBoolean PASN_Choice::Decode(PASN_Stream & strm)
+bool PASN_Choice::Decode(PASN_Stream & strm)
 {
   return strm.ChoiceDecode(*this);
 }
@@ -1986,7 +1986,7 @@ PINDEX PASN_Choice::GetValueByName(PString name) const
 ///////////////////////////////////////////////////////////////////////
 
 PASN_Sequence::PASN_Sequence(unsigned tag, TagClass tagClass,
-                             unsigned nOpts, PBoolean extend, unsigned nExtend)
+                             unsigned nOpts, bool extend, unsigned nExtend)
   : PASN_Object(tag, tagClass, extend)
 {
   optionMap.SetConstraints(PASN_ConstrainedObject::FixedConstraint, nOpts);
@@ -2028,7 +2028,7 @@ PASN_Sequence & PASN_Sequence::operator=(const PASN_Sequence & other)
 }
 
 
-PBoolean PASN_Sequence::HasOptionalField(PINDEX opt) const
+bool PASN_Sequence::HasOptionalField(PINDEX opt) const
 {
   if (opt < (PINDEX)optionMap.GetSize())
     return optionMap[opt];
@@ -2122,13 +2122,13 @@ PINDEX PASN_Sequence::GetDataLength() const
 }
 
 
-PBoolean PASN_Sequence::IsPrimitive() const
+bool PASN_Sequence::IsPrimitive() const
 {
   return false;
 }
 
 
-PBoolean PASN_Sequence::Decode(PASN_Stream & strm)
+bool PASN_Sequence::Decode(PASN_Stream & strm)
 {
   return PreambleDecode(strm) && UnknownExtensionsDecode(strm);
 }
@@ -2141,7 +2141,7 @@ void PASN_Sequence::Encode(PASN_Stream & strm) const
 }
 
 
-PBoolean PASN_Sequence::PreambleDecode(PASN_Stream & strm)
+bool PASN_Sequence::PreambleDecode(PASN_Stream & strm)
 {
   return strm.SequencePreambleDecode(*this);
 }
@@ -2153,7 +2153,7 @@ void PASN_Sequence::PreambleEncode(PASN_Stream & strm) const
 }
 
 
-PBoolean PASN_Sequence::KnownExtensionDecode(PASN_Stream & strm, PINDEX fld, PASN_Object & field)
+bool PASN_Sequence::KnownExtensionDecode(PASN_Stream & strm, PINDEX fld, PASN_Object & field)
 {
   return strm.SequenceKnownDecode(*this, fld, field);
 }
@@ -2165,7 +2165,7 @@ void PASN_Sequence::KnownExtensionEncode(PASN_Stream & strm, PINDEX fld, const P
 }
 
 
-PBoolean PASN_Sequence::UnknownExtensionsDecode(PASN_Stream & strm)
+bool PASN_Sequence::UnknownExtensionsDecode(PASN_Stream & strm)
 {
   return strm.SequenceUnknownDecode(*this);
 }
@@ -2180,7 +2180,7 @@ void PASN_Sequence::UnknownExtensionsEncode(PASN_Stream & strm) const
 ///////////////////////////////////////////////////////////////////////
 
 PASN_Set::PASN_Set(unsigned tag, TagClass tagClass,
-                   unsigned nOpts, PBoolean extend, unsigned nExtend)
+                   unsigned nOpts, bool extend, unsigned nExtend)
   : PASN_Sequence(tag, tagClass, nOpts, extend, nExtend)
 {
 }
@@ -2227,7 +2227,7 @@ PASN_Array & PASN_Array::operator=(const PASN_Array & other)
 }
 
 
-PBoolean PASN_Array::SetSize(PINDEX newSize)
+bool PASN_Array::SetSize(PINDEX newSize)
 {
   if (newSize > MaximumArraySize)
     return false;
@@ -2296,13 +2296,13 @@ PINDEX PASN_Array::GetDataLength() const
 }
 
 
-PBoolean PASN_Array::IsPrimitive() const
+bool PASN_Array::IsPrimitive() const
 {
   return false;
 }
 
 
-PBoolean PASN_Array::Decode(PASN_Stream & strm)
+bool PASN_Array::Decode(PASN_Stream & strm)
 {
   return strm.ArrayDecode(*this);
 }
@@ -2329,7 +2329,7 @@ PASN_Stream::PASN_Stream(const PBYTEArray & bytes)
 }
 
 
-PASN_Stream::PASN_Stream(const BYTE * buf, PINDEX size)
+PASN_Stream::PASN_Stream(const uint8_t * buf, PINDEX size)
   : PBYTEArray(buf, size)
 {
   Construct();
@@ -2355,13 +2355,13 @@ void PASN_Stream::PrintOn(ostream & strm) const
     PINDEX j;
     for (j = 0; j < 16; j++)
       if (i+j < GetSize())
-        strm << setw(2) << (unsigned)(BYTE)theArray[i+j] << ' ';
+        strm << setw(2) << (unsigned)(uint8_t)theArray[i+j] << ' ';
       else
         strm << "   ";
     strm << "  ";
     for (j = 0; j < 16; j++) {
       if (i+j < GetSize()) {
-        BYTE c = theArray[i+j];
+        uint8_t c = theArray[i+j];
         if (c < 128 && isprint(c))
           strm << c;
         else
@@ -2416,7 +2416,7 @@ void PASN_Stream::CompleteEncoding()
 }
 
 
-BYTE PASN_Stream::ByteDecode()
+uint8_t PASN_Stream::ByteDecode()
 {
   if (!CheckByteOffset(byteOffset, GetSize()))
     return 0;
@@ -2437,11 +2437,11 @@ void PASN_Stream::ByteEncode(unsigned value)
   }
   if (byteOffset >= GetSize())
     SetSize(byteOffset+10);
-  theArray[byteOffset++] = (BYTE)value;
+  theArray[byteOffset++] = (uint8_t)value;
 }
 
 
-unsigned PASN_Stream::BlockDecode(BYTE * bufptr, unsigned nBytes)
+unsigned PASN_Stream::BlockDecode(uint8_t * bufptr, unsigned nBytes)
 {
   if (nBytes == 0 || bufptr == NULL || !CheckByteOffset(byteOffset+nBytes))
     return 0;
@@ -2460,7 +2460,7 @@ unsigned PASN_Stream::BlockDecode(BYTE * bufptr, unsigned nBytes)
 }
 
 
-void PASN_Stream::BlockEncode(const BYTE * bufptr, PINDEX nBytes)
+void PASN_Stream::BlockEncode(const uint8_t * bufptr, PINDEX nBytes)
 {
   if (!CheckByteOffset(byteOffset, GetSize()))
     return;

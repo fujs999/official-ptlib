@@ -4,7 +4,7 @@
  * Extensible Messaging and Presence Protocol (XMPP) Core
  * Client to Server communication classes
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 2004 Reitek S.p.A.
  *
@@ -18,7 +18,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Post Increment
  *
@@ -55,18 +55,18 @@ namespace XMPP
 
     public:
       TCPTransport(const PString& hostname);
-      TCPTransport(const PString& hostname, WORD port);
+      TCPTransport(const PString& hostname, uint16_t port);
       ~TCPTransport();
 
       const PString&  GetServerHost() const   { return m_Hostname; }
-      WORD            GetServerPort() const   { return m_Port; }
+      uint16_t            GetServerPort() const   { return m_Port; }
 
-      virtual PBoolean Open();
-      virtual PBoolean Close();
+      virtual bool Open();
+      virtual bool Close();
 
     protected:
       PString         m_Hostname;
-      WORD            m_Port;
+      uint16_t            m_Port;
       PTCPSocket *    m_Socket;
     };
   
@@ -79,12 +79,12 @@ namespace XMPP
       PCLASSINFO(StreamHandler, BaseStreamHandler);
 
     public:
-      StreamHandler(const JID& jid, const PString& pwd, PBoolean newAccount = false);
+      StreamHandler(const JID& jid, const PString& pwd, bool newAccount = false);
       ~StreamHandler();
 
-      virtual PBoolean IsEstablished() const        { return m_State == Established; }
+      virtual bool IsEstablished() const        { return m_State == Established; }
 
-      virtual PBoolean Start(Transport * transport = 0);
+      virtual bool Start(Transport * transport = 0);
 
       /** Request the delivery of the specified stanza
       NOTE: the StreamHandler takes ownership of the stanza
@@ -92,10 +92,10 @@ namespace XMPP
       BIG NOTE: use this method and not Write() if you want to
       get a notification when an answer to an iq arrives
       */
-      PBoolean    Send(Stanza * stanza);
+      bool    Send(Stanza * stanza);
 
-      void    SetVersion(WORD major, WORD minor);
-      void    GetVersion(WORD& major, WORD& minor) const;
+      void    SetVersion(uint16_t major, uint16_t minor);
+      void    GetVersion(uint16_t& major, uint16_t& minor) const;
 
       const JID&  GetJID() const  { return m_JID; }
 
@@ -135,12 +135,12 @@ namespace XMPP
           The response handler will receive a PIQ stanza (a smart
           pointer to a XMPP::IQ)
        */
-      virtual PBoolean DiscoverItems(
+      virtual bool DiscoverItems(
         const PString& jid,           ///< JID to which a query will be send
         const PNotifier & responseHandler,  ///< Handler function for responses
         const PString& node = PString::Empty() ///< Optional node
       );
-      virtual PBoolean DiscoverInfo(
+      virtual bool DiscoverInfo(
         const PString& jid,           ///< JID to which a query will be send
         const PNotifier & responseHandler,  ///< Handler function for responses
         const PString& node = PString::Empty() ///< Optional node
@@ -174,23 +174,23 @@ namespace XMPP
       virtual void    HandleSessionSentState(PXMLElement & pdu);
       virtual void    HandleEstablishedState(PXMLElement& pdu);
 
-      virtual PBoolean    Discover(const PString& xmlns,
+      virtual bool    Discover(const PString& xmlns,
                                const PString& jid,
                                const PNotifier & responseHandler,
                                const PString& node);
 
-      WORD                m_VersionMajor;
-      WORD                m_VersionMinor;
+      uint16_t                m_VersionMajor;
+      uint16_t                m_VersionMinor;
       PString             m_StreamID;
-      PBoolean                m_NewAccount;
+      bool                m_NewAccount;
       JID                 m_JID;
       const PString       m_Password;
 #if P_SASL
       PSASLClient         m_SASL;
       PString             m_Mechanism;
 #endif
-      PBoolean                m_HasBind;
-      PBoolean                m_HasSession;
+      bool                m_HasBind;
+      bool                m_HasSession;
 
       PNotifierList       m_SessionEstablishedHandlers;
       PNotifierList       m_SessionReleasedHandlers;

@@ -3,7 +3,7 @@
  *
  * SNMP Client class
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-2002 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -108,21 +108,21 @@ PASNInt PSNMPClient::GetRequestID() const
 }
 
 
-PBoolean PSNMPClient::WriteGetRequest(PSNMPVarBindingList & varsIn,
+bool PSNMPClient::WriteGetRequest(PSNMPVarBindingList & varsIn,
                                   PSNMPVarBindingList & varsOut)
 {
   return WriteRequest(GetRequest, varsIn, varsOut);
 }
 
 
-PBoolean PSNMPClient::WriteGetNextRequest(PSNMPVarBindingList & varsIn,
+bool PSNMPClient::WriteGetNextRequest(PSNMPVarBindingList & varsIn,
                                       PSNMPVarBindingList & varsOut)
 {
   return WriteRequest(GetNextRequest, varsIn, varsOut);
 }
 
 
-PBoolean PSNMPClient::WriteSetRequest(PSNMPVarBindingList & varsIn,
+bool PSNMPClient::WriteSetRequest(PSNMPVarBindingList & varsIn,
                                   PSNMPVarBindingList & varsOut)
 {
   return WriteRequest(SetRequest, varsIn, varsOut);
@@ -146,7 +146,7 @@ PString PSNMPClient::GetLastErrorText() const
   return PSNMP::GetErrorText(m_lastErrorCode);
 }
 
-PBoolean PSNMPClient::ReadRequest(PBYTEArray & readBuffer)
+bool PSNMPClient::ReadRequest(PBYTEArray & readBuffer)
 {
   readBuffer.SetSize(m_maxRxSize);
   PINDEX rxSize = 0;
@@ -175,7 +175,7 @@ PBoolean PSNMPClient::ReadRequest(PBYTEArray & readBuffer)
   PINDEX hdrLen = 1;
 
   // if not a valid sequence header, then stop reading
-  WORD len;
+  uint16_t len;
   if ((readBuffer[0] != 0x30) ||
       !PASNObject::DecodeASNLength(readBuffer, hdrLen, len)) {
     m_lastErrorCode = MalformedResponse;
@@ -183,7 +183,7 @@ PBoolean PSNMPClient::ReadRequest(PBYTEArray & readBuffer)
   }
 
   // length of packet is length of header + length of data
-  len = (WORD)(len + hdrLen);
+  len = (uint16_t)(len + hdrLen);
 
   // return true if we have the packet, else return false
   if (len <= m_maxRxSize) 
@@ -209,12 +209,12 @@ PBoolean PSNMPClient::ReadRequest(PBYTEArray & readBuffer)
 #endif
 }
 
-PBoolean PSNMPClient::WriteRequest(PASNInt requestCode,
+bool PSNMPClient::WriteRequest(PASNInt requestCode,
                                PSNMPVarBindingList & vars,
                                PSNMPVarBindingList & varsOut)
 {
   PASNSequence pdu;
-  PASNSequence * pduData     = new PASNSequence((BYTE)requestCode);
+  PASNSequence * pduData     = new PASNSequence((uint8_t)requestCode);
   PASNSequence * bindingList = new PASNSequence();
 
   m_lastErrorIndex = 0;
@@ -350,7 +350,7 @@ void PSNMP::SendEnterpriseTrap (
                             const PString & enterprise,
                                      PINDEX specificTrap,
                                PASNUnsigned timeTicks,
-                                       WORD sendPort)
+                                       uint16_t sendPort)
 {
   PSNMPVarBindingList vars;
   SendTrap(addr,
@@ -371,7 +371,7 @@ void PSNMP::SendEnterpriseTrap (
                                      PINDEX specificTrap,
                                PASNUnsigned timeTicks,
                 const PSNMPVarBindingList & vars,
-                                       WORD sendPort)
+                                       uint16_t sendPort)
 {
   SendTrap(addr,
            EnterpriseSpecific,
@@ -391,7 +391,7 @@ void PSNMP::SendTrap(const PIPSocket::Address & addr,
                                          PINDEX specificTrap,
                                    PASNUnsigned timeTicks,
                     const PSNMPVarBindingList & vars,
-                                           WORD sendPort)
+                                           uint16_t sendPort)
 {
   PIPSocket::Address agentAddress;
   PIPSocket::GetHostAddress(agentAddress);
@@ -415,7 +415,7 @@ void PSNMP::SendTrap(const PIPSocket::Address & addr,
                                    PASNUnsigned timeTicks,
                     const PSNMPVarBindingList & vars,
                      const PIPSocket::Address & agentAddress,
-                                           WORD sendPort)
+                                           uint16_t sendPort)
                             
 {
   // send the trap to specified remote host
@@ -435,7 +435,7 @@ void PSNMP::WriteTrap(                 PChannel & channel,
                        const PIPSocket::Address & agentAddress)
 {
   PASNSequence pdu;
-  PASNSequence * pduData     = new PASNSequence((BYTE)Trap);
+  PASNSequence * pduData     = new PASNSequence((uint8_t)Trap);
   PASNSequence * bindingList = new PASNSequence();
 
   // build a trap PDU PDU

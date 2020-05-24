@@ -68,24 +68,24 @@ PGloballyUniqueID::PGloballyUniqueID()
                                  - 3);             // Allow for 1700, 1800, 1900 not leap years
   int64_t timestamp = (PTime() + delta).GetTimestamp()*10;
 
-  theArray[0] = (BYTE)(timestamp&0xff);
-  theArray[1] = (BYTE)((timestamp>>8)&0xff);
-  theArray[2] = (BYTE)((timestamp>>16)&0xff);
-  theArray[3] = (BYTE)((timestamp>>24)&0xff);
-  theArray[4] = (BYTE)((timestamp>>32)&0xff);
-  theArray[5] = (BYTE)((timestamp>>40)&0xff);
-  theArray[6] = (BYTE)((timestamp>>48)&0xff);
-  theArray[7] = (BYTE)(((timestamp>>56)&0x0f) + 0x10);  // Version number is 1
+  theArray[0] = (uint8_t)(timestamp&0xff);
+  theArray[1] = (uint8_t)((timestamp>>8)&0xff);
+  theArray[2] = (uint8_t)((timestamp>>16)&0xff);
+  theArray[3] = (uint8_t)((timestamp>>24)&0xff);
+  theArray[4] = (uint8_t)((timestamp>>32)&0xff);
+  theArray[5] = (uint8_t)((timestamp>>40)&0xff);
+  theArray[6] = (uint8_t)((timestamp>>48)&0xff);
+  theArray[7] = (uint8_t)(((timestamp>>56)&0x0f) + 0x10);  // Version number is 1
 
-  static WORD clockSequence = (WORD)PRandom::Number();
-  static PInt64 lastTimestamp = 0;
+  static uint16_t clockSequence = (uint16_t)PRandom::Number();
+  static int64_t lastTimestamp = 0;
   if (lastTimestamp < timestamp)
     lastTimestamp = timestamp;
   else
     clockSequence++;
 
-  theArray[8] = (BYTE)(((clockSequence>>8)&0x1f) | 0x80); // DCE compatible GUID
-  theArray[9] = (BYTE)clockSequence;
+  theArray[8] = (uint8_t)(((clockSequence>>8)&0x1f) | 0x80); // DCE compatible GUID
+  theArray[9] = (uint8_t)clockSequence;
 
   if (!s_haveMacAddress.exchange(true)) {
     PString str = PIPSocket::GetInterfaceMACAddress();
@@ -138,7 +138,7 @@ PGloballyUniqueID::PGloballyUniqueID(const PASN_OctetString & newId)
 
 #ifdef GUID_DEFINED
 PGloballyUniqueID::PGloballyUniqueID(const GUID & guid)
-  : PBYTEArray(reinterpret_cast<const BYTE *>(&guid), sizeof(GUID))
+  : PBYTEArray(reinterpret_cast<const uint8_t *>(&guid), sizeof(GUID))
 {
 }
 #endif
@@ -173,22 +173,22 @@ void PGloballyUniqueID::PrintOn(ostream & strm) const
 
   char fillchar = strm.fill();
   strm << hex << setfill('0')
-       << setw(2) << (unsigned)(BYTE)theArray[0]
-       << setw(2) << (unsigned)(BYTE)theArray[1]
-       << setw(2) << (unsigned)(BYTE)theArray[2]
-       << setw(2) << (unsigned)(BYTE)theArray[3] << '-'
-       << setw(2) << (unsigned)(BYTE)theArray[4]
-       << setw(2) << (unsigned)(BYTE)theArray[5] << '-'
-       << setw(2) << (unsigned)(BYTE)theArray[6]
-       << setw(2) << (unsigned)(BYTE)theArray[7] << '-'
-       << setw(2) << (unsigned)(BYTE)theArray[8]
-       << setw(2) << (unsigned)(BYTE)theArray[9] << '-'
-       << setw(2) << (unsigned)(BYTE)theArray[10]
-       << setw(2) << (unsigned)(BYTE)theArray[11]
-       << setw(2) << (unsigned)(BYTE)theArray[12]
-       << setw(2) << (unsigned)(BYTE)theArray[13]
-       << setw(2) << (unsigned)(BYTE)theArray[14]
-       << setw(2) << (unsigned)(BYTE)theArray[15]
+       << setw(2) << (unsigned)(uint8_t)theArray[0]
+       << setw(2) << (unsigned)(uint8_t)theArray[1]
+       << setw(2) << (unsigned)(uint8_t)theArray[2]
+       << setw(2) << (unsigned)(uint8_t)theArray[3] << '-'
+       << setw(2) << (unsigned)(uint8_t)theArray[4]
+       << setw(2) << (unsigned)(uint8_t)theArray[5] << '-'
+       << setw(2) << (unsigned)(uint8_t)theArray[6]
+       << setw(2) << (unsigned)(uint8_t)theArray[7] << '-'
+       << setw(2) << (unsigned)(uint8_t)theArray[8]
+       << setw(2) << (unsigned)(uint8_t)theArray[9] << '-'
+       << setw(2) << (unsigned)(uint8_t)theArray[10]
+       << setw(2) << (unsigned)(uint8_t)theArray[11]
+       << setw(2) << (unsigned)(uint8_t)theArray[12]
+       << setw(2) << (unsigned)(uint8_t)theArray[13]
+       << setw(2) << (unsigned)(uint8_t)theArray[14]
+       << setw(2) << (unsigned)(uint8_t)theArray[15]
        << dec << setfill(fillchar);
 }
 
@@ -210,7 +210,7 @@ void PGloballyUniqueID::ReadFrom(istream & strm)
         if (digit >= 16)
           digit -= 'a'-'A';
       }
-      theArray[count/2] = (BYTE)((theArray[count/2] << 4) | digit);
+      theArray[count/2] = (uint8_t)((theArray[count/2] << 4) | digit);
       count++;
     }
     else if (strm.peek() == '-') {
@@ -239,7 +239,7 @@ PString PGloballyUniqueID::AsString() const
 }
 
 
-PBoolean PGloballyUniqueID::IsNULL() const
+bool PGloballyUniqueID::IsNULL() const
 {
   PAssert(GetSize() == Size, "PGloballyUniqueID is invalid size");
 

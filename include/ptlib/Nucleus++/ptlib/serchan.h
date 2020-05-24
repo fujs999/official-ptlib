@@ -3,7 +3,7 @@
  *
  * Asynchronous serial I/O channel class.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -44,25 +44,25 @@ extern "C" {
 
 #include "../../serchan.h"
   public:
-    PBoolean Close();
+    bool Close();
 
   private:
-    DWORD  baudRate;
-    BYTE   dataBits;
+    uint32_t  baudRate;
+    uint8_t   dataBits;
     Parity parityBits;
-    BYTE   stopBits;
+    uint8_t   stopBits;
     
     UNSIGNED_CHAR smc;
     UART_INIT uart[2];
     
-    virtual PBoolean Read(
+    virtual bool Read(
       void * buf,   /// Pointer to a block of memory to receive the read bytes.
       PINDEX len    /// Maximum number of bytes to read into the buffer.
       );
 
     virtual int ReadChar();
 
-    virtual PBoolean ReadAsync(
+    virtual bool ReadAsync(
       void * buf,   /// Pointer to a block of memory to receive the read bytes.
       PINDEX len    /// Maximum number of bytes to read into the buffer.
       );
@@ -72,12 +72,12 @@ extern "C" {
       PINDEX len  /// Actual number of bytes to read into the buffer.
       );
 
-    virtual PBoolean Write(
+    virtual bool Write(
       const void * buf, /// Pointer to a block of memory to write.
       PINDEX len        /// Number of bytes to write.
       );
 
-    virtual PBoolean WriteAsync(
+    virtual bool WriteAsync(
       const void * buf, /// Pointer to a block of memory to write.
       PINDEX len        /// Number of bytes to write.
       );

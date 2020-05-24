@@ -3,7 +3,7 @@
  *
  * I/O channel ancestor class.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -62,7 +62,7 @@ class PChannelStreamBuffer : public std::streambuf {
     virtual pos_type seekoff(std::streamoff, ios::seekdir, ios::openmode = ios::in | ios::out);
     virtual pos_type seekpos(pos_type, ios::openmode = ios::in | ios::out);
 
-    PBoolean SetBufferSize(
+    bool SetBufferSize(
       PINDEX newSize
     );
 
@@ -155,7 +155,7 @@ class PChannel : public PObject, public std::iostream
 
        @return true if the channel is open.
      */
-    virtual PBoolean IsOpen() const;
+    virtual bool IsOpen() const;
 
     /** Get the platform and I/O channel type name of the channel. For example,
        it would return the filename in <code>PFile</code> type channels.
@@ -326,7 +326,7 @@ class PChannel : public PObject, public std::iostream
        true indicates that at least one character was read from the channel.
        false means no bytes were read due to timeout or some other I/O error.
      */
-    virtual PBoolean Read(
+    virtual bool Read(
       void * buf,   ///< Pointer to a block of memory to receive the read bytes.
       PINDEX len    ///< Maximum number of bytes to read into the buffer.
     );
@@ -369,7 +369,7 @@ class PChannel : public PObject, public std::iostream
        @return
        true if the read of <code>len</code> bytes was sucessfull.
      */
-    virtual PBoolean ReadBlock(
+    virtual bool ReadBlock(
       void * buf,   ///< Pointer to a block of memory to receive the read bytes.
       PINDEX len    ///< Maximum number of bytes to read into the buffer.
     );
@@ -419,7 +419,7 @@ class PChannel : public PObject, public std::iostream
        @return
        true if at least len bytes were written to the channel.
      */
-    virtual PBoolean Write(
+    virtual bool Write(
       const void * buf, ///< Pointer to a block of memory to write.
       PINDEX len        ///< Number of bytes to write.
     );
@@ -436,7 +436,7 @@ class PChannel : public PObject, public std::iostream
        @return	 
        true if at least len bytes were written to the channel.	 
       */	 
-     virtual PBoolean Write(	 
+     virtual bool Write(	 
        const void * buf,       ///< Pointer to a block of memory to write.	 
        PINDEX len,             ///< Number of bytes to write.	 
        const void * /*mark*/   ///< pointer for AVsync & render buffering.	 
@@ -466,7 +466,7 @@ class PChannel : public PObject, public std::iostream
        @return
        true if the byte was successfully written.
      */
-    virtual PBoolean WriteChar(int c);
+    virtual bool WriteChar(int c);
 
     /** Write a string to the channel. This function simply uses the Write()
        function so all comments on that function also apply.
@@ -474,7 +474,7 @@ class PChannel : public PObject, public std::iostream
        @return
        true if the character written.
      */
-    virtual PBoolean WriteString(
+    virtual bool WriteString(
       const PString & str   ///< String to write
     );
   //@}
@@ -584,7 +584,7 @@ class PChannel : public PObject, public std::iostream
 
        @return true if the channel successfully closed.
      */
-    virtual PBoolean Close();
+    virtual bool Close();
 
     enum ShutdownValue {
       ShutdownRead         = 0,
@@ -599,7 +599,7 @@ class PChannel : public PObject, public std::iostream
        @return
        true if the shutdown was successfully performed.
      */
-    virtual PBoolean Shutdown(
+    virtual bool Shutdown(
       ShutdownValue option
     );
 
@@ -624,7 +624,7 @@ class PChannel : public PObject, public std::iostream
        @return
        true if the new buffer size was set.
       */
-    PBoolean SetBufferSize(
+    bool SetBufferSize(
       PINDEX newSize    ///< New buffer size
     );
 
@@ -666,7 +666,7 @@ class PChannel : public PObject, public std::iostream
        @return
        true if the command string was completely processed.
      */
-    PBoolean SendCommandString(
+    bool SendCommandString(
       const PString & command  ///< Command to send to the channel
     );
 
@@ -689,7 +689,7 @@ class PChannel : public PObject, public std::iostream
        
        @return true if there was no error.
      */
-    virtual PBoolean ConvertOSError(
+    virtual bool ConvertOSError(
       P_INT_PTR libcReturnValue,                ///< Return value from standard library
       ErrorGroup group = LastGeneralError ///< Error group to set
     );
@@ -698,7 +698,7 @@ class PChannel : public PObject, public std::iostream
     /**Set error values to those specified.
        Return true if errorCode is NoError, false otherwise
       */
-    PBoolean SetErrorValues(
+    bool SetErrorValues(
       Errors errorCode,   ///< Error code to translate.
       int osError,        ///< OS error number to translate.
       ErrorGroup group = LastGeneralError ///< Error group to set
@@ -718,7 +718,7 @@ class PChannel : public PObject, public std::iostream
     );
 
     // Receive a (partial) command string, determine if completed yet.
-    PBoolean ReceiveCommandString(
+    bool ReceiveCommandString(
       int nextChar,
       const PString & reply,
       PINDEX & pos,
@@ -777,8 +777,8 @@ class PNullChannel : public PChannel
     PNullChannel();
 
     virtual PString GetName() const { return "null"; }
-    virtual PBoolean Read(void *, PINDEX);
-    virtual PBoolean Write(const void *, PINDEX);
+    virtual bool Read(void *, PINDEX);
+    virtual bool Write(const void *, PINDEX);
 };
 
 
@@ -798,7 +798,7 @@ public:
 
   void Zero();
 
-  PBoolean IsPresent(intptr_t fd) const;
+  bool IsPresent(intptr_t fd) const;
 
   operator fd_set*() const
   {

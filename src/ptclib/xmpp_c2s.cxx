@@ -4,7 +4,7 @@
  * Extensible Messaging and Presence Protocol (XMPP) Core
  * Client to Server communication classes
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 2004 Reitek S.p.A.
  *
@@ -18,7 +18,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Post Increment
  *
@@ -62,7 +62,7 @@ XMPP::C2S::TCPTransport::TCPTransport(const PString& hostname)
 
 
 // A port was specified, so well connect exactly where we're told
-XMPP::C2S::TCPTransport::TCPTransport(const PString& hostname, WORD port)
+XMPP::C2S::TCPTransport::TCPTransport(const PString& hostname, uint16_t port)
   : m_Hostname(hostname),
     m_Port(port)
 {
@@ -75,7 +75,7 @@ XMPP::C2S::TCPTransport::~TCPTransport()
 }
 
 
-PBoolean XMPP::C2S::TCPTransport::Open()
+bool XMPP::C2S::TCPTransport::Open()
 {
   if (IsOpen())
     Close();
@@ -85,14 +85,14 @@ PBoolean XMPP::C2S::TCPTransport::Open()
 }
 
 
-PBoolean XMPP::C2S::TCPTransport::Close()
+bool XMPP::C2S::TCPTransport::Close()
 {
   return PIndirectChannel::Close();
 }
 
 ///////////////////////////////////////////////////////
 
-XMPP::C2S::StreamHandler::StreamHandler(const JID& jid, const PString& pwd, PBoolean newAccount)
+XMPP::C2S::StreamHandler::StreamHandler(const JID& jid, const PString& pwd, bool newAccount)
   : m_VersionMajor(1), m_VersionMinor(0),
     m_NewAccount(newAccount),
     m_JID(jid), m_Password(pwd),
@@ -115,7 +115,7 @@ XMPP::C2S::StreamHandler::~StreamHandler()
 }
 
 
-PBoolean XMPP::C2S::StreamHandler::Start(Transport * transport)
+bool XMPP::C2S::StreamHandler::Start(Transport * transport)
 {
   if (!transport)
     transport = new XMPP::C2S::TCPTransport(m_JID.GetServer());
@@ -124,7 +124,7 @@ PBoolean XMPP::C2S::StreamHandler::Start(Transport * transport)
 }
 
 
-PBoolean XMPP::C2S::StreamHandler::Send(XMPP::Stanza * stanza)
+bool XMPP::C2S::StreamHandler::Send(XMPP::Stanza * stanza)
 {
   if (!stanza)
     return false;
@@ -147,20 +147,20 @@ PBoolean XMPP::C2S::StreamHandler::Send(XMPP::Stanza * stanza)
     }
   }
   
-  PBoolean res = Write(*stanza);
+  bool res = Write(*stanza);
   delete stanza;
   return res;
 }
 
 
-void XMPP::C2S::StreamHandler::SetVersion(WORD major, WORD minor)
+void XMPP::C2S::StreamHandler::SetVersion(uint16_t major, uint16_t minor)
 {
   m_VersionMajor = major;
   m_VersionMinor = minor;
 }
 
 
-void XMPP::C2S::StreamHandler::GetVersion(WORD& major, WORD& minor) const
+void XMPP::C2S::StreamHandler::GetVersion(uint16_t& major, uint16_t& minor) const
 {
   major = m_VersionMajor;
   minor = m_VersionMinor;
@@ -196,7 +196,7 @@ PNotifierList& XMPP::C2S::StreamHandler::MessageSenderHandlers(const JID& from)
 }
 
 
-PBoolean XMPP::C2S::StreamHandler::Discover(const PString& xmlns,
+bool XMPP::C2S::StreamHandler::Discover(const PString& xmlns,
                                             const PString& jid,
                                             const PNotifier & responseHandler,
                                             const PString& node)
@@ -224,7 +224,7 @@ PBoolean XMPP::C2S::StreamHandler::Discover(const PString& xmlns,
 }
 
 
-PBoolean XMPP::C2S::StreamHandler::DiscoverItems(const PString& jid, const PNotifier & responseHandler, const PString& node)
+bool XMPP::C2S::StreamHandler::DiscoverItems(const PString& jid, const PNotifier & responseHandler, const PString& node)
 {
   if (node.IsEmpty())
     PTRACE(3, "XMPP\tDisco: discovering items for " << jid);
@@ -236,7 +236,7 @@ PBoolean XMPP::C2S::StreamHandler::DiscoverItems(const PString& jid, const PNoti
 }
 
 
-PBoolean XMPP::C2S::StreamHandler::DiscoverInfo(const PString& jid, const PNotifier & responseHandler, const PString& node)
+bool XMPP::C2S::StreamHandler::DiscoverInfo(const PString& jid, const PNotifier & responseHandler, const PString& node)
 {
   if (node.IsEmpty())
     PTRACE(3, "XMPP\tDisco: discovering info for " << jid);
@@ -298,8 +298,8 @@ void XMPP::C2S::StreamHandler::OnOpen(XMPP::Stream& stream, INT extra)
           m_VersionMajor = 0;
           m_VersionMinor = 9;
         } else {
-          m_VersionMajor = maj < 1 ? (WORD)0 : (WORD)1;
-          m_VersionMinor = maj < 1 ? (WORD)9 : (WORD)0;
+          m_VersionMajor = maj < 1 ? (uint16_t)0 : (uint16_t)1;
+          m_VersionMinor = maj < 1 ? (uint16_t)9 : (uint16_t)0;
         }
       }
     }

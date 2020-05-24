@@ -3,7 +3,7 @@
  *
  * Millisecond resolution time interval class (uses 64 bit integers).
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -67,10 +67,10 @@ class PTimeInterval : public PObject
 </code></pre>
      */
     PTimeInterval(
-      PInt64 millisecs = 0   ///< Number of milliseconds for interval.
+      int64_t millisecs = 0   ///< Number of milliseconds for interval.
     );
     PTimeInterval(
-      PInt64 millisecs,     ///< Number of milliseconds for interval.
+      int64_t millisecs,     ///< Number of milliseconds for interval.
       long seconds,         ///< Number of seconds for interval.
       long minutes = 0,     ///< Number of minutes for interval.
       long hours = 0,       ///< Number of hours for interval.
@@ -176,7 +176,7 @@ class PTimeInterval : public PObject
        @return
        very long integer number of nanoseconds.
      */
-    PInt64 GetNanoSeconds() const;
+    int64_t GetNanoSeconds() const;
 
     /** Set the number of nanoseconds for the time interval.
      */
@@ -190,7 +190,7 @@ class PTimeInterval : public PObject
        @return
        very long integer number of microseconds.
      */
-    PInt64 GetMicroSeconds() const;
+    int64_t GetMicroSeconds() const;
 
     /** Set the number of microseconds for the time interval.
      */
@@ -212,11 +212,11 @@ class PTimeInterval : public PObject
        @return
        very long integer number of milliseconds.
      */
-    PInt64 GetMilliSeconds() const;
+    int64_t GetMilliSeconds() const;
 
     /** Set the number of milliseconds for the time interval.
      */
-    void SetMilliSeconds(PInt64 msecs);
+    void SetMilliSeconds(int64_t msecs);
 
     /** Get the number of whole seconds for the time interval.
     
@@ -260,7 +260,7 @@ class PTimeInterval : public PObject
     int GetDays() const;
 
 #ifdef _WIN32
-    typedef DWORD IntervalType;
+    typedef uint32_t IntervalType;
 #else
     typedef int IntervalType;
 #endif
@@ -288,7 +288,7 @@ class PTimeInterval : public PObject
 </code></pre>
      */
     void SetInterval(
-      PInt64 milliseconds = 0,  ///< Number of milliseconds for interval.
+      int64_t milliseconds = 0,  ///< Number of milliseconds for interval.
       long seconds = 0,         ///< Number of seconds for interval.
       long minutes = 0,         ///< Number of minutes for interval.
       long hours = 0,           ///< Number of hours for interval.

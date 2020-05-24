@@ -3,7 +3,7 @@
  *
  * Miscellaneous implementation of classes for Win32
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -48,15 +48,15 @@ class SecurityID
 {
   public:
     SecurityID(PSID_IDENTIFIER_AUTHORITY  pIdentifierAuthority,  // pointer to identifier authority
-               BYTE nSubAuthorityCount,  // count of subauthorities
-               DWORD dwSubAuthority0,  // subauthority 0
-               DWORD dwSubAuthority1,  // subauthority 1
-               DWORD dwSubAuthority2,  // subauthority 2
-               DWORD dwSubAuthority3,  // subauthority 3
-               DWORD dwSubAuthority4,  // subauthority 4
-               DWORD dwSubAuthority5,  // subauthority 5
-               DWORD dwSubAuthority6,  // subauthority 6
-               DWORD dwSubAuthority7  // subauthority 7
+               uint8_t nSubAuthorityCount,  // count of subauthorities
+               uint32_t dwSubAuthority0,  // subauthority 0
+               uint32_t dwSubAuthority1,  // subauthority 1
+               uint32_t dwSubAuthority2,  // subauthority 2
+               uint32_t dwSubAuthority3,  // subauthority 3
+               uint32_t dwSubAuthority4,  // subauthority 4
+               uint32_t dwSubAuthority5,  // subauthority 5
+               uint32_t dwSubAuthority6,  // subauthority 6
+               uint32_t dwSubAuthority7  // subauthority 7
               )
     {
       if (!AllocateAndInitializeSid(pIdentifierAuthority,  // pointer to identifier authority
@@ -106,12 +106,12 @@ class SecurityID
       return sidptr;
     }
 
-    DWORD GetLength() const
+    uint32_t GetLength() const
     {
       return GetLengthSid(sidptr);
     }
 
-    PBoolean IsValid() const
+    bool IsValid() const
     {
       return sidptr != NULL && IsValidSid(sidptr);
     }
@@ -121,7 +121,7 @@ class SecurityID
 };
 
 
-static DWORD SecureCreateKey(HKEY rootKey, const PString & subkey, HKEY & key)
+static uint32_t SecureCreateKey(HKEY rootKey, const PString & subkey, HKEY & key)
 {
   SECURITY_DESCRIPTOR secdesc;
   if (!InitializeSecurityDescriptor(&secdesc, SECURITY_DESCRIPTOR_REVISION))
@@ -157,7 +157,7 @@ static DWORD SecureCreateKey(HKEY rootKey, const PString & subkey, HKEY & key)
   if (!userID.IsValid())
     return GetLastError();
 
-  DWORD acl_len = sizeof(ACL) + 4*sizeof(ACCESS_ALLOWED_ACE) +
+  uint32_t acl_len = sizeof(ACL) + 4*sizeof(ACCESS_ALLOWED_ACE) +
                     adminID.GetLength() + creatorID.GetLength() +
                     systemID.GetLength() + userID.GetLength();
   PBYTEArray dacl_buf(acl_len);
@@ -197,8 +197,8 @@ RegistryKey::RegistryKey(const PString & subkeyname, OpenMode mode)
   PAssert(!subkeyname.IsEmpty(), PInvalidParameter);
 
   PProcess & proc = PProcess::Current();
-  DWORD access = mode == ReadOnly ? KEY_READ : KEY_ALL_ACCESS;
-  DWORD error;
+  uint32_t access = mode == ReadOnly ? KEY_READ : KEY_ALL_ACCESS;
+  uint32_t error;
 
   PVarString subkey;
   HKEY basekey;
@@ -232,34 +232,34 @@ RegistryKey::RegistryKey(const PString & subkeyname, OpenMode mode)
       adjustedSubkey.Replace("CurrentVersion", proc.GetVersion(false));
       PVarString keyname = adjustedSubkey;
 
-      error = RegOpenKeyEx(HKEY_CURRENT_USER, keyname, 0, access, &key);
+      error = RegOpenKeyEx(HKEY_CURRENT_USER, keyname, 0, access, &m_hKey);
       if (error == ERROR_SUCCESS)
         return;
 
       PTRACE_IF(1, error == ERROR_ACCESS_DENIED, "PTLib\tAccess denied accessing registry entry HKEY_CURRENT_USER\\" << keyname);
 
-      error = RegOpenKeyEx(HKEY_LOCAL_MACHINE, keyname, 0, access, &key);
+      error = RegOpenKeyEx(HKEY_LOCAL_MACHINE, keyname, 0, access, &m_hKey);
       if (error == ERROR_SUCCESS)
         return;
 
       PTRACE_IF(1, error == ERROR_ACCESS_DENIED, "PTLib\tAccess denied accessing registry entry HKEY_LOCAL_MACHINE\\" << keyname);
     }
 
-    error = RegOpenKeyEx(HKEY_CURRENT_USER, subkey, 0, access, &key);
+    error = RegOpenKeyEx(HKEY_CURRENT_USER, subkey, 0, access, &m_hKey);
     if (error == ERROR_SUCCESS)
       return;
 
     PTRACE_IF(1, error == ERROR_ACCESS_DENIED, "PTLib\tAccess denied accessing registry entry HKEY_CURRENT_USER\\" << subkey);
   }
 
-  error = RegOpenKeyEx(basekey != NULL ? basekey : HKEY_LOCAL_MACHINE, subkey, 0, access, &key);
+  error = RegOpenKeyEx(basekey != NULL ? basekey : HKEY_LOCAL_MACHINE, subkey, 0, access, &m_hKey);
   if (error == ERROR_SUCCESS)
     return;
 
   PTRACE_IF(1, error == ERROR_ACCESS_DENIED, "PTLib\tAccess denied accessing registry entry "
             << (basekey != NULL ? "" : LocalMachineStr) << subkey);
 
-  key = NULL;
+  m_hKey = NULL;
   if (mode != Create)
     return;
 
@@ -271,17 +271,17 @@ RegistryKey::RegistryKey(const PString & subkeyname, OpenMode mode)
   }
 
   if (basekey != HKEY_CURRENT_USER)
-    error = SecureCreateKey(basekey, subkey, key);
+    error = SecureCreateKey(basekey, subkey, m_hKey);
   if (error != ERROR_SUCCESS) {
     DWORD disposition;
     TCHAR empty[1];
     empty[0] = 0;
-    error = RegCreateKeyEx(basekey, subkey, 0, empty, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &key, &disposition);
+    error = RegCreateKeyEx(basekey, subkey, 0, empty, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &m_hKey, &disposition);
     if (error != ERROR_SUCCESS) {
       PTRACE(1, "PTLib\tCould not create registry entry "
              << (basekey == HKEY_LOCAL_MACHINE ? LocalMachineStr :
                 (basekey == HKEY_CURRENT_USER ? CurrentUserStr : "")) << subkey);
-      key = NULL;
+      m_hKey = NULL;
     }
   }
 }
@@ -289,18 +289,18 @@ RegistryKey::RegistryKey(const PString & subkeyname, OpenMode mode)
 
 RegistryKey::~RegistryKey()
 {
-  if (key != NULL)
-    RegCloseKey(key);
+  if (m_hKey != NULL)
+    RegCloseKey(m_hKey);
 }
 
 
-BOOL RegistryKey::EnumKey(PINDEX idx, PString & str)
+bool RegistryKey::EnumKey(PINDEX idx, PString & str)
 {
-  if (key == NULL)
+  if (m_hKey == NULL)
     return false;
 
   TCHAR buffer[_MAX_PATH];
-  if (RegEnumKey(key, idx, buffer, sizeof(buffer)) != ERROR_SUCCESS)
+  if (RegEnumKey(m_hKey, idx, buffer, sizeof(buffer)) != ERROR_SUCCESS)
     return false;
 
   str = buffer;
@@ -308,14 +308,14 @@ BOOL RegistryKey::EnumKey(PINDEX idx, PString & str)
 }
 
 
-BOOL RegistryKey::EnumValue(PINDEX idx, PString & str)
+bool RegistryKey::EnumValue(PINDEX idx, PString & str)
 {
-  if (key == NULL)
+  if (m_hKey == NULL)
     return false;
 
   TCHAR buffer[_MAX_PATH];
   DWORD size = _MAX_PATH;
-  if (RegEnumValue(key, idx, buffer, &size, NULL, NULL, NULL, NULL) != ERROR_SUCCESS)
+  if (RegEnumValue(m_hKey, idx, buffer, &size, NULL, NULL, NULL, NULL) != ERROR_SUCCESS)
     return false;
 
   str = buffer;
@@ -323,39 +323,39 @@ BOOL RegistryKey::EnumValue(PINDEX idx, PString & str)
 }
 
 
-BOOL RegistryKey::DeleteKey(const PString & subkey)
+bool RegistryKey::DeleteKey(const PString & subkey)
 {
-  if (key == NULL)
+  if (m_hKey == NULL)
     return true;
 
-  return RegDeleteKey(key, PVarString(subkey)) == ERROR_SUCCESS;
+  return RegDeleteKey(m_hKey, PVarString(subkey)) == ERROR_SUCCESS;
 }
 
 
-BOOL RegistryKey::DeleteValue(const PString & valueName)
+bool RegistryKey::DeleteValue(const PString & valueName)
 {
-  if (key == NULL)
+  if (m_hKey == NULL)
     return true;
 
-  return RegDeleteValue(key, PVarString(valueName)) == ERROR_SUCCESS;
+  return RegDeleteValue(m_hKey, PVarString(valueName)) == ERROR_SUCCESS;
 }
 
 
-BOOL RegistryKey::QueryValue(const PString & valueName, PString & str)
+bool RegistryKey::QueryValue(const PString & valueName, PString & str)
 {
-  if (key == NULL)
+  if (m_hKey == NULL)
     return false;
 
   PVarString varValueName = valueName;
 
   DWORD type, size, num;
-  DWORD error = RegQueryValueEx(key, varValueName, NULL, &type, NULL, &size);
+  DWORD error = RegQueryValueEx(m_hKey, varValueName, NULL, &type, NULL, &size);
   if (error != ERROR_SUCCESS)
     return false;
 
   if (type == REG_DWORD) {
     size = sizeof(num);
-    if (RegQueryValueEx(key, varValueName, NULL, &type, (LPBYTE)&num, &size) != ERROR_SUCCESS)
+    if (RegQueryValueEx(m_hKey, varValueName, NULL, &type, (LPBYTE)&num, &size) != ERROR_SUCCESS)
       return false;
 
     str = PString(PString::Signed, num);
@@ -367,7 +367,7 @@ BOOL RegistryKey::QueryValue(const PString & valueName, PString & str)
     return false;
   }
 
-  if (RegQueryValueEx(key, varValueName, NULL, &type,
+  if (RegQueryValueEx(m_hKey, varValueName, NULL, &type,
                       (LPBYTE)str.GetPointerAndSetLength(size), &size) != ERROR_SUCCESS)
     return false;
 
@@ -380,15 +380,15 @@ BOOL RegistryKey::QueryValue(const PString & valueName, PString & str)
 }
 
 
-BOOL RegistryKey::QueryValue(const PString & valueName, DWORD & num, BOOL boolean)
+bool RegistryKey::QueryValue(const PString & valueName, uint32_t& num, bool boolean)
 {
-  if (key == NULL)
+  if (m_hKey == NULL)
     return false;
 
   DWORD type, size;
   PVarString varValueName = valueName;
 
-  if (RegQueryValueEx(key, varValueName, NULL, &type, NULL, &size) != ERROR_SUCCESS)
+  if (RegQueryValueEx(m_hKey, varValueName, NULL, &type, NULL, &size) != ERROR_SUCCESS)
     return false;
 
 
@@ -401,11 +401,11 @@ BOOL RegistryKey::QueryValue(const PString & valueName, DWORD & num, BOOL boolea
       // Do REG_DWORD case
 
     case REG_DWORD :
-      return RegQueryValueEx(key, varValueName, NULL, &type, (LPBYTE)&num, &size) == ERROR_SUCCESS;
+      return RegQueryValueEx(m_hKey, varValueName, NULL, &type, (LPBYTE)&num, &size) == ERROR_SUCCESS;
 
     case REG_SZ : {
       TCHAR buffer[100];
-      if (RegQueryValueEx(key, varValueName, NULL, &type, (LPBYTE)buffer, &size) == ERROR_SUCCESS) {
+      if (RegQueryValueEx(m_hKey, varValueName, NULL, &type, (LPBYTE)buffer, &size) == ERROR_SUCCESS) {
         PString str = buffer;
         num = str.AsInteger();
         if (num == 0 && boolean) {
@@ -424,23 +424,23 @@ BOOL RegistryKey::QueryValue(const PString & valueName, DWORD & num, BOOL boolea
 }
 
 
-BOOL RegistryKey::SetValue(const PString & valueName, const PString & str)
+bool RegistryKey::SetValue(const PString & valueName, const PString & str)
 {
-  if (key == NULL)
+  if (m_hKey == NULL)
     return false;
 
   PVarString vstr(str);
-  return RegSetValueEx(key, PVarString(valueName), 0, REG_SZ,
+  return RegSetValueEx(m_hKey, PVarString(valueName), 0, REG_SZ,
                        (LPBYTE)(const TCHAR *)vstr, vstr.GetLength()+1) == ERROR_SUCCESS;
 }
 
 
-BOOL RegistryKey::SetValue(const PString & value, DWORD num)
+bool RegistryKey::SetValue(const PString & value, uint32_t num)
 {
-  if (key == NULL)
+  if (m_hKey == NULL)
     return false;
 
-  return RegSetValueEx(key, PVarString(value), 0, REG_DWORD, (LPBYTE)&num, sizeof(num)) == ERROR_SUCCESS;
+  return RegSetValueEx(m_hKey, PVarString(value), 0, REG_DWORD, (LPBYTE)&num, sizeof(num)) == ERROR_SUCCESS;
 }
 
 
@@ -448,7 +448,7 @@ BOOL RegistryKey::SetValue(const PString & value, DWORD num)
 
 #if P_CONFIG_FILE
 
-static PBoolean IsRegistryPath(PString & path)
+static bool IsRegistryPath(PString & path)
 {
   if (path.NumCompare(LocalMachineStr) != PObject::EqualTo &&
       path.NumCompare(LocalMach64Str ) != PObject::EqualTo &&
@@ -713,7 +713,7 @@ void PConfig::DeleteKey(const PString & section, const PString & key)
 }
 
 
-PBoolean PConfig::HasKey(const PString & section, const PString & key) const
+bool PConfig::HasKey(const PString & section, const PString & key) const
 {
   switch (source) {
     case Environment :
@@ -807,8 +807,8 @@ void PConfig::SetString(const PString & section,
 }
 
 
-PBoolean PConfig::GetBoolean(const PString & section,
-                                          const PString & key, PBoolean dflt) const
+bool PConfig::GetBoolean(const PString & section,
+                                          const PString & key, bool dflt) const
 {
   if (source != Application) {
     PString str = GetString(section, key, dflt ? "T" : "F").ToUpper();
@@ -819,7 +819,7 @@ PBoolean PConfig::GetBoolean(const PString & section,
   PAssert(!section.IsEmpty(), PInvalidParameter);
   RegistryKey registry(location + section, RegistryKey::ReadOnly);
 
-  DWORD value;
+  uint32_t value;
   if (!registry.QueryValue(key, value, true))
     return dflt;
 
@@ -827,7 +827,7 @@ PBoolean PConfig::GetBoolean(const PString & section,
 }
 
 
-void PConfig::SetBoolean(const PString & section, const PString & key, PBoolean value)
+void PConfig::SetBoolean(const PString & section, const PString & key, bool value)
 {
   if (source != Application)
     SetString(section, key, value ? "True" : "False");
@@ -850,7 +850,7 @@ long PConfig::GetInteger(const PString & section,
   PAssert(!section.IsEmpty(), PInvalidParameter);
   RegistryKey registry(location + section, RegistryKey::ReadOnly);
 
-  DWORD value;
+  uint32_t value;
   if (!registry.QueryValue(key, value, false))
     return dflt;
 

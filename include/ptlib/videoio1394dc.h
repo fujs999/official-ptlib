@@ -48,30 +48,30 @@ class PVideoInput1394DcDevice : public PVideoInputDevice
 
     /**Open the device given the device name.
       */
-    PBoolean Open(
+    bool Open(
       const PString & deviceName,   /// Device name to open
-      PBoolean startImmediate = true    /// Immediately start device
+      bool startImmediate = true    /// Immediately start device
     );
 
     /**Determine of the device is currently open.
       */
-    PBoolean IsOpen();
+    bool IsOpen();
 
     /**Close the device.
       */
-    PBoolean Close();
+    bool Close();
 
     /**Start the video device I/O.
       */
-    PBoolean Start();
+    bool Start();
 
     /**Stop the video device I/O capture.
       */
-    PBoolean Stop();
+    bool Stop();
 
     /**Determine if the video device I/O capture is in progress.
       */
-    PBoolean IsCapturing();
+    bool IsCapturing();
 
     /**Get a list of all of the drivers available.
       */
@@ -90,7 +90,7 @@ class PVideoInput1394DcDevice : public PVideoInputDevice
 
     /**Set brightness of the image. 0xffff-Very bright.
      */
-    PBoolean SetBrightness(unsigned newBrightness);
+    bool SetBrightness(unsigned newBrightness);
 
 
     /**Get the whiteness of the image. 0xffff-Very white.
@@ -99,7 +99,7 @@ class PVideoInput1394DcDevice : public PVideoInputDevice
 
     /**Set whiteness of the image. 0xffff-Very white.
      */
-    PBoolean SetWhiteness(unsigned newWhiteness);
+    bool SetWhiteness(unsigned newWhiteness);
 
 
     /**Get the colour of the image. 0xffff-lots of colour.
@@ -108,7 +108,7 @@ class PVideoInput1394DcDevice : public PVideoInputDevice
 
     /**Set colour of the image. 0xffff-lots of colour.
      */
-    PBoolean SetColour(unsigned newColour);
+    bool SetColour(unsigned newColour);
 
 
     /**Get the contrast of the image. 0xffff-High contrast.
@@ -117,7 +117,7 @@ class PVideoInput1394DcDevice : public PVideoInputDevice
 
     /**Set contrast of the image. 0xffff-High contrast.
      */
-    PBoolean SetContrast(unsigned newContrast);
+    bool SetContrast(unsigned newContrast);
 
 
     /**Get the hue of the image. 0xffff-High hue.
@@ -126,17 +126,17 @@ class PVideoInput1394DcDevice : public PVideoInputDevice
 
     /**Set hue of the image. 0xffff-High hue.
      */
-    PBoolean SetHue(unsigned newHue);
+    bool SetHue(unsigned newHue);
     
     
     /**Return whiteness, brightness, colour, contrast and hue in one call.
      */
-    PBoolean GetParameters (int *whiteness, int *brightness, 
+    bool GetParameters (int *whiteness, int *brightness, 
                         int *colour, int *contrast, int *hue);
 
     /**Get the minimum & maximum size of a frame on the device.
     */
-    PBoolean GetFrameSizeLimits(
+    bool GetFrameSizeLimits(
       unsigned & minWidth,   /// Variable to receive minimum width
       unsigned & minHeight,  /// Variable to receive minimum height
       unsigned & maxWidth,   /// Variable to receive maximum width
@@ -146,37 +146,37 @@ class PVideoInput1394DcDevice : public PVideoInputDevice
     void ClearMapping();
 
     int GetNumChannels();
-    PBoolean SetChannel(
+    bool SetChannel(
          int channelNumber  /// New channel number for device.
     );
-    PBoolean SetFrameRate(
+    bool SetFrameRate(
       unsigned rate  /// Frames  per second
     );
-    PBoolean SetVideoFormat(
+    bool SetVideoFormat(
       VideoFormat videoFormat   /// New video format
     );
-    PBoolean SetFrameSize(
+    bool SetFrameSize(
       unsigned width,   /// New width of frame
       unsigned height   /// New height of frame
     );
-    PBoolean SetColourFormat(
+    bool SetColourFormat(
       const PString & colourFormat   // New colour format for device.
     );
 
 
     /**Try all known video formats & see which ones are accepted by the video driver
      */
-    PBoolean TestAllFormats();
+    bool TestAllFormats();
 
     /**Set the frame size to be used, trying converters if available.
 
        If the device does not support the size, a set of alternate resolutions
        are attempted.  A converter is setup if possible.
     */
-    PBoolean SetFrameSizeConverter(
+    bool SetFrameSizeConverter(
       unsigned width,        /// New width of frame
       unsigned height,       /// New height of frame
-      PBoolean     bScaleNotCrop /// Scale or crop/pad preference
+      bool     bScaleNotCrop /// Scale or crop/pad preference
     );
 
     /**Set the colour format to be used, trying converters if available.
@@ -185,17 +185,17 @@ class PVideoInput1394DcDevice : public PVideoInputDevice
        is compatible with a registered converter, and install that converter
        so that the correct format is used.
     */
-    PBoolean SetColourFormatConverter(
+    bool SetColourFormatConverter(
       const PString & colourFormat // New colour format for device.
     );
 
 
  protected:
-    virtual bool InternalGetFrameData(BYTE * buffer, PINDEX & bytesReturned, bool & keyFrame, bool wait);
+    virtual bool InternalGetFrameData(uint8_t * buffer, PINDEX & bytesReturned, bool & keyFrame, bool wait);
 
     raw1394handle_t handle;
-    PBoolean is_capturing;
-    PBoolean UseDMA;
+    bool is_capturing;
+    bool UseDMA;
     nodeid_t * camera_nodes;
     int numCameras;
     dc1394_cameracapture camera;

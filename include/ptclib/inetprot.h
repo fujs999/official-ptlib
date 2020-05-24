@@ -3,7 +3,7 @@
  *
  * Internet Protocol ancestor channel class
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-2002 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -84,7 +84,7 @@ class PInternetProtocol : public PIndirectChannel
        @return
        true if at least len bytes were written to the channel.
      */
-    virtual PBoolean Read(
+    virtual bool Read(
       void * buf,   ///< Pointer to a block of memory to receive the read bytes.
       PINDEX len    ///< Maximum number of bytes to read into the buffer.
     );
@@ -113,7 +113,7 @@ class PInternetProtocol : public PIndirectChannel
        @return
        true if at least len bytes were written to the channel.
      */
-    virtual PBoolean Write(
+    virtual bool Write(
       const void * buf, ///< Pointer to a block of memory to write.
       PINDEX len        ///< Number of bytes to write.
     );
@@ -131,11 +131,11 @@ class PInternetProtocol : public PIndirectChannel
        @return
        true if the channel was successfully connected to the remote host.
      */
-    virtual PBoolean Connect(
+    virtual bool Connect(
       const PString & address,    ///< Address of remote machine to connect to.
-      WORD port = 0               ///< Port number to use for the connection.
+      uint16_t port = 0               ///< Port number to use for the connection.
     );
-    virtual PBoolean Connect(
+    virtual bool Connect(
       const PString & address,    ///< Address of remote machine to connect to.
       const PString & service     ///< Service name to use for the connection.
     );
@@ -145,7 +145,7 @@ class PInternetProtocol : public PIndirectChannel
        @return
        true if the channel was successfully connected to the remote host.
      */
-    virtual PBoolean Accept(
+    virtual bool Accept(
       PSocket & listener    ///< Address of remote machine to connect to.
     );
 
@@ -174,7 +174,7 @@ class PInternetProtocol : public PIndirectChannel
        @return
        true if the string and CR/LF were completely written.
      */
-    virtual PBoolean WriteLine(
+    virtual bool WriteLine(
       const PString & line ///< String to write as a command line.
     );
 
@@ -194,9 +194,9 @@ class PInternetProtocol : public PIndirectChannel
        @return
        true if a CR/LF pair was received, false if a timeout or error occurred.
      */
-    virtual PBoolean ReadLine(
+    virtual bool ReadLine(
       PString & line,             ///< String to receive a CR/LF terminated line.
-      PBoolean allowContinuation = false  ///< Flag to handle continued lines.
+      bool allowContinuation = false  ///< Flag to handle continued lines.
     );
 
     /** Put back the characters into the data stream so that the next
@@ -253,12 +253,12 @@ class PInternetProtocol : public PIndirectChannel
        @return
        true if something was read, otherwise an I/O error occurred.
      */
-    virtual PBoolean ReadCommand(
+    virtual bool ReadCommand(
       PINDEX & num,     /**< Number of the command parsed from the command line,
                              or P_MAX_INDEX if no match. */
       PString & args  ///< String to receive the arguments to the command.
     );
-    virtual PBoolean ReadCommand(
+    virtual bool ReadCommand(
       PINDEX & num,     /**< Number of the command parsed from the command line,
                              or P_MAX_INDEX if no match. */
       PString & args,   ///< String to receive the arguments to the command.
@@ -281,11 +281,11 @@ class PInternetProtocol : public PIndirectChannel
        @return
        true if the response was completely written.
      */
-    virtual PBoolean WriteResponse(
+    virtual bool WriteResponse(
       unsigned numericCode, ///< Response code for command response.
       const PString & info  ///< Extra information available after response code.
     );
-    virtual PBoolean WriteResponse(
+    virtual bool WriteResponse(
       const PString & code, ///< Response code for command response.
       const PString & info  ///< Extra information available after response code.
     );
@@ -308,12 +308,12 @@ class PInternetProtocol : public PIndirectChannel
        @return
        true if the response was completely read without a socket error.
      */
-    virtual PBoolean ReadResponse();
-    virtual PBoolean ReadResponse(
+    virtual bool ReadResponse();
+    virtual bool ReadResponse(
       int & code,      ///< Response code for command response.
       PString & info   ///< Extra information available after response code.
     );
-    virtual PBoolean ReadResponse(
+    virtual bool ReadResponse(
       int & code,      ///< Response code for command response.
       PString & info,  ///< Extra information available after response code.
       PMIMEInfo & mime ///< MIME information supplied in reply
@@ -395,7 +395,7 @@ class PInternetProtocol : public PIndirectChannel
     } stuffingState;
     // Do byte stuffing of '.' characters in output to the socket channel.
 
-    PBoolean newLineToCRLF;
+    bool newLineToCRLF;
     // Translate \\n characters to CR/LF pairs.
 
     bool SetLastResponse(int code, const PString & info, ErrorGroup group = LastGeneralError);
@@ -404,7 +404,7 @@ class PInternetProtocol : public PIndirectChannel
     // Responses
 
   private:
-    PBoolean AttachSocket(PIPSocket * socket);
+    bool AttachSocket(PIPSocket * socket);
 };
 
 

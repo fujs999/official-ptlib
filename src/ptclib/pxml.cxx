@@ -3,7 +3,7 @@
  *
  * XML parser support
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 2002 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -654,7 +654,7 @@ PINDEX PXML::GetNumElements() const
 }
 
 
-PBoolean PXML::IsNoIndentElement(const PString & elementName) const
+bool PXML::IsNoIndentElement(const PString & elementName) const
 {
   return m_noIndentElements.GetValuesIndex(elementName) != P_MAX_INDEX;
 }

@@ -3,7 +3,7 @@
  *
  * Electronic mail class.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -31,11 +31,11 @@
 // PMail
 
   protected:
-    DWORD    sessionId;
-    DWORD    lastError;
+    uint32_t    sessionId;
+    uint32_t    lastError;
     unsigned hUserInterface;
 
-    PBoolean LogOnCommonInterface(const char * username,
+    bool LogOnCommonInterface(const char * username,
                                   const char * password, const char * service);
 
 #if P_HAS_CMC

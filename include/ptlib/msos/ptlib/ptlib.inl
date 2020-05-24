@@ -3,7 +3,7 @@
  *
  * Non-GUI classes inline function implementation.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -46,7 +46,7 @@ PINLINE unsigned PTimer::Resolution()
 #else
 
 PINLINE PTimeInterval PTimer::Tick()
-  { return (PInt64)clock()*CLOCKS_PER_SEC/1000; }
+  { return (int64_t)clock()*CLOCKS_PER_SEC/1000; }
 
 PINLINE unsigned PTimer::Resolution()
   { return 1000/CLOCKS_PER_SEC; }

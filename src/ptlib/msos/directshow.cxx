@@ -94,7 +94,7 @@
   DECLARE_INTERFACE_(ISampleGrabberCB, IUnknown)
   {
     STDMETHOD_(HRESULT, SampleCB)(THIS_ double, IMediaSample *) PURE;
-    STDMETHOD_(HRESULT, BufferCB)(THIS_ double, BYTE *, long) PURE;
+    STDMETHOD_(HRESULT, BufferCB)(THIS_ double, uint8_t *, long) PURE;
   };
 
   #undef INTERFACE
@@ -149,9 +149,9 @@ class PSampleGrabberCB : public ISampleGrabberCB
     STDMETHODIMP SampleCB( double /*SampleTime*/, IMediaSample * /*pSample*/) { return 0; }
 
     // The sample grabber is calling us back on its deliver thread.
-    STDMETHODIMP BufferCB(double PTRACE_PARAM(dblSampleTime), BYTE * buffer, long size);
+    STDMETHODIMP BufferCB(double PTRACE_PARAM(dblSampleTime), uint8_t * buffer, long size);
 
-    bool GetData(BYTE * data, PINDEX maxSize, PINDEX & actualSize, bool wait);
+    bool GetData(uint8_t * data, PINDEX maxSize, PINDEX & actualSize, bool wait);
 };
 
 
@@ -179,19 +179,19 @@ class PVideoInputDevice_DirectShow : public PVideoInputDevice
 
     static PStringArray GetInputDeviceNames();
     virtual PStringArray GetDeviceNames() const;
-    static PBoolean GetInputDeviceCapabilities(const PString & deviceName, Capabilities * capabilities);
+    static bool GetInputDeviceCapabilities(const PString & deviceName, Capabilities * capabilities);
     virtual bool GetDeviceCapabilities(Capabilities * capabilities) const;
     virtual bool SetControl(PVideoControlInfo::Types type, int value, ControlMode mode);
 
-    virtual PBoolean Open(const PString & deviceName, PBoolean startImmediate);
-    virtual PBoolean IsOpen();
-    virtual PBoolean Close();
-    virtual PBoolean Start();
-    virtual PBoolean Stop();
-    virtual PBoolean IsCapturing();
-    virtual PBoolean SetColourFormat(const PString & colourFormat);
-    virtual PBoolean SetFrameRate(unsigned rate);
-    virtual PBoolean SetFrameSize(unsigned width, unsigned height);
+    virtual bool Open(const PString & deviceName, bool startImmediate);
+    virtual bool IsOpen();
+    virtual bool Close();
+    virtual bool Start();
+    virtual bool Stop();
+    virtual bool IsCapturing();
+    virtual bool SetColourFormat(const PString & colourFormat);
+    virtual bool SetFrameRate(unsigned rate);
+    virtual bool SetFrameSize(unsigned width, unsigned height);
     virtual PINDEX GetMaxFrameBytes();
     virtual bool FlowControl(const void * flowData);
     virtual bool GetAttributes(Attributes & attributes);
@@ -199,11 +199,11 @@ class PVideoInputDevice_DirectShow : public PVideoInputDevice
 
 
   protected:
-    virtual bool InternalGetFrameData(BYTE * buffer, PINDEX & bytesReturned, bool & keyFrame, bool wait);
+    virtual bool InternalGetFrameData(uint8_t * buffer, PINDEX & bytesReturned, bool & keyFrame, bool wait);
     bool BindCaptureDevice(const PString & devName);
     bool PlatformOpen();
     PINDEX GetCurrentBufferSize();
-    bool GetCurrentBufferData(BYTE * data, PINDEX & bufferSize, bool wait);
+    bool GetCurrentBufferData(uint8_t * data, PINDEX & bufferSize, bool wait);
     bool SetPinFormat(unsigned useDefaultColourOrSize = 0);
     bool SetAttributeCommon(long control, int newValue);
     int GetAttributeCommon(long control) const;
@@ -344,7 +344,7 @@ PStringArray PVideoInputDevice_DirectShow::GetInputDeviceNames()
 }
 
 
-PBoolean PVideoInputDevice_DirectShow::GetInputDeviceCapabilities(const PString & deviceName,
+bool PVideoInputDevice_DirectShow::GetInputDeviceCapabilities(const PString & deviceName,
                                                              Capabilities * capabilities)
 {
   PVideoInputDevice_DirectShow instance;
@@ -378,7 +378,7 @@ bool PVideoInputDevice_DirectShow::GetDeviceCapabilities(Capabilities * caps) co
   std::set<PVideoFrameInfo, std::greater<PVideoFrameInfo> > fsizes;
   for (int iFormat = 0; iFormat < iCount; iFormat++) {
     MediaTypePtr pMediaFormat;
-    if (SUCCEEDED(pStreamConfig->GetStreamCaps(iFormat, &pMediaFormat, (BYTE *)&scc)) &&
+    if (SUCCEEDED(pStreamConfig->GetStreamCaps(iFormat, &pMediaFormat, (uint8_t *)&scc)) &&
         pMediaFormat->majortype == MEDIATYPE_Video &&
         pMediaFormat->formattype == FORMAT_VideoInfo &&
         pMediaFormat->pbFormat != NULL &&
@@ -437,7 +437,7 @@ bool PVideoInputDevice_DirectShow::SetPinFormat(unsigned useDefaultColourOrSize)
   for (int iFormat = 0; iFormat < iCount; iFormat++) {
     VIDEO_STREAM_CONFIG_CAPS scc;
     MediaTypePtr pMediaFormat;
-    if (SUCCEEDED(pStreamConfig->GetStreamCaps(iFormat, &pMediaFormat, (BYTE *)&scc)) &&
+    if (SUCCEEDED(pStreamConfig->GetStreamCaps(iFormat, &pMediaFormat, (uint8_t *)&scc)) &&
         pMediaFormat->majortype == MEDIATYPE_Video &&
         pMediaFormat->formattype == FORMAT_VideoInfo &&
         pMediaFormat->pbFormat != NULL &&
@@ -505,8 +505,8 @@ bool PVideoInputDevice_DirectShow::SetPinFormat(unsigned useDefaultColourOrSize)
 }
 
 
-PBoolean PVideoInputDevice_DirectShow::Open(const PString & devName,
-                                            PBoolean        startImmediate)
+bool PVideoInputDevice_DirectShow::Open(const PString & devName,
+                                            bool        startImmediate)
 {
   Close();
 
@@ -568,13 +568,13 @@ PBoolean PVideoInputDevice_DirectShow::Open(const PString & devName,
 }
 
 
-PBoolean PVideoInputDevice_DirectShow::IsOpen()
+bool PVideoInputDevice_DirectShow::IsOpen()
 {
   return m_pGraphBuilder != NULL;
 }
 
 
-PBoolean PVideoInputDevice_DirectShow::Close()
+bool PVideoInputDevice_DirectShow::Close()
 {
   if (!IsOpen())
     return false;
@@ -607,7 +607,7 @@ PBoolean PVideoInputDevice_DirectShow::Close()
 }
 
 
-PBoolean PVideoInputDevice_DirectShow::Start()
+bool PVideoInputDevice_DirectShow::Start()
 {
   if (!IsOpen()) {
     PTRACE(3, "Not open.");
@@ -626,7 +626,7 @@ PBoolean PVideoInputDevice_DirectShow::Start()
 }
 
 
-PBoolean PVideoInputDevice_DirectShow::Stop()
+bool PVideoInputDevice_DirectShow::Stop()
 {
   if (!IsOpen()) {
     PTRACE(3, "Not open.");
@@ -644,7 +644,7 @@ PBoolean PVideoInputDevice_DirectShow::Stop()
 }
 
 
-PBoolean PVideoInputDevice_DirectShow::IsCapturing()
+bool PVideoInputDevice_DirectShow::IsCapturing()
 {
   OAFilterState state;
   PCOM_RETURN_ON_FAILED(m_pMediaControl->GetState,(0, &state));
@@ -652,7 +652,7 @@ PBoolean PVideoInputDevice_DirectShow::IsCapturing()
 }
 
 
-PBoolean PVideoInputDevice_DirectShow::SetColourFormat(const PString & newColourFormat)
+bool PVideoInputDevice_DirectShow::SetColourFormat(const PString & newColourFormat)
 {
   if (m_colourFormat == newColourFormat)
     return true;
@@ -670,7 +670,7 @@ PBoolean PVideoInputDevice_DirectShow::SetColourFormat(const PString & newColour
 }
 
 
-PBoolean PVideoInputDevice_DirectShow::SetFrameRate(unsigned newRate)
+bool PVideoInputDevice_DirectShow::SetFrameRate(unsigned newRate)
 {
   if (m_frameRate == newRate)
     return true;
@@ -688,7 +688,7 @@ PBoolean PVideoInputDevice_DirectShow::SetFrameRate(unsigned newRate)
 }
 
 
-PBoolean PVideoInputDevice_DirectShow::SetFrameSize(unsigned width, unsigned height)
+bool PVideoInputDevice_DirectShow::SetFrameSize(unsigned width, unsigned height)
 {
   if (m_frameWidth == width && m_frameHeight == height)
     return true;
@@ -735,7 +735,7 @@ PINDEX PVideoInputDevice_DirectShow::GetMaxFrameBytes()
   return GetMaxFrameBytesConverted(CalculateFrameBytes(m_frameWidth, m_frameHeight, m_colourFormat));
 }
 
-bool PVideoInputDevice_DirectShow::InternalGetFrameData(BYTE * buffer, PINDEX & bytesReturned, bool & keyFrame, bool wait)
+bool PVideoInputDevice_DirectShow::InternalGetFrameData(uint8_t * buffer, PINDEX & bytesReturned, bool & keyFrame, bool wait)
 {
   if (!IsOpen())
     return false;
@@ -802,7 +802,7 @@ bool PVideoInputDevice_DirectShow::GetAttributes(Attributes & attrib)
 }
 
 
-PBoolean PVideoInputDevice_DirectShow::SetAttributeCommon(long control, int newValue)
+bool PVideoInputDevice_DirectShow::SetAttributeCommon(long control, int newValue)
 {
   CComPtr<IAMVideoProcAmp> pVideoProcAmp;
   PCOM_RETURN_ON_FAILED(m_pCaptureFilter->QueryInterface,(IID_IAMVideoProcAmp, (void **)&pVideoProcAmp));
@@ -831,7 +831,7 @@ PBoolean PVideoInputDevice_DirectShow::SetAttributeCommon(long control, int newV
   return true;
 }
 
-PBoolean PVideoInputDevice_DirectShow::SetAttributes(const Attributes & attrib)
+bool PVideoInputDevice_DirectShow::SetAttributes(const Attributes & attrib)
 {
   return SetAttributeCommon(VideoProcAmp_Brightness, attrib.m_brightness) &&
          SetAttributeCommon(VideoProcAmp_Saturation, attrib.m_saturation) &&
@@ -1025,7 +1025,7 @@ STDMETHODIMP PSampleGrabberCB::QueryInterface(REFIID riid, void ** ppv)
 // The sample grabber is calling us back on its deliver thread.
 // This is NOT the main app thread!
 //
-STDMETHODIMP PSampleGrabberCB::BufferCB(double PTRACE_PARAM(dblSampleTime), BYTE * buffer, long size)
+STDMETHODIMP PSampleGrabberCB::BufferCB(double PTRACE_PARAM(dblSampleTime), uint8_t * buffer, long size)
 {
   PTRACE(6, "Buffer callback: time=" << dblSampleTime
           << ", buf=" << (void *)buffer << ", size=" << size);
@@ -1057,7 +1057,7 @@ STDMETHODIMP PSampleGrabberCB::BufferCB(double PTRACE_PARAM(dblSampleTime), BYTE
 }
 
 
-bool PSampleGrabberCB::GetData(BYTE * data, PINDEX maxSize, PINDEX & actualSize, bool wait)
+bool PSampleGrabberCB::GetData(uint8_t * data, PINDEX maxSize, PINDEX & actualSize, bool wait)
 {
   // Live! Cam Optia AF (VC0100) webcam took 3.1 sec.
   if (!m_frameReady.Wait(wait ? 5000 : 0)) {
@@ -1255,7 +1255,7 @@ PINDEX PVideoInputDevice_DirectShow::GetCurrentBufferSize()
 }
 
 
-bool PVideoInputDevice_DirectShow::GetCurrentBufferData(BYTE * data, PINDEX & bufferSize, bool wait)
+bool PVideoInputDevice_DirectShow::GetCurrentBufferData(uint8_t * data, PINDEX & bufferSize, bool wait)
 {
   if (m_pSampleGrabberCB == NULL)
     return false;

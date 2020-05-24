@@ -3,7 +3,7 @@
  *
  * ASN classes in support of the SNMP code.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-2002 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -62,7 +62,7 @@ static char cannotPerformOnBaseTypeMsg[] =
    "Cannot perform operation on base type PASNObject";
 
 
-BYTE PASNObject::ASNTypeToType[] = {
+uint8_t PASNObject::ASNTypeToType[] = {
   ASN_INTEGER   | ASN_UNIVERSAL | ASN_PRIMITIVE,    // Integer
   ASN_OCTET_STR | ASN_UNIVERSAL | ASN_PRIMITIVE,    // String
   ASN_OBJECT_ID | ASN_UNIVERSAL | ASN_PRIMITIVE,    // ObjectID
@@ -111,7 +111,7 @@ void PASNObject::Encode(PBYTEArray &)
 }
 
 
-WORD PASNObject::GetEncodedLength() 
+uint16_t PASNObject::GetEncodedLength() 
 {
   PAssertAlways(cannotPerformOnBaseTypeMsg);
   return 0;
@@ -139,18 +139,18 @@ PObject * PASNObject::Clone() const
 }
 
 
-void PASNObject::EncodeASNLength (PBYTEArray & buffer, WORD length)
+void PASNObject::EncodeASNLength (PBYTEArray & buffer, uint16_t length)
 {
   PINDEX offs = buffer.GetSize();
 
   // handle lengths less then 128
   if (length < 128) 
-    buffer[offs++] = (BYTE)length;
+    buffer[offs++] = (uint8_t)length;
 
   // handle lengths less than 256
   else if (length < 256) {
-    buffer[offs++] = (BYTE)(0x01 | ASN_LONG_LEN);
-    buffer[offs++] = (BYTE)length;
+    buffer[offs++] = (uint8_t)(0x01 | ASN_LONG_LEN);
+    buffer[offs++] = (uint8_t)length;
   }
 
   // handle lengths up to 0xffff
@@ -162,32 +162,32 @@ void PASNObject::EncodeASNLength (PBYTEArray & buffer, WORD length)
 }
 
 
-PBoolean PASNObject::DecodeASNLength (const PBYTEArray & buffer, PINDEX & ptr, WORD & len)
+bool PASNObject::DecodeASNLength (const PBYTEArray & buffer, PINDEX & ptr, uint16_t & len)
 {
   PINDEX s = buffer.GetSize();
 
   if (ptr >= s)
     return false;
 
-  BYTE ch = buffer[ptr++];
+  uint8_t ch = buffer[ptr++];
 
   if ((ch & ASN_LONG_LEN) == 0)
-    len = (WORD)ch;
+    len = (uint16_t)ch;
   else if ((ch & ~ASN_LONG_LEN) == 0x01) {
     if (ptr >= s)
       return false;
-    len = (WORD)buffer[ptr++];
+    len = (uint16_t)buffer[ptr++];
   } else {
     if (ptr + 1 >= s)
       return false;
-    len = (WORD)((buffer[ptr] << 8) + buffer[ptr+1]);
+    len = (uint16_t)((buffer[ptr] << 8) + buffer[ptr+1]);
     ptr += 2;
   }
   return true;
 }
 
 
-WORD PASNObject::GetASNLengthLength (WORD  length) 
+uint16_t PASNObject::GetASNLengthLength (uint16_t  length) 
 {
   // handle lengths less then 128
   if (length < 128) 
@@ -203,20 +203,20 @@ WORD PASNObject::GetASNLengthLength (WORD  length)
 }
 
 
-void PASNObject::EncodeASNSequenceStart(PBYTEArray & buffer, BYTE type, WORD length) 
+void PASNObject::EncodeASNSequenceStart(PBYTEArray & buffer, uint8_t type, uint16_t length) 
 {
   buffer[buffer.GetSize()] = type;
   EncodeASNLength(buffer, length);
 }
 
 
-WORD PASNObject::GetASNSequenceStartLength(WORD length) 
+uint16_t PASNObject::GetASNSequenceStartLength(uint16_t length) 
 {
-  return (WORD)(1 + GetASNLengthLength(length));
+  return (uint16_t)(1 + GetASNLengthLength(length));
 }
 
 
-void PASNObject::EncodeASNHeader(PBYTEArray & buffer, PASNObject::ASNType type, WORD length)
+void PASNObject::EncodeASNHeader(PBYTEArray & buffer, PASNObject::ASNType type, uint16_t length)
 
 {
   buffer[buffer.GetSize()] = ASNTypeToType[type];
@@ -224,20 +224,20 @@ void PASNObject::EncodeASNHeader(PBYTEArray & buffer, PASNObject::ASNType type, 
 }
 
 
-WORD PASNObject::GetASNHeaderLength(WORD length) 
+uint16_t PASNObject::GetASNHeaderLength(uint16_t length) 
 {
-  return (WORD)(1 + GetASNLengthLength(length));
+  return (uint16_t)(1 + GetASNLengthLength(length));
 }
 
 
 void PASNObject::EncodeASNInteger (PBYTEArray & buffer, PASNInt data, PASNObject::ASNType type)
 {
-  DWORD mask;
-  WORD  intsize = sizeof(data);
+  uint32_t mask;
+  uint16_t  intsize = sizeof(data);
 
-  // create a mask which is the top nine bits of a DWORD, or 0xFF800000
+  // create a mask which is the top nine bits of a uint32_t, or 0xFF800000
   // on a big endian machine
-  mask = 0x1FFUL << ((8 * (sizeof(DWORD) - 1)) - 1);
+  mask = 0x1FFUL << ((8 * (sizeof(uint32_t) - 1)) - 1);
 
   // remove all sequences of nine 0's or 1's at the start of the value
   while ((((data & mask) == 0) || ((data & mask) == mask))
@@ -251,9 +251,9 @@ void PASNObject::EncodeASNInteger (PBYTEArray & buffer, PASNInt data, PASNObject
 
   // insert the data
   PINDEX offs = buffer.GetSize();
-  mask = 0xFFUL << (8 * (sizeof(DWORD) - 1));
+  mask = 0xFFUL << (8 * (sizeof(uint32_t) - 1));
   while (intsize--) {
-    buffer[offs++] = (u_char)((data & mask) >> (8 * (sizeof(DWORD) - 1)));
+    buffer[offs++] = (u_char)((data & mask) >> (8 * (sizeof(uint32_t) - 1)));
     data <<= 8;
   }
 }
@@ -262,7 +262,7 @@ void PASNObject::EncodeASNInteger (PBYTEArray & buffer, PASNInt data, PASNObject
 void PASNObject::EncodeASNUnsigned (PBYTEArray & buffer, PASNUnsigned data, PASNObject::ASNType type)
 {
   long mask;
-  WORD intsize = sizeof(data);
+  uint16_t intsize = sizeof(data);
   int  add_null_byte = 0;
 
   mask = 0xFFUL << (8 * (sizeof(long) - 1));
@@ -273,9 +273,9 @@ void PASNObject::EncodeASNUnsigned (PBYTEArray & buffer, PASNUnsigned data, PASN
     intsize++;
   }
 
-  // create a mask which is the top nine bits of a DWORD, or 0xFF800000
+  // create a mask which is the top nine bits of a uint32_t, or 0xFF800000
   // on a big endian machine
-  mask = 0x1FFL << ((8 * (sizeof(DWORD) - 1)) - 1);
+  mask = 0x1FFL << ((8 * (sizeof(uint32_t) - 1)) - 1);
 
   // remove all sequences of nine 0's or 1's at the start of the value
   while ((((data & mask) == 0) || (((long)data & mask) == mask))
@@ -289,9 +289,9 @@ void PASNObject::EncodeASNUnsigned (PBYTEArray & buffer, PASNUnsigned data, PASN
 
   // insert the data
   PINDEX offs = buffer.GetSize();
-  mask = 0xFFL << (8 * (sizeof(DWORD) - 1));
+  mask = 0xFFL << (8 * (sizeof(uint32_t) - 1));
   while (intsize--) {
-    buffer[offs++] = (u_char)((data & mask) >> (8 * (sizeof(DWORD) - 1)));
+    buffer[offs++] = (u_char)((data & mask) >> (8 * (sizeof(uint32_t) - 1)));
     data <<= 8;
   }
 
@@ -300,12 +300,12 @@ void PASNObject::EncodeASNUnsigned (PBYTEArray & buffer, PASNUnsigned data, PASN
 }
 
 
-PBoolean PASNObject::DecodeASNInteger(const PBYTEArray & buffer, PINDEX & ptr, PASNInt & value, PASNObject::ASNType theType)
+bool PASNObject::DecodeASNInteger(const PBYTEArray & buffer, PINDEX & ptr, PASNInt & value, PASNObject::ASNType theType)
 {
   if (buffer[ptr++] != ASNTypeToType[theType])
     return false;
 
-  WORD len;
+  uint16_t len;
   if (!DecodeASNLength(buffer, ptr, len))
     return false;
 
@@ -323,12 +323,12 @@ PBoolean PASNObject::DecodeASNInteger(const PBYTEArray & buffer, PINDEX & ptr, P
 }
 
 
-PBoolean PASNObject::DecodeASNUnsigned(const PBYTEArray & buffer, PINDEX & ptr, PASNUnsigned & value, PASNObject::ASNType theType)
+bool PASNObject::DecodeASNUnsigned(const PBYTEArray & buffer, PINDEX & ptr, PASNUnsigned & value, PASNObject::ASNType theType)
 {
   if (buffer[ptr++] != ASNTypeToType[theType])
     return false;
 
-  WORD len;
+  uint16_t len;
   if (!DecodeASNLength(buffer, ptr, len))
     return false;
 
@@ -345,14 +345,14 @@ PBoolean PASNObject::DecodeASNUnsigned(const PBYTEArray & buffer, PINDEX & ptr, 
 }
 
 
-WORD PASNObject::GetASNIntegerLength(PASNInt data) 
+uint16_t PASNObject::GetASNIntegerLength(PASNInt data) 
 {
-  DWORD mask;
-  WORD  intsize = sizeof(data);
+  uint32_t mask;
+  uint16_t  intsize = sizeof(data);
 
-  // create a mask which is the top nine bits of a DWORD, or 0xFF800000
+  // create a mask which is the top nine bits of a uint32_t, or 0xFF800000
   // on a big endian machine
-  mask = 0x1FFUL << ((8 * (sizeof(DWORD) - 1)) - 1);
+  mask = 0x1FFUL << ((8 * (sizeof(uint32_t) - 1)) - 1);
 
   // remove all sequences of nine 0's or 1's at the start of the value
   while ((((data & mask) == 0) || ((data & mask) == mask))
@@ -362,14 +362,14 @@ WORD PASNObject::GetASNIntegerLength(PASNInt data)
   }
 
   // get the length of the header
-  return (WORD)(intsize + GetASNHeaderLength(intsize));
+  return (uint16_t)(intsize + GetASNHeaderLength(intsize));
 }
 
 
-WORD PASNObject::GetASNUnsignedLength (PASNUnsigned data)
+uint16_t PASNObject::GetASNUnsignedLength (PASNUnsigned data)
 {
   long mask;
-  WORD intsize = sizeof(data);
+  uint16_t intsize = sizeof(data);
   int  add_null_byte = 0;
 
   mask = 0xFFL << (8 * (sizeof(long) - 1));
@@ -380,9 +380,9 @@ WORD PASNObject::GetASNUnsignedLength (PASNUnsigned data)
     intsize++;
   }
 
-  // create a mask which is the top nine bits of a DWORD, or 0xFF800000
+  // create a mask which is the top nine bits of a uint32_t, or 0xFF800000
   // on a big endian machine
-  mask = 0x1FFL << ((8 * (sizeof(DWORD) - 1)) - 1);
+  mask = 0x1FFL << ((8 * (sizeof(uint32_t) - 1)) - 1);
 
   // remove all sequences of nine 0's or 1's at the start of the value
   while ((((data & mask) == 0) || (((long)data & mask) == mask))
@@ -392,7 +392,7 @@ WORD PASNObject::GetASNUnsignedLength (PASNUnsigned data)
   }
 
   // insert the header
-  return (WORD)(intsize + GetASNHeaderLength(intsize) + add_null_byte);
+  return (uint16_t)(intsize + GetASNHeaderLength(intsize) + add_null_byte);
 }
 
 
@@ -463,7 +463,7 @@ void PASNInteger::Encode(PBYTEArray & buffer)
 }
 
 
-WORD PASNInteger::GetEncodedLength()
+uint16_t PASNInteger::GetEncodedLength()
 {
   return GetASNIntegerLength(value);
 }
@@ -508,13 +508,13 @@ PObject * PASNInteger::Clone() const
 PASNString::PASNString(const PString & str)
 {
   value    = str;
-  valueLen = (WORD)str.GetLength();
+  valueLen = (uint16_t)str.GetLength();
 }
 
-PASNString::PASNString(const BYTE * ptr, int len)
+PASNString::PASNString(const uint8_t * ptr, int len)
 {
   value = PString((const char *)ptr, len);
-  valueLen = (WORD)len;
+  valueLen = (uint16_t)len;
 }
 
 PASNString::PASNString(const PBYTEArray & buffer, PASNObject::ASNType type)
@@ -530,7 +530,7 @@ PASNString::PASNString(const PBYTEArray & buffer, PINDEX & ptr, PASNObject::ASNT
 }
 
 
-PBoolean PASNString::Decode(const PBYTEArray & buffer, PINDEX & ptr, PASNObject::ASNType type)
+bool PASNString::Decode(const PBYTEArray & buffer, PINDEX & ptr, PASNObject::ASNType type)
 {
   valueLen = 0;
   if (buffer[ptr++] != ASNTypeToType[type])
@@ -542,7 +542,7 @@ PBoolean PASNString::Decode(const PBYTEArray & buffer, PINDEX & ptr, PASNObject:
   if (ptr + valueLen > buffer.GetSize())
     return false;
 
-  value = PString(ptr + (const char *)(const BYTE *)buffer, valueLen);
+  value = PString(ptr + (const char *)(const uint8_t *)buffer, valueLen);
   ptr += valueLen;
 
   return true;
@@ -570,9 +570,9 @@ void PASNString::Encode(PBYTEArray & buffer, PASNObject::ASNType type)
 }
 
 
-WORD PASNString::GetEncodedLength()
+uint16_t PASNString::GetEncodedLength()
 {
-  return (WORD)(GetASNHeaderLength(valueLen) + (int)valueLen);
+  return (uint16_t)(GetASNHeaderLength(valueLen) + (int)valueLen);
 }
 
 
@@ -605,7 +605,7 @@ PObject * PASNString::Clone() const
 //  PASNUnsignedInteger
 //     A descendant of PASNObject which is an unsigned integer
 
-PBoolean PASNUnsignedInteger::Decode(const PBYTEArray & buffer, PINDEX & ptr, PASNObject::ASNType theType)
+bool PASNUnsignedInteger::Decode(const PBYTEArray & buffer, PINDEX & ptr, PASNObject::ASNType theType)
 {
   return DecodeASNUnsigned(buffer, ptr, value, theType);
 }
@@ -626,7 +626,7 @@ void PASNUnsignedInteger::PrintOn(ostream & strm) const
 }
 
 
-WORD PASNUnsignedInteger::GetEncodedLength()
+uint16_t PASNUnsignedInteger::GetEncodedLength()
 {
   return GetASNUnsignedLength(value);
 }
@@ -650,7 +650,7 @@ PASNUnsigned PASNUnsignedInteger::GetUnsigned() const
 //     A descendant of PASNObject which is a simple ASN ObjID type
 //
 
-PASNObjectID::PASNObjectID(PASNOid * val, BYTE theLen)
+PASNObjectID::PASNObjectID(PASNOid * val, uint8_t theLen)
 {
   value.SetSize(theLen);
   memcpy(value.GetPointer(theLen), val, theLen * sizeof(PASNOid)); 
@@ -718,7 +718,7 @@ void PASNObjectID::Encode(PBYTEArray & buffer)
     eObjId [offs++] = 0;
     objIdLen = 0;
   } else {
-    eObjId [offs++] = (BYTE)(objId[1] + (objId[0] * 40));
+    eObjId [offs++] = (uint8_t)(objId[1] + (objId[0] * 40));
     objIdLen -= 2;
     objId += 2;
   }
@@ -726,7 +726,7 @@ void PASNObjectID::Encode(PBYTEArray & buffer)
   while (objIdLen-- > 0) {
     subId = *objId++;
     if (subId < 128) 
-      eObjId [offs++] = (BYTE)subId;
+      eObjId [offs++] = (uint8_t)subId;
     else {
       mask = 0x7F; /* handle subid == 0 case */
       bits = 0;
@@ -753,19 +753,19 @@ void PASNObjectID::Encode(PBYTEArray & buffer)
   }
 
   PINDEX s = eObjId.GetSize();
-  EncodeASNHeader (buffer, ObjectID, (WORD)s);
+  EncodeASNHeader (buffer, ObjectID, (uint16_t)s);
   offs = buffer.GetSize();
   for (PINDEX i = 0; i < s; i++)
     buffer [offs + i] = eObjId[i];
 }
 
 
-WORD PASNObjectID::GetEncodedLength()
+uint16_t PASNObjectID::GetEncodedLength()
 {
   PASNOid    subId, mask, testmask;
   int        bits, testbits;
   PINDEX     objIdLen = value.GetSize();
-  WORD       theLen = 0;
+  uint16_t       theLen = 0;
   PASNOid    *objId = value.GetPointer();
 
   if (objIdLen < 2) {
@@ -806,7 +806,7 @@ WORD PASNObjectID::GetEncodedLength()
     }
   }
 
-  return (WORD)(theLen + GetASNHeaderLength(theLen));
+  return (uint16_t)(theLen + GetASNHeaderLength(theLen));
 }
 
 
@@ -836,14 +836,14 @@ PString PASNObjectID::GetString() const
 }
 
 
-PBoolean PASNObjectID::Decode(const PBYTEArray & buffer, PINDEX & offs)
+bool PASNObjectID::Decode(const PBYTEArray & buffer, PINDEX & offs)
 {
-  BYTE type = buffer[offs++];
+  uint8_t type = buffer[offs++];
   PAssert(type == (ASN_OBJECT_ID | ASN_UNIVERSAL | ASN_PRIMITIVE),
           "Attempt to decode non-objectID");
   PASNOid subId;
   
-  WORD dataLen;
+  uint16_t dataLen;
   if (!DecodeASNLength(buffer, offs, dataLen))
     return false;
 
@@ -909,11 +909,11 @@ PASNSequence::PASNSequence()
 }
 
 
-PASNSequence::PASNSequence(BYTE selector)
+PASNSequence::PASNSequence(uint8_t selector)
 {
   encodedLen = 0;
   PAssert(selector < ASN_CONSTRUCTOR, "Sequence selector too big");
-  type    = (BYTE)(ASNTypeToType[Choice] | selector);
+  type    = (uint8_t)(ASNTypeToType[Choice] | selector);
   asnType = Choice;
 }
 
@@ -942,7 +942,7 @@ void PASNSequence::AppendObjectID(const PString & str)
 }
 
 
-void PASNSequence::AppendObjectID(PASNOid * val, BYTE len)
+void PASNSequence::AppendObjectID(PASNOid * val, uint8_t len)
 {
   Append(new PASNObjectID(val, len));
 }
@@ -972,7 +972,7 @@ void PASNSequence::Encode(PBYTEArray & buffer)
     sequence[i].Encode(buffer);
 }
 
-PBoolean PASNSequence::Encode(PBYTEArray & buffer, PINDEX maxLen) 
+bool PASNSequence::Encode(PBYTEArray & buffer, PINDEX maxLen) 
 {
   // calculate the length of the sequence, if it hasn't already been done
   if (encodedLen == 0)
@@ -993,14 +993,14 @@ PBoolean PASNSequence::Encode(PBYTEArray & buffer, PINDEX maxLen)
 }
 
 
-WORD PASNSequence::GetEncodedLength()
+uint16_t PASNSequence::GetEncodedLength()
 {
   // calculate the length of the sequence
   if (encodedLen == 0) {
     seqLen = 0;
     for (PINDEX i = 0; i < sequence.GetSize(); i++)
-      seqLen = (WORD)(seqLen + sequence[i].GetEncodedLength());
-    encodedLen = (WORD)(GetASNSequenceStartLength(seqLen) + seqLen);
+      seqLen = (uint16_t)(seqLen + sequence[i].GetEncodedLength());
+    encodedLen = (uint16_t)(GetASNSequenceStartLength(seqLen) + seqLen);
   }
   return encodedLen;
 }
@@ -1040,10 +1040,10 @@ PASNSequence::PASNSequence(const PBYTEArray & buffer, PINDEX & ptr)
 }
 
 
-PBoolean PASNSequence::Decode(const PBYTEArray & buffer, PINDEX & ptr)
+bool PASNSequence::Decode(const PBYTEArray & buffer, PINDEX & ptr)
 {
   PINDEX s = buffer.GetSize();
-  BYTE   c;
+  uint8_t   c;
 
   // all sequences start with a sequence start
   if (ptr >= s)
@@ -1054,13 +1054,13 @@ PBoolean PASNSequence::Decode(const PBYTEArray & buffer, PINDEX & ptr)
   if (c == (ASN_CONSTRUCTOR | ASN_SEQUENCE)) 
     asnType = Sequence;
   else if ((c & ~ASN_EXTENSION_ID) == (ASN_CONSTRUCTOR | ASN_CONTEXT)) {
-    type    = (BYTE)(c & ASN_EXTENSION_ID);
+    type    = (uint8_t)(c & ASN_EXTENSION_ID);
     asnType = Choice;
   } else
     return false;
 
   // get the sequence length
-  WORD len;
+  uint16_t len;
   if (!DecodeASNLength(buffer, ptr, len))
     return false;
 
@@ -1072,7 +1072,7 @@ PBoolean PASNSequence::Decode(const PBYTEArray & buffer, PINDEX & ptr)
   s = ptr + len;
 
   // now decode the elements
-  PBoolean   ok = true;
+  bool   ok = true;
   while (ptr < s && ok) {
     c = buffer[ptr];
     if ((c & ~ASN_EXTENSION_ID) == (ASN_CONSTRUCTOR | ASN_CONTEXT)) 
@@ -1184,13 +1184,13 @@ PString PASNIPAddress::GetString() const
   if (len < 4) {
     PString out = "Hex";
     for (PINDEX i = 0; i < len; i++)
-      out &= psprintf("%02x", (BYTE)value[i]);
+      out &= psprintf("%02x", (uint8_t)value[i]);
     return out;
   }
 
   return psprintf("%i.%i.%i.%i",
-         (BYTE)value[0], (BYTE)value[1],
-         (BYTE)value[2], (BYTE)value[3]);
+         (uint8_t)value[0], (uint8_t)value[1],
+         (uint8_t)value[2], (uint8_t)value[3]);
 }
 
 
@@ -1213,8 +1213,8 @@ PASNIPAddress::PASNIPAddress(const PString & str)
 
 PIPSocket::Address PASNIPAddress::GetIPAddress () const
 {
-  return PIPSocket::Address((BYTE)value[0], (BYTE)value[1],
-                            (BYTE)value[2], (BYTE)value[3]);
+  return PIPSocket::Address((uint8_t)value[0], (uint8_t)value[1],
+                            (uint8_t)value[2], (uint8_t)value[3]);
 }
 
 PASNNull::PASNNull()
@@ -1241,7 +1241,7 @@ void PASNNull::Encode(PBYTEArray & buffer)
   EncodeASNHeader(buffer, Null, 0);
 }
 
-WORD PASNNull::GetEncodedLength()
+uint16_t PASNNull::GetEncodedLength()
 {
   return 2;
 }

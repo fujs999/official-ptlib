@@ -3,7 +3,7 @@
  *
  * HTTP Client class.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-2002 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -87,7 +87,7 @@ class PHTTPClient_OutputBody
 
 struct PHTTPClient_DummyProcessor : public PHTTPContentProcessor
 {
-  BYTE m_body[4096];
+  uint8_t m_body[4096];
 
   PHTTPClient_DummyProcessor(bool reader)
     : PHTTPContentProcessor(reader)
@@ -169,7 +169,7 @@ struct PHTTPClient_BinaryReader : public PHTTPContentProcessor
   virtual void * GetBuffer(PINDEX & size)
   {
     PINDEX oldSize = m_body.GetSize();
-    BYTE * ptr = m_body.GetPointer(oldSize+size);
+    uint8_t * ptr = m_body.GetPointer(oldSize+size);
     return ptr != NULL ? ptr+oldSize : NULL;
   }
 };
@@ -926,12 +926,12 @@ PObject::Comparison PHTTPClientBasicAuthentication::Compare(const PObject & othe
   return PHTTPClientAuthentication::Compare(other);
 }
 
-PBoolean PHTTPClientBasicAuthentication::Parse(const PString & /*auth*/, PBoolean /*proxy*/)
+bool PHTTPClientBasicAuthentication::Parse(const PString & /*auth*/, bool /*proxy*/)
 {
   return true;
 }
 
-PBoolean PHTTPClientBasicAuthentication::Authorise(AuthObject & authObject) const
+bool PHTTPClientBasicAuthentication::Authorise(AuthObject & authObject) const
 {
   PBase64 digestor;
   digestor.StartEncoding();
@@ -995,7 +995,7 @@ PObject::Comparison PHTTPClientDigestAuthentication::Compare(const PObject & oth
   return PHTTPClientAuthentication::Compare(other);
 }
 
-PBoolean PHTTPClientDigestAuthentication::Parse(const PString & p_auth, PBoolean proxy)
+bool PHTTPClientDigestAuthentication::Parse(const PString & p_auth, bool proxy)
 {
   PCaselessString auth = p_auth;
 
@@ -1060,7 +1060,7 @@ PBoolean PHTTPClientDigestAuthentication::Parse(const PString & p_auth, PBoolean
 }
 
 
-PBoolean PHTTPClientDigestAuthentication::Authorise(AuthObject & authObject) const
+bool PHTTPClientDigestAuthentication::Authorise(AuthObject & authObject) const
 {
   PTRACE(3, "Adding authentication information");
 

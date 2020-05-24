@@ -3,7 +3,7 @@
  *
  * Generalised Thead Pool functions
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (C) 2009 Post Increment
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Post Increment
  *

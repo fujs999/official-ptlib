@@ -3,7 +3,7 @@
  *
  * Console I/O channel class.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -123,7 +123,7 @@ class PConsoleChannel : public PChannel
 
        @return true if the channel successfully closed.
      */
-    virtual PBoolean Close();
+    virtual bool Close();
 
     /** Read a single 8 bit byte from the channel. If one was not available
        within the read timeout period, or an I/O error occurred, then the
@@ -162,7 +162,7 @@ class PConsoleChannel : public PChannel
        The channel is opened it on the specified port and with the specified
        attributes.
      */
-    virtual PBoolean Open(
+    virtual bool Open(
       ConsoleType type  /// Type of console for object
     );
 

@@ -3,7 +3,7 @@
  *
  * File system directory class.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -109,7 +109,7 @@ class PFileInfo : public PObject
     /**Size of the file in bytes. This is a quadword or 8 byte value to allow
        for files greater than 4 gigabytes.
      */
-    PUInt64 size;
+    uint64_t size;
 
     /// File access permissions for the file.
     P_DECLARE_BITWISE_ENUM_EX(Permissions,9,
@@ -277,9 +277,9 @@ class PDirectory : public PFilePathString
        true if the information could be determined.
      */
     bool GetVolumeSpace(
-      PInt64 & total,     ///< Total number of bytes available on volume
-      PInt64 & free,      ///< Number of bytes unused on the volume
-      DWORD & clusterSize ///< "Quantisation factor" in bytes for files on volume
+      int64_t & total,     ///< Total number of bytes available on volume
+      int64_t & free,      ///< Number of bytes unused on the volume
+      uint32_t & clusterSize ///< "Quantisation factor" in bytes for files on volume
     ) const;
   //@}
 

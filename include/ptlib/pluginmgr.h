@@ -3,7 +3,7 @@
  *
  * Plugin Manager Class Declarations
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Contributor(s): Snark at GnomeMeeting
  */
@@ -52,7 +52,7 @@ class PPluginManager : public PObject
     void LoadDirectory(const PDirectory & dir);
 
     // functions to load/unload a dynamic plugin 
-    PBoolean LoadPlugin(const PString & fileName);
+    bool LoadPlugin(const PString & fileName);
 
     void OnShutdown();
   
@@ -102,7 +102,7 @@ class PPluginManager : public PObject
       const char * const * prioritisedDrivers = NULL
     ) const;
 
-    PBoolean GetPluginsDeviceCapabilities(
+    bool GetPluginsDeviceCapabilities(
       const PString & serviceType,
       const PString & serviceName,
       const PString & deviceName,
@@ -137,7 +137,7 @@ class PPluginManager : public PObject
 
     void AddNotifier(
       const PNotifier & filterFunction,
-      PBoolean existing = false
+      bool existing = false
     );
 
     void RemoveNotifier(

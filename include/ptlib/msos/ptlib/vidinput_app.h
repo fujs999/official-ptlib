@@ -57,30 +57,30 @@ class PVideoInputDevice_Application : public PVideoInputDevice
 
     /**Open the device given the device name.
       */
-    virtual PBoolean Open(
+    virtual bool Open(
       const PString & DeviceName,   ///< Device name to open
-      PBoolean startImmediate = TRUE    ///< Immediately start device
+      bool startImmediate = TRUE    ///< Immediately start device
     );
 
     /**Determine if the device is currently open.
       */
-    virtual PBoolean IsOpen();
+    virtual bool IsOpen();
 
     /**Close the device.
       */
-    virtual PBoolean Close();
+    virtual bool Close();
 
     /**Start the video device I/O.
       */
-    virtual PBoolean Start();
+    virtual bool Start();
 
     /**Stop the video device I/O capture.
       */
-    virtual PBoolean Stop();
+    virtual bool Stop();
 
     /**Determine if the video device I/O capture is in progress.
       */
-    virtual PBoolean IsCapturing();
+    virtual bool IsCapturing();
 
     /**Set the colour format to be used.
        Note that this function does not do any conversion. If it returns TRUE
@@ -92,7 +92,7 @@ class PVideoInputDevice_Application : public PVideoInputDevice
        Default behaviour sets the value of the colourFormat variable and then
        returns TRUE.
     */
-    virtual PBoolean SetColourFormat(
+    virtual bool SetColourFormat(
       const PString & colourFormat ///< New colour format for device.
     );
 
@@ -111,8 +111,8 @@ class PVideoInputDevice_Application : public PVideoInputDevice
     );
 
   protected:
-    virtual bool InternalGetFrameData(BYTE * buffer, PINDEX & bytesReturned, bool & keyFrame, bool wait);
-    bool GetWindowBitmap(BITMAP & bitmapInfo, BYTE * pixels = NULL, bool useTemp = false);
+    virtual bool InternalGetFrameData(uint8_t * buffer, PINDEX & bytesReturned, bool & keyFrame, bool wait);
+    bool GetWindowBitmap(BITMAP & bitmapInfo, uint8_t * pixels = NULL, bool useTemp = false);
 
     HWND       m_hWnd;               ///< Handle of Window to Capture
     bool       m_client;             ///< Capture the client area only

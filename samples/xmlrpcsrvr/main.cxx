@@ -21,7 +21,7 @@
 
 PCREATE_PROCESS(Xmlrpcsrvr);
 
-const WORD DefaultHTTPPort = 8000;
+const uint16_t DefaultHTTPPort = 8000;
 
 
 Xmlrpcsrvr::Xmlrpcsrvr()
@@ -31,7 +31,7 @@ Xmlrpcsrvr::Xmlrpcsrvr()
 }
 
 
-PBoolean Xmlrpcsrvr::OnStart()
+bool Xmlrpcsrvr::OnStart()
 {
   GetFile().GetDirectory().Change();
 
@@ -77,7 +77,7 @@ void Xmlrpcsrvr::AddUnregisteredText(PHTML &)
 }
 
 
-PBoolean Xmlrpcsrvr::Initialise(const char * initMsg)
+bool Xmlrpcsrvr::Initialise(const char * initMsg)
 {
   //  create the home page
   static const char welcomeHtml[] = "welcome.html";

@@ -3,7 +3,7 @@
  *
  * Berkley sockets ancestor class.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -34,9 +34,9 @@
     ~PSocket();
       // close a socket
 
-    virtual PBoolean Read(void * buf, PINDEX len);
-    virtual PBoolean Write(const void * buf, PINDEX len);
-    virtual PBoolean Close();
+    virtual bool Read(void * buf, PINDEX len);
+    virtual bool Write(const void * buf, PINDEX len);
+    virtual bool Close();
     virtual PString GetErrorText(ErrorGroup group = NumErrorGroups) const;
     static PString GetErrorText(Errors lastError, int osError = 0) { return PChannel::GetErrorText(lastError, osError); }
 

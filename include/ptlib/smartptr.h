@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -175,7 +175,7 @@ class PSmartPointer : public PObject
        @return
        true if the pointer is NULL.
      */
-    PBoolean IsNULL() const { return object == NULL; }
+    bool IsNULL() const { return object == NULL; }
 
     /** Get the current value if the internal smart object pointer.
 

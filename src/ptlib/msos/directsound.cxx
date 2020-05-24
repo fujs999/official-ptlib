@@ -3,7 +3,7 @@
  *
  * DirectX Sound driver implementation.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 2006-2007 Novacom, a division of IT-Optics
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original DirectSound Code is 
  * Vincent Luba <vincent.luba@novacom.be>
@@ -389,7 +389,7 @@ bool PSoundChannelDirectSound::Open(const Params & params)
 
 // This stops play or record in progress (breaks Wait loop)
 
-PBoolean PSoundChannelDirectSound::Abort () // public
+bool PSoundChannelDirectSound::Abort () // public
 {
   if (IsOpen())
     SetEvent(m_triggerEvent[SOUNDEVENT_ABORT]); // signal read or write to stop
@@ -403,7 +403,7 @@ PBoolean PSoundChannelDirectSound::Abort () // public
 }
 
 
-PBoolean PSoundChannelDirectSound::Close () // public
+bool PSoundChannelDirectSound::Close () // public
 {
   PWaitAndSignal mutex(m_bufferMutex);  // wait for read/write completion
   Abort(); // abort waiting for I/O
@@ -445,21 +445,21 @@ void SetWaveFormat (WAVEFORMATEX & format,
 {
   memset(&format, 0, sizeof(WAVEFORMATEX));
   format.wFormatTag = WAVE_FORMAT_PCM;
-  format.nChannels = (WORD)numChannels;
+  format.nChannels = (uint16_t)numChannels;
   format.nSamplesPerSec = sampleRate;
-  format.wBitsPerSample = (WORD)bitsPerSample;
+  format.wBitsPerSample = (uint16_t)bitsPerSample;
   format.nBlockAlign = format.nChannels * ((format.wBitsPerSample + 7) / 8);
   format.nAvgBytesPerSec = format.nSamplesPerSec * format.nBlockAlign;
 }
 
 
-PBoolean PSoundChannelDirectSound::SetFormat (unsigned numChannels, // public
+bool PSoundChannelDirectSound::SetFormat (unsigned numChannels, // public
                                               unsigned sampleRate,
                                               unsigned bitsPerSample)
 {
   if (IsOpen()) {
     PWaitAndSignal mutex(m_bufferMutex); // don't do this while CheckxBuffer is running!
-    if (m_waveFormat.nChannels == (WORD)numChannels && m_waveFormat.nSamplesPerSec == sampleRate && m_waveFormat.wBitsPerSample == (WORD)bitsPerSample)
+    if (m_waveFormat.nChannels == (uint16_t)numChannels && m_waveFormat.nSamplesPerSec == sampleRate && m_waveFormat.wBitsPerSample == (uint16_t)bitsPerSample)
       return true;
 
     Abort(); // abort waiting for I/O
@@ -484,7 +484,7 @@ PBoolean PSoundChannelDirectSound::SetFormat (unsigned numChannels, // public
 }
 
 
-PBoolean PSoundChannelDirectSound::SetBufferSections (PINDEX size, PINDEX count)
+bool PSoundChannelDirectSound::SetBufferSections (PINDEX size, PINDEX count)
 {
   m_bufferSectionCount = count;
   m_bufferSectionSize = size; 
@@ -493,7 +493,7 @@ PBoolean PSoundChannelDirectSound::SetBufferSections (PINDEX size, PINDEX count)
 }
 
 
-PBoolean PSoundChannelDirectSound::SetBuffers (PINDEX size, PINDEX count) // public
+bool PSoundChannelDirectSound::SetBuffers (PINDEX size, PINDEX count) // public
 {
   if (size < DSBSIZE_MIN || size > DSBSIZE_MAX) {
     PTRACE(4, GetDirectionText() << " SetBuffers: invalid buffer size " << size << " bytes");
@@ -532,7 +532,7 @@ PBoolean PSoundChannelDirectSound::SetBuffers (PINDEX size, PINDEX count) // pub
 }
 
 
-PBoolean PSoundChannelDirectSound::GetBuffers (PINDEX & size, PINDEX & count) // public
+bool PSoundChannelDirectSound::GetBuffers (PINDEX & size, PINDEX & count) // public
 {
   count = m_bufferSectionCount;
   size = m_bufferSectionSize;
@@ -611,7 +611,7 @@ PTimeInterval PSoundChannelDirectSound::GetInterval (void) // private
 // Get the number of entire Buffers that DirectSound has filled or emptied since last
 // time we checked, to detect buffer wrap around
 
-DWORD PSoundChannelDirectSound::GetCyclesPassed (void) // private
+uint32_t PSoundChannelDirectSound::GetCyclesPassed (void) // private
 {
   // measure time since last check
   PTimeInterval interval = GetInterval();
@@ -627,7 +627,7 @@ DWORD PSoundChannelDirectSound::GetCyclesPassed (void) // private
 // requires buffer size and media format
 // if any failure occurs in here, device is closed
 
-PBoolean PSoundChannelDirectSound::OpenPlayback (LPCGUID deviceId) // private
+bool PSoundChannelDirectSound::OpenPlayback (LPCGUID deviceId) // private
 {
   HRESULT result = DirectSoundCreate8(deviceId, &m_playbackDevice, NULL);
   if (result != S_OK) {
@@ -652,7 +652,7 @@ PBoolean PSoundChannelDirectSound::OpenPlayback (LPCGUID deviceId) // private
 
 // if any failure occurs in here, device is closed
 
-PBoolean PSoundChannelDirectSound::OpenPlaybackBuffer () // private
+bool PSoundChannelDirectSound::OpenPlaybackBuffer () // private
 {
   if (m_playbackBuffer != NULL)
     m_playbackBuffer.Release();
@@ -787,7 +787,7 @@ PSoundChannelDirectSound::CheckBufferState PSoundChannelDirectSound::CheckPlayBu
 }
 
 
-PBoolean PSoundChannelDirectSound::WaitForPlayBufferFree () // protected
+bool PSoundChannelDirectSound::WaitForPlayBufferFree () // protected
 {
   ResetEvent(m_triggerEvent[SOUNDEVENT_SOUND]);
   do {
@@ -817,7 +817,7 @@ PBoolean PSoundChannelDirectSound::WaitForPlayBufferFree () // protected
 }
 
 
-PBoolean PSoundChannelDirectSound::Write (const void *buf, PINDEX len) // public
+bool PSoundChannelDirectSound::Write (const void *buf, PINDEX len) // public
 {
   {
     PWaitAndSignal mutex(m_bufferMutex); // prevent closing while active
@@ -847,7 +847,7 @@ PBoolean PSoundChannelDirectSound::Write (const void *buf, PINDEX len) // public
 
     LPVOID pointer1, pointer2;
     DWORD length1, length2;
-    DWORD desiredWriteCount = std::min(m_available, (DWORD)len);
+    uint32_t desiredWriteCount = std::min(m_available, (uint32_t)len);
     HRESULT result = m_playbackBuffer->Lock(m_movePos, desiredWriteCount,
                                             &pointer1, &length1, &pointer2, &length2, 0L);
     if (result == DSERR_BUFFERLOST) {   // Buffer was lost, need to restore it
@@ -887,13 +887,13 @@ PBoolean PSoundChannelDirectSound::Write (const void *buf, PINDEX len) // public
 }
 
 
-PBoolean PSoundChannelDirectSound::HasPlayCompleted () // public
+bool PSoundChannelDirectSound::HasPlayCompleted () // public
 {
   return CheckPlayBuffer() != SOUNDNOTIFY_AVAILABLE || m_available == (DWORD)m_bufferSize;
 }
 
 
-PBoolean PSoundChannelDirectSound::WaitForPlayCompletion () // public
+bool PSoundChannelDirectSound::WaitForPlayCompletion () // public
 {
   // only works for non-streaming player
   while (!HasPlayCompleted()) 
@@ -903,7 +903,7 @@ PBoolean PSoundChannelDirectSound::WaitForPlayCompletion () // public
 }
 
 
-PBoolean PSoundChannelDirectSound::PlaySound (const PSound & sound, PBoolean wait) // public
+bool PSoundChannelDirectSound::PlaySound (const PSound & sound, bool wait) // public
 {
   PAssert(m_activeDirection == Player, "Invalid device direction");
 
@@ -928,7 +928,7 @@ PBoolean PSoundChannelDirectSound::PlaySound (const PSound & sound, PBoolean wai
 // requires buffer size and media format
 // if any failure occurs in here, device is closed
 
-PBoolean PSoundChannelDirectSound::OpenCapture (LPCGUID deviceId) // private
+bool PSoundChannelDirectSound::OpenCapture (LPCGUID deviceId) // private
 {
   HRESULT result = DirectSoundCaptureCreate8(deviceId, &m_captureDevice, NULL);
   if (result != S_OK) {
@@ -942,7 +942,7 @@ PBoolean PSoundChannelDirectSound::OpenCapture (LPCGUID deviceId) // private
 
 // if any failure occurs in here, device is closed
 
-PBoolean PSoundChannelDirectSound::OpenCaptureBuffer () // private
+bool PSoundChannelDirectSound::OpenCaptureBuffer () // private
 {
   if (m_captureBuffer != NULL)
     m_captureBuffer.Release();
@@ -1012,7 +1012,7 @@ void PSoundChannelDirectSound::CloseCapture () // private
 }
 
 
-PBoolean PSoundChannelDirectSound::StartRecording () // public
+bool PSoundChannelDirectSound::StartRecording () // public
 {
   PWaitAndSignal mutex(m_bufferMutex);
 
@@ -1091,7 +1091,7 @@ PSoundChannelDirectSound::CheckBufferState PSoundChannelDirectSound::CheckCaptur
 }
 
 
-PBoolean PSoundChannelDirectSound::IsRecordBufferFull () // public
+bool PSoundChannelDirectSound::IsRecordBufferFull () // public
 {
   if (!StartRecording()) // Start the first read
     return false;
@@ -1105,7 +1105,7 @@ PBoolean PSoundChannelDirectSound::IsRecordBufferFull () // public
 }
 
 
-PBoolean PSoundChannelDirectSound::WaitForRecordBufferFull () // public
+bool PSoundChannelDirectSound::WaitForRecordBufferFull () // public
 {
   if (!StartRecording()) // Start the first read
     return false;
@@ -1129,7 +1129,7 @@ PBoolean PSoundChannelDirectSound::WaitForRecordBufferFull () // public
 }
 
 
-PBoolean PSoundChannelDirectSound::Read (void * buf, PINDEX len) // public
+bool PSoundChannelDirectSound::Read (void * buf, PINDEX len) // public
 {
   {
     PWaitAndSignal mutex(m_bufferMutex); // prevent closing while active
@@ -1159,7 +1159,7 @@ PBoolean PSoundChannelDirectSound::Read (void * buf, PINDEX len) // public
     // Read from device buffer minimum between the data required and data available
     LPVOID pointer1, pointer2;
     DWORD length1, length2;
-    HRESULT result = m_captureBuffer->Lock(m_movePos, std::min(m_available, (DWORD)len),
+    HRESULT result = m_captureBuffer->Lock(m_movePos, std::min(m_available, (uint32_t)len),
                                            &pointer1, &length1, &pointer2, &length2, 0L);
     if (FAILED(result)) {
       SetErrorValues(Miscellaneous, result, LastReadError);
@@ -1187,21 +1187,21 @@ PBoolean PSoundChannelDirectSound::Read (void * buf, PINDEX len) // public
 }
 
 
-PBoolean PSoundChannelDirectSound::AreAllRecordBuffersFull() // public
+bool PSoundChannelDirectSound::AreAllRecordBuffersFull() // public
 {
   PTRACE(4, "AreAllRecordBuffersFull unimplemented");
   return true;
 }
 
 
-PBoolean PSoundChannelDirectSound::WaitForAllRecordBuffersFull() // public
+bool PSoundChannelDirectSound::WaitForAllRecordBuffersFull() // public
 {
   PTRACE(4, "WaitForAllRecordBuffersFull unimplemented");
   return false;
 }
 
 
-PBoolean PSoundChannelDirectSound::RecordSound (PSound & /*sound*/) // public
+bool PSoundChannelDirectSound::RecordSound (PSound & /*sound*/) // public
 {
   PAssert(m_activeDirection == Recorder, "Invalid device direction");
   PTRACE(4, "RecordSound unimplemented");
@@ -1209,7 +1209,7 @@ PBoolean PSoundChannelDirectSound::RecordSound (PSound & /*sound*/) // public
 }
 
 
-PBoolean PSoundChannelDirectSound::RecordFile (const PFilePath & /*filename*/) // public
+bool PSoundChannelDirectSound::RecordFile (const PFilePath & /*filename*/) // public
 {
   PAssert(m_activeDirection == Recorder, "Invalid device direction");
   PTRACE(4, "RecordFile unimplemented");
@@ -1224,7 +1224,7 @@ PBoolean PSoundChannelDirectSound::RecordFile (const PFilePath & /*filename*/) /
 // Use wave mixer because DirectX does not let you change the capture buffer volume
 // and player buffer volume changes do not interact with Control Panel
 
-PBoolean PSoundChannelDirectSound::OpenMixer (UINT waveDeviceId)
+bool PSoundChannelDirectSound::OpenMixer (UINT waveDeviceId)
 {
   mixerOpen(&m_mixer, waveDeviceId, NULL, NULL, (m_activeDirection == Player)? MIXER_OBJECTF_WAVEOUT : MIXER_OBJECTF_WAVEIN);
   if (m_mixer == NULL) {
@@ -1267,7 +1267,7 @@ void PSoundChannelDirectSound::CloseMixer ()
 }
 
 
-PBoolean PSoundChannelDirectSound::SetVolume (unsigned newVal) // public
+bool PSoundChannelDirectSound::SetVolume (unsigned newVal) // public
 {
   PWaitAndSignal mutex(m_bufferMutex);
   if (!IsOpen() || m_mixer == NULL) {
@@ -1299,7 +1299,7 @@ PBoolean PSoundChannelDirectSound::SetVolume (unsigned newVal) // public
 }
 
 
-PBoolean PSoundChannelDirectSound::GetVolume (unsigned & devVol) // public
+bool PSoundChannelDirectSound::GetVolume (unsigned & devVol) // public
 {
   PWaitAndSignal mutex(m_bufferMutex);
   if (!IsOpen() || m_mixer == NULL) {

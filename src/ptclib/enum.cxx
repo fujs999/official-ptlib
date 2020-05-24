@@ -1,7 +1,7 @@
 /*
  * enum.cxx
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (C) 2004 Post Increment
  *
@@ -15,7 +15,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Post Increment
  *
@@ -293,7 +293,7 @@ void PDNS::SetENUMServers(const PStringArray & servers)
      GetENUMServers() = servers;
 }
 
-PBoolean PDNS::ENUMLookup(const PString & e164,
+bool PDNS::ENUMLookup(const PString & e164,
       const PString & service,PString & dn)
 {
   PWaitAndSignal m(GetENUMServerMutex());
@@ -307,9 +307,9 @@ PBoolean PDNS::ENUMLookup(const PString & e164,
   return PDNS::ENUMLookup(e164, service, domains, dn);
 }
 
-static PBoolean InternalENUMLookup(const PString & e164, const PString & service, PDNS::NAPTRRecordList & records, PString & returnStr)
+static bool InternalENUMLookup(const PString & e164, const PString & service, PDNS::NAPTRRecordList & records, PString & returnStr)
 {
-  PBoolean result = false;
+  bool result = false;
 
   // get the first record that matches the service. 
   PDNS::NAPTRRecord * rec = records.GetFirst(service);
@@ -321,8 +321,8 @@ static PBoolean InternalENUMLookup(const PString & e164, const PString & service
       break;
 
     // process the flags
-    PBoolean handled  = false;
-    PBoolean terminal = true;
+    bool handled  = false;
+    bool terminal = true;
 
     for (PINDEX f = 0; !handled && f < rec->flags.GetLength(); ++f) {
       switch (tolower(rec->flags[f])) {
@@ -373,7 +373,7 @@ static PBoolean InternalENUMLookup(const PString & e164, const PString & service
   return result;
 }
 
-PBoolean PDNS::ENUMLookup(
+bool PDNS::ENUMLookup(
         const PString & _e164,
         const PString & service,
    const PStringArray & enumSpaces,
@@ -434,9 +434,9 @@ static PStringArray & GetRDSServers()
   return servers;
 }
 
-static PBoolean RewriteDomain(const PString & original, PDNS::NAPTRRecordList & records, PString & returnStr)
+static bool RewriteDomain(const PString & original, PDNS::NAPTRRecordList & records, PString & returnStr)
 {
-   PBoolean result = false;
+   bool result = false;
 
   // get the first record that matches the service. 
   PDNS::NAPTRRecord * rec = records.GetFirst();
@@ -448,7 +448,7 @@ static PBoolean RewriteDomain(const PString & original, PDNS::NAPTRRecordList & 
       break;
 
     // process the flags
-    PBoolean handled  = false;
+    bool handled  = false;
 
 	// General domain rewrites has no flag
     if (rec->flags.IsEmpty()) {
@@ -474,9 +474,9 @@ static PBoolean RewriteDomain(const PString & original, PDNS::NAPTRRecordList & 
   return result;   
 }
 
-static PBoolean InternalRDSLookup(const PString & rds, const PString & service, PDNS::NAPTRRecordList & records, PString & returnStr)
+static bool InternalRDSLookup(const PString & rds, const PString & service, PDNS::NAPTRRecordList & records, PString & returnStr)
 {
-  PBoolean result = false;
+  bool result = false;
 
   // get the first record that matches the service. 
   PDNS::NAPTRRecord * rec = records.GetFirst(service);
@@ -488,8 +488,8 @@ static PBoolean InternalRDSLookup(const PString & rds, const PString & service, 
       break;
 
     // process the flags
-    PBoolean handled  = false;
-    PBoolean terminal = true;
+    bool handled  = false;
+    bool terminal = true;
 
     for (PINDEX f = 0; !handled && f < rec->flags.GetLength(); ++f) {
       switch (tolower(rec->flags[f])) {
@@ -545,7 +545,7 @@ void PDNS::SetRDSServers(const PStringArray & servers)
      GetRDSServers() = servers;
 }
 
-PBoolean PDNS::RDSLookup(const PURL & url,
+bool PDNS::RDSLookup(const PURL & url,
       const PString & service,PStringList & dn)
 {
   PWaitAndSignal m(GetRDSServerMutex());
@@ -559,7 +559,7 @@ PBoolean PDNS::RDSLookup(const PURL & url,
   return PDNS::RDSLookup(url, service, domains, dn);
 }
 
-PBoolean PDNS::RDSLookup(
+bool PDNS::RDSLookup(
   const PURL & url,
   const PString & service,
   const PStringArray & naptrSpaces,

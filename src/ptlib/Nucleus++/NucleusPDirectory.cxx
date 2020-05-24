@@ -52,7 +52,7 @@ PAssertAlways("No PDirectories under Nucleus");
 #endif
 }
 
-PBoolean PDirectory::Create(const PString & p, int perm)
+bool PDirectory::Create(const PString & p, int perm)
 {
 #ifdef __NUCLEUS_PLUS__
 PAssertAlways("No PDirectories under Nucleus");
@@ -64,7 +64,7 @@ return true;
 #endif
 }
 
-PBoolean PDirectory::Remove(const PString & p)
+bool PDirectory::Remove(const PString & p)
 {
 #ifdef __NUCLEUS_PLUS__
 PAssertAlways("No PDirectories under Nucleus");

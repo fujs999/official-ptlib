@@ -15,7 +15,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -269,11 +269,11 @@ class PVXMLSession : public PIndirectChannel
 {
   PCLASSINFO(PVXMLSession, PIndirectChannel);
   public:
-    PVXMLSession(PTextToSpeech * tts = NULL, PBoolean autoDelete = false);
+    PVXMLSession(PTextToSpeech * tts = NULL, bool autoDelete = false);
     virtual ~PVXMLSession();
 
     // new functions
-    PTextToSpeech * SetTextToSpeech(PTextToSpeech * tts, PBoolean autoDelete = false);
+    PTextToSpeech * SetTextToSpeech(PTextToSpeech * tts, bool autoDelete = false);
     PTextToSpeech * SetTextToSpeech(const PString & ttsName);
     PTextToSpeech * GetTextToSpeech() const { return m_textToSpeech; }
 
@@ -283,37 +283,37 @@ class PVXMLSession : public PIndirectChannel
     void SetRecordDirectory(const PDirectory & dir) { m_recordDirectory = dir; }
     const PDirectory & GetRecordDirectory() const { return m_recordDirectory; }
 
-    virtual PBoolean Load(const PString & source);
-    virtual PBoolean LoadFile(const PFilePath & file, const PString & firstForm = PString::Empty());
-    virtual PBoolean LoadURL(const PURL & url);
-    virtual PBoolean LoadVXML(const PString & xml, const PString & firstForm = PString::Empty());
-    virtual PBoolean IsLoaded() const { return m_currentXML.get() != NULL; }
+    virtual bool Load(const PString & source);
+    virtual bool LoadFile(const PFilePath & file, const PString & firstForm = PString::Empty());
+    virtual bool LoadURL(const PURL & url);
+    virtual bool LoadVXML(const PString & xml, const PString & firstForm = PString::Empty());
+    virtual bool IsLoaded() const { return m_currentXML.get() != NULL; }
 
     virtual bool Open(const PString & mediaFormat, unsigned sampleRate = 8000, unsigned channels = 1);
-    virtual PBoolean Close();
+    virtual bool Close();
 
     PVXMLChannel * GetAndLockVXMLChannel();
     void UnLockVXMLChannel() { m_sessionMutex.Signal(); }
     PMutex & GetSessionMutex() { return m_sessionMutex; }
 
-    virtual PBoolean LoadGrammar(PVXMLGrammar * grammar);
+    virtual bool LoadGrammar(PVXMLGrammar * grammar);
 
-    virtual PBoolean PlayText(const PString & text, PTextToSpeech::TextType type = PTextToSpeech::Default, PINDEX repeat = 1, PINDEX delay = 0);
+    virtual bool PlayText(const PString & text, PTextToSpeech::TextType type = PTextToSpeech::Default, PINDEX repeat = 1, PINDEX delay = 0);
 
-    virtual PBoolean PlayFile(const PString & fn, PINDEX repeat = 1, PINDEX delay = 0, PBoolean autoDelete = false);
-    virtual PBoolean PlayData(const PBYTEArray & data, PINDEX repeat = 1, PINDEX delay = 0);
-    virtual PBoolean PlayCommand(const PString & data, PINDEX repeat = 1, PINDEX delay = 0);
-    virtual PBoolean PlayResource(const PURL & url, PINDEX repeat = 1, PINDEX delay = 0);
-    virtual PBoolean PlayTone(const PString & toneSpec, PINDEX repeat = 1, PINDEX delay = 0);
-    virtual PBoolean PlayElement(PXMLElement & element);
+    virtual bool PlayFile(const PString & fn, PINDEX repeat = 1, PINDEX delay = 0, bool autoDelete = false);
+    virtual bool PlayData(const PBYTEArray & data, PINDEX repeat = 1, PINDEX delay = 0);
+    virtual bool PlayCommand(const PString & data, PINDEX repeat = 1, PINDEX delay = 0);
+    virtual bool PlayResource(const PURL & url, PINDEX repeat = 1, PINDEX delay = 0);
+    virtual bool PlayTone(const PString & toneSpec, PINDEX repeat = 1, PINDEX delay = 0);
+    virtual bool PlayElement(PXMLElement & element);
 
-    //virtual PBoolean PlayMedia(const PURL & url, PINDEX repeat = 1, PINDEX delay = 0);
-    virtual PBoolean PlaySilence(PINDEX msecs = 0);
-    virtual PBoolean PlaySilence(const PTimeInterval & timeout);
+    //virtual bool PlayMedia(const PURL & url, PINDEX repeat = 1, PINDEX delay = 0);
+    virtual bool PlaySilence(PINDEX msecs = 0);
+    virtual bool PlaySilence(const PTimeInterval & timeout);
 
-    virtual PBoolean PlayStop();
+    virtual bool PlayStop();
 
-    virtual void SetPause(PBoolean pause);
+    virtual void SetPause(bool pause);
     virtual void GetBeepData(PBYTEArray & data, unsigned ms);
 
     virtual void OnUserInput(const PString & str);
@@ -347,36 +347,36 @@ class PVXMLSession : public PIndirectChannel
     virtual void Trigger();
 
 
-    virtual PBoolean TraverseBlock(PXMLElement & element);
-    virtual PBoolean TraverseAudio(PXMLElement & element);
-    virtual PBoolean TraverseBreak(PXMLElement & element);
-    virtual PBoolean TraverseValue(PXMLElement & element);
-    virtual PBoolean TraverseSayAs(PXMLElement & element);
-    virtual PBoolean TraverseGoto(PXMLElement & element);
-    virtual PBoolean TraverseGrammar(PXMLElement & element);
-    virtual PBoolean TraverseRecord(PXMLElement & element);
-    virtual PBoolean TraversedRecord(PXMLElement & element);
-    virtual PBoolean TraverseIf(PXMLElement & element);
-    virtual PBoolean TraversedIf(PXMLElement & element);
-    virtual PBoolean TraverseElseIf(PXMLElement & element);
-    virtual PBoolean TraverseElse(PXMLElement & element);
-    virtual PBoolean TraverseExit(PXMLElement & element);
-    virtual PBoolean TraverseVar(PXMLElement & element);
-    virtual PBoolean TraverseSubmit(PXMLElement & element);
-    virtual PBoolean TraverseMenu(PXMLElement & element);
-    virtual PBoolean TraversedMenu(PXMLElement & element);
-    virtual PBoolean TraverseChoice(PXMLElement & element);
-    virtual PBoolean TraverseProperty(PXMLElement & element);
-    virtual PBoolean TraverseDisconnect(PXMLElement & element);
-    virtual PBoolean TraverseForm(PXMLElement & element);
-    virtual PBoolean TraversedForm(PXMLElement & element);
-    virtual PBoolean TraversePrompt(PXMLElement & element);
-    virtual PBoolean TraversedPrompt(PXMLElement & element);
-    virtual PBoolean TraverseField(PXMLElement & element);
-    virtual PBoolean TraversedField(PXMLElement & element);
-    virtual PBoolean TraverseTransfer(PXMLElement & element);
-    virtual PBoolean TraversedTransfer(PXMLElement & element);
-	virtual PBoolean TraverseScript(PXMLElement & element);
+    virtual bool TraverseBlock(PXMLElement & element);
+    virtual bool TraverseAudio(PXMLElement & element);
+    virtual bool TraverseBreak(PXMLElement & element);
+    virtual bool TraverseValue(PXMLElement & element);
+    virtual bool TraverseSayAs(PXMLElement & element);
+    virtual bool TraverseGoto(PXMLElement & element);
+    virtual bool TraverseGrammar(PXMLElement & element);
+    virtual bool TraverseRecord(PXMLElement & element);
+    virtual bool TraversedRecord(PXMLElement & element);
+    virtual bool TraverseIf(PXMLElement & element);
+    virtual bool TraversedIf(PXMLElement & element);
+    virtual bool TraverseElseIf(PXMLElement & element);
+    virtual bool TraverseElse(PXMLElement & element);
+    virtual bool TraverseExit(PXMLElement & element);
+    virtual bool TraverseVar(PXMLElement & element);
+    virtual bool TraverseSubmit(PXMLElement & element);
+    virtual bool TraverseMenu(PXMLElement & element);
+    virtual bool TraversedMenu(PXMLElement & element);
+    virtual bool TraverseChoice(PXMLElement & element);
+    virtual bool TraverseProperty(PXMLElement & element);
+    virtual bool TraverseDisconnect(PXMLElement & element);
+    virtual bool TraverseForm(PXMLElement & element);
+    virtual bool TraversedForm(PXMLElement & element);
+    virtual bool TraversePrompt(PXMLElement & element);
+    virtual bool TraversedPrompt(PXMLElement & element);
+    virtual bool TraverseField(PXMLElement & element);
+    virtual bool TraversedField(PXMLElement & element);
+    virtual bool TraverseTransfer(PXMLElement & element);
+    virtual bool TraversedTransfer(PXMLElement & element);
+	virtual bool TraverseScript(PXMLElement & element);
 
     __inline PVXMLChannel * GetVXMLChannel() const { return (PVXMLChannel *)readChannel; }
 #if P_VXML_VIDEO
@@ -426,11 +426,11 @@ class PVXMLSession : public PIndirectChannel
       VideoReceiverDevice(PVXMLSession & vxmlSession);
       ~VideoReceiverDevice() { Close(); }
       virtual PStringArray GetDeviceNames() const;
-      virtual PBoolean Open(const PString & deviceName, PBoolean startImmediate = true);
-      virtual PBoolean IsOpen();
-      virtual PBoolean Close();
-      virtual PBoolean SetColourFormat(const PString & colourFormat);
-      virtual PBoolean SetFrameData(const FrameData & frameData);
+      virtual bool Open(const PString & deviceName, bool startImmediate = true);
+      virtual bool IsOpen();
+      virtual bool Close();
+      virtual bool SetColourFormat(const PString & colourFormat);
+      virtual bool SetFrameData(const FrameData & frameData);
       int GetAnalayserInstance() const { return m_analayserInstance; }
     protected:
       PVXMLSession & m_vxmlSession;
@@ -445,10 +445,10 @@ class PVXMLSession : public PIndirectChannel
       VideoSenderDevice();
       ~VideoSenderDevice() { Close(); }
       virtual void SetActualDevice(PVideoInputDevice * actualDevice, bool autoDelete = true);
-      virtual PBoolean Start();
+      virtual bool Start();
       bool IsRunning() const { return m_running; }
     protected:
-      virtual bool InternalGetFrameData(BYTE * buffer, PINDEX & bytesReturned, bool & keyFrame, bool wait);
+      virtual bool InternalGetFrameData(uint8_t * buffer, PINDEX & bytesReturned, bool & keyFrame, bool wait);
       bool m_running;
     };
     VideoSenderDevice m_videoSender;
@@ -514,12 +514,12 @@ class PVXMLRecordable : public PObject
   public:
     PVXMLRecordable();
 
-    virtual PBoolean Open(const PString & arg) = 0;
+    virtual bool Open(const PString & arg) = 0;
 
     virtual bool OnStart(PVXMLChannel & incomingChannel) = 0;
     virtual void OnStop() { }
 
-    virtual PBoolean OnFrame(PBoolean /*isSilence*/) { return false; }
+    virtual bool OnFrame(bool /*isSilence*/) { return false; }
 
     const PTimeInterval & GetFinalSilence() const { return m_finalSilence; }
     void SetFinalSilence(const PTimeInterval & v) { m_finalSilence = v > 0 ? v : 60000; }
@@ -540,9 +540,9 @@ class PVXMLRecordableFilename : public PVXMLRecordable
 {
   PCLASSINFO(PVXMLRecordableFilename, PVXMLRecordable);
   public:
-    PBoolean Open(const PString & arg);
+    bool Open(const PString & arg);
     bool OnStart(PVXMLChannel & incomingChannel);
-    PBoolean OnFrame(PBoolean isSilence);
+    bool OnFrame(bool isSilence);
 
   protected:
     PFilePath m_fileName;
@@ -557,7 +557,7 @@ class PVXMLPlayable : public PObject
     PVXMLPlayable();
     ~PVXMLPlayable();
 
-    virtual PBoolean Open(PVXMLChannel & chan, const PString & arg, PINDEX delay, PINDEX repeat, PBoolean autoDelete);
+    virtual bool Open(PVXMLChannel & chan, const PString & arg, PINDEX delay, PINDEX repeat, bool autoDelete);
 
     virtual bool OnStart() = 0;
     virtual bool OnRepeat();
@@ -603,7 +603,7 @@ class PVXMLPlayableURL : public PVXMLPlayable
 {
   PCLASSINFO(PVXMLPlayableURL, PVXMLPlayable);
   public:
-    virtual PBoolean Open(PVXMLChannel & chan, const PString & arg, PINDEX delay, PINDEX repeat, PBoolean autoDelete);
+    virtual bool Open(PVXMLChannel & chan, const PString & arg, PINDEX delay, PINDEX repeat, bool autoDelete);
     virtual bool OnStart();
   protected:
     PURL m_url;
@@ -615,7 +615,7 @@ class PVXMLPlayableData : public PVXMLPlayable
 {
   PCLASSINFO(PVXMLPlayableData, PVXMLPlayable);
   public:
-    virtual PBoolean Open(PVXMLChannel & chan, const PString & arg, PINDEX delay, PINDEX repeat, PBoolean autoDelete);
+    virtual bool Open(PVXMLChannel & chan, const PString & arg, PINDEX delay, PINDEX repeat, bool autoDelete);
     void SetData(const PBYTEArray & data);
     virtual bool OnStart();
     virtual bool OnRepeat();
@@ -633,7 +633,7 @@ class PVXMLPlayableTone : public PVXMLPlayableData
 {
   PCLASSINFO(PVXMLPlayableTone, PVXMLPlayableData);
   public:
-    virtual PBoolean Open(PVXMLChannel & chan, const PString & arg, PINDEX delay, PINDEX repeat, PBoolean autoDelete);
+    virtual bool Open(PVXMLChannel & chan, const PString & arg, PINDEX delay, PINDEX repeat, bool autoDelete);
   protected:
     PTones m_tones;
 };
@@ -647,7 +647,7 @@ class PVXMLPlayableCommand : public PVXMLPlayable
 {
   PCLASSINFO(PVXMLPlayableCommand, PVXMLPlayable);
   public:
-    virtual PBoolean Open(PVXMLChannel & chan, const PString & arg, PINDEX delay, PINDEX repeat, PBoolean autoDelete);
+    virtual bool Open(PVXMLChannel & chan, const PString & arg, PINDEX delay, PINDEX repeat, bool autoDelete);
     virtual bool OnStart();
     virtual void OnStop();
 
@@ -661,7 +661,7 @@ class PVXMLPlayableFile : public PVXMLPlayable
 {
   PCLASSINFO(PVXMLPlayableFile, PVXMLPlayable);
   public:
-    virtual PBoolean Open(PVXMLChannel & chan, const PString & arg, PINDEX delay, PINDEX repeat, PBoolean autoDelete);
+    virtual bool Open(PVXMLChannel & chan, const PString & arg, PINDEX delay, PINDEX repeat, bool autoDelete);
     virtual bool OnStart();
     virtual bool OnRepeat();
     virtual void OnStop();
@@ -676,8 +676,8 @@ class PVXMLPlayableFileList : public PVXMLPlayableFile
   PCLASSINFO(PVXMLPlayableFileList, PVXMLPlayableFile);
   public:
     PVXMLPlayableFileList();
-    virtual PBoolean Open(PVXMLChannel & chan, const PString & arg, PINDEX delay, PINDEX repeat, PBoolean autoDelete);
-    virtual PBoolean Open(PVXMLChannel & chan, const PStringArray & filenames, PINDEX delay, PINDEX repeat, PBoolean autoDelete);
+    virtual bool Open(PVXMLChannel & chan, const PString & arg, PINDEX delay, PINDEX repeat, bool autoDelete);
+    virtual bool Open(PVXMLChannel & chan, const PStringArray & filenames, PINDEX delay, PINDEX repeat, bool autoDelete);
     virtual bool OnStart();
     virtual bool OnRepeat();
     virtual void OnStop();
@@ -703,10 +703,10 @@ class PVXMLChannel : public PDelayChannel
     virtual bool Open(PVXMLSession * session, unsigned sampleRate, unsigned channels);
 
     // overrides from PIndirectChannel
-    virtual PBoolean IsOpen() const;
-    virtual PBoolean Close();
-    virtual PBoolean Read(void * buffer, PINDEX amount);
-    virtual PBoolean Write(const void * buf, PINDEX len);
+    virtual bool IsOpen() const;
+    virtual bool Close();
+    virtual bool Read(void * buffer, PINDEX amount);
+    virtual bool Write(const void * buf, PINDEX len);
 
     // new functions
     virtual PString GetAudioFormat() const = 0;
@@ -722,34 +722,34 @@ class PVXMLChannel : public PDelayChannel
     virtual PChannel * OpenMediaFile(const PFilePath & fn, bool recording);
 
     // Incoming channel functions
-    virtual PBoolean WriteFrame(const void * buf, PINDEX len) = 0;
-    virtual PBoolean IsSilenceFrame(const void * buf, PINDEX len) const = 0;
+    virtual bool WriteFrame(const void * buf, PINDEX len) = 0;
+    virtual bool IsSilenceFrame(const void * buf, PINDEX len) const = 0;
 
     virtual bool QueueRecordable(PVXMLRecordable * newItem);
     bool EndRecording(bool timedOut);
     bool IsRecording() const { return m_recordable != NULL; }
 
     // Outgoing channel functions
-    virtual PBoolean ReadFrame(void * buffer, PINDEX amount) = 0;
+    virtual bool ReadFrame(void * buffer, PINDEX amount) = 0;
     virtual PINDEX CreateSilenceFrame(void * buffer, PINDEX amount) = 0;
     virtual void GetBeepData(PBYTEArray &, unsigned) { }
 
-    virtual PBoolean QueueResource(const PURL & url, PINDEX repeat= 1, PINDEX delay = 0);
+    virtual bool QueueResource(const PURL & url, PINDEX repeat= 1, PINDEX delay = 0);
 
-    virtual PBoolean QueuePlayable(const PString & type, const PString & str, PINDEX repeat = 1, PINDEX delay = 0, PBoolean autoDelete = false);
-    virtual PBoolean QueuePlayable(PVXMLPlayable * newItem);
-    virtual PBoolean QueueData(const PBYTEArray & data, PINDEX repeat = 1, PINDEX delay = 0);
+    virtual bool QueuePlayable(const PString & type, const PString & str, PINDEX repeat = 1, PINDEX delay = 0, bool autoDelete = false);
+    virtual bool QueuePlayable(PVXMLPlayable * newItem);
+    virtual bool QueueData(const PBYTEArray & data, PINDEX repeat = 1, PINDEX delay = 0);
 
-    virtual PBoolean QueueFile(const PString & fn, PINDEX repeat = 1, PINDEX delay = 0, PBoolean autoDelete = false)
+    virtual bool QueueFile(const PString & fn, PINDEX repeat = 1, PINDEX delay = 0, bool autoDelete = false)
     { return QueuePlayable("File", fn, repeat, delay, autoDelete); }
 
-    virtual PBoolean QueueCommand(const PString & cmd, PINDEX repeat = 1, PINDEX delay = 0)
+    virtual bool QueueCommand(const PString & cmd, PINDEX repeat = 1, PINDEX delay = 0)
     { return QueuePlayable("Command", cmd, repeat, delay, true); }
 
     virtual void FlushQueue();
-    virtual PBoolean IsPlaying() const { return m_currentPlayItem != NULL || m_playQueue.GetSize() > 0; }
+    virtual bool IsPlaying() const { return m_currentPlayItem != NULL || m_playQueue.GetSize() > 0; }
 
-    void SetPause(PBoolean pause) { m_paused = pause; }
+    void SetPause(bool pause) { m_paused = pause; }
     void SetSilence(unsigned msecs);
 
   protected:
@@ -770,7 +770,7 @@ class PVXMLChannel : public PDelayChannel
     PSimpleTimer    m_silenceTimer;
 
 #if P_WAVFILE
-    P_REMOVE_VIRTUAL(PWAVFile*,CreateWAVFile(const PFilePath&,PBoolean),NULL);
+    P_REMOVE_VIRTUAL(PWAVFile*,CreateWAVFile(const PFilePath&,bool),NULL);
     P_REMOVE_VIRTUAL(PString,AdjustWavFilename(const PString&),NULL);
 #endif
 };

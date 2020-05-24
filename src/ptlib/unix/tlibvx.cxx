@@ -3,7 +3,7 @@
  *
  * Thread library implementation for VxWorks
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * The contents of this file are subject to the Mozilla Public License
  * Version 1.0 (the "License"); you may not use this file except in
@@ -15,7 +15,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -262,7 +262,7 @@ void PThread::Terminate()
 }
 
 
-PBoolean PThread::IsTerminated() const
+bool PThread::IsTerminated() const
 {
   STATUS stat = ERROR;
   if (PX_threadId != 0)
@@ -280,7 +280,7 @@ void PThread::WaitForTermination() const
 }
 
 
-PBoolean PThread::WaitForTermination(const PTimeInterval & maxWait) const
+bool PThread::WaitForTermination(const PTimeInterval & maxWait) const
 {
   if (PX_threadId == 0)
     return true;
@@ -295,7 +295,7 @@ PBoolean PThread::WaitForTermination(const PTimeInterval & maxWait) const
 }
 
 
-void PThread::Suspend(PBoolean susp)
+void PThread::Suspend(bool susp)
 {
   if (!IsTerminated()) {
     if (susp) {
@@ -323,9 +323,9 @@ void PThread::Resume()
 }
 
 
-PBoolean PThread::IsSuspended() const
+bool PThread::IsSuspended() const
 {
-  PBoolean isSuspended = false;
+  bool isSuspended = false;
   if (!IsTerminated())
     isSuspended = ::taskIsSuspended(PX_threadId);
   else
@@ -538,7 +538,7 @@ void PSemaphore::Wait()
 }
 
 
-PBoolean PSemaphore::Wait(const PTimeInterval & timeout)
+bool PSemaphore::Wait(const PTimeInterval & timeout)
 {
   long wait;
 	if (timeout == PMaxTimeInterval) {
@@ -606,7 +606,7 @@ void PMutex::Wait()
 	PAssertOS(result == OK);
 }
 
-PBoolean PMutex::Wait(const PTimeInterval & timeout)
+bool PMutex::Wait(const PTimeInterval & timeout)
 {
   long wait;
 	if (timeout == PMaxTimeInterval) {

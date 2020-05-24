@@ -3,7 +3,7 @@
  *
  * I/O channel classes implementation
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -16,25 +16,25 @@
 #include "../common/pchannel.cxx"
 #define new PNEW
 
-PBoolean PChannel::Read(void *, PINDEX)
+bool PChannel::Read(void *, PINDEX)
 {
   PAssertAlways(PUnimplementedFunction);
   return false;
 }
 
 
-PBoolean PChannel::Write(const void *, PINDEX)
+bool PChannel::Write(const void *, PINDEX)
 {
   PAssertAlways(PUnimplementedFunction);
   return false;
 }
 
-PBoolean PChannel::Write(const void * buf, PINDEX len, const void * /*mark*/)
+bool PChannel::Write(const void * buf, PINDEX len, const void * /*mark*/)
 {
   return Write(buf,len);
 }
 
-PBoolean PChannel::Close()
+bool PChannel::Close()
 {
    ::shutdown(os_handle,2);
    os_handle=-1;
@@ -59,12 +59,12 @@ PString PChannel::GetErrorText() const
   return GetErrorText(lastError, osError);
 }
 
-PBoolean PChannel::ConvertOSError(int err)
+bool PChannel::ConvertOSError(int err)
 {
   return ConvertOSError(err, lastError, osError);
 }
 
-PBoolean PChannel::ConvertOSError(int err, Errors & lastError, int & osError)
+bool PChannel::ConvertOSError(int err, Errors & lastError, int & osError)
 
 {
   osError = (err >= 0) ? 0 : errno;
@@ -118,12 +118,12 @@ PBoolean PChannel::ConvertOSError(int err, Errors & lastError, int & osError)
   return false;
 }
 
-PBoolean PChannel::PXSetIOBlock (int type, const PTimeInterval & timeout)
+bool PChannel::PXSetIOBlock (int type, const PTimeInterval & timeout)
 {
   return PXSetIOBlock(type, os_handle, timeout);
 }
 
-PBoolean PChannel::PXSetIOBlock (int type, int blockHandle, const PTimeInterval & timeout)
+bool PChannel::PXSetIOBlock (int type, int blockHandle, const PTimeInterval & timeout)
 {
   if (blockHandle < 0) {
     lastError = NotOpen;

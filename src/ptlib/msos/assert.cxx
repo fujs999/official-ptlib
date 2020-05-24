@@ -3,7 +3,7 @@
  *
  * Function to implement assert clauses.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -61,7 +61,7 @@
 
     DWORD wndProcess;
     GetWindowThreadProcessId(hWnd, &wndProcess);
-    if (wndProcess != (DWORD)thisProcess)
+    if (wndProcess != (uint32_t)thisProcess)
       return true;
 
     PTRACE(2, "PTLib", "Awaiting key press on exit.");
@@ -107,14 +107,14 @@
       BOOL (__stdcall *m_SymCleanup)(
         __in HANDLE hProcess
       );
-      DWORD (__stdcall *m_SymGetOptions)(
+      uint32_t (__stdcall *m_SymGetOptions)(
         VOID
       );
-      DWORD (__stdcall *m_SymSetOptions)(
-        __in DWORD   SymOptions
+      uint32_t (__stdcall *m_SymSetOptions)(
+        __in uint32_t   SymOptions
       );
       BOOL (__stdcall *m_StackWalk64)(
-        __in DWORD MachineType,
+        __in uint32_t MachineType,
         __in HANDLE hProcess,
         __in HANDLE hThread,
         __inout LPSTACKFRAME64 StackFrame,
@@ -175,7 +175,7 @@
         // Get the directory the .exe file is in
         char filename[_MAX_PATH];
         if (GetModuleFileNameEx(m_hProcess, NULL, filename, sizeof(filename)) == 0) {
-          DWORD err = ::GetLastError();
+          uint32_t err = ::GetLastError();
           strm << "\n    GetModuleFileNameEx failed, error=" << err;
           return false;
         }
@@ -203,7 +203,7 @@
 
         // Initialise the symbols with path for PDB files.
         if (!m_SymInitialize(m_hProcess, path.str().c_str(), TRUE)) {
-          DWORD err = ::GetLastError();
+          uint32_t err = ::GetLastError();
           strm << "\n    SymInitialize failed, error=" << err;
           return false;
         }
@@ -233,7 +233,7 @@
         symbol->SizeOfStruct = sizeof(IMAGEHLP_SYMBOL64);
         symbol->MaxNameLength = sizeof(buffer) - sizeof(IMAGEHLP_SYMBOL64);
         DWORD64 displacement = 0;
-        DWORD error = 0;
+        uint32_t error = 0;
         if (m_SymGetSymFromAddr64(m_hProcess, addrPC, &displacement, symbol))
           strm << symbol->Name;
         else {
@@ -293,7 +293,7 @@
         else {
           hThread = OpenThread(THREAD_QUERY_INFORMATION|THREAD_GET_CONTEXT|THREAD_SUSPEND_RESUME, FALSE, id);
           if (hThread == NULL) {
-            DWORD err = ::GetLastError();
+            uint32_t err = ::GetLastError();
             strm << "\n    No thread: id=" << id << " (0x" << std::hex << id << std::dec << "), error=" << err;
             return;
           }
@@ -301,7 +301,7 @@
           if (!GetThreadContext(hThread, &threadContext)) {
             if (resumeCount >= 0)
               ResumeThread(hThread);
-            DWORD err = ::GetLastError();
+            uint32_t err = ::GetLastError();
             strm << "\n    No context for thread: id=" << id << " (0x" << std::hex << id << std::dec << "), error=" << err;
             return;
           }
@@ -314,15 +314,15 @@
         frame.AddrFrame.Mode = AddrModeFlat;
         #ifdef _M_IX86
           // normally, call ImageNtHeader() and use machine info from PE header
-          DWORD imageType = IMAGE_FILE_MACHINE_I386;
+          uint32_t imageType = IMAGE_FILE_MACHINE_I386;
           frame.AddrPC.Offset = threadContext.Eip;
           frame.AddrFrame.Offset = frame.AddrStack.Offset = threadContext.Esp;
         #elif _M_X64
-          DWORD imageType = IMAGE_FILE_MACHINE_AMD64;
+          uint32_t imageType = IMAGE_FILE_MACHINE_AMD64;
           frame.AddrPC.Offset = threadContext.Rip;
           frame.AddrFrame.Offset = frame.AddrStack.Offset = threadContext.Rsp;
         #elif _M_IA64
-          DWORD imageType = IMAGE_FILE_MACHINE_IA64;
+          uint32_t imageType = IMAGE_FILE_MACHINE_IA64;
           frame.AddrPC.Offset = threadContext.StIIP;
           frame.AddrFrame.Offset = threadContext.IntSp;
           frame.AddrBStore.Offset = threadContext.RsBSP;
@@ -343,7 +343,7 @@
                              m_SymFunctionTableAccess64,
                              m_SymGetModuleBase64,
                              NULL)) {
-            DWORD err = ::GetLastError();
+            uint32_t err = ::GetLastError();
             strm << "\n    StackWalk64 failed: error=" << err;
             break;
           }

@@ -3,7 +3,7 @@
  *
  * Asynchronous serial I/O channel class.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -28,7 +28,7 @@
  */
 
   public:
-    PBoolean Close();
+    bool Close();
 
   private:
 #ifndef P_VXWORKS
@@ -36,9 +36,9 @@
     struct termios Termio;
 #endif // !P_VXWORKS
 
-    DWORD  baudRate;
-    BYTE   dataBits;
+    uint32_t  baudRate;
+    uint8_t   dataBits;
     Parity parityBits;
-    BYTE   stopBits;
+    uint8_t   stopBits;
 
 // End Of File ////////////////////////////////////////////////////////////////

@@ -63,7 +63,7 @@ PGPS::~PGPS()
 void PGPS::Main()
 {
     
-    DWORD dwRet = 0;
+    uint32_t dwRet = 0;
     GPS_POSITION gps_Position = {0};
 
     HANDLE gpsHandles[GPS_CONTROLLER_EVENT_COUNT] = {s_hNewLocationData, 
@@ -101,7 +101,7 @@ void PGPS::Main()
   }
 }
 
-PBoolean PGPS::Start()
+bool PGPS::Start()
 {
   PWaitAndSignal m(gpsMutex);
 
@@ -126,7 +126,7 @@ PBoolean PGPS::Start()
   return gpsRunning;
 }
 
-PBoolean PGPS::Stop()
+bool PGPS::Stop()
 {
   PWaitAndSignal m(gpsMutex);
 

@@ -3,7 +3,7 @@
  *
  * XML/RPC support
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 2002 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -66,7 +66,7 @@ PXMLRPCServerResource::PXMLRPCServerResource(
 {
 }
 
-PBoolean PXMLRPCServerResource::SetMethod(const PString & methodName, const PNotifier & func)
+bool PXMLRPCServerResource::SetMethod(const PString & methodName, const PNotifier & func)
 {
   PWaitAndSignal m(methodMutex);
 
@@ -86,12 +86,12 @@ PBoolean PXMLRPCServerResource::SetMethod(const PString & methodName, const PNot
   return true;
 }
 
-PBoolean PXMLRPCServerResource::LoadHeaders(PHTTPRequest & /*request*/)    // Information on this request.
+bool PXMLRPCServerResource::LoadHeaders(PHTTPRequest & /*request*/)    // Information on this request.
 {
   return true;
 }
 
-PBoolean PXMLRPCServerResource::OnPOSTData(PHTTPRequest & request,
+bool PXMLRPCServerResource::OnPOSTData(PHTTPRequest & request,
                                 const PStringToString & /*data*/)
 {
   PString reply;
@@ -113,7 +113,7 @@ void PXMLRPCServerResource::OnXMLRPCRequest(const PString & body, PString & repl
 {
   // get body of message here
   PXMLRPCBlock request;
-  PBoolean ok = request.Load(body);
+  bool ok = request.Load(body);
   
   PTRACE(4, "XMLRPC\tOnXMLRPCRequest() received XML request:" << body);
   

@@ -3,7 +3,7 @@
  *
  * HyperText Transport Protocol classes.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-2002 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -79,7 +79,7 @@ class PHTTPSpace : public PContainer
        @return
        true if resource added, false if failed.
      */
-    PBoolean AddResource(
+    bool AddResource(
       PHTTPResource * resource, ///< Resource to add to the name space.
       AddOptions overwrite = ErrorOnExist
         ///< Flag to overwrite an existing resource if it already exists.
@@ -92,7 +92,7 @@ class PHTTPSpace : public PContainer
        @return
        true if resource deleted, false if failed.
      */
-    PBoolean DelResource(
+    bool DelResource(
       const PURL & url          ///< URL to search for in the name space.
     );
 
@@ -144,7 +144,7 @@ class PHTTPSpace : public PContainer
     } * root;
 
   private:
-    PBoolean SetSize(PINDEX) { return false; }
+    bool SetSize(PINDEX) { return false; }
 };
 
 #ifdef TRACE
@@ -316,16 +316,16 @@ class PHTTPClientAuthentication : public PObject
       const PObject & other
     ) const;
 
-    virtual PBoolean Parse(
+    virtual bool Parse(
       const PString & auth,
-      PBoolean proxy
+      bool proxy
     ) = 0;
 
-    virtual PBoolean Authorise(
+    virtual bool Authorise(
       AuthObject & pdu
     ) const =  0;
 
-    virtual PBoolean IsProxy() const               { return isProxy; }
+    virtual bool IsProxy() const               { return isProxy; }
 
     virtual PString GetUsername() const   { return username; }
     virtual PString GetPassword() const   { return password; }
@@ -343,7 +343,7 @@ class PHTTPClientAuthentication : public PObject
 
 
   protected:
-    PBoolean  isProxy;
+    bool  isProxy;
     PString   username;
     PString   password;
 };
@@ -382,12 +382,12 @@ class PHTTPClientBasicAuthentication : public PHTTPClientAuthentication
       const PObject & other
     ) const;
 
-    virtual PBoolean Parse(
+    virtual bool Parse(
       const PString & auth,
-      PBoolean proxy
+      bool proxy
     );
 
-    virtual PBoolean Authorise(
+    virtual bool Authorise(
       AuthObject & pdu
     ) const;
 };
@@ -408,12 +408,12 @@ class PHTTPClientDigestAuthentication : public PHTTPClientAuthentication
       const PObject & other
     ) const;
 
-    virtual PBoolean Parse(
+    virtual bool Parse(
       const PString & auth,
-      PBoolean proxy
+      bool proxy
     );
 
-    virtual PBoolean Authorise(
+    virtual bool Authorise(
       AuthObject & pdu
     ) const;
 
@@ -919,7 +919,7 @@ class PWebSocket : public PIndirectChannel
         true indicates that at least one character was read from the channel.
         false means no bytes were read due to timeout or some other I/O error.
     */
-    virtual PBoolean Read(
+    virtual bool Read(
       void * buf,   ///< Pointer to a block of memory to receive the read bytes.
       PINDEX len    ///< Maximum number of bytes to read into the buffer.
     );
@@ -935,7 +935,7 @@ class PWebSocket : public PIndirectChannel
         @return
         true if at least len bytes were written to the channel.
     */
-    virtual PBoolean Write(
+    virtual bool Write(
       const void * buf, ///< Pointer to a block of memory to write.
       PINDEX len        ///< Number of bytes to write.
     );
@@ -1064,7 +1064,7 @@ class PHTTPConnectionInfo : public PObject
     const PMIMEInfo & GetMIME() const { return mimeInfo; }
     void SetMIME(const PString & tag, const PString & value);
 
-    PBoolean IsCompatible(int major, int minor) const;
+    bool IsCompatible(int major, int minor) const;
 
     bool IsPersistent() const         { return isPersistent; }
     bool WasPersistent() const        { return wasPersistent; }
@@ -1108,7 +1108,7 @@ class PHTTPConnectionInfo : public PObject
     void ClearWebSocket() { m_isWebSocket = false; }
 
   protected:
-    PBoolean Initialise(PHTTPServer & server, PString & args);
+    bool Initialise(PHTTPServer & server, PString & args);
     bool DecodeMultipartFormInfo() { return mimeInfo.DecodeMultiPartList(m_multipartFormInfo, entityBody); }
 
     PHTTP::Commands commandCode;
@@ -1209,7 +1209,7 @@ class PHTTPServer : public PHTTP
        allow persistent mode, or the client did not request it
        timed out
      */
-    virtual PBoolean ProcessCommand();
+    virtual bool ProcessCommand();
 
     /** Handle a GET command from a client.
 
@@ -1280,7 +1280,7 @@ class PHTTPServer : public PHTTP
        If there is no ContentLength field in the response, this value must
        be false for correct operation.
      */
-    virtual PBoolean OnProxy(
+    virtual bool OnProxy(
       const PHTTPConnectionInfo & conInfo   ///<  HTTP connection information
     );
 
@@ -1298,7 +1298,7 @@ class PHTTPServer : public PHTTP
        @return
        true if the connection may persist, false if the connection must close
      */
-    virtual PBoolean OnUnknown(
+    virtual bool OnUnknown(
       const PCaselessString & command,         ///< Complete command line received.
       const PHTTPConnectionInfo & connectInfo  ///< HTTP connection information
     );
@@ -1351,7 +1351,7 @@ class PHTTPServer : public PHTTP
        @return
        true if the connection may persist, false if the connection must close
      */
-    virtual PBoolean OnError(
+    virtual bool OnError(
       StatusCode code,                         ///< Status code for the error response.
       const PCaselessString & extra,           ///< Extra information included in the response.
       const PHTTPConnectionInfo & connectInfo  ///< HTTP connection information
@@ -1444,9 +1444,9 @@ class PHTTPServer : public PHTTP
     typedef std::map<std::string, WebSocketNotifier> WebSocketNotifierMap;
     WebSocketNotifierMap m_webSocketNotifiers;
 
-    P_REMOVE_VIRTUAL(PBoolean,OnGET(const PURL&,const PMIMEInfo&, const PHTTPConnectionInfo&),false);
-    P_REMOVE_VIRTUAL(PBoolean,OnHEAD(const PURL&,const PMIMEInfo&,const PHTTPConnectionInfo&),false);
-    P_REMOVE_VIRTUAL(PBoolean,OnPOST(const PURL&,const PMIMEInfo&,const PStringToString&,const PHTTPConnectionInfo&),false);
+    P_REMOVE_VIRTUAL(bool,OnGET(const PURL&,const PMIMEInfo&, const PHTTPConnectionInfo&),false);
+    P_REMOVE_VIRTUAL(bool,OnHEAD(const PURL&,const PMIMEInfo&,const PHTTPConnectionInfo&),false);
+    P_REMOVE_VIRTUAL(bool,OnPOST(const PURL&,const PMIMEInfo&,const PStringToString&,const PHTTPConnectionInfo&),false);
 };
 
 
@@ -1473,13 +1473,13 @@ public:
   /** Start listening for HTTP connections.
     */
   bool ListenForHTTP(
-    WORD port,                ///< Port to listen on, zero picks a random one
+    uint16_t port,                ///< Port to listen on, zero picks a random one
     PSocket::Reusability reuse = PSocket::CanReuseAddress,  ///< Can/Cant listen more than once.
     unsigned queueSize = 10   ///< Number of pending accepts that may be queued.
   );
   bool ListenForHTTP(
     const PString & interfaces, ///< Comma separated list of interfaces to listen on.
-    WORD port,                  ///< Port to listen on, zero picks a random one
+    uint16_t port,                  ///< Port to listen on, zero picks a random one
     PSocket::Reusability reuse = PSocket::CanReuseAddress,  ///< Can/Cant listen more than once.
     unsigned queueSize = 10     ///< Number of pending accepts that may be queued.
   );
@@ -1491,7 +1491,7 @@ public:
   bool IsListening() const { return !m_httpListeningSockets.IsEmpty() && m_httpListeningSockets.front().IsOpen(); }
 
   /// Get the port we are lkstening on.
-  WORD GetPort() const { return m_httpListeningSockets.IsEmpty() ? 0 : m_httpListeningSockets.front().GetPort(); }
+  uint16_t GetPort() const { return m_httpListeningSockets.IsEmpty() ? 0 : m_httpListeningSockets.front().GetPort(); }
 
   /** Call back to create transport socket, or TLS, channel.
     */
@@ -1532,7 +1532,7 @@ protected:
 
   PHTTPSpace         m_httpNameSpace;
   PString            m_listenerInterfaces;
-  WORD               m_listenerPort;
+  uint16_t               m_listenerPort;
   PThread          * m_listenerThread;
   PSocketList        m_httpListeningSockets;
   PList<PHTTPServer> m_httpServers;
@@ -1606,7 +1606,7 @@ class PHTTPRequest : public PHTTPConnectionInfo
     PINDEX             contentSize;   ///< Size of the body of the resource data.
     PIPSocket::Address origin;        ///< IP address of origin host for request
     PIPSocket::Address localAddr;     ///< IP address of local interface for request
-    WORD               localPort;     ///< Port number of local server for request
+    uint16_t               localPort;     ///< Port number of local server for request
     PTime              m_arrivalTime; ///< Time of arrival of the HTTP request
 };
 
@@ -1639,7 +1639,7 @@ class PHTTPAuthority : public PObject
        @return
        true if the user and password are authorised in the realm.
      */
-    virtual PBoolean Validate(
+    virtual bool Validate(
       const PHTTPRequest & request,  ///< Request information.
       const PString & authInfo       ///< Authority information string.
     ) const = 0;
@@ -1653,7 +1653,7 @@ class PHTTPAuthority : public PObject
        @return
        true if the authorisation in the realm is to be applied.
      */
-    virtual PBoolean IsActive() const;
+    virtual bool IsActive() const;
 
   protected:
     static void DecodeBasicAuthority(
@@ -1711,7 +1711,7 @@ class PHTTPSimpleAuth : public PHTTPAuthority
        @return
        true if the user and password are authorised in the realm.
      */
-    virtual PBoolean Validate(
+    virtual bool Validate(
       const PHTTPRequest & request,  ///< Request information.
       const PString & authInfo       ///< Authority information string.
     ) const;
@@ -1725,7 +1725,7 @@ class PHTTPSimpleAuth : public PHTTPAuthority
        @return
        true if the authorisation in the realm is to be applied.
      */
-    virtual PBoolean IsActive() const;
+    virtual bool IsActive() const;
 
     /** Get the realm or name space for the user authorisation name and
        password as required by the basic authorisation system of HTTP/1.0.
@@ -1806,7 +1806,7 @@ class PHTTPMultiSimpAuth : public PHTTPAuthority
        @return
        true if the user and password are authorised in the realm.
      */
-    virtual PBoolean Validate(
+    virtual bool Validate(
       const PHTTPRequest & request,  ///< Request information.
       const PString & authInfo       ///< Authority information string.
     ) const;
@@ -1820,7 +1820,7 @@ class PHTTPMultiSimpAuth : public PHTTPAuthority
        @return
        true if the authorisation in the realm is to be applied.
      */
-    virtual PBoolean IsActive() const;
+    virtual bool IsActive() const;
 
     /** Get the user name allocated to this simple authorisation.
 
@@ -1922,7 +1922,7 @@ class PHTTPResource : public PObject
        @return
        Hit count for the resource.
      */
-    DWORD GetHitCount() const { return m_hitCount; }
+    uint32_t GetHitCount() const { return m_hitCount; }
 
     /// Clear the hit count for the resource.
     void ClearHitCount() { m_hitCount = 0; }
@@ -2029,7 +2029,7 @@ class PHTTPResource : public PObject
        If there is no ContentLength field in the response, this value must
        be false for correct operation.
     */
-    virtual PBoolean OnPOSTData(
+    virtual bool OnPOSTData(
       PHTTPRequest & request,        ///< request information
       const PStringToString & data   ///< Variables in the POST data.
     );
@@ -2040,7 +2040,7 @@ class PHTTPResource : public PObject
        @return
        true if has been modified since.
      */
-    virtual PBoolean IsModifiedSince(
+    virtual bool IsModifiedSince(
       const PTime & when    ///< Time to see if modified later than
     );
 
@@ -2049,7 +2049,7 @@ class PHTTPResource : public PObject
        @return
        Status of load operation.
      */
-    virtual PBoolean GetExpirationDate(
+    virtual bool GetExpirationDate(
       PTime & when          ///< Time that the resource expires
     );
 
@@ -2072,7 +2072,7 @@ class PHTTPResource : public PObject
        @return
        true if all OK, false if an error occurred.
      */
-    virtual PBoolean LoadHeaders(
+    virtual bool LoadHeaders(
       PHTTPRequest & request    ///<  Information on this request.
     );
 
@@ -2093,7 +2093,7 @@ class PHTTPResource : public PObject
        @return
        true if there is still more to load.
      */
-    virtual PBoolean LoadData(
+    virtual bool LoadData(
       PHTTPRequest & request,    ///<  Information on this request.
       PCharArray & data          ///<  Data used in reply.
     );
@@ -2129,7 +2129,7 @@ class PHTTPResource : public PObject
        @return
        true if the connection may persist, false if the connection must close
      */
-    virtual PBoolean Post(
+    virtual bool Post(
       PHTTPRequest & request,       ///<  Information on this request.
       const PStringToString & data, ///<  Variables in the POST data.
       PHTML & replyMessage          ///<  Reply message for post.
@@ -2168,12 +2168,12 @@ class PHTTPResource : public PObject
   protected:
     /** See if the resource is authorised given the mime info
      */
-    virtual PBoolean CheckAuthority(
+    virtual bool CheckAuthority(
       PHTTPServer & server,               ///<  Server to send response to.
       const PHTTPRequest & request,       ///<  Information on this request.
       const PHTTPConnectionInfo & conInfo ///<  Information on the connection
     );
-    static PBoolean CheckAuthority(
+    static bool CheckAuthority(
                    PHTTPAuthority & authority,
                       PHTTPServer & server,
                const PHTTPRequest & request,
@@ -2195,11 +2195,11 @@ class PHTTPResource : public PObject
     PStringOptions   m_corsHeaders; ///< Cross-Origin Resource Sharing (CORS) headers
     atomic<unsigned> m_hitCount;    ///< Count of number of times resource was accessed. 
 
-    P_REMOVE_VIRTUAL(PBoolean,OnGET(PHTTPServer&,const PURL&,const PMIMEInfo&,const PHTTPConnectionInfo&),false);
-    P_REMOVE_VIRTUAL(PBoolean,OnHEAD(PHTTPServer&,const PURL&,const PMIMEInfo&,const PHTTPConnectionInfo &),false);
-    P_REMOVE_VIRTUAL(PBoolean,OnGETOrHEAD(PHTTPServer&,const PURL&,const PMIMEInfo&,const PHTTPConnectionInfo&,PBoolean),false);
-    P_REMOVE_VIRTUAL(PBoolean,OnPOST(PHTTPServer&,const PURL&,const PMIMEInfo&,const PStringToString&,const PHTTPConnectionInfo&),false);
-    P_REMOVE_VIRTUAL(PBoolean,OnGETData(PHTTPServer&,const PURL&,const PHTTPConnectionInfo&,PHTTPRequest&),false);
+    P_REMOVE_VIRTUAL(bool,OnGET(PHTTPServer&,const PURL&,const PMIMEInfo&,const PHTTPConnectionInfo&),false);
+    P_REMOVE_VIRTUAL(bool,OnHEAD(PHTTPServer&,const PURL&,const PMIMEInfo&,const PHTTPConnectionInfo &),false);
+    P_REMOVE_VIRTUAL(bool,OnGETOrHEAD(PHTTPServer&,const PURL&,const PMIMEInfo&,const PHTTPConnectionInfo&,bool),false);
+    P_REMOVE_VIRTUAL(bool,OnPOST(PHTTPServer&,const PURL&,const PMIMEInfo&,const PStringToString&,const PHTTPConnectionInfo&),false);
+    P_REMOVE_VIRTUAL(bool,OnGETData(PHTTPServer&,const PURL&,const PHTTPConnectionInfo&,PHTTPRequest&),false);
     P_REMOVE_VIRTUAL(PHTTPRequest*,CreateRequest(const PURL&,const PMIMEInfo&,const PMultiPartList&,PHTTPServer&),NULL);
 };
 
@@ -2256,7 +2256,7 @@ class PHTTPString : public PHTTPResource
        @return
        true if all OK, false if an error occurred.
      */
-    virtual PBoolean LoadHeaders(
+    virtual bool LoadHeaders(
       PHTTPRequest & request    // Information on this request.
     );
 
@@ -2358,7 +2358,7 @@ class PHTTPFile : public PHTTPResource
        @return
        true if all OK, false if an error occurred.
      */
-    virtual PBoolean LoadHeaders(
+    virtual bool LoadHeaders(
       PHTTPRequest & request    // Information on this request.
     );
 
@@ -2367,7 +2367,7 @@ class PHTTPFile : public PHTTPResource
        @return
        true if more to load.
      */
-    virtual PBoolean LoadData(
+    virtual bool LoadData(
       PHTTPRequest & request,    // Information on this request.
       PCharArray & data          // Data used in reply.
     );
@@ -2470,7 +2470,7 @@ class PHTTPTailFile : public PHTTPFile
        @return
        true if all OK, false if an error occurred.
      */
-    virtual PBoolean LoadHeaders(
+    virtual bool LoadHeaders(
       PHTTPRequest & request    // Information on this request.
     );
 
@@ -2479,7 +2479,7 @@ class PHTTPTailFile : public PHTTPFile
        @return
        true if more to load.
      */
-    virtual PBoolean LoadData(
+    virtual bool LoadData(
       PHTTPRequest & request,    // Information on this request.
       PCharArray & data          // Data used in reply.
     );
@@ -2536,7 +2536,7 @@ class PHTTPDirectory : public PHTTPFile
        @return
        true if all OK, false if an error occurred.
      */
-    virtual PBoolean LoadHeaders(
+    virtual bool LoadHeaders(
       PHTTPRequest & request    ///< Information on this request.
     );
 
@@ -2564,16 +2564,16 @@ class PHTTPDirectory : public PHTTPFile
 
     /** Enable or disable directory listings when a default directory file does not exist
      */
-    void AllowDirectories(PBoolean enable = true);
+    void AllowDirectories(bool enable = true);
 
   protected:
-    PBoolean CheckAuthority(
+    bool CheckAuthority(
       PHTTPServer & server,               // Server to send response to.
       const PHTTPRequest & request,       // Information on this request.
       const PHTTPConnectionInfo & conInfo // Information on the connection
     );
 
-    PBoolean FindAuthorisations(const PDirectory & dir, PString & realm, PStringToString & authorisations);
+    bool FindAuthorisations(const PDirectory & dir, PString & realm, PStringToString & authorisations);
 
     PDirectory m_basePath;
     PString    m_authorisationRealm;

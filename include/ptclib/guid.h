@@ -138,13 +138,13 @@ class PGloballyUniqueID : public PBYTEArray
 
     /**Test if the GUID is null, ie consists of all zeros.
       */
-    PBoolean IsNULL() const;
+    bool IsNULL() const;
 
-    PBoolean operator!() const { return !IsNULL(); }
+    bool operator!() const { return !IsNULL(); }
   //@}
 
   private:
-    virtual PBoolean SetSize(PINDEX) { return true; }
+    virtual bool SetSize(PINDEX) { return true; }
 };
 
 

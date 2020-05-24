@@ -20,7 +20,7 @@ PAssertAlways("No PFile under Nucleus");
 }
 
 
-PBoolean PFile::Open(OpenMode mode, int opt)
+bool PFile::Open(OpenMode mode, int opt)
 
 {
 #ifdef __NUCLEUS_PLUS__
@@ -75,7 +75,7 @@ return true;
 }
 
 
-PBoolean PFile::SetLength(off_t len)
+bool PFile::SetLength(off_t len)
 {
 #ifdef __NUCLEUS_PLUS__
 PAssertAlways("No PFile under Nucleus");
@@ -86,7 +86,7 @@ PAssertAlways("No PFile under Nucleus");
 }
 
 
-PBoolean PFile::Rename(const PFilePath & oldname, const PString & newname, PBoolean force)
+bool PFile::Rename(const PFilePath & oldname, const PString & newname, bool force)
 {
 #ifdef __NUCLEUS_PLUS__
   PAssertAlways("No PFile under Nucleus");
@@ -110,7 +110,7 @@ PBoolean PFile::Rename(const PFilePath & oldname, const PString & newname, PBool
 }
 
 
-PBoolean PFile::Move(const PFilePath & oldname, const PFilePath & newname, PBoolean force)
+bool PFile::Move(const PFilePath & oldname, const PFilePath & newname, bool force)
 {
   PFilePath from = oldname.GetDirectory() + oldname.GetFileName();
   PFilePath to = newname.GetDirectory() + newname.GetFileName();
@@ -131,7 +131,7 @@ PBoolean PFile::Move(const PFilePath & oldname, const PFilePath & newname, PBool
 }
 
 
-PBoolean PFile::Access(const PFilePath & name, OpenMode mode)
+bool PFile::Access(const PFilePath & name, OpenMode mode)
 {
 #ifdef __NUCLEUS_PLUS__
   PAssertAlways("No PFile under Nucleus");
@@ -157,7 +157,7 @@ PBoolean PFile::Access(const PFilePath & name, OpenMode mode)
 }
 
 
-PBoolean PFile::GetInfo(const PFilePath & name, PFileInfo & status)
+bool PFile::GetInfo(const PFilePath & name, PFileInfo & status)
 {
 #ifdef __NUCLEUS_PLUS__
   PAssertAlways("No PFile under Nucleus");
@@ -200,7 +200,7 @@ PBoolean PFile::GetInfo(const PFilePath & name, PFileInfo & status)
 }
 
 
-PBoolean PFile::SetPermissions(const PFilePath & name, int permissions)
+bool PFile::SetPermissions(const PFilePath & name, int permissions)
 
 {
 #ifdef __NUCLEUS_PLUS__

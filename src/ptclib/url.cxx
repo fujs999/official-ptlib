@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -256,7 +256,7 @@ PString PURL::TranslateString(const PString & str, TranslationType type)
   
   for (PINDEX pos = 0; (pos = xlat.FindSpan(safeChars, pos)) != P_MAX_INDEX; ++pos) {
     char buf[10];
-    sprintf(buf, "%%%02X", (BYTE)xlat[pos]);
+    sprintf(buf, "%%%02X", (uint8_t)xlat[pos]);
     xlat.Splice(buf, pos, 1);
   }
 
@@ -428,7 +428,7 @@ PCaselessString PURL::ExtractScheme(const char * cstr)
 }
 
 
-PBoolean PURL::InternalParse(const char * cstr, const char * defaultScheme)
+bool PURL::InternalParse(const char * cstr, const char * defaultScheme)
 {
   m_scheme.MakeEmpty();
   m_username.MakeEmpty();
@@ -576,7 +576,7 @@ bool PURL::LegacyParse(const char * cstr, const PURLLegacyScheme * schemeInfo)
       }
 
       if (pos != P_MAX_INDEX) {
-        m_port = (WORD)uphp.Mid(pos+1).AsUnsigned();
+        m_port = (uint16_t)uphp.Mid(pos+1).AsUnsigned();
         m_portSupplied = true;
       }
 
@@ -784,7 +784,7 @@ void PURL::SetHostName(const PString & h)
 }
 
 
-void PURL::SetPort(WORD newPort)
+void PURL::SetPort(uint16_t newPort)
 {
   if (newPort != 0) {
     m_port = newPort;
@@ -1067,7 +1067,7 @@ class PURL_CalltoScheme : public PURLScheme
         pos = 0;
       pos = hostname.Find(':', pos);
       if (pos != P_MAX_INDEX) {
-        url.SetPort((WORD)hostname.Mid(pos+1).AsUnsigned());
+        url.SetPort((uint16_t)hostname.Mid(pos+1).AsUnsigned());
         hostname.Delete(pos, P_MAX_INDEX);
       }
 
@@ -1100,7 +1100,7 @@ class PURL_TelScheme : public PURLScheme
 {
     PCLASSINFO(PURL_TelScheme, PURLScheme);
   public:
-    virtual PBoolean Parse(const char * cstr, PURL & url) const
+    virtual bool Parse(const char * cstr, PURL & url) const
     {
       const PConstCaselessString str(cstr);
 

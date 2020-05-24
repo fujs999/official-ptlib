@@ -3,7 +3,7 @@
  *
  * Sub-process commuicating with pip I/O channel implementation
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -79,11 +79,11 @@ PPipeChannel::PPipeChannel()
 }
 
 
-PBoolean PPipeChannel::PlatformOpen(const PString & subProgram,
+bool PPipeChannel::PlatformOpen(const PString & subProgram,
                                 const PStringArray & argumentList,
                                 OpenMode mode,
-                                PBoolean searchPath,
-                                PBoolean stderrSeparate,
+                                bool searchPath,
+                                bool stderrSeparate,
                                 const PStringToString * environment)
 {
 #if defined(P_VXWORKS) || defined(P_RTEMS)
@@ -283,7 +283,7 @@ PBoolean PPipeChannel::PlatformOpen(const PString & subProgram,
 }
 
 
-PBoolean PPipeChannel::Close()
+bool PPipeChannel::Close()
 {
   bool wasRunning = false;
 
@@ -337,7 +337,7 @@ PBoolean PPipeChannel::Close()
 }
 
 
-PBoolean PPipeChannel::Read(void * buffer, PINDEX len)
+bool PPipeChannel::Read(void * buffer, PINDEX len)
 {
   if (CheckNotOpen())
     return false;
@@ -350,7 +350,7 @@ PBoolean PPipeChannel::Read(void * buffer, PINDEX len)
 }
 
 
-PBoolean PPipeChannel::Write(const void * buffer, PINDEX len)
+bool PPipeChannel::Write(const void * buffer, PINDEX len)
 {
   if (CheckNotOpen())
     return false;
@@ -363,7 +363,7 @@ PBoolean PPipeChannel::Write(const void * buffer, PINDEX len)
 }
 
 
-PBoolean PPipeChannel::Execute()
+bool PPipeChannel::Execute()
 {
   flush();
   clear();
@@ -389,7 +389,7 @@ int PPipeChannel::GetReturnCode() const
 }
 
 
-PBoolean PPipeChannel::IsRunning() const
+bool PPipeChannel::IsRunning() const
 {
   return const_cast<PPipeChannel *>(this)->WaitForTermination(0) < -1;
 }
@@ -441,19 +441,19 @@ int PPipeChannel::WaitForTermination(const PTimeInterval & timeout)
   return m_returnCode;
 }
 
-PBoolean PPipeChannel::Kill(int killType)
+bool PPipeChannel::Kill(int killType)
 {
   PTRACE(4, "Child being sent signal " << killType);
   return ConvertOSError(kill(m_childPID, killType));
 }
 
-PBoolean PPipeChannel::CanReadAndWrite()
+bool PPipeChannel::CanReadAndWrite()
 {
   return true;
 }
 
 
-PBoolean PPipeChannel::ReadStandardError(PString & errors, PBoolean wait)
+bool PPipeChannel::ReadStandardError(PString & errors, bool wait)
 {
   if (CheckNotOpen())
     return false;
@@ -463,7 +463,7 @@ PBoolean PPipeChannel::ReadStandardError(PString & errors, PBoolean wait)
 
   os_handle = m_stderrChildPipe[0];
   
-  PBoolean status = false;
+  bool status = false;
 #ifndef BE_BONELESS
   int available;
   if (ConvertOSError(ioctl(m_stderrChildPipe[0], FIONREAD, &available))) {

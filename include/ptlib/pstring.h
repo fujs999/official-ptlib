@@ -3,7 +3,7 @@
  *
  * Character string class.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -130,7 +130,7 @@ public:
       const PCharArray & buf  ///< Buffer to create new reference to.
     );
 
-    /**Create a new string based on the BYTE array.
+    /**Create a new string based on the uint8_t array.
        Note it is up to the caller to assure the semantics of a binary object
        such as PBYTEArray are suitable to be used as a string.
      */
@@ -1256,7 +1256,7 @@ public:
        position of regular expression in the string, or P_MAX_INDEX if no
        characters from the set are in the string.
      */
-    PBoolean FindRegEx(
+    bool FindRegEx(
       const PRegularExpression & regex, ///< regular expression to find
       PINDEX & pos,                     ///< Position of matched expression
       PINDEX & len,                     ///< Length of matched expression
@@ -1267,7 +1267,7 @@ public:
 
     /**Return true if the entire string matches the regular expression
      */
-    PBoolean MatchesRegEx(
+    bool MatchesRegEx(
       const PRegularExpression & regex ///< regular expression to match
     ) const;
 
@@ -1284,7 +1284,7 @@ public:
     PString & Replace(
       const PString & target,   ///< Text to be removed.
       const PString & subs,     ///< String to be inserted into the gaps created
-      PBoolean all = false,         ///< Replace all occurrences of target text.
+      bool all = false,         ///< Replace all occurrences of target text.
       PINDEX offset = 0         ///< Offset into string to begin search.
     );
 
@@ -1510,7 +1510,7 @@ public:
     PStringArray Tokenise(
       const PString & separators,
         ///< A string for the set of separator characters that delimit tokens.
-      PBoolean onePerSeparator = true
+      bool onePerSeparator = true
         ///< Flag for if there are empty tokens between consecutive separators.
     ) const;
     /**Split the string into an array of substrings.
@@ -1540,7 +1540,7 @@ public:
     PStringArray Tokenise(
       const char * cseparators,
         ///< A C string for the set of separator characters that delimit tokens.
-      PBoolean onePerSeparator = true
+      bool onePerSeparator = true
         ///< Flag for if there are empty tokens between consecutive separators.
     ) const;
 
@@ -1683,7 +1683,7 @@ public:
        @return
        integer value for the string.
      */
-    DWORD AsUnsigned(
+    uint32_t AsUnsigned(
       unsigned base = 0    ///< Number base to convert the string in.
     ) const;
     /**Convert the string to an integer value using the specified number base.
@@ -1703,7 +1703,7 @@ public:
       unsigned base = 0    ///< Number base to convert the string in.
     ) const;
 
-    __inline PInt64 AsInt64(unsigned base = 0) const { return AsInteger(base); } // Backward compatibility
+    __inline int64_t AsInt64(unsigned base = 0) const { return AsInteger(base); } // Backward compatibility
 
     /**Convert the string to an integer value using the specified number base.
        All characters up to the first illegal character for the number base are
@@ -2104,7 +2104,7 @@ class PStringArray : public PArray<PString>
     PStringArray(
       PINDEX count,                 ///< Count of strings in array
       char const * const * strarr,  ///< Array of C strings
-      PBoolean caseless = false         ///< New strings are to be PCaselessStrings
+      bool caseless = false         ///< New strings are to be PCaselessStrings
     );
     /**Create a PStringArray of length one from the single string.
      */
@@ -2295,7 +2295,7 @@ class PStringList : public PList<PString>
     PStringList(
       PINDEX count,                 ///< Count of strings in array
       char const * const * strarr,  ///< Array of C strings
-      PBoolean caseless = false         ///< New strings are to be PCaselessStrings
+      bool caseless = false         ///< New strings are to be PCaselessStrings
     );
     /**Create a PStringList of length one from the single string.
      */
@@ -2436,7 +2436,7 @@ class PSortedStringList : public PSortedList<PString>
     PSortedStringList(
       PINDEX count,                 ///< Count of strings in array
       char const * const * strarr,  ///< Array of C strings
-      PBoolean caseless = false         ///< New strings are to be PCaselessStrings
+      bool caseless = false         ///< New strings are to be PCaselessStrings
     );
     /**Create a PSortedStringList of length one from the single string.
      */
@@ -2540,7 +2540,7 @@ class PStringSet : public PSet<PString>
   //@{
     /**Create a PStringSet.
      */
-    PStringSet(PBoolean initialDeleteObjects = true)
+    PStringSet(bool initialDeleteObjects = true)
       : BaseClass(initialDeleteObjects) { }
 
     PStringSet(const BaseClass & other)
@@ -2551,7 +2551,7 @@ class PStringSet : public PSet<PString>
     PStringSet(
       PINDEX count,                 ///< Count of strings in array
       char const * const * strarr,  ///< Array of C strings
-      PBoolean caseless = false         ///< New strings are to be PCaselessStrings
+      bool caseless = false         ///< New strings are to be PCaselessStrings
     );
 
     /**Create a PStringSet containing the single string.
@@ -2683,7 +2683,7 @@ template <class K> class PStringDictionary : public PDictionary<K, PString>
        @return
        true if the object was successfully added.
      */
-    virtual PBoolean SetAt(
+    virtual bool SetAt(
       const K & key,       // Key for position in dictionary to add object.
       const PString & str  // New string value to put into the dictionary.
     ) { return this->AbstractSetAt(key, PNEW PString(str)) != NULL; }
@@ -2812,14 +2812,14 @@ class PStringToOrdinal : public POrdinalDictionary<PString>
     PStringToOrdinal(
       PINDEX count,                ///< Count of strings in initialiser array
       const Initialiser * init,    ///< Array of Initialiser structures
-      PBoolean caseless = false        ///< New keys are to be PCaselessStrings
+      bool caseless = false        ///< New keys are to be PCaselessStrings
     );
     /** Initialise the string dictionary of ordinals from the static array.
     */
     PStringToOrdinal(
       PINDEX count,                ///< Count of strings in initialiser array
       const POrdinalToString::Initialiser * init,    ///< Array of Initialiser structures
-      PBoolean caseless = false        ///< New keys are to be PCaselessStrings
+      bool caseless = false        ///< New keys are to be PCaselessStrings
     );
     //@}
 
@@ -2866,8 +2866,8 @@ PDECLARE_STRING_DICTIONARY(PStringToString, PString);
     PStringToString(
       PINDEX count,                ///< Count of strings in initialiser array
       const Initialiser * init,    ///< Array of Initialiser structures
-      PBoolean caselessKeys = false,   ///< New keys are to be PCaselessStrings
-      PBoolean caselessValues = false  ///< New values are to be PCaselessStrings
+      bool caselessKeys = false,   ///< New keys are to be PCaselessStrings
+      bool caselessValues = false  ///< New values are to be PCaselessStrings
     );
 
     /** Initialise the string dictionary from the string.
@@ -2969,11 +2969,11 @@ class PStringOptions : public PStringToString
     PString * GetAt(const PCaselessString & (*key)()) const { return PStringToString::GetAt(key()); }
 
     // Overide default PStringToString::SetAt() to make sure the key is caseless
-    PBoolean SetAt(const char *              key,    const PString & data) { PConstCaselessString k(key); return SetAt(k, data); }
-    PBoolean SetAt(const std::string     &   key,    const PString & data) { return SetAt(PCaselessString(key), data); }
-    PBoolean SetAt(const PString         &   key,    const PString & data) { return SetAt(PCaselessString(key), data); }
-    PBoolean SetAt(const PCaselessString &   key,    const PString & data) { MakeUnique(); return PStringToString::SetAt(key, data); }
-    PBoolean SetAt(const PCaselessString & (*key)(), const PString & data) { return SetAt(key(), data); }
+    bool SetAt(const char *              key,    const PString & data) { PConstCaselessString k(key); return SetAt(k, data); }
+    bool SetAt(const std::string     &   key,    const PString & data) { return SetAt(PCaselessString(key), data); }
+    bool SetAt(const PString         &   key,    const PString & data) { return SetAt(PCaselessString(key), data); }
+    bool SetAt(const PCaselessString &   key,    const PString & data) { MakeUnique(); return PStringToString::SetAt(key, data); }
+    bool SetAt(const PCaselessString & (*key)(), const PString & data) { return SetAt(key(), data); }
 
     // Overide default PStringToString::RemoveAt() to make sure the key is caseless
     PString * RemoveAt(const char *              key)    { PConstCaselessString k(key); return RemoveAt(k); }

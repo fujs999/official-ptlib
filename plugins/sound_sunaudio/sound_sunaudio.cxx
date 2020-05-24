@@ -3,7 +3,7 @@
  *
  * Sound driver implementation.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -118,20 +118,20 @@ bool PSoundChannelSunAudio::Open(const Params & params)
 }
 
 
-PBoolean PSoundChannelSunAudio::Close()
+bool PSoundChannelSunAudio::Close()
 {
   if (os_handle < 0)
     return true;
   return PChannel::Close();
 }
 
-PBoolean PSoundChannelSunAudio::IsOpen() const 
+bool PSoundChannelSunAudio::IsOpen() const 
 {
   return os_handle >=0;
 }
 
 
-PBoolean PSoundChannelSunAudio::SetFormat(unsigned numChannels,
+bool PSoundChannelSunAudio::SetFormat(unsigned numChannels,
                               unsigned sampleRate,
                               unsigned bitsPerSample){
   PAssert(numChannels >= 1 && numChannels <= 2, PInvalidParameter);
@@ -186,7 +186,7 @@ unsigned PSoundChannelSunAudio::GetSampleSize() const
    return mBitsPerSample;
 }
 
-PBoolean PSoundChannelSunAudio::SetBuffers(PINDEX size, PINDEX count)
+bool PSoundChannelSunAudio::SetBuffers(PINDEX size, PINDEX count)
 {
   PAssert(size > 0 && count > 0 && count < 65536, PInvalidParameter);
 
@@ -213,7 +213,7 @@ PBoolean PSoundChannelSunAudio::SetBuffers(PINDEX size, PINDEX count)
 }
 
 
-PBoolean PSoundChannelSunAudio::GetBuffers(PINDEX & size, PINDEX & count)
+bool PSoundChannelSunAudio::GetBuffers(PINDEX & size, PINDEX & count)
 {
   audio_info_t audio_info;
   int err;
@@ -240,7 +240,7 @@ PBoolean PSoundChannelSunAudio::GetBuffers(PINDEX & size, PINDEX & count)
 }
 
 
-PBoolean PSoundChannelSunAudio::Write(const void * buffer, PINDEX length)
+bool PSoundChannelSunAudio::Write(const void * buffer, PINDEX length)
 {
 
   PINDEX total = 0;
@@ -271,12 +271,12 @@ PBoolean PSoundChannelSunAudio::Write(const void * buffer, PINDEX length)
   return ConvertOSError(0, LastWriteError);
 }
 
-PBoolean PSoundChannelSunAudio::PlaySound(const PSound & sound, PBoolean wait)
+bool PSoundChannelSunAudio::PlaySound(const PSound & sound, bool wait)
 {
   if (os_handle < 0)
     return SetErrorValues(NotOpen, EBADF);
 
-  if (!Write((const BYTE *)sound, sound.GetSize()))
+  if (!Write((const uint8_t *)sound, sound.GetSize()))
     return false;
 
   if (wait)
@@ -286,7 +286,7 @@ PBoolean PSoundChannelSunAudio::PlaySound(const PSound & sound, PBoolean wait)
 }
 
 
-PBoolean PSoundChannelSunAudio::PlayFile(const PFilePath & filename, PBoolean wait)
+bool PSoundChannelSunAudio::PlayFile(const PFilePath & filename, bool wait)
 {
   if (os_handle < 0 )
     return SetErrorValues(NotOpen,EBADF);
@@ -296,7 +296,7 @@ PBoolean PSoundChannelSunAudio::PlayFile(const PFilePath & filename, PBoolean wa
     return false;
 
   for (;;) {
-    BYTE buffer[256];
+    uint8_t buffer[256];
     if (!file.Read(buffer, 256))
       break;
     PINDEX len = file.GetLastReadCount();
@@ -315,7 +315,7 @@ PBoolean PSoundChannelSunAudio::PlayFile(const PFilePath & filename, PBoolean wa
 }
 
 
-PBoolean PSoundChannelSunAudio::HasPlayCompleted()
+bool PSoundChannelSunAudio::HasPlayCompleted()
 {
   int err;
   audio_info_t audio_info;
@@ -330,7 +330,7 @@ PBoolean PSoundChannelSunAudio::HasPlayCompleted()
 }
 
 
-PBoolean PSoundChannelSunAudio::WaitForPlayCompletion()
+bool PSoundChannelSunAudio::WaitForPlayCompletion()
 {
 
   if (os_handle < 0)
@@ -339,7 +339,7 @@ PBoolean PSoundChannelSunAudio::WaitForPlayCompletion()
   return ConvertOSError(::ioctl(os_handle, AUDIO_DRAIN, NULL));
 }
 
-PBoolean PSoundChannelSunAudio::Read(void * buffer, PINDEX length)
+bool PSoundChannelSunAudio::Read(void * buffer, PINDEX length)
 {
  
   int ret;
@@ -370,25 +370,25 @@ PBoolean PSoundChannelSunAudio::Read(void * buffer, PINDEX length)
 }
 
 
-PBoolean PSoundChannelSunAudio::RecordSound(PSound & sound)
+bool PSoundChannelSunAudio::RecordSound(PSound & sound)
 {
    return false;
 }
 
 
-PBoolean PSoundChannelSunAudio::RecordFile(const PFilePath & filename)
+bool PSoundChannelSunAudio::RecordFile(const PFilePath & filename)
 {
    return false;
 }
 
 
-PBoolean PSoundChannelSunAudio::StartRecording()
+bool PSoundChannelSunAudio::StartRecording()
 {
   return true;
 }
 
 
-PBoolean PSoundChannelSunAudio::IsRecordBufferFull()
+bool PSoundChannelSunAudio::IsRecordBufferFull()
 {
   int err;
   audio_info_t audio_info;
@@ -403,14 +403,14 @@ PBoolean PSoundChannelSunAudio::IsRecordBufferFull()
 }
 
 
-PBoolean PSoundChannelSunAudio::AreAllRecordBuffersFull()
+bool PSoundChannelSunAudio::AreAllRecordBuffersFull()
 {
    /* There is a just one buffer */
    return IsRecordBufferFull();
 }
 
 
-PBoolean PSoundChannelSunAudio::WaitForRecordBufferFull()
+bool PSoundChannelSunAudio::WaitForRecordBufferFull()
 {
   if (os_handle < 0)
     return SetErrorValues(NotOpen, EBADF);
@@ -419,13 +419,13 @@ PBoolean PSoundChannelSunAudio::WaitForRecordBufferFull()
 }
 
 
-PBoolean PSoundChannelSunAudio::WaitForAllRecordBuffersFull()
+bool PSoundChannelSunAudio::WaitForAllRecordBuffersFull()
 {
   return WaitForRecordBufferFull();
 }
 
 
-PBoolean PSoundChannelSunAudio::Abort()
+bool PSoundChannelSunAudio::Abort()
 {
   audio_info_t audio_info;
   int err;
@@ -456,7 +456,7 @@ PBoolean PSoundChannelSunAudio::Abort()
   return true;
 }
 
-PBoolean PSoundChannelSunAudio::SetVolume(unsigned newVolume)
+bool PSoundChannelSunAudio::SetVolume(unsigned newVolume)
 {
    audio_info_t audio_info;
    int err;
@@ -483,7 +483,7 @@ PBoolean PSoundChannelSunAudio::SetVolume(unsigned newVolume)
    return true;
 }
 
-PBoolean  PSoundChannelSunAudio::GetVolume(unsigned & volume)
+bool  PSoundChannelSunAudio::GetVolume(unsigned & volume)
 {
    audio_info_t audio_info;
    int err;

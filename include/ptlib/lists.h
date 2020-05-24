@@ -3,7 +3,7 @@
  *
  * List Container Classes
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -123,7 +123,7 @@ class PAbstractList : public PCollection
        @return
        Always true.
      */
-    virtual PBoolean SetSize(
+    virtual bool SetSize(
       PINDEX newSize  ///< New size for the list, this is ignored.
     );
   //@}
@@ -185,7 +185,7 @@ class PAbstractList : public PCollection
        @return
        true if the object was in the collection.
      */
-    virtual PBoolean Remove(
+    virtual bool Remove(
       const PObject * obj   ///< Existing object to remove from the collection.
     );
 
@@ -232,7 +232,7 @@ class PAbstractList : public PCollection
        @return
        true if the object was successfully added.
      */
-    P_DEPRECATED virtual PBoolean SetAt(
+    P_DEPRECATED virtual bool SetAt(
       PINDEX index,   ///< Index position in collection to set.
       PObject * val   ///< New value to place into the collection.
     );
@@ -247,7 +247,7 @@ class PAbstractList : public PCollection
        @return
        true if the object was successfully replaced.
      */   
-    P_DEPRECATED virtual PBoolean ReplaceAt(
+    P_DEPRECATED virtual bool ReplaceAt(
       PINDEX index,   ///< Index position in collection to set.
       PObject * val   ///< New value to place into the collection.
     );
@@ -673,7 +673,7 @@ class PAbstractSortedList : public PCollection
        @return
        Always true.
      */
-    virtual PBoolean SetSize(
+    virtual bool SetSize(
       PINDEX newSize  // New size for the sorted list, this is ignored.
     );
   //@}
@@ -728,7 +728,7 @@ class PAbstractSortedList : public PCollection
        @return
        true if the object was in the collection.
      */
-    virtual PBoolean Remove(
+    virtual bool Remove(
       const PObject * obj   // Existing object to remove from the collection.
     );
 
@@ -759,7 +759,7 @@ class PAbstractSortedList : public PCollection
        @return
        false allways
      */
-    virtual PBoolean SetAt(
+    virtual bool SetAt(
       PINDEX index,   // Index position in collection to set.
       PObject * val   // New value to place into the collection.
     );

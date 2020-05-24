@@ -94,7 +94,7 @@ class PCLI : public PObject
            @return
            true if at least len bytes were written to the channel.
          */
-        virtual PBoolean Write(
+        virtual bool Write(
           const void * buf, ///< Pointer to a block of memory to write.
           PINDEX len        ///< Number of bytes to write.
         );
@@ -898,7 +898,7 @@ class PCLISocket : public PCLI
   /**@name Construction */
   //@{
     PCLISocket(
-      WORD port = 0,
+      uint16_t port = 0,
       const char * prompt = NULL,
       bool singleThreadForAll = false
     );
@@ -944,12 +944,12 @@ class PCLISocket : public PCLI
     /**Start listening socket.
       */
     bool Listen(
-      WORD port = 0
+      uint16_t port = 0
     );
 
     /**Get the port we are listing on.
       */
-    WORD GetPort() const { return m_listenSocket.GetPort(); }
+    uint16_t GetPort() const { return m_listenSocket.GetPort(); }
   //@}
 
   protected:
@@ -979,7 +979,7 @@ class PCLITelnet : public PCLISocket
   /**@name Construction */
   //@{
     PCLITelnet(
-      WORD port = 0,
+      uint16_t port = 0,
       const char * prompt = NULL,
       bool singleThreadForAll = false
     );
@@ -1045,7 +1045,7 @@ class PCLICurses : public PCLI
     public:
       // Overrides from PChannel
       virtual PString GetName() const { return "CursesWindow"; }
-      virtual PBoolean Write(const void * data, PINDEX length);
+      virtual bool Write(const void * data, PINDEX length);
 
       // New functions
       virtual bool FillChar(

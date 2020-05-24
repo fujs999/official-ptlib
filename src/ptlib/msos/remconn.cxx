@@ -3,7 +3,7 @@
  *
  * Remote Networking Connection class implmentation for Win32 RAS.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -40,16 +40,16 @@ class PRASDLL : public PDynaLink
   public:
     PRASDLL();
 
-  DWORD (FAR PASCAL *Dial)(LPRASDIALEXTENSIONS,LPTSTR,LPRASDIALPARAMS,DWORD,LPVOID,LPHRASCONN);
-  DWORD (FAR PASCAL *HangUp)(HRASCONN);
-  DWORD (FAR PASCAL *GetConnectStatus)(HRASCONN,LPRASCONNSTATUS);
-  DWORD (FAR PASCAL *EnumConnections)(LPRASCONN,LPDWORD,LPDWORD);
-  DWORD (FAR PASCAL *EnumEntries)(LPTSTR,LPTSTR,LPRASENTRYNAME,LPDWORD,LPDWORD);
-  DWORD (FAR PASCAL *GetEntryProperties)(LPTSTR, LPTSTR, LPRASENTRY, LPDWORD, LPBYTE, LPDWORD);
-  DWORD (FAR PASCAL *SetEntryProperties)(LPTSTR, LPTSTR, LPRASENTRY, DWORD, LPBYTE, DWORD);
-  DWORD (FAR PASCAL *DeleteEntry)(LPTSTR, LPTSTR);
-  DWORD (FAR PASCAL *ValidateEntryName)(LPTSTR, LPTSTR);
-  DWORD (FAR PASCAL *GetProjectionInfo)(HRASCONN, RASPROJECTION, LPVOID, LPDWORD);
+  uint32_t (FAR PASCAL *Dial)(LPRASDIALEXTENSIONS,LPTSTR,LPRASDIALPARAMS,uint32_t,LPVOID,LPHRASCONN);
+  uint32_t (FAR PASCAL *HangUp)(HRASCONN);
+  uint32_t (FAR PASCAL *GetConnectStatus)(HRASCONN,LPRASCONNSTATUS);
+  uint32_t (FAR PASCAL *EnumConnections)(LPRASCONN,LPDWORD,LPDWORD);
+  uint32_t (FAR PASCAL *EnumEntries)(LPTSTR,LPTSTR,LPRASENTRYNAME,LPDWORD,LPDWORD);
+  uint32_t (FAR PASCAL *GetEntryProperties)(LPTSTR, LPTSTR, LPRASENTRY, LPDWORD, LPBYTE, LPDWORD);
+  uint32_t (FAR PASCAL *SetEntryProperties)(LPTSTR, LPTSTR, LPRASENTRY, uint32_t, LPBYTE, uint32_t);
+  uint32_t (FAR PASCAL *DeleteEntry)(LPTSTR, LPTSTR);
+  uint32_t (FAR PASCAL *ValidateEntryName)(LPTSTR, LPTSTR);
+  uint32_t (FAR PASCAL *GetProjectionInfo)(HRASCONN, RASPROJECTION, LPVOID, LPDWORD);
 } Ras;
 
 
@@ -97,10 +97,10 @@ PRemoteConnection::~PRemoteConnection()
 }
 
 
-PBoolean PRemoteConnection::Open(const PString & name,
+bool PRemoteConnection::Open(const PString & name,
                              const PString & user,
                              const PString & pass,
-                             PBoolean existing)
+                             bool existing)
 {
   if (name != remoteName) {
     Close();
@@ -112,7 +112,7 @@ PBoolean PRemoteConnection::Open(const PString & name,
 }
 
 
-PBoolean PRemoteConnection::Open(const PString & name, PBoolean existing)
+bool PRemoteConnection::Open(const PString & name, bool existing)
 {
   if (name != remoteName) {
     Close();
@@ -142,7 +142,7 @@ void PRemoteConnection::Construct()
 }
 
 
-PBoolean PRemoteConnection::Open(PBoolean existing)
+bool PRemoteConnection::Open(bool existing)
 {
   Close();
   if (!Ras.IsLoaded())
@@ -163,7 +163,7 @@ PBoolean PRemoteConnection::Open(PBoolean existing)
   }
 
   if (osError == 0) {
-    for (DWORD i = 0; i < numConnections; i++) {
+    for (uint32_t i = 0; i < numConnections; i++) {
       if (remoteName == connections[i].szEntryName) {
         rasConnection = connections[i].hrasconn;
         break;
@@ -221,7 +221,7 @@ void PRemoteConnection::Close()
 }
 
 
-static int GetRasStatus(HRASCONN rasConnection, DWORD & rasError)
+static int GetRasStatus(HRASCONN rasConnection, uint32_t & rasError)
 {
   RASCONNSTATUS status;
   status.dwSize = sizeof(status);
@@ -344,7 +344,7 @@ PStringArray PRemoteConnection::GetAvailableNames()
   DWORD size = sizeof(entry);
   DWORD numEntries;
 
-  DWORD rasError = Ras.EnumEntries(NULL, NULL, entries, &size, &numEntries);
+  uint32_t rasError = Ras.EnumEntries(NULL, NULL, entries, &size, &numEntries);
 
   if (rasError == ERROR_BUFFER_TOO_SMALL) {
     entries = new RASENTRYNAME[size/sizeof(RASENTRYNAME)];
@@ -354,7 +354,7 @@ PStringArray PRemoteConnection::GetAvailableNames()
 
   if (rasError == 0) {
     array.SetSize(numEntries);
-    for (DWORD i = 0; i < numEntries; i++)
+    for (uint32_t i = 0; i < numEntries; i++)
       array[i] = entries[i].szEntryName;
   }
 
@@ -372,7 +372,7 @@ PRemoteConnection::Status
 }
 
 
-static DWORD MyRasGetEntryProperties(const char * name, PBYTEArray & entrybuf)
+static uint32_t MyRasGetEntryProperties(const char * name, PBYTEArray & entrybuf)
 {
   LPRASENTRY entry = (LPRASENTRY)entrybuf.GetPointer(sizeof(RASENTRY));
   entry->dwSize = sizeof(RASENTRY);
@@ -407,7 +407,7 @@ PRemoteConnection::Status
       return GeneralFailure;
   }
 
-  LPRASENTRY entry = (LPRASENTRY)(const BYTE *)entrybuf;
+  LPRASENTRY entry = (LPRASENTRY)(const uint8_t *)entrybuf;
 
   config.device = entry->szDeviceType + PString("/") + entry->szDeviceName;
 
@@ -440,7 +440,7 @@ PRemoteConnection::Status
 
 
 PRemoteConnection::Status
-      PRemoteConnection::SetConfiguration(const Configuration & config, PBoolean create)
+      PRemoteConnection::SetConfiguration(const Configuration & config, bool create)
 {
   return SetConfiguration(remoteName, config, create);
 }
@@ -449,7 +449,7 @@ PRemoteConnection::Status
 PRemoteConnection::Status
       PRemoteConnection::SetConfiguration(const PString & name,
                                           const Configuration & config,
-                                          PBoolean create)
+                                          bool create)
 {
   if (!Ras.IsLoaded() || Ras.SetEntryProperties == NULL || Ras.ValidateEntryName == NULL)
     return NotInstalled;
@@ -470,7 +470,7 @@ PRemoteConnection::Status
       return GeneralFailure;
   }
 
-  LPRASENTRY entry = (LPRASENTRY)(const BYTE *)entrybuf;
+  LPRASENTRY entry = (LPRASENTRY)(const uint8_t *)entrybuf;
 
   PINDEX barpos = config.device.Find('/');
   if (barpos == P_MAX_INDEX)
@@ -487,20 +487,20 @@ PRemoteConnection::Status
     entry->dwfOptions &= ~RASEO_SpecificIpAddr;
   else {
     entry->dwfOptions |= RASEO_SpecificIpAddr;
-    entry->ipaddr.a = (BYTE)dots[0].AsInteger();
-    entry->ipaddr.b = (BYTE)dots[1].AsInteger();
-    entry->ipaddr.c = (BYTE)dots[2].AsInteger();
-    entry->ipaddr.d = (BYTE)dots[3].AsInteger();
+    entry->ipaddr.a = (uint8_t)dots[0].AsInteger();
+    entry->ipaddr.b = (uint8_t)dots[1].AsInteger();
+    entry->ipaddr.c = (uint8_t)dots[2].AsInteger();
+    entry->ipaddr.d = (uint8_t)dots[3].AsInteger();
   }
   dots = config.dnsAddress.Tokenise('.');
   if (dots.GetSize() != 4)
     entry->dwfOptions &= ~RASEO_SpecificNameServers;
   else {
     entry->dwfOptions |= RASEO_SpecificNameServers;
-    entry->ipaddrDns.a = (BYTE)dots[0].AsInteger();
-    entry->ipaddrDns.b = (BYTE)dots[1].AsInteger();
-    entry->ipaddrDns.c = (BYTE)dots[2].AsInteger();
-    entry->ipaddrDns.d = (BYTE)dots[3].AsInteger();
+    entry->ipaddrDns.a = (uint8_t)dots[0].AsInteger();
+    entry->ipaddrDns.b = (uint8_t)dots[1].AsInteger();
+    entry->ipaddrDns.c = (uint8_t)dots[2].AsInteger();
+    entry->ipaddrDns.d = (uint8_t)dots[3].AsInteger();
   }
 
   strncpy(entry->szScript, config.script, sizeof(entry->szScript-1));

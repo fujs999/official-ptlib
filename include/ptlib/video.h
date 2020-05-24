@@ -3,7 +3,7 @@
  *
  * Video interface class.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -83,7 +83,7 @@ class PVideoChannel : public PChannel
        @return
        true if the video device is valid for playing/recording.
      */
-    PBoolean Open(
+    bool Open(
       const PString & device,   ///< Name of video driver/device
       Directions dir            ///< Video I/O direction
     );
@@ -92,7 +92,7 @@ class PVideoChannel : public PChannel
        is non NULL. If either pointer is non NULL, then a device is ready
        to be written to, which indicates this channel is open.
     */
-     PBoolean IsOpen() const;
+     bool IsOpen() const;
     
     /**Get all of the names for video devices/drivers that are available on
        this platform. Note that a named device may not necessarily do both
@@ -128,7 +128,7 @@ class PVideoChannel : public PChannel
      */
     virtual PINDEX  GetGrabHeight();
 
-    virtual PBoolean Read(void * buf, PINDEX  len);
+    virtual bool Read(void * buf, PINDEX  len);
       // Low level read from the video channel. This function will block until the
       // requested number of characters were read.
   
@@ -136,12 +136,12 @@ class PVideoChannel : public PChannel
     /**Low level write to the channel, which is data to be rendered to the 
        local video display device.
        */
-    PBoolean Write(const void * buf,  //Pointer to the image data to be rendered
+    bool Write(const void * buf,  //Pointer to the image data to be rendered
                PINDEX      len);
 
     /** Low level write to the video channel with marker. .
      */
-    virtual PBoolean Write(
+    virtual bool Write(
       const void * buf,  ///< Pointer to a block of memory to write.
       PINDEX len,        ///< Number of bytes to write.
 	  void * mark        ///< Unique Marker to identify write
@@ -150,7 +150,7 @@ class PVideoChannel : public PChannel
     /**Cause the referenced data to be drawn to the 
        previously defined media 
      */
-    virtual PBoolean Redraw(const void * frame); 
+    virtual bool Redraw(const void * frame); 
 
     /**Return the previously specified width.
      */
@@ -183,7 +183,7 @@ class PVideoChannel : public PChannel
        If keepCurrent is false, the existing video player is deleted before attaching
        the new player.
      */
-    virtual void AttachVideoPlayer(PVideoOutputDevice * device, PBoolean keepCurrent = true);
+    virtual void AttachVideoPlayer(PVideoOutputDevice * device, bool keepCurrent = true);
 
     /**Attach a user specific class for acquiring video 
 
@@ -193,7 +193,7 @@ class PVideoChannel : public PChannel
        If keepCurrent is false, the existing video reader is deleted before attaching
        the new reader.
      */
-    virtual void AttachVideoReader(PVideoInputDevice * device, PBoolean keepCurrent = true);
+    virtual void AttachVideoReader(PVideoInputDevice * device, bool keepCurrent = true);
 
     /**Return a pointer to the class for acquiring video 
      */
@@ -205,23 +205,23 @@ class PVideoChannel : public PChannel
 
     /**See if the grabber is open 
      */
-    virtual PBoolean IsGrabberOpen();
+    virtual bool IsGrabberOpen();
     
     /**See if the rendering device is open
      */
-    virtual PBoolean IsRenderOpen();
+    virtual bool IsRenderOpen();
 
 	/**Allow the outputdevice decide whether the 
 		decoder should ignore decode hence not render
 		any output. This does not mean the video channel is closed
 		just to not decode and render any frames. 
 	  */
-	virtual PBoolean DisableDecode();
+	virtual bool DisableDecode();
 
     /**Get data from the attached inputDevice, and display on the
        attached ouptutDevice.
     */
-    PBoolean DisplayRawData(void *videoBuffer);
+    bool DisplayRawData(void *videoBuffer);
 
     /**Destroy the attached grabber class.
      */
@@ -241,7 +241,7 @@ class PVideoChannel : public PChannel
 
     /**Toggle the vertical flip state of the video grabber.
     */
-    PBoolean ToggleVFlipInput();
+    bool ToggleVFlipInput();
 
      /**Flow Control information
        Pass data to the channel for flowControl determination.

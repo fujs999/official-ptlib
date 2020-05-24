@@ -3,7 +3,7 @@
  *
  * Plugin Class Declarations
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Contributor(s): Snark at GnomeMeeting
  */

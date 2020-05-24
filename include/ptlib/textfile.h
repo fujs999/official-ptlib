@@ -3,7 +3,7 @@
  *
  * A text file I/O channel class.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -92,7 +92,7 @@ class PTextFile : public PFile
        @return
        true if successful, false if at end of file or a read error.
      */
-    PBoolean ReadLine(
+    bool ReadLine(
       PString & str  ///< String into which line of text is read.
     );
 
@@ -105,7 +105,7 @@ class PTextFile : public PFile
        @return
        true if successful, false if an error occurred.
      */
-    PBoolean WriteLine(
+    bool WriteLine(
       const PString & str  ///< String to write with end of line terminator.
     );
   //@}

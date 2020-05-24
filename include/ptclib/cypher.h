@@ -3,7 +3,7 @@
  *
  * Encryption support classes.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-2002 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -215,10 +215,10 @@ class PBase64 : public PObject
        @return
        true if block was last in the Base64 encoded string.
      */
-    PBoolean ProcessDecoding(
+    bool ProcessDecoding(
       const PString & str      // String to be encoded
     );
-    PBoolean ProcessDecoding(
+    bool ProcessDecoding(
       const char * cstr        // C String to be encoded
     );
 
@@ -227,7 +227,7 @@ class PBase64 : public PObject
        @return
        Decoded data for the processed Base64 string.
      */
-    PBoolean GetDecodedData(
+    bool GetDecodedData(
       void * dataBlock,    // Pointer to data to be decoded from base64
       PINDEX length        // Length of the data block.
     );
@@ -240,7 +240,7 @@ class PBase64 : public PObject
        @return
        Decoded data for the processed Base64 string.
      */
-    PBoolean IsDecodeOK() { return m_perfectDecode; }
+    bool IsDecodeOK() { return m_perfectDecode; }
 
 
     /** Convert a printable text string to binary data using the Internet MIME
@@ -257,11 +257,11 @@ class PBase64 : public PObject
     static PString Decode(
       const PString & str // Encoded base64 string to be decoded.
     );
-    static PBoolean Decode(
+    static bool Decode(
       const PString & str, // Encoded base64 string to be decoded.
       PBYTEArray & data    // Converted binary data from base64.
     );
-    static PBoolean Decode(
+    static bool Decode(
       const PString & str, // Encoded base64 string to be decoded.
       void * dataBlock,    // Pointer to data to be decoded from base64
       PINDEX length        // Length of the data block.
@@ -270,10 +270,10 @@ class PBase64 : public PObject
 
 
   private:
-    void OutputBase64(const BYTE * data);
+    void OutputBase64(const uint8_t * data);
 
     PString m_encodedString;
-    BYTE    m_saveTriple[3];
+    uint8_t    m_saveTriple[3];
     PINDEX  m_saveCount;
     PString m_endOfLine;
     PINDEX  m_maxLineLength;
@@ -416,8 +416,8 @@ class PHMAC : public PObject
   public:
     void SetKey(const char * key)             { InitKey(key, strlen(key)); }
     void SetKey(const PString & key)          { InitKey(key.GetPointer(), key.GetLength()); }
-    void SetKey(const PBYTEArray & key)       { InitKey((const BYTE *)key, key.GetSize()); }
-    void SetKey(const BYTE * key, PINDEX len) { InitKey(key, len); }
+    void SetKey(const PBYTEArray & key)       { InitKey((const uint8_t *)key, key.GetSize()); }
+    void SetKey(const uint8_t * key, PINDEX len) { InitKey(key, len); }
 
     PString Encode(const void * data, PINDEX len, PBase64::Options options = PBase64::e_NoLF);
     PString Encode(const PBYTEArray & data, PBase64::Options options = PBase64::e_NoLF);
@@ -457,14 +457,14 @@ class PMessageDigest5 : public PMessageDigest, public PMessageDigestStatics<PMes
     virtual void InternalCompleteDigest(Result & result);
 
   private:
-    void Transform(const BYTE * block);
+    void Transform(const uint8_t * block);
 
     /// input buffer
-    BYTE buffer[64];
+    uint8_t buffer[64];
     /// state (ABCD)
-    DWORD state[4];
+    uint32_t state[4];
     /// number of bits, modulo 2^64 (lsb first)
-    PUInt64 count;
+    uint64_t count;
 };
 
 
@@ -674,12 +674,12 @@ class PCypher : public PObject
       const PString & cypher   ///< Base64 Cypher text string to be decoded.
     );
     /**Decode the data. */
-    PBoolean Decode(
+    bool Decode(
       const PString & cypher,  ///< Base64 Cypher text string to be decoded.
       PString & clear          ///< Clear text string decoded.
     );
     /**Decode the data. */
-    PBoolean Decode(
+    bool Decode(
       const PString & cypher,  ///< Base64 Cypher text string to be decoded.
       PBYTEArray & clear       ///< Clear text binary data decoded.
     );
@@ -710,7 +710,7 @@ class PCypher : public PObject
     @return
       decoded string.
     */
-    PBoolean Decode(
+    bool Decode(
       const PBYTEArray & coded, ///< Encoded data (cyphertext).
       PBYTEArray & clear       ///< Clear text binary data decoded.
     );
@@ -734,7 +734,7 @@ class PCypher : public PObject
 
     /** Initialise the encoding/decoding sequence. */
     virtual void Initialise(
-      PBoolean encoding   ///< Flag for encoding/decoding sequence about to start.
+      bool encoding   ///< Flag for encoding/decoding sequence about to start.
     ) = 0;
 
     /** Encode an n bit block of memory according to the encryption algorithm. */
@@ -773,7 +773,7 @@ class PTEACypher : public PCypher
 
   public:
     struct Key {
-      BYTE value[16];
+      uint8_t value[16];
     };
 
     /**
@@ -809,7 +809,7 @@ class PTEACypher : public PCypher
   protected:
     /** Initialise the encoding/decoding sequence. */
     virtual void Initialise(
-      PBoolean encoding   ///< Flag for encoding/decoding sequence about to start.
+      bool encoding   ///< Flag for encoding/decoding sequence about to start.
     );
 
     /** Encode an n bit block of memory according to the encryption algorithm. */
@@ -825,7 +825,7 @@ class PTEACypher : public PCypher
     );
 
   private:
-    DWORD k0, k1, k2, k3;
+    uint32_t k0, k1, k2, k3;
 };
 
 
@@ -921,7 +921,7 @@ class PSecureConfig : public PConfig
        State of the validation keys.
      */
 
-    PBoolean ValidatePending();
+    bool ValidatePending();
     /* Validate a pending secured option list for the product. All secured
        keys with the <CODE>pendingPrefix</CODE> name will be checked against
        the value of the field <CODE>securityKey</CODE>. If they match then

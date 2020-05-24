@@ -3,7 +3,7 @@
  *
  * Class for implementing a serial queue channel in memory.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 2001 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -40,7 +40,7 @@
 PQueueChannel::PQueueChannel(PINDEX size)
 {
   if (size > 0) {
-    queueBuffer = new BYTE[size];
+    queueBuffer = new uint8_t[size];
     os_handle = 1;
   }
   else {
@@ -58,7 +58,7 @@ PQueueChannel::~PQueueChannel()
 }
 
 
-PBoolean PQueueChannel::Open(PINDEX size)
+bool PQueueChannel::Open(PINDEX size)
 {
   Close();
 
@@ -67,7 +67,7 @@ PBoolean PQueueChannel::Open(PINDEX size)
 
   mutex.Wait();
 
-  if ((queueBuffer = new BYTE[size]) == NULL)
+  if ((queueBuffer = new uint8_t[size]) == NULL)
     return false;
 
   queueSize = size;
@@ -80,7 +80,7 @@ PBoolean PQueueChannel::Open(PINDEX size)
 }
 
 
-PBoolean PQueueChannel::Close()
+bool PQueueChannel::Close()
 {
   if (CheckNotOpen())
     return false;
@@ -97,7 +97,7 @@ PBoolean PQueueChannel::Close()
 }
 
 
-PBoolean PQueueChannel::Read(void * buf, PINDEX count)
+bool PQueueChannel::Read(void * buf, PINDEX count)
 {
   mutex.Wait();
 
@@ -108,7 +108,7 @@ PBoolean PQueueChannel::Read(void * buf, PINDEX count)
     return false;
   }
 
-  BYTE * buffer = (BYTE *)buf;
+  uint8_t * buffer = (uint8_t *)buf;
 
   /* If queue is empty then we should block for the time specifed in the
       read timeout.
@@ -183,7 +183,7 @@ PBoolean PQueueChannel::Read(void * buf, PINDEX count)
 }
 
 
-PBoolean PQueueChannel::Write(const void * buf, PINDEX count)
+bool PQueueChannel::Write(const void * buf, PINDEX count)
 {
   mutex.Wait();
 
@@ -194,7 +194,7 @@ PBoolean PQueueChannel::Write(const void * buf, PINDEX count)
     return false;
   }
 
-  const BYTE * buffer = (BYTE *)buf;
+  const uint8_t * buffer = (uint8_t *)buf;
   PINDEX written = 0;
   while (count > 0) {
     /* If queue is full then we should block for the time specifed in the
@@ -245,7 +245,7 @@ PBoolean PQueueChannel::Write(const void * buf, PINDEX count)
       enqueuePos = 0;
 
     // see if we need to signal reader that queue was empty
-    PBoolean queueWasEmpty = queueLength == 0;
+    bool queueWasEmpty = queueLength == 0;
 
     // increment queue length by the amount we copied
     queueLength += copyLen;

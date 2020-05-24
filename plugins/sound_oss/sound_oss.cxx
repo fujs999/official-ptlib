@@ -3,7 +3,7 @@
  *
  * Sound driver implementation.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -74,11 +74,11 @@ PSoundChannelOSS::~PSoundChannelOSS()
   Close();
 }
 
-static PBoolean IsNumericString(PString numbers) {
+static bool IsNumericString(PString numbers) {
   // return true if 'numbers' contains only digits (0 to 9)
   // or if it contains digits followed by a '.'
 
-  PBoolean isNumber = false;
+  bool isNumber = false;
   for (PINDEX p = 0; p < numbers.GetLength(); p++) {
     if (isdigit(numbers[p])) {
       isNumber = true;
@@ -89,7 +89,7 @@ static PBoolean IsNumericString(PString numbers) {
   return isNumber;
 }
 
-static void CollectSoundDevices(PDirectory devdir, POrdinalToString & dsp, POrdinalToString & mixer, PBoolean collect_with_names)
+static void CollectSoundDevices(PDirectory devdir, POrdinalToString & dsp, POrdinalToString & mixer, bool collect_with_names)
 {
   if (!devdir.Open())
     return;
@@ -307,7 +307,7 @@ bool PSoundChannelOSS::Open(const Params & params)
       return ConvertOSError(os_handle);
 
     // switch to blocking mode
-    DWORD cmd = 0;
+    uint32_t cmd = 0;
     ::ioctl(os_handle, FIONBIO, &cmd);
 
     // add the device to the dictionary
@@ -333,7 +333,7 @@ bool PSoundChannelOSS::Open(const Params & params)
   return true;
 }
 
-PBoolean PSoundChannelOSS::Setup()
+bool PSoundChannelOSS::Setup()
 {
   PWaitAndSignal mutex(dictMutex);
 
@@ -354,7 +354,7 @@ PBoolean PSoundChannelOSS::Setup()
   SoundHandleEntry & entry = handleDict()[device];
 
   // set default return status
-  PBoolean stat = true;
+  bool stat = true;
 
   // do not re-initialise initialised devices
   if (entry.isInitialised) {
@@ -443,7 +443,7 @@ PBoolean PSoundChannelOSS::Setup()
   return stat;
 }
 
-PBoolean PSoundChannelOSS::Close()
+bool PSoundChannelOSS::Close()
 {
   // if the channel isn't open, do nothing
   if (os_handle < 0)
@@ -470,12 +470,12 @@ PBoolean PSoundChannelOSS::Close()
   return true;
 }
 
-PBoolean PSoundChannelOSS::IsOpen() const
+bool PSoundChannelOSS::IsOpen() const
 {
   return os_handle >= 0;
 }
 
-PBoolean PSoundChannelOSS::Write(const void * buf, PINDEX len)
+bool PSoundChannelOSS::Write(const void * buf, PINDEX len)
 {
   SetLastWriteCount(0);
 
@@ -490,14 +490,14 @@ PBoolean PSoundChannelOSS::Write(const void * buf, PINDEX len)
 
   else {
     // cut the data into 1K blocks and upsample it
-    BYTE resampleBuffer[1024];
-    const BYTE * src    = (const BYTE *)buf;
-    const BYTE * srcEnd = src + len;
+    uint8_t resampleBuffer[1024];
+    const uint8_t * src    = (const uint8_t *)buf;
+    const uint8_t * srcEnd = src + len;
     while (src < srcEnd) {
 
       // expand the data by the appropriate sample ratio
-      BYTE * dst = resampleBuffer;
-      const BYTE * srcStart = src;
+      uint8_t * dst = resampleBuffer;
+      const uint8_t * srcStart = src;
       unsigned j;
        
       while ((src < srcEnd) && (dst < (resampleBuffer + sizeof(resampleBuffer) - resampleRate*2))) {
@@ -521,7 +521,7 @@ PBoolean PSoundChannelOSS::Write(const void * buf, PINDEX len)
   return true;
 }
 
-PBoolean PSoundChannelOSS::Read(void * buf, PINDEX len)
+bool PSoundChannelOSS::Read(void * buf, PINDEX len)
 {
   SetLastReadCount(0);
 
@@ -551,8 +551,8 @@ PBoolean PSoundChannelOSS::Read(void * buf, PINDEX len)
 
     // downsample the data
 
-    BYTE * dst    = (BYTE *)buf;
-    BYTE * dstEnd = dst + len;
+    uint8_t * dst    = (uint8_t *)buf;
+    uint8_t * dstEnd = dst + len;
 
     PBYTEArray resampleBuffer((1024 / resampleRate) * resampleRate);
 
@@ -576,7 +576,7 @@ PBoolean PSoundChannelOSS::Read(void * buf, PINDEX len)
       }
 
       // use an average, not just a single sample
-      const BYTE * src = resampleBuffer;
+      const uint8_t * src = resampleBuffer;
       while ( ((PINDEX)(src - resampleBuffer) < bytes) && (dst < dstEnd)) {
         int sample = 0;
         unsigned j;
@@ -596,7 +596,7 @@ PBoolean PSoundChannelOSS::Read(void * buf, PINDEX len)
 }
 
 
-PBoolean PSoundChannelOSS::SetFormat(unsigned numChannels,
+bool PSoundChannelOSS::SetFormat(unsigned numChannels,
                               unsigned sampleRate,
                               unsigned bitsPerSample)
 {
@@ -657,7 +657,7 @@ unsigned PSoundChannelOSS::GetSampleSize() const
   return mBitsPerSample;
 }
 
-PBoolean PSoundChannelOSS::SetBuffers(PINDEX size, PINDEX count)
+bool PSoundChannelOSS::SetBuffers(PINDEX size, PINDEX count)
 {
   if (os_handle < 0)
     return SetErrorValues(NotOpen, EBADF);
@@ -704,7 +704,7 @@ PBoolean PSoundChannelOSS::SetBuffers(PINDEX size, PINDEX count)
 }
 
 
-PBoolean PSoundChannelOSS::GetBuffers(PINDEX & size, PINDEX & count)
+bool PSoundChannelOSS::GetBuffers(PINDEX & size, PINDEX & count)
 {
   if (os_handle < 0)
     return SetErrorValues(NotOpen, EBADF);
@@ -725,7 +725,7 @@ PBoolean PSoundChannelOSS::GetBuffers(PINDEX & size, PINDEX & count)
 }
 
 
-PBoolean PSoundChannelOSS::HasPlayCompleted()
+bool PSoundChannelOSS::HasPlayCompleted()
 {
   if (os_handle < 0)
     return SetErrorValues(NotOpen, EBADF);
@@ -738,7 +738,7 @@ PBoolean PSoundChannelOSS::HasPlayCompleted()
 }
 
 
-PBoolean PSoundChannelOSS::WaitForPlayCompletion()
+bool PSoundChannelOSS::WaitForPlayCompletion()
 {
   if (os_handle < 0)
     return SetErrorValues(NotOpen, EBADF);
@@ -747,7 +747,7 @@ PBoolean PSoundChannelOSS::WaitForPlayCompletion()
 }
 
 
-PBoolean PSoundChannelOSS::StartRecording()
+bool PSoundChannelOSS::StartRecording()
 {
   if (os_handle < 0)
     return SetErrorValues(NotOpen, EBADF);
@@ -768,7 +768,7 @@ PBoolean PSoundChannelOSS::StartRecording()
 }
 
 
-PBoolean PSoundChannelOSS::IsRecordBufferFull()
+bool PSoundChannelOSS::IsRecordBufferFull()
 {
   if (os_handle < 0)
     return SetErrorValues(NotOpen, EBADF);
@@ -781,7 +781,7 @@ PBoolean PSoundChannelOSS::IsRecordBufferFull()
 }
 
 
-PBoolean PSoundChannelOSS::AreAllRecordBuffersFull()
+bool PSoundChannelOSS::AreAllRecordBuffersFull()
 {
   if (os_handle < 0)
     return SetErrorValues(NotOpen, EBADF);
@@ -794,7 +794,7 @@ PBoolean PSoundChannelOSS::AreAllRecordBuffersFull()
 }
 
 
-PBoolean PSoundChannelOSS::WaitForRecordBufferFull()
+bool PSoundChannelOSS::WaitForRecordBufferFull()
 {
   if (os_handle < 0)
     return SetErrorValues(NotOpen, EBADF);
@@ -803,20 +803,20 @@ PBoolean PSoundChannelOSS::WaitForRecordBufferFull()
 }
 
 
-PBoolean PSoundChannelOSS::WaitForAllRecordBuffersFull()
+bool PSoundChannelOSS::WaitForAllRecordBuffersFull()
 {
   return false;
 }
 
 
-PBoolean PSoundChannelOSS::Abort()
+bool PSoundChannelOSS::Abort()
 {
   return ConvertOSError(ioctl(os_handle, SNDCTL_DSP_RESET, NULL));
 }
 
 
 
-PBoolean PSoundChannelOSS::SetVolume(unsigned newVal)
+bool PSoundChannelOSS::SetVolume(unsigned newVal)
 {
   if (os_handle <= 0)  //CAnnot set volume in loop back mode.
     return false;
@@ -836,7 +836,7 @@ PBoolean PSoundChannelOSS::SetVolume(unsigned newVal)
   return true;
 }
 
-PBoolean  PSoundChannelOSS::GetVolume(unsigned &devVol)
+bool  PSoundChannelOSS::GetVolume(unsigned &devVol)
 {
   if (os_handle <= 0)  //CAnnot get volume in loop back mode.
     return false;

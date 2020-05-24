@@ -163,7 +163,7 @@ class PTones : public PShortArray
     /// Set sample rate for tones, note will clear tone buffer.
     void SetSampleRate(unsigned rate);
 
-    virtual PBoolean SetSize(PINDEX newSize);
+    virtual bool SetSize(PINDEX newSize);
 
   protected:
     void Reset();

@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Derek J Smithies
  *
@@ -108,7 +108,7 @@ void StringTest::Main()
   iterations = PMAX(1, PMIN(iterations, 100000));
   PError << "Will run the test for 1 million x " << iterations << " loops" << endl;
 
-  PBoolean testPwlib = ! args.HasOption('s');
+  bool testPwlib = ! args.HasOption('s');
 
   if (args.HasOption('s'))
     cerr << "examine std::string" << endl;

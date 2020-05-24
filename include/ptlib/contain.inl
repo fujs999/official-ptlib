@@ -3,7 +3,7 @@
  *
  * Container Class Inline Function Definitions
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -44,10 +44,10 @@ PINLINE void PContainer::CopyContents(const PContainer &)
 PINLINE PINDEX PContainer::GetSize() const
   { return PAssertNULL(reference)->size; }
 
-PINLINE PBoolean PContainer::IsEmpty() const
+PINLINE bool PContainer::IsEmpty() const
   { return GetSize() == 0; }
 
-PINLINE PBoolean PContainer::IsUnique() const
+PINLINE bool PContainer::IsUnique() const
   { return PAssertNULL(reference)->count <= 1; }
 
 
@@ -170,7 +170,7 @@ PINLINE PINDEX PString::FindSpan(const PString & str, PINDEX offset) const
 PINLINE PString & PString::Splice(const PString & str, PINDEX pos, PINDEX len)
   { return Splice((const char *)str, pos, len); }
 
-PINLINE PStringArray PString::Tokenise(const PString & separators, PBoolean onePerSeparator) const
+PINLINE PStringArray PString::Tokenise(const PString & separators, bool onePerSeparator) const
   { return Tokenise((const char *)separators, onePerSeparator); }
 
 PINLINE PString & PString::vsprintf(const PString & fmt, va_list args)
@@ -209,7 +209,7 @@ PINLINE PCollection::PCollection(PINDEX initialSize)
 PINLINE PCollection::PCollection(int dummy, const PCollection * c)
   : PContainer(dummy, c) { }
 
-PINLINE void PCollection::AllowDeleteObjects(PBoolean yes)
+PINLINE void PCollection::AllowDeleteObjects(bool yes)
   { reference->deleteObjects = yes; }
 
 PINLINE void PCollection::DisallowDeleteObjects()
@@ -270,7 +270,7 @@ PINLINE PINDEX PSortedStringList::GetStringsIndex(const PString & str) const
 
 ///////////////////////////////////////////////////////////////////////////////
 
-PINLINE PBoolean PHashTable::AbstractContains(const PObject & key) const
+PINLINE bool PHashTable::AbstractContains(const PObject & key) const
   { return hashTable->GetElementAt(key) != NULL; }
 
 

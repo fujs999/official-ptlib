@@ -2,7 +2,7 @@
  * main.cxx - do wave file things.
  *
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -16,7 +16,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -207,7 +207,7 @@ void WAVFileTest::Record(PArgList & args)
   PSimpleTimer timer(0, args.GetOptionString('r').AsUnsigned());
   cout << "Recording WAV file for " << timer << " seconds ..." << endl;
   while (timer.IsRunning()) {
-    BYTE buffer[8192];
+    uint8_t buffer[8192];
     if (!sound->Read(buffer, sizeof(buffer))) {
       cout << "Error reading sound channel: " << sound->GetErrorText() << endl;
       break;

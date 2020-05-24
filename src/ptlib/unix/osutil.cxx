@@ -3,7 +3,7 @@
  *
  * Operating System classes implementation
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -616,7 +616,7 @@ PString PDirectory::GetVolume() const
   return volume;
 }
 
-bool PDirectory::GetVolumeSpace(PInt64 & total, PInt64 & free, DWORD & clusterSize) const
+bool PDirectory::GetVolumeSpace(int64_t & total, int64_t & free, uint32_t & clusterSize) const
 {
 #if defined(P_LINUX) || defined(P_FREEBSD) || defined(P_OPENBSD) || defined(P_NETBSD) || defined(P_MACOSX) || defined(P_IOS) || defined(P_GNU_HURD) || defined(P_ANDROID)
 
@@ -626,8 +626,8 @@ bool PDirectory::GetVolumeSpace(PInt64 & total, PInt64 & free, DWORD & clusterSi
     return false;
 
   clusterSize = fs.f_bsize;
-  total = fs.f_blocks*(PInt64)fs.f_bsize;
-  free = fs.f_bavail*(PInt64)fs.f_bsize;
+  total = fs.f_blocks*(int64_t)fs.f_bsize;
+  free = fs.f_bavail*(int64_t)fs.f_bsize;
   return true;
 
 #elif defined(P_AIX) || defined(P_VXWORKS)
@@ -637,8 +637,8 @@ bool PDirectory::GetVolumeSpace(PInt64 & total, PInt64 & free, DWORD & clusterSi
     return false;
 
   clusterSize = fs.f_bsize;
-  total = fs.f_blocks*(PInt64)fs.f_bsize;
-  free = fs.f_bavail*(PInt64)fs.f_bsize;
+  total = fs.f_blocks*(int64_t)fs.f_bsize;
+  free = fs.f_bavail*(int64_t)fs.f_bsize;
   return true;
 
 #elif defined(P_SOLARIS)
@@ -661,8 +661,8 @@ bool PDirectory::GetVolumeSpace(PInt64 & total, PInt64 & free, DWORD & clusterSi
     return false;
 
   clusterSize = fs.f_bsize;
-  total = fs.f_blocks*(PInt64)fs.f_bsize;
-  free = fs.f_bfree*(PInt64)fs.f_bsize;
+  total = fs.f_blocks*(int64_t)fs.f_bsize;
+  free = fs.f_bfree*(int64_t)fs.f_bsize;
   return true;
 
 #elif defined(P_QNX)
@@ -673,8 +673,8 @@ bool PDirectory::GetVolumeSpace(PInt64 & total, PInt64 & free, DWORD & clusterSi
     return false;
 
   clusterSize = fs.f_bsize;
-  total = fs.f_blocks*(PInt64)fs.f_bsize;
-  free = fs.f_bavail*(PInt64)fs.f_bsize;
+  total = fs.f_blocks*(int64_t)fs.f_bsize;
+  free = fs.f_bavail*(int64_t)fs.f_bsize;
   return true;
 
 #else
@@ -793,7 +793,7 @@ bool PFile::InternalOpen(OpenMode mode, OpenOptions opt, PFileInfo::Permissions 
 }
 
 
-PBoolean PFile::SetLength(off_t len)
+bool PFile::SetLength(off_t len)
 {
   return ConvertOSError(ftruncate(GetHandle(), len));
 }
@@ -806,7 +806,7 @@ bool PFile::Exists(const PFilePath & name)
   // as workaround, open the file in read-only mode
   // if it succeeds, the file exists
   PFile file(name, ReadOnly, MustExist);
-  PBoolean exists = file.IsOpen();
+  bool exists = file.IsOpen();
   if(exists == true)
     file.Close();
   return exists;
@@ -823,7 +823,7 @@ bool PFile::Access(const PFilePath & name, OpenMode mode)
   // as workaround, open the file in specified mode
   // if it succeeds, the access is allowed
   PFile file(name, mode, ModeDefault);
-  PBoolean access = file.IsOpen();
+  bool access = file.IsOpen();
   if(access == true)
     file.Close();
   return access;
@@ -986,7 +986,7 @@ PConsoleChannel::PConsoleChannel(ConsoleType type)
 }
 
 
-PBoolean PConsoleChannel::Open(ConsoleType type)
+bool PConsoleChannel::Open(ConsoleType type)
 {
   switch (type) {
     case StandardInput :
@@ -1012,7 +1012,7 @@ PString PConsoleChannel::GetName() const
 }
 
 
-PBoolean PConsoleChannel::Close()
+bool PConsoleChannel::Close()
 {
   if (os_handle == 0) {
     SetLocalEcho(true);
@@ -1168,7 +1168,7 @@ void PTime::SetCurrentTime()
 }
 
 
-PBoolean PTime::GetTimeAMPM()
+bool PTime::GetTimeAMPM()
 {
 #if defined(P_USE_LANGINFO)
   return strstr(nl_langinfo(T_FMT), "%p") != NULL;
@@ -1405,7 +1405,7 @@ PString PTime::GetMonthName(PTime::Months month, NameType type)
 }
 
 
-PBoolean PTime::IsDaylightSavings()
+bool PTime::IsDaylightSavings()
 {
   time_t theTime = ::time(NULL);
   struct tm ts;

@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -196,7 +196,7 @@ DelayThread::DelayThread(PINDEX _delay)
   ++manualDeleteThreadsStarted;
 }    
 
-DelayThread::DelayThread(PINDEX _delay, PBoolean)
+DelayThread::DelayThread(PINDEX _delay, bool)
   : PThread(10000, AutoDeleteThread), delay(_delay)
 {
   PTRACE(3, "ThreadEx\tConstructor for an auto deleted  delay thread");
@@ -256,7 +256,7 @@ void LauncherThread::Main()
 {
   PINDEX gapIteration = Threadex::Current().GapIteration();
   PINDEX delay = Threadex::Current().Delay();
-  PBoolean   doCreate = Threadex::Current().Create();
+  bool   doCreate = Threadex::Current().Create();
 
   PThread *thread = NULL;
   if (Threadex::Current().AutoDelete()) {

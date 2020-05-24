@@ -3,7 +3,7 @@
  *
  * Sound driver implementation.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 2009 Matthias Kattanek
  *

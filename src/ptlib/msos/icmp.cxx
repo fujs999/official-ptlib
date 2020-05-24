@@ -3,7 +3,7 @@
  *
  * ICMP class implementation for Win32.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -120,15 +120,15 @@ class PICMPDLL : public PDynaLink
     BOOL (PASCAL *IcmpCloseHandle)(HANDLE handle);
 
     // Send the ICMP echo command for a "ping"
-    DWORD (PASCAL *IcmpSendEcho)(
+    uint32_t (PASCAL *IcmpSendEcho)(
     HANDLE   handle,           /* handle returned from IcmpCreateFile() */
     u_long   destAddr,         /* destination IP address (in network order) */
     void   * sendBuffer,       /* pointer to buffer to send */
-    WORD     sendLength,       /* length of data in buffer */
+    uint16_t     sendLength,       /* length of data in buffer */
     IPINFO * requestOptions,   /* see structure definition above */
     void   * replyBuffer,      /* structure definitionm above */
-    DWORD    replySize,        /* size of reply buffer */
-    DWORD    timeout           /* time in milliseconds to wait for reply */
+    uint32_t    replySize,        /* size of reply buffer */
+    uint32_t    timeout           /* time in milliseconds to wait for reply */
   );
 } ICMP;
 
@@ -138,19 +138,19 @@ PICMPSocket::PICMPSocket()
   OpenSocket();
 }
 
-PBoolean PICMPSocket::IsOpen() const
+bool PICMPSocket::IsOpen() const
 {
   return icmpHandle != NULL;
 }
 
 
-PBoolean PICMPSocket::OpenSocket()
+bool PICMPSocket::OpenSocket()
 {
   return ICMP.IsLoaded() && (icmpHandle = ICMP.IcmpCreateFile()) != NULL;
 }
 
 
-PBoolean PICMPSocket::Close()
+bool PICMPSocket::Close()
 {
   if (icmpHandle == NULL) 
     return true;
@@ -164,14 +164,14 @@ const char * PICMPSocket::GetProtocolName() const
   return "icmp";
 }
 
-PBoolean PICMPSocket::Ping(const PString & host)
+bool PICMPSocket::Ping(const PString & host)
 {
   PingInfo info;
   return Ping(host, info);
 }
 
 
-PBoolean PICMPSocket::Ping(const PString & host, PingInfo & info)
+bool PICMPSocket::Ping(const PString & host, PingInfo & info)
 {
   if (!ICMP.IsLoaded())
     return SetErrorValues(NotOpen, EBADF);
@@ -188,14 +188,14 @@ PBoolean PICMPSocket::Ping(const PString & host, PingInfo & info)
   requestOptions.OptionsSize = 0;    /* Size of options data (usually 0, max 40) */
   requestOptions.OptionsData = NULL; /* Options data buffer */
 
-  BYTE sendBuffer[32];
+  uint8_t sendBuffer[32];
   void * sendBufferPtr;
-  WORD sendBufferSize;
+  uint16_t sendBufferSize;
 
   if (info.buffer != NULL) {
     sendBufferPtr = (void *)info.buffer;
     PAssert(info.bufferSize < 65535, PInvalidParameter);
-    sendBufferSize = (WORD)info.bufferSize;
+    sendBufferSize = (uint16_t)info.bufferSize;
   }
   else {
     sendBufferPtr = sendBuffer;
@@ -267,7 +267,7 @@ PBoolean PICMPSocket::Ping(const PString & host, PingInfo & info)
 }
 
 
-PICMPSocket::PingInfo::PingInfo(WORD id)
+PICMPSocket::PingInfo::PingInfo(uint16_t id)
 {
   identifier = id;
   sequenceNum = 0;

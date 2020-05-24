@@ -3,7 +3,7 @@
  *
  * Classes for service applications using HTTP as the user interface.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-2002 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -93,7 +93,7 @@ PHTTPServiceProcess & PHTTPServiceProcess::Current()
 }
 
 
-PBoolean PHTTPServiceProcess::OnStart()
+bool PHTTPServiceProcess::OnStart()
 {
   {
     /* Set up the default data and html files directory underneath
@@ -138,7 +138,7 @@ void PHTTPServiceProcess::OnStop()
 }
 
 
-PBoolean PHTTPServiceProcess::OnPause()
+bool PHTTPServiceProcess::OnPause()
 {
   OnConfigChanged();
   return true;
@@ -258,7 +258,7 @@ bool PHTTPServiceProcess::InitialiseBase(Params & params)
                                                     "days", "Number of days to keep rotated log files, zero is infinite"));
 
   // HTTP Port number to use.
-    params.m_httpPort = (WORD)params.m_configPage->AddIntegerField(params.m_httpPortKey, 1, 65535, params.m_httpPort,
+    params.m_httpPort = (uint16_t)params.m_configPage->AddIntegerField(params.m_httpPortKey, 1, 65535, params.m_httpPort,
                                                                    "", "Port for HTTP user interface for server.");
     params.m_httpInterfaces = params.m_configPage->AddStringField(params.m_httpInterfacesKey, 30, params.m_httpInterfaces,
                                                                  "Local network interface(s) for HTTP user interface for server.");
@@ -275,7 +275,7 @@ bool PHTTPServiceProcess::InitialiseBase(Params & params)
     info.m_maxSize = cfg.GetInteger(params.m_rotateSizeKey, info.m_maxSize / 1000) * 1000;
     info.m_maxFileCount = cfg.GetInteger(params.m_rotateCountKey, info.m_maxFileCount);
     info.m_maxFileAge.SetInterval(0, 0, 0, 0, cfg.GetInteger(params.m_rotateAgeKey, info.m_maxFileAge.GetDays()));
-    params.m_httpPort = (WORD)cfg.GetInteger(params.m_httpPortKey, params.m_httpPort);
+    params.m_httpPort = (uint16_t)cfg.GetInteger(params.m_httpPortKey, params.m_httpPort);
     params.m_httpInterfaces = cfg.GetString(params.m_httpInterfacesKey, params.m_httpInterfaces);
   }
 
@@ -357,7 +357,7 @@ PString PHTTPServiceProcess::ClearLogPage::LoadText(PHTTPRequest & request)
 }
 
 
-PBoolean PHTTPServiceProcess::ClearLogPage::Post(PHTTPRequest & request, const PStringToString & data, PHTML & msg)
+bool PHTTPServiceProcess::ClearLogPage::Post(PHTTPRequest & request, const PStringToString & data, PHTML & msg)
 {
   msg << PHTML::Title() << "Cleared Log File" << PHTML::Body()
       << PHTML::Heading(1) << "Cleared Log File" << PHTML::Heading(1);
@@ -427,7 +427,7 @@ void PHTTPServiceProcess::AddUnregisteredText(PHTML &)
 }
 
 
-PBoolean PHTTPServiceProcess::SubstituteEquivalSequence(PHTTPRequest &, const PString &, PString &)
+bool PHTTPServiceProcess::SubstituteEquivalSequence(PHTTPRequest &, const PString &, PString &)
 {
   return false;
 }
@@ -534,19 +534,19 @@ void PConfigPage::OnLoadedText(PHTTPRequest & request, PString & text)
 }
 
 
-PBoolean PConfigPage::OnPOST(PHTTPServer & server, const PHTTPConnectionInfo & connectInfo)
+bool PConfigPage::OnPOST(PHTTPServer & server, const PHTTPConnectionInfo & connectInfo)
 {
   server.GetConnectionInfo().DisablePersistence();
   return PHTTPConfig::OnPOST(server, connectInfo);
 }
 
 
-PBoolean PConfigPage::Post(PHTTPRequest & request,
+bool PConfigPage::Post(PHTTPRequest & request,
                        const PStringToString & data,
                        PHTML & reply)
 {
   PSYSTEMLOG(Debug3, "Post to " << request.url << '\n' << data);
-  PBoolean retval = PHTTPConfig::Post(request, data, reply);
+  bool retval = PHTTPConfig::Post(request, data, reply);
 
   if (request.code == PHTTP::RequestOK)
     process.BeginRestartSystem();
@@ -560,7 +560,7 @@ PBoolean PConfigPage::Post(PHTTPRequest & request,
 }
 
 
-PBoolean PConfigPage::GetExpirationDate(PTime & when)
+bool PConfigPage::GetExpirationDate(PTime & when)
 {
   // Well and truly before now....
   when = ImmediateExpiryTime;
@@ -595,25 +595,25 @@ void PConfigSectionsPage::OnLoadedText(PHTTPRequest & request, PString & text)
 }
 
 
-PBoolean PConfigSectionsPage::OnPOST(PHTTPServer & server, const PHTTPConnectionInfo & connectInfo)
+bool PConfigSectionsPage::OnPOST(PHTTPServer & server, const PHTTPConnectionInfo & connectInfo)
 {
   server.GetConnectionInfo().DisablePersistence();
   return PHTTPConfigSectionList::OnPOST(server, connectInfo);
 }
 
 
-PBoolean PConfigSectionsPage::Post(PHTTPRequest & request,
+bool PConfigSectionsPage::Post(PHTTPRequest & request,
                                const PStringToString & data,
                                PHTML & reply)
 {
-  PBoolean retval = PHTTPConfigSectionList::Post(request, data, reply);
+  bool retval = PHTTPConfigSectionList::Post(request, data, reply);
   if (request.code == PHTTP::RequestOK)
     process.BeginRestartSystem();
   return retval;
 }
 
 
-PBoolean PConfigSectionsPage::GetExpirationDate(PTime & when)
+bool PConfigSectionsPage::GetExpirationDate(PTime & when)
 {
   // Well and truly before now....
   when = ImmediateExpiryTime;
@@ -747,7 +747,7 @@ PString PRegisterPage::LoadText(PHTTPRequest & request)
 }
 
 
-static PBoolean FindSpliceBlock(const PRegularExpression & regex,
+static bool FindSpliceBlock(const PRegularExpression & regex,
                             const PString & text,
                             PINDEX & pos,
                             PINDEX & len,
@@ -880,14 +880,14 @@ void PRegisterPage::OnLoadedText(PHTTPRequest & request, PString & text)
 }
 
 
-PBoolean PRegisterPage::Post(PHTTPRequest & request,
+bool PRegisterPage::Post(PHTTPRequest & request,
                          const PStringToString & data,
                          PHTML & reply)
 {
   if (m_fields.GetSize() == 0)
     LoadText(request);
 
-  PBoolean retval = PHTTPConfig::Post(request, data, reply);
+  bool retval = PHTTPConfig::Post(request, data, reply);
   if (request.code != PHTTP::RequestOK)
     return false;
 
@@ -1033,20 +1033,20 @@ PString PServiceHTML::CalculateSignature(const PString & outStr,
 
   // encode it
   PTEACypher cypher(sig);
-  BYTE buf[PMessageDigest5::DigestLength+7];
+  uint8_t buf[PMessageDigest5::DigestLength+7];
   memcpy(buf, md5, PMessageDigest5::DigestLength);
   memset(&buf[PMessageDigest5::DigestLength], 0, sizeof(buf)-PMessageDigest5::DigestLength);
   return cypher.Encode(buf, sizeof(buf));
 }
 
 
-PBoolean PServiceHTML::CheckSignature()
+bool PServiceHTML::CheckSignature()
 {
   return CheckSignature(*this);
 }
 
 
-PBoolean PServiceHTML::CheckSignature(const PString & html)
+bool PServiceHTML::CheckSignature(const PString & html)
 {
   if (PHTTPServiceProcess::Current().ShouldIgnoreSignatures())
     return true;
@@ -1063,7 +1063,7 @@ PBoolean PServiceHTML::CheckSignature(const PString & html)
 }
 
 
-static PBoolean FindBrackets(const PString & args, PINDEX & open, PINDEX & close)
+static bool FindBrackets(const PString & args, PINDEX & open, PINDEX & close)
 {
   open = args.FindOneOf("[{(", close);
   if (open == P_MAX_INDEX)
@@ -1084,7 +1084,7 @@ static PBoolean FindBrackets(const PString & args, PINDEX & open, PINDEX & close
 }
 
 
-static PBoolean ExtractVariables(const PString & args,
+static bool ExtractVariables(const PString & args,
                              PString & variable,
                              PString & value)
 {
@@ -1111,7 +1111,7 @@ static PBoolean ExtractVariables(const PString & args,
 PServiceMacro * PServiceMacro::list;
 
 
-PServiceMacro::PServiceMacro(const char * name, PBoolean isBlock)
+PServiceMacro::PServiceMacro(const char * name, bool isBlock)
 {
   macroName = name;
   isMacroBlock = isBlock;
@@ -1120,7 +1120,7 @@ PServiceMacro::PServiceMacro(const char * name, PBoolean isBlock)
 }
 
 
-PServiceMacro::PServiceMacro(const PCaselessString & name, PBoolean isBlock)
+PServiceMacro::PServiceMacro(const PCaselessString & name, bool isBlock)
 {
   macroName = name;
   isMacroBlock = isBlock;
@@ -1346,7 +1346,7 @@ PCREATE_SERVICE_MACRO(MonitorInfo,request,P_EMPTY)
   if (request.localAddr != 0)
     localAddr = request.localAddr.AsString();
 
-  WORD localPort = 80;
+  uint16_t localPort = 80;
   if (request.localPort != 0)
     localPort = request.localPort;
 
@@ -1552,7 +1552,7 @@ PCREATE_SERVICE_MACRO_BLOCK(IfQuery,request,args,block)
   PString var = args.Left(space);
   PString value = args.Mid(space).LeftTrim();
 
-  PBoolean ok;
+  bool ok;
   if (value.IsEmpty())
     ok = vars.Contains(var);
   else {
@@ -1688,7 +1688,7 @@ bool PServiceHTML::ProcessMacros(PHTTPRequest & request,
   PRegularExpression MacroRegEx("<?!--#(equival|" + process.GetMacroKeyword() + ")[ \t\r\n]+(-?[^-])+-->?",
                                 PRegularExpression::Extended|PRegularExpression::IgnoreCase);
 
-  PBoolean substitedMacro;
+  bool substitedMacro;
   do {
     substitedMacro = false;
 
@@ -1789,7 +1789,7 @@ PString PServiceHTTPString::LoadText(PHTTPRequest & request)
   return text;
 }
 
-PBoolean PServiceHTTPString::GetExpirationDate(PTime & when)
+bool PServiceHTTPString::GetExpirationDate(PTime & when)
 {
   // Well and truly before now....
   when = ImmediateExpiryTime;
@@ -1804,7 +1804,7 @@ void PServiceHTTPFile::OnLoadedText(PHTTPRequest & request, PString & text)
           needSignature ? PServiceHTML::NeedSignature : PServiceHTML::NoOptions);
 }
 
-PBoolean PServiceHTTPFile::GetExpirationDate(PTime & when)
+bool PServiceHTTPFile::GetExpirationDate(PTime & when)
 {
   // Well and truly before now....
   when = ImmediateExpiryTime;
@@ -1820,7 +1820,7 @@ void PServiceHTTPDirectory::OnLoadedText(PHTTPRequest & request, PString & text)
 }
 
 
-PBoolean PServiceHTTPDirectory::GetExpirationDate(PTime & when)
+bool PServiceHTTPDirectory::GetExpirationDate(PTime & when)
 {
   // Well and truly before now....
   when = ImmediateExpiryTime;

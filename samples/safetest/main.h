@@ -15,7 +15,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -65,7 +65,7 @@ class ReporterThread : public PThread
   PSyncPoint exitFlag;
   
   /**Flag to indicate end this thread */
-  PBoolean terminateNow;
+  bool terminateNow;
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -101,7 +101,7 @@ class DelayWorkerThread : public PThread
 {
   PCLASSINFO(DelayWorkerThread, PThread);
  public:
-  DelayWorkerThread(DelayThread &_delayThread, PInt64 _iteration);
+  DelayWorkerThread(DelayThread &_delayThread, int64_t _iteration);
 
   /**Do the work of advising the SafeTest about this */
   void Main();
@@ -112,7 +112,7 @@ class DelayWorkerThread : public PThread
   DelayThread & delayThread;
 
   /** Iteration we are representing */
-  PInt64 iteration;
+  int64_t iteration;
 
   /**The name we make up for this DelayWorkerThread instance */
   PStringStream thisThreadName;
@@ -156,7 +156,7 @@ public:
   /**Create this class, so it runs for the specified delay period, The
      class is assigned a unique ID tag, based on the parameter
      idNumber */
-  DelayThread(SafeTest & _safeTest, PINDEX _delay, PInt64 idNumber);
+  DelayThread(SafeTest & _safeTest, PINDEX _delay, int64_t idNumber);
     
   /**Destroy this class. Includes a check to see if this class is
      still running*/
@@ -201,7 +201,7 @@ public:
     PString id;
 
     /**Flag to indicate we are still going */
-    PBoolean threadRunning;
+    bool threadRunning;
 
     /**The name of this thread */
     PStringStream name;
@@ -252,7 +252,7 @@ public:
   /**Access function, which is callled by the UserInterfaceThread.  It
    reports the number of DelayThread instances that have been
    created.*/
-  PInt64 GetIteration() { return iteration; }
+  int64_t GetIteration() { return iteration; }
 
   /**Cause this thread to stop work and end */
   virtual void Terminate() { keepGoing = false; }
@@ -280,14 +280,14 @@ public:
 
   /**Count on the number of DelayThread instances that have been
      created */
-  PInt64          iteration;
+  int64_t          iteration;
   
   /**The time at which this program was started */
   PTime           startTime;
 
   /**A flag to indicate that we have to keep on doing our job, of
      launching DelayThread instances */
-  PBoolean            keepGoing;
+  bool            keepGoing;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -348,15 +348,15 @@ class SafeTest : public PProcess
     PINDEX GetRandom() { return random.Generate() % (delay >> 2); }
 
     /**Report the status of the useOnThreadEnd flag */
-    PBoolean UseOnThreadEnd();
+    bool UseOnThreadEnd();
 
     /**Return true or false, to decide if we use PThread::Create */
-    PBoolean AvoidPThreadCreate() { return avoidPThreadCreate; }
+    bool AvoidPThreadCreate() { return avoidPThreadCreate; }
 
 
     /**Return true or false to determine if a thread should be
        launched to regularly report on status */
-    PBoolean RegularReporting() { return regularReporting; }
+    bool RegularReporting() { return regularReporting; }
  protected:
 
     /**The thread safe list of DelayThread s that we manage */
@@ -370,7 +370,7 @@ class SafeTest : public PProcess
     } delayThreadsActive;
 
     /**The flag to say when we exit */
-    PBoolean exitNow;
+    bool exitNow;
      
     /**The delay each thread has to wait for */
     PINDEX delay;
@@ -387,15 +387,15 @@ class SafeTest : public PProcess
 
     /**Flag to indicate that we use the OnDelayThreadEnd mechanism for
        signifing the end of a DelayThread */
-    PBoolean useOnThreadEnd;
+    bool useOnThreadEnd;
 
     /**Flag to indicate if we can use PThread::Create to generate
        temporary thread, or if we use the supplied thread class */
-    PBoolean avoidPThreadCreate;
+    bool avoidPThreadCreate;
     
 
     /**Flag to determine if a thread is used to regularly report on status */
-    PBoolean regularReporting;
+    bool regularReporting;
 };
 
 

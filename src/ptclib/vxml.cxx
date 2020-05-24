@@ -15,7 +15,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -79,10 +79,10 @@ class PVXMLChannelPCM : public PVXMLChannel
     virtual bool SetSampleRate(unsigned rate);
     virtual unsigned GetChannels() const;
     virtual bool SetChannels(unsigned channels);
-    virtual PBoolean WriteFrame(const void * buf, PINDEX len);
-    virtual PBoolean ReadFrame(void * buffer, PINDEX amount);
+    virtual bool WriteFrame(const void * buf, PINDEX len);
+    virtual bool ReadFrame(void * buffer, PINDEX amount);
     virtual PINDEX CreateSilenceFrame(void * buffer, PINDEX amount);
-    virtual PBoolean IsSilenceFrame(const void * buf, PINDEX len) const;
+    virtual bool IsSilenceFrame(const void * buf, PINDEX len) const;
     virtual void GetBeepData(PBYTEArray & data, unsigned ms);
 
   protected:
@@ -103,10 +103,10 @@ class PVXMLChannelG7231 : public PVXMLChannel
     virtual bool SetSampleRate(unsigned rate);
     virtual unsigned GetChannels() const;
     virtual bool SetChannels(unsigned channels);
-    virtual PBoolean WriteFrame(const void * buf, PINDEX len);
-    virtual PBoolean ReadFrame(void * buffer, PINDEX amount);
+    virtual bool WriteFrame(const void * buf, PINDEX len);
+    virtual bool ReadFrame(void * buffer, PINDEX amount);
     virtual PINDEX CreateSilenceFrame(void * buffer, PINDEX amount);
-    virtual PBoolean IsSilenceFrame(const void * buf, PINDEX len) const;
+    virtual bool IsSilenceFrame(const void * buf, PINDEX len) const;
 };
 
 
@@ -122,10 +122,10 @@ class PVXMLChannelG729 : public PVXMLChannel
     virtual bool SetSampleRate(unsigned rate);
     virtual unsigned GetChannels() const;
     virtual bool SetChannels(unsigned channels);
-    virtual PBoolean WriteFrame(const void * buf, PINDEX len);
-    virtual PBoolean ReadFrame(void * buffer, PINDEX amount);
+    virtual bool WriteFrame(const void * buf, PINDEX len);
+    virtual bool ReadFrame(void * buffer, PINDEX amount);
     virtual PINDEX CreateSilenceFrame(void * buffer, PINDEX amount);
-    virtual PBoolean IsSilenceFrame(const void * buf, PINDEX len) const;
+    virtual bool IsSilenceFrame(const void * buf, PINDEX len) const;
 };
 
 
@@ -493,34 +493,34 @@ public:
     return SIGN_LANGUAGE_PREVIEW_SCRIPT_FUNCTION;
   }
 
-  virtual PBoolean Open(const PString &, PBoolean)
+  virtual bool Open(const PString &, bool)
   {
     return IsOpen();
   }
 
-  virtual PBoolean IsOpen()
+  virtual bool IsOpen()
   {
     return PVXMLSignLanguageAnalyser::GetInstance().CanPreview(m_receiver.GetAnalayserInstance());
   }
 
-  virtual PBoolean Close()
+  virtual bool Close()
   {
     return true;
   }
 
-  virtual PBoolean SetFrameSize(unsigned width, unsigned height)
+  virtual bool SetFrameSize(unsigned width, unsigned height)
   {
     return width == m_frameWidth && height == m_frameHeight;
   }
 
-  PBoolean SetColourFormat(const PString & colourFormat)
+  bool SetColourFormat(const PString & colourFormat)
   {
     return colourFormat == m_colourFormat;
   }
 
 
 protected:
-  virtual bool InternalReadFrameData(BYTE * buffer)
+  virtual bool InternalReadFrameData(uint8_t * buffer)
   {
     if (!IsOpen())
       return false;
@@ -573,7 +573,7 @@ PVXMLPlayable::~PVXMLPlayable()
 }
 
 
-PBoolean PVXMLPlayable::Open(PVXMLChannel & channel, const PString &, PINDEX delay, PINDEX repeat, PBoolean autoDelete)
+bool PVXMLPlayable::Open(PVXMLChannel & channel, const PString &, PINDEX delay, PINDEX repeat, bool autoDelete)
 {
   m_vxmlChannel = &channel;
   m_delay = delay;
@@ -640,7 +640,7 @@ bool PVXMLPlayableStop::OnStart()
 
 ///////////////////////////////////////////////////////////////
 
-PBoolean PVXMLPlayableFile::Open(PVXMLChannel & chan, const PString & fn, PINDEX delay, PINDEX repeat, PBoolean autoDelete)
+bool PVXMLPlayableFile::Open(PVXMLChannel & chan, const PString & fn, PINDEX delay, PINDEX repeat, bool autoDelete)
 {
   return chan.AdjustMediaFilename(fn, m_filePath) && PVXMLPlayable::Open(chan, fn, delay, repeat, autoDelete);
 }
@@ -692,13 +692,13 @@ PVXMLPlayableFileList::PVXMLPlayableFileList()
 }
 
 
-PBoolean PVXMLPlayableFileList::Open(PVXMLChannel & chan, const PString & list, PINDEX delay, PINDEX repeat, PBoolean autoDelete)
+bool PVXMLPlayableFileList::Open(PVXMLChannel & chan, const PString & list, PINDEX delay, PINDEX repeat, bool autoDelete)
 {
   return Open(chan, list.Lines(), delay, repeat, autoDelete);
 }
 
 
-PBoolean PVXMLPlayableFileList::Open(PVXMLChannel & chan, const PStringArray & list, PINDEX delay, PINDEX repeat, PBoolean autoDelete)
+bool PVXMLPlayableFileList::Open(PVXMLChannel & chan, const PStringArray & list, PINDEX delay, PINDEX repeat, bool autoDelete)
 {
   for (PINDEX i = 0; i < list.GetSize(); ++i) {
     PFilePath fn;
@@ -755,7 +755,7 @@ PFACTORY_CREATE(PFactory<PVXMLPlayable>, PVXMLPlayableFileList, "FileList");
 
 #if P_PIPECHAN
 
-PBoolean PVXMLPlayableCommand::Open(PVXMLChannel & chan, const PString & cmd, PINDEX delay, PINDEX repeat, PBoolean autoDelete)
+bool PVXMLPlayableCommand::Open(PVXMLChannel & chan, const PString & cmd, PINDEX delay, PINDEX repeat, bool autoDelete)
 {
   if (cmd.IsEmpty()) {
     PTRACE(2, "Empty command line.");
@@ -811,7 +811,7 @@ PFACTORY_CREATE(PFactory<PVXMLPlayable>, PVXMLPlayableCommand, "Command");
 
 ///////////////////////////////////////////////////////////////
 
-PBoolean PVXMLPlayableData::Open(PVXMLChannel & chan, const PString & hex, PINDEX delay, PINDEX repeat, PBoolean autoDelete)
+bool PVXMLPlayableData::Open(PVXMLChannel & chan, const PString & hex, PINDEX delay, PINDEX repeat, bool autoDelete)
 {
   return PVXMLPlayable::Open(chan, hex, delay, repeat, autoDelete);
 }
@@ -850,7 +850,7 @@ PFACTORY_CREATE(PFactory<PVXMLPlayable>, PVXMLPlayableData, "PCM Data");
 
 #if P_DTMF
 
-PBoolean PVXMLPlayableTone::Open(PVXMLChannel & chan, const PString & toneSpec, PINDEX delay, PINDEX repeat, PBoolean autoDelete)
+bool PVXMLPlayableTone::Open(PVXMLChannel & chan, const PString & toneSpec, PINDEX delay, PINDEX repeat, bool autoDelete)
 {
   // populate the tone buffer
   PTones tones;
@@ -873,7 +873,7 @@ PFACTORY_CREATE(PFactory<PVXMLPlayable>, PVXMLPlayableTone, "Tone");
 
 ///////////////////////////////////////////////////////////////
 
-PBoolean PVXMLPlayableURL::Open(PVXMLChannel & chan, const PString & url, PINDEX delay, PINDEX repeat, PBoolean autoDelete)
+bool PVXMLPlayableURL::Open(PVXMLChannel & chan, const PString & url, PINDEX delay, PINDEX repeat, bool autoDelete)
 {
   if (!m_url.Parse(url)) {
     PTRACE(2, "Invalid URL \"" << url << '"');
@@ -917,7 +917,7 @@ PVXMLRecordable::PVXMLRecordable()
 
 ///////////////////////////////////////////////////////////////
 
-PBoolean PVXMLRecordableFilename::Open(const PString & arg)
+bool PVXMLRecordableFilename::Open(const PString & arg)
 {
   m_fileName = arg;
   return true;
@@ -940,7 +940,7 @@ bool PVXMLRecordableFilename::OnStart(PVXMLChannel & outgoingChannel)
 }
 
 
-PBoolean PVXMLRecordableFilename::OnFrame(PBoolean isSilence)
+bool PVXMLRecordableFilename::OnFrame(bool isSilence)
 {
   if (isSilence) {
     if (m_silenceTimer.HasExpired()) {
@@ -1077,7 +1077,7 @@ bool PVXMLCache::PutWithLock(const PString & prefix,
 
 //////////////////////////////////////////////////////////
 
-PVXMLSession::PVXMLSession(PTextToSpeech * tts, PBoolean autoDelete)
+PVXMLSession::PVXMLSession(PTextToSpeech * tts, bool autoDelete)
   : m_textToSpeech(tts)
   , m_ttsCache(NULL)
   , m_autoDeleteTextToSpeech(autoDelete)
@@ -1128,7 +1128,7 @@ PVXMLSession::~PVXMLSession()
 }
 
 
-PTextToSpeech * PVXMLSession::SetTextToSpeech(PTextToSpeech * tts, PBoolean autoDelete)
+PTextToSpeech * PVXMLSession::SetTextToSpeech(PTextToSpeech * tts, bool autoDelete)
 {
   PWaitAndSignal mutex(m_sessionMutex);
 
@@ -1178,7 +1178,7 @@ PVXMLCache & PVXMLSession::GetCache()
 }
 
 
-PBoolean PVXMLSession::Load(const PString & source)
+bool PVXMLSession::Load(const PString & source)
 {
   // See if we have been given a file
   PFilePath file = source;
@@ -1195,7 +1195,7 @@ PBoolean PVXMLSession::Load(const PString & source)
 }
 
 
-PBoolean PVXMLSession::LoadFile(const PFilePath & filename, const PString & firstForm)
+bool PVXMLSession::LoadFile(const PFilePath & filename, const PString & firstForm)
 {
   PTRACE(4, "Loading file: " << filename);
 
@@ -1210,7 +1210,7 @@ PBoolean PVXMLSession::LoadFile(const PFilePath & filename, const PString & firs
 }
 
 
-PBoolean PVXMLSession::LoadURL(const PURL & url)
+bool PVXMLSession::LoadURL(const PURL & url)
 {
   PTRACE(4, "Loading URL " << url);
 
@@ -1227,7 +1227,7 @@ PBoolean PVXMLSession::LoadURL(const PURL & url)
 }
 
 
-PBoolean PVXMLSession::LoadVXML(const PString & xmlText, const PString & firstForm)
+bool PVXMLSession::LoadVXML(const PString & xmlText, const PString & firstForm)
 {
   m_rootURL = PString::Empty();
   return InternalLoadVXML(xmlText, firstForm);
@@ -1433,7 +1433,7 @@ void PVXMLSession::InternalStartThread()
 }
 
 
-PBoolean PVXMLSession::Close()
+bool PVXMLSession::Close()
 {
   m_sessionMutex.Wait();
 
@@ -1808,7 +1808,7 @@ void PVXMLSession::OnUserInput(const PString & str)
 }
 
 
-PBoolean PVXMLSession::TraverseRecord(PXMLElement & element)
+bool PVXMLSession::TraverseRecord(PXMLElement & element)
 {
   if (!ExecuteCondition(element))
     return false;
@@ -1818,7 +1818,7 @@ PBoolean PVXMLSession::TraverseRecord(PXMLElement & element)
 }
 
 
-PBoolean PVXMLSession::TraversedRecord(PXMLElement & element)
+bool PVXMLSession::TraversedRecord(PXMLElement & element)
 {
   if (m_abortVXML)
     return true; // True is not "good" but "done", that is move to next element in VXML.
@@ -1915,7 +1915,7 @@ PBoolean PVXMLSession::TraversedRecord(PXMLElement & element)
 }
 
 
-PBoolean PVXMLSession::TraverseScript(PXMLElement & element)
+bool PVXMLSession::TraverseScript(PXMLElement & element)
 {
 #if P_SCRIPTS
   if (m_scriptContext != NULL) {
@@ -2122,31 +2122,31 @@ void PVXMLSession::SetVar(const PString & varName, const PString & value)
 }
 
 
-PBoolean PVXMLSession::PlayFile(const PString & fn, PINDEX repeat, PINDEX delay, PBoolean autoDelete)
+bool PVXMLSession::PlayFile(const PString & fn, PINDEX repeat, PINDEX delay, bool autoDelete)
 {
   return IsOpen() && !m_bargingIn && GetVXMLChannel()->QueueFile(fn, repeat, delay, autoDelete);
 }
 
 
-PBoolean PVXMLSession::PlayCommand(const PString & cmd, PINDEX repeat, PINDEX delay)
+bool PVXMLSession::PlayCommand(const PString & cmd, PINDEX repeat, PINDEX delay)
 {
   return IsOpen() && !m_bargingIn && GetVXMLChannel()->QueueCommand(cmd, repeat, delay);
 }
 
 
-PBoolean PVXMLSession::PlayData(const PBYTEArray & data, PINDEX repeat, PINDEX delay)
+bool PVXMLSession::PlayData(const PBYTEArray & data, PINDEX repeat, PINDEX delay)
 {
   return IsOpen() && !m_bargingIn && GetVXMLChannel()->QueueData(data, repeat, delay);
 }
 
 
-PBoolean PVXMLSession::PlayTone(const PString & toneSpec, PINDEX repeat, PINDEX delay)
+bool PVXMLSession::PlayTone(const PString & toneSpec, PINDEX repeat, PINDEX delay)
 {
   return IsOpen() && !m_bargingIn && GetVXMLChannel()->QueuePlayable("Tone", toneSpec, repeat, delay, true);
 }
 
 
-PBoolean PVXMLSession::PlayElement(PXMLElement & element)
+bool PVXMLSession::PlayElement(PXMLElement & element)
 {
   if (m_bargingIn)
     return false;
@@ -2163,7 +2163,7 @@ PBoolean PVXMLSession::PlayElement(PXMLElement & element)
   if (str[0] == '|')
     return PlayCommand(str.Mid(1));
 
-  PINDEX repeat = std::max(DWORD(1), element.GetAttribute("repeat").AsUnsigned());
+  PINDEX repeat = std::max(uint32_t(1), element.GetAttribute("repeat").AsUnsigned());
 
   // files on the local file system get loaded locally
   PURL url(str);
@@ -2213,32 +2213,32 @@ void PVXMLSession::GetBeepData(PBYTEArray & data, unsigned ms)
 }
 
 
-PBoolean PVXMLSession::PlaySilence(const PTimeInterval & timeout)
+bool PVXMLSession::PlaySilence(const PTimeInterval & timeout)
 {
   return PlaySilence((PINDEX)timeout.GetMilliSeconds());
 }
 
 
-PBoolean PVXMLSession::PlaySilence(PINDEX msecs)
+bool PVXMLSession::PlaySilence(PINDEX msecs)
 {
   PBYTEArray nothing;
   return IsOpen() && !m_bargingIn && GetVXMLChannel()->QueueData(nothing, 1, msecs);
 }
 
 
-PBoolean PVXMLSession::PlayStop()
+bool PVXMLSession::PlayStop()
 {
   return IsOpen() && GetVXMLChannel()->QueuePlayable(new PVXMLPlayableStop());
 }
 
 
-PBoolean PVXMLSession::PlayResource(const PURL & url, PINDEX repeat, PINDEX delay)
+bool PVXMLSession::PlayResource(const PURL & url, PINDEX repeat, PINDEX delay)
 {
   return IsOpen() && !m_bargingIn && GetVXMLChannel()->QueueResource(url, repeat, delay);
 }
 
 
-PBoolean PVXMLSession::LoadGrammar(PVXMLGrammar * grammar)
+bool PVXMLSession::LoadGrammar(PVXMLGrammar * grammar)
 {
   PTRACE_IF(2, m_grammar != NULL && grammar == NULL, "Grammar cleared from " << *m_grammar);
 
@@ -2251,7 +2251,7 @@ PBoolean PVXMLSession::LoadGrammar(PVXMLGrammar * grammar)
 }
 
 
-PBoolean PVXMLSession::PlayText(const PString & textToPlay,
+bool PVXMLSession::PlayText(const PString & textToPlay,
                     PTextToSpeech::TextType type,
                                      PINDEX repeat,
                                      PINDEX delay)
@@ -2320,20 +2320,20 @@ PBoolean PVXMLSession::PlayText(const PString & textToPlay,
 }
 
 
-void PVXMLSession::SetPause(PBoolean pause)
+void PVXMLSession::SetPause(bool pause)
 {
   if (IsOpen())
     GetVXMLChannel()->SetPause(pause);
 }
 
 
-PBoolean PVXMLSession::TraverseBlock(PXMLElement & element)
+bool PVXMLSession::TraverseBlock(PXMLElement & element)
 {
   return ExecuteCondition(element);
 }
 
 
-PBoolean PVXMLSession::TraverseAudio(PXMLElement & element)
+bool PVXMLSession::TraverseAudio(PXMLElement & element)
 {
   if (PlayElement(element))
     return false; // Playing files, so don't process children
@@ -2345,7 +2345,7 @@ PBoolean PVXMLSession::TraverseAudio(PXMLElement & element)
 }
 
 
-PBoolean PVXMLSession::TraverseBreak(PXMLElement & element)
+bool PVXMLSession::TraverseBreak(PXMLElement & element)
 {
   // msecs is VXML 1.0
   if (element.HasAttribute("msecs"))
@@ -2371,7 +2371,7 @@ PBoolean PVXMLSession::TraverseBreak(PXMLElement & element)
 }
 
 
-PBoolean PVXMLSession::TraverseValue(PXMLElement & element)
+bool PVXMLSession::TraverseValue(PXMLElement & element)
 {
   PString className = element.GetAttribute("class");
   PString value = EvaluateExpr(element.GetAttribute(ExprAttribute));
@@ -2383,14 +2383,14 @@ PBoolean PVXMLSession::TraverseValue(PXMLElement & element)
 }
 
 
-PBoolean PVXMLSession::TraverseSayAs(PXMLElement & element)
+bool PVXMLSession::TraverseSayAs(PXMLElement & element)
 {
   SayAs(element.GetAttribute("class"), element.GetData());
   return true;
 }
 
 
-PBoolean PVXMLSession::TraverseGoto(PXMLElement & element)
+bool PVXMLSession::TraverseGoto(PXMLElement & element)
 {
   bool fullURI = false;
   PString target;
@@ -2416,7 +2416,7 @@ PBoolean PVXMLSession::TraverseGoto(PXMLElement & element)
 }
 
 
-PBoolean PVXMLSession::TraverseGrammar(PXMLElement & element)
+bool PVXMLSession::TraverseGrammar(PXMLElement & element)
 {
   // LATER: A bunch of work to do here!
 
@@ -2651,7 +2651,7 @@ static PXMLObject * NextElseIfNode(PXMLElement & ifElement, PINDEX pos)
 
 static PConstString const IfStateAttributeName("PTLibInternalIfState");
 
-PBoolean PVXMLSession::TraverseIf(PXMLElement & element)
+bool PVXMLSession::TraverseIf(PXMLElement & element)
 {
   // If 'cond' parameter evaluates to true, enter child entities, else
   // go to next element.
@@ -2670,14 +2670,14 @@ PBoolean PVXMLSession::TraverseIf(PXMLElement & element)
 }
 
 
-PBoolean PVXMLSession::TraversedIf(PXMLElement & element)
+bool PVXMLSession::TraversedIf(PXMLElement & element)
 {
   element.SetAttribute(IfStateAttributeName, PString::Empty());
   return true;
 }
 
 
-PBoolean PVXMLSession::TraverseElseIf(PXMLElement & element)
+bool PVXMLSession::TraverseElseIf(PXMLElement & element)
 {
   PXMLElement * ifElement = element.GetParent();
   PString state = ifElement->GetAttribute(IfStateAttributeName);
@@ -2700,14 +2700,14 @@ PBoolean PVXMLSession::TraverseElseIf(PXMLElement & element)
 }
 
 
-PBoolean PVXMLSession::TraverseElse(PXMLElement & element)
+bool PVXMLSession::TraverseElse(PXMLElement & element)
 {
   m_currentNode = element.GetParent();
   return false;
 }
 
 
-PBoolean PVXMLSession::TraverseExit(PXMLElement &)
+bool PVXMLSession::TraverseExit(PXMLElement &)
 {
   PTRACE(2, "Exiting, fast forwarding through script");
   m_abortVXML = true;
@@ -2716,7 +2716,7 @@ PBoolean PVXMLSession::TraverseExit(PXMLElement &)
 }
 
 
-PBoolean PVXMLSession::TraverseSubmit(PXMLElement & element)
+bool PVXMLSession::TraverseSubmit(PXMLElement & element)
 {
   PURL url;
 
@@ -2873,7 +2873,7 @@ PBoolean PVXMLSession::TraverseSubmit(PXMLElement & element)
 }
 
 
-PBoolean PVXMLSession::TraverseProperty(PXMLElement & element)
+bool PVXMLSession::TraverseProperty(PXMLElement & element)
 {
   if (element.HasAttribute(NameAttribute))
     SetVar(PSTRSTRM(PropertyScope << '.' << element.GetAttribute(NameAttribute)), element.GetAttribute("value"));
@@ -2882,7 +2882,7 @@ PBoolean PVXMLSession::TraverseProperty(PXMLElement & element)
 }
 
 
-PBoolean PVXMLSession::TraverseTransfer(PXMLElement & element)
+bool PVXMLSession::TraverseTransfer(PXMLElement & element)
 {
   if (!ExecuteCondition(element))
     return false;
@@ -2892,7 +2892,7 @@ PBoolean PVXMLSession::TraverseTransfer(PXMLElement & element)
 }
 
 
-PBoolean PVXMLSession::TraversedTransfer(PXMLElement & element)
+bool PVXMLSession::TraversedTransfer(PXMLElement & element)
 {
   const char * eventName = "error";
 
@@ -2952,7 +2952,7 @@ void PVXMLSession::SetTransferComplete(bool state)
 }
 
 
-PBoolean PVXMLSession::TraverseMenu(PXMLElement & element)
+bool PVXMLSession::TraverseMenu(PXMLElement & element)
 {
   LoadGrammar(new PVXMLMenuGrammar(*this, element));
   m_defaultMenuDTMF = (element.GetAttribute(DtmfAttribute) *= "true") ? '1' : 'N';
@@ -2961,7 +2961,7 @@ PBoolean PVXMLSession::TraverseMenu(PXMLElement & element)
 }
 
 
-PBoolean PVXMLSession::TraversedMenu(PXMLElement &)
+bool PVXMLSession::TraversedMenu(PXMLElement &)
 {
   if (m_grammar != NULL)
     m_grammar->Start();
@@ -2969,7 +2969,7 @@ PBoolean PVXMLSession::TraversedMenu(PXMLElement &)
 }
 
 
-PBoolean PVXMLSession::TraverseChoice(PXMLElement & element)
+bool PVXMLSession::TraverseChoice(PXMLElement & element)
 {
   if (!element.HasAttribute(DtmfAttribute) && m_defaultMenuDTMF <= '9')
     element.SetAttribute(DtmfAttribute, PString(m_defaultMenuDTMF++));
@@ -2978,7 +2978,7 @@ PBoolean PVXMLSession::TraverseChoice(PXMLElement & element)
 }
 
 
-PBoolean PVXMLSession::TraverseVar(PXMLElement & element)
+bool PVXMLSession::TraverseVar(PXMLElement & element)
 {
   PString name = element.GetAttribute(NameAttribute);
   PString expr = element.GetAttribute(ExprAttribute);
@@ -2993,14 +2993,14 @@ PBoolean PVXMLSession::TraverseVar(PXMLElement & element)
 }
 
 
-PBoolean PVXMLSession::TraverseDisconnect(PXMLElement &)
+bool PVXMLSession::TraverseDisconnect(PXMLElement &)
 {
   m_currentNode = NULL;
   return true;
 }
 
 
-PBoolean PVXMLSession::TraverseForm(PXMLElement &)
+bool PVXMLSession::TraverseForm(PXMLElement &)
 {
   m_variableScope = DialogScope;
   ++m_promptCount;
@@ -3008,14 +3008,14 @@ PBoolean PVXMLSession::TraverseForm(PXMLElement &)
 }
 
 
-PBoolean PVXMLSession::TraversedForm(PXMLElement &)
+bool PVXMLSession::TraversedForm(PXMLElement &)
 {
   m_variableScope = ApplicationScope;
   return true;
 }
 
 
-PBoolean PVXMLSession::TraversePrompt(PXMLElement & element)
+bool PVXMLSession::TraversePrompt(PXMLElement & element)
 {
   PXMLElement * validPrompt = FindElementWithCount(*element.GetParent(), PromptElement, m_promptCount);
   if (validPrompt == NULL || GetCountAttribute(*validPrompt) != GetCountAttribute(element)) {
@@ -3037,20 +3037,20 @@ PBoolean PVXMLSession::TraversePrompt(PXMLElement & element)
 }
 
 
-PBoolean PVXMLSession::TraversedPrompt(PXMLElement &)
+bool PVXMLSession::TraversedPrompt(PXMLElement &)
 {
   m_bargeIn = GetVar("property.bargein") != "false";
   return true;
 }
 
 
-PBoolean PVXMLSession::TraverseField(PXMLElement & element)
+bool PVXMLSession::TraverseField(PXMLElement & element)
 {
   return ExecuteCondition(element);
 }
 
 
-PBoolean PVXMLSession::TraversedField(PXMLElement &)
+bool PVXMLSession::TraversedField(PXMLElement &)
 {
   if (m_grammar != NULL)
     m_grammar->Start();
@@ -3138,19 +3138,19 @@ PStringArray PVXMLSession::VideoReceiverDevice::GetDeviceNames() const
 }
 
 
-PBoolean PVXMLSession::VideoReceiverDevice::Open(const PString &, PBoolean)
+bool PVXMLSession::VideoReceiverDevice::Open(const PString &, bool)
 {
   return IsOpen();
 }
 
 
-PBoolean PVXMLSession::VideoReceiverDevice::IsOpen()
+bool PVXMLSession::VideoReceiverDevice::IsOpen()
 {
   return m_analayserInstance >= 0;
 }
 
 
-PBoolean PVXMLSession::VideoReceiverDevice::Close()
+bool PVXMLSession::VideoReceiverDevice::Close()
 {
   if (!IsOpen())
     return false;
@@ -3164,20 +3164,20 @@ PBoolean PVXMLSession::VideoReceiverDevice::Close()
 }
 
 
-PBoolean PVXMLSession::VideoReceiverDevice::SetColourFormat(const PString & colourFormat)
+bool PVXMLSession::VideoReceiverDevice::SetColourFormat(const PString & colourFormat)
 {
   return colourFormat == m_colourFormat;
 }
 
 
-PBoolean PVXMLSession::VideoReceiverDevice::SetFrameData(const FrameData & frameData)
+bool PVXMLSession::VideoReceiverDevice::SetFrameData(const FrameData & frameData)
 {
   if (m_analayserInstance < 0 || frameData.partialFrame || frameData.x != 0 || frameData.y != 0)
     return false;
 
   const void * pixels;
   if (m_converter != NULL) {
-    BYTE * storePtr = m_frameStore.GetPointer(m_converter->GetMaxDstFrameBytes());
+    uint8_t * storePtr = m_frameStore.GetPointer(m_converter->GetMaxDstFrameBytes());
     if (!m_converter->Convert(frameData.pixels, storePtr))
       return false;
     pixels = storePtr;
@@ -3208,14 +3208,14 @@ void PVXMLSession::VideoSenderDevice::SetActualDevice(PVideoInputDevice * actual
 }
 
 
-PBoolean PVXMLSession::VideoSenderDevice::Start()
+bool PVXMLSession::VideoSenderDevice::Start()
 {
   m_running = true;
   return PVideoInputDeviceIndirect::Start();
 }
 
 
-bool PVXMLSession::VideoSenderDevice::InternalGetFrameData(BYTE * buffer, PINDEX & bytesReturned, bool & keyFrame, bool wait)
+bool PVXMLSession::VideoSenderDevice::InternalGetFrameData(uint8_t * buffer, PINDEX & bytesReturned, bool & keyFrame, bool wait)
 {
   if (m_running && !PVideoInputDeviceIndirect::InternalGetFrameData(buffer, bytesReturned, keyFrame, wait))
     m_running = false;
@@ -3417,7 +3417,7 @@ PVXMLChannel::PVXMLChannel(unsigned frameDelay, PINDEX frameSize)
 }
 
 
-PBoolean PVXMLChannel::Open(PVXMLSession * session, unsigned sampleRate, unsigned channels)
+bool PVXMLChannel::Open(PVXMLSession * session, unsigned sampleRate, unsigned channels)
 {
   PTRACE(4, "Opening channel:"
             " this=" << this << ","
@@ -3440,13 +3440,13 @@ PVXMLChannel::~PVXMLChannel()
 }
 
 
-PBoolean PVXMLChannel::IsOpen() const
+bool PVXMLChannel::IsOpen() const
 {
   return !m_closed;
 }
 
 
-PBoolean PVXMLChannel::Close()
+bool PVXMLChannel::Close()
 {
   if (!m_closed) {
     PTRACE(4, "Closing channel " << this);
@@ -3582,7 +3582,7 @@ PChannel * PVXMLChannel::OpenMediaFile(const PFilePath & fn, bool recording)
 }
 
 
-PBoolean PVXMLChannel::Write(const void * buf, PINDEX len)
+bool PVXMLChannel::Write(const void * buf, PINDEX len)
 {
   if (m_closed)
     return false;
@@ -3608,7 +3608,7 @@ PBoolean PVXMLChannel::Write(const void * buf, PINDEX len)
 }
 
 
-PBoolean PVXMLChannel::QueueRecordable(PVXMLRecordable * newItem)
+bool PVXMLChannel::QueueRecordable(PVXMLRecordable * newItem)
 {
   m_totalData = 0;
 
@@ -3624,7 +3624,7 @@ PBoolean PVXMLChannel::QueueRecordable(PVXMLRecordable * newItem)
 }
 
 
-PBoolean PVXMLChannel::EndRecording(bool timedOut)
+bool PVXMLChannel::EndRecording(bool timedOut)
 {
   PWaitAndSignal mutex(m_recordingMutex);
 
@@ -3642,7 +3642,7 @@ PBoolean PVXMLChannel::EndRecording(bool timedOut)
 }
 
 
-PBoolean PVXMLChannel::Read(void * buffer, PINDEX amount)
+bool PVXMLChannel::Read(void * buffer, PINDEX amount)
 {
   for (;;) {
     if (m_closed)
@@ -3722,11 +3722,11 @@ void PVXMLChannel::SetSilence(unsigned msecs)
 }
 
 
-PBoolean PVXMLChannel::QueuePlayable(const PString & type,
+bool PVXMLChannel::QueuePlayable(const PString & type,
                                  const PString & arg,
                                  PINDEX repeat,
                                  PINDEX delay,
-                                 PBoolean autoDelete)
+                                 bool autoDelete)
 {
   if (repeat <= 0)
     repeat = 1;
@@ -3748,7 +3748,7 @@ PBoolean PVXMLChannel::QueuePlayable(const PString & type,
 }
 
 
-PBoolean PVXMLChannel::QueuePlayable(PVXMLPlayable * newItem)
+bool PVXMLChannel::QueuePlayable(PVXMLPlayable * newItem)
 {
   if (!IsOpen()) {
     delete newItem;
@@ -3762,7 +3762,7 @@ PBoolean PVXMLChannel::QueuePlayable(PVXMLPlayable * newItem)
 }
 
 
-PBoolean PVXMLChannel::QueueResource(const PURL & url, PINDEX repeat, PINDEX delay)
+bool PVXMLChannel::QueueResource(const PURL & url, PINDEX repeat, PINDEX delay)
 {
   if (url.GetScheme() *= "file")
     return QueuePlayable("File", url.AsFilePath(), repeat, delay, false);
@@ -3771,7 +3771,7 @@ PBoolean PVXMLChannel::QueueResource(const PURL & url, PINDEX repeat, PINDEX del
 }
 
 
-PBoolean PVXMLChannel::QueueData(const PBYTEArray & data, PINDEX repeat, PINDEX delay)
+bool PVXMLChannel::QueueData(const PBYTEArray & data, PINDEX repeat, PINDEX delay)
 {
   PTRACE(3, "Enqueueing " << data.GetSize() << " bytes for playing, followed by " << delay << "ms silence");
   PVXMLPlayableData * item = PFactory<PVXMLPlayable>::CreateInstanceAs<PVXMLPlayableData>("PCM Data");
@@ -3868,13 +3868,13 @@ bool PVXMLChannelPCM::SetChannels(unsigned channels)
 }
 
 
-PBoolean PVXMLChannelPCM::WriteFrame(const void * buf, PINDEX len)
+bool PVXMLChannelPCM::WriteFrame(const void * buf, PINDEX len)
 {
   return PDelayChannel::Write(buf, len);
 }
 
 
-PBoolean PVXMLChannelPCM::ReadFrame(void * buffer, PINDEX amount)
+bool PVXMLChannelPCM::ReadFrame(void * buffer, PINDEX amount)
 {
   PINDEX len = 0;
   while (len < amount)  {
@@ -3895,7 +3895,7 @@ PINDEX PVXMLChannelPCM::CreateSilenceFrame(void * buffer, PINDEX amount)
 }
 
 
-PBoolean PVXMLChannelPCM::IsSilenceFrame(const void * buf, PINDEX len) const
+bool PVXMLChannelPCM::IsSilenceFrame(const void * buf, PINDEX len) const
 {
   // Calculate the average signal level of this frame
   int sum = 0;
@@ -3971,9 +3971,9 @@ bool PVXMLChannelG7231::SetChannels(unsigned channels)
 
 static const PINDEX g7231Lens[] = { 24, 20, 4, 1 };
 
-PBoolean PVXMLChannelG7231::WriteFrame(const void * buffer, PINDEX actualLen)
+bool PVXMLChannelG7231::WriteFrame(const void * buffer, PINDEX actualLen)
 {
-  PINDEX len = g7231Lens[(*(BYTE *)buffer)&3];
+  PINDEX len = g7231Lens[(*(uint8_t *)buffer)&3];
   if (len > actualLen)
     return false;
 
@@ -3981,14 +3981,14 @@ PBoolean PVXMLChannelG7231::WriteFrame(const void * buffer, PINDEX actualLen)
 }
 
 
-PBoolean PVXMLChannelG7231::ReadFrame(void * buffer, PINDEX /*amount*/)
+bool PVXMLChannelG7231::ReadFrame(void * buffer, PINDEX /*amount*/)
 {
   if (!PDelayChannel::Read(buffer, 1))
     return false;
 
-  PINDEX len = g7231Lens[(*(BYTE *)buffer)&3];
+  PINDEX len = g7231Lens[(*(uint8_t *)buffer)&3];
   if (len != 1) {
-    if (!PIndirectChannel::Read(1+(BYTE *)buffer, len-1))
+    if (!PIndirectChannel::Read(1+(uint8_t *)buffer, len-1))
       return false;
     SetLastReadCount(GetLastReadCount()+1);
   }
@@ -3999,19 +3999,19 @@ PBoolean PVXMLChannelG7231::ReadFrame(void * buffer, PINDEX /*amount*/)
 
 PINDEX PVXMLChannelG7231::CreateSilenceFrame(void * buffer, PINDEX /* len */)
 {
-  ((BYTE *)buffer)[0] = 2;
-  memset(((BYTE *)buffer)+1, 0, 3);
+  ((uint8_t *)buffer)[0] = 2;
+  memset(((uint8_t *)buffer)+1, 0, 3);
   return 4;
 }
 
 
-PBoolean PVXMLChannelG7231::IsSilenceFrame(const void * buf, PINDEX len) const
+bool PVXMLChannelG7231::IsSilenceFrame(const void * buf, PINDEX len) const
 {
   if (len == 4)
     return true;
   if (buf == NULL)
     return false;
-  return ((*(const BYTE *)buf)&3) == 2;
+  return ((*(const uint8_t *)buf)&3) == 2;
 }
 
 ///////////////////////////////////////////////////////////////
@@ -4054,12 +4054,12 @@ bool PVXMLChannelG729::SetChannels(unsigned channels)
 }
 
 
-PBoolean PVXMLChannelG729::WriteFrame(const void * buf, PINDEX /*len*/)
+bool PVXMLChannelG729::WriteFrame(const void * buf, PINDEX /*len*/)
 {
   return PDelayChannel::Write(buf, 10);
 }
 
-PBoolean PVXMLChannelG729::ReadFrame(void * buffer, PINDEX /*amount*/)
+bool PVXMLChannelG729::ReadFrame(void * buffer, PINDEX /*amount*/)
 {
   return PDelayChannel::Read(buffer, 10); // No silence frames so always 10 bytes
 }
@@ -4072,7 +4072,7 @@ PINDEX PVXMLChannelG729::CreateSilenceFrame(void * buffer, PINDEX /* len */)
 }
 
 
-PBoolean PVXMLChannelG729::IsSilenceFrame(const void * /*buf*/, PINDEX /*len*/) const
+bool PVXMLChannelG729::IsSilenceFrame(const void * /*buf*/, PINDEX /*len*/) const
 {
   return false;
 }
@@ -4088,21 +4088,21 @@ class TextToSpeech_Sample : public PTextToSpeech
   public:
     TextToSpeech_Sample();
     PStringArray GetVoiceList();
-    PBoolean SetVoice(const PString & voice);
-    PBoolean SetSampleRate(unsigned rate);
+    bool SetVoice(const PString & voice);
+    bool SetSampleRate(unsigned rate);
     unsigned GetSampleRate();
-    PBoolean SetChannels(unsigned channels);
+    bool SetChannels(unsigned channels);
     unsigned GetChannels();
-    PBoolean SetVolume(unsigned volume);
+    bool SetVolume(unsigned volume);
     unsigned GetVolume();
-    PBoolean OpenFile   (const PFilePath & fn);
-    PBoolean OpenChannel(PChannel * chanel);
-    PBoolean IsOpen()    { return m_opened; }
-    PBoolean Close();
-    PBoolean Speak(const PString & text, TextType hint = Default);
-    PBoolean SpeakNumber(unsigned number);
+    bool OpenFile   (const PFilePath & fn);
+    bool OpenChannel(PChannel * chanel);
+    bool IsOpen()    { return m_opened; }
+    bool Close();
+    bool Speak(const PString & text, TextType hint = Default);
+    bool SpeakNumber(unsigned number);
 
-    PBoolean SpeakFile(const PString & text);
+    bool SpeakFile(const PString & text);
 
   protected:
     //PTextToSpeech * defaultEngine;
@@ -4138,14 +4138,14 @@ PStringArray TextToSpeech_Sample::GetVoiceList()
 }
 
 
-PBoolean TextToSpeech_Sample::SetVoice(const PString & v)
+bool TextToSpeech_Sample::SetVoice(const PString & v)
 {
   m_voice = v;
   return true;
 }
 
 
-PBoolean TextToSpeech_Sample::SetSampleRate(unsigned v)
+bool TextToSpeech_Sample::SetSampleRate(unsigned v)
 {
   m_sampleRate = v;
   return true;
@@ -4158,7 +4158,7 @@ unsigned TextToSpeech_Sample::GetSampleRate()
 }
 
 
-PBoolean TextToSpeech_Sample::SetChannels(unsigned v)
+bool TextToSpeech_Sample::SetChannels(unsigned v)
 {
   m_channels = v;
   return true;
@@ -4171,7 +4171,7 @@ unsigned TextToSpeech_Sample::GetChannels()
 }
 
 
-PBoolean TextToSpeech_Sample::SetVolume(unsigned v)
+bool TextToSpeech_Sample::SetVolume(unsigned v)
 {
   m_volume = v;
   return true;
@@ -4184,7 +4184,7 @@ unsigned TextToSpeech_Sample::GetVolume()
 }
 
 
-PBoolean TextToSpeech_Sample::OpenFile(const PFilePath & fn)
+bool TextToSpeech_Sample::OpenFile(const PFilePath & fn)
 {
   PWaitAndSignal m(mutex);
 
@@ -4199,7 +4199,7 @@ PBoolean TextToSpeech_Sample::OpenFile(const PFilePath & fn)
 }
 
 
-PBoolean TextToSpeech_Sample::OpenChannel(PChannel * /*chanel*/)
+bool TextToSpeech_Sample::OpenChannel(PChannel * /*chanel*/)
 {
   PWaitAndSignal m(mutex);
 
@@ -4211,14 +4211,14 @@ PBoolean TextToSpeech_Sample::OpenChannel(PChannel * /*chanel*/)
 }
 
 
-PBoolean TextToSpeech_Sample::Close()
+bool TextToSpeech_Sample::Close()
 {
   PWaitAndSignal m(mutex);
 
   if (!m_opened)
     return true;
 
-  PBoolean stat = true;
+  bool stat = true;
 
 #if P_WAVFILE
   if (m_usingFile) {
@@ -4238,7 +4238,7 @@ PBoolean TextToSpeech_Sample::Close()
           stat = false;
         } else {
           PTRACE(1, "Reading from " << f);
-          BYTE buffer[1024];
+          uint8_t buffer[1024];
           for (;;) {
             if (!file.Read(buffer, 1024))
               break;
@@ -4256,13 +4256,13 @@ PBoolean TextToSpeech_Sample::Close()
 }
 
 
-PBoolean TextToSpeech_Sample::SpeakNumber(unsigned number)
+bool TextToSpeech_Sample::SpeakNumber(unsigned number)
 {
   return Speak(PString(PString::Signed, number), Number);
 }
 
 
-PBoolean TextToSpeech_Sample::Speak(const PString & text, TextType hint)
+bool TextToSpeech_Sample::Speak(const PString & text, TextType hint)
 {
   // break into lines
   PStringArray lines = text.Lines();
@@ -4314,8 +4314,8 @@ PBoolean TextToSpeech_Sample::Speak(const PString & text, TextType hint)
     }
 
     if (hint == Default) {
-      PBoolean isTime = false;
-      PBoolean isDate = false;
+      bool isTime = false;
+      bool isDate = false;
 
       for (i = 0; !isDate && i < 7; ++i) {
         isDate = isDate || (line.Find(PTime::GetDayName((PTime::Weekdays)i, PTime::FullName)) != P_MAX_INDEX);
@@ -4368,8 +4368,8 @@ PBoolean TextToSpeech_Sample::Speak(const PString & text, TextType hint)
         case Default:
         case Literal:
           {
-            PBoolean isDigits = true;
-            PBoolean isIpAddress = true;
+            bool isDigits = true;
+            bool isIpAddress = true;
 
             PINDEX k;
             for (k = 0; k < word.GetLength(); ++k) {
@@ -4474,7 +4474,7 @@ PBoolean TextToSpeech_Sample::Speak(const PString & text, TextType hint)
 }
 
 
-PBoolean TextToSpeech_Sample::SpeakFile(const PString & text)
+bool TextToSpeech_Sample::SpeakFile(const PString & text)
 {
   PFilePath f = PDirectory(m_voice) + (text.ToLower() + ".wav");
   if (!PFile::Exists(f)) {

@@ -58,43 +58,43 @@ class PVideoOutputDevice_Shm : public PVideoOutputDevice
 
     /**Open the device given the device name.
       */
-    virtual PBoolean Open(
+    virtual bool Open(
       const PString & deviceName,   /// Device name (filename base) to open
-      PBoolean startImmediate = true    /// Immediately start device
+      bool startImmediate = true    /// Immediately start device
     );
 
     /**Determine if the device is currently open.
       */
-    virtual PBoolean IsOpen();
+    virtual bool IsOpen();
 
     /**Close the device.
       */
-    virtual PBoolean Close();
+    virtual bool Close();
 
     /**Get a list of all of the drivers available.
       */
     virtual PStringArray GetDeviceNames() const;
 	
-	virtual PBoolean SetColourFormat(const PString & colourFormat);
+	virtual bool SetColourFormat(const PString & colourFormat);
 	
-	virtual PBoolean SetFrameSize(unsigned width,
+	virtual bool SetFrameSize(unsigned width,
 							  unsigned height);
 	
 	virtual PINDEX GetMaxFrameBytes();
 	
-	virtual PBoolean SetFrameData(unsigned x,
+	virtual bool SetFrameData(unsigned x,
 							  unsigned y,
 							  unsigned width,
 							  unsigned height,
-							  const BYTE * data,
-							  PBoolean endFrame = true);
+							  const uint8_t * data,
+							  bool endFrame = true);
 	
 	/**Indicate frame may be displayed.
 		*/
-	virtual PBoolean EndFrame();
+	virtual bool EndFrame();
 
   protected:
-    PBoolean shmInit();
+    bool shmInit();
 
     PINDEX bytesPerPixel;
     sem_t *semLock;
@@ -112,16 +112,16 @@ class PVideoInputDevice_Shm : public PVideoInputDevice
   public:
     PVideoInputDevice_Shm();
 	
-    PBoolean Start();
+    bool Start();
 	
-    PBoolean Stop();
+    bool Stop();
 
-    PBoolean Open(
+    bool Open(
       const PString & deviceName,   /// Device name to open
-      PBoolean startImmediate = true    /// Immediately start device
+      bool startImmediate = true    /// Immediately start device
       );
-    PBoolean IsOpen();
-    PBoolean Close();
+    bool IsOpen();
+    bool Close();
 
     /**Get a list of all of the drivers available.
      */
@@ -135,23 +135,23 @@ class PVideoInputDevice_Shm : public PVideoInputDevice
     Default behaviour returns the value 1 to UINT_MAX for both and returns
     false.
     */
-    virtual PBoolean GetFrameSizeLimits(
+    virtual bool GetFrameSizeLimits(
       unsigned & minWidth,   /// Variable to receive minimum width
       unsigned & minHeight,  /// Variable to receive minimum height
       unsigned & maxWidth,   /// Variable to receive maximum width
       unsigned & maxHeight   /// Variable to receive maximum height
       ) ;
 	
-	virtual PBoolean TestAllFormats();
+	virtual bool TestAllFormats();
 	
-	virtual PBoolean IsCapturing();
+	virtual bool IsCapturing();
 	
 	virtual PINDEX GetMaxFrameBytes();
 
 
   protected:
-    virtual bool InternalGetFrameData(BYTE * buffer, PINDEX & bytesReturned, bool & keyFrame, bool wait);
-    PBoolean shmInit();
+    virtual bool InternalGetFrameData(uint8_t * buffer, PINDEX & bytesReturned, bool & keyFrame, bool wait);
+    bool shmInit();
 
     PAdaptiveDelay m_pacing;
 

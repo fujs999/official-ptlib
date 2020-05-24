@@ -4,7 +4,7 @@
  * Extensible Messaging and Presence Protocol (XMPP) IM
  * Roster management classes
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 2004 Reitek S.p.A.
  *
@@ -18,7 +18,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Post Increment
  *
@@ -69,19 +69,19 @@ namespace XMPP
       const PStringSet&   GetGroups() const     { return m_Groups; }
       const PresenceInfo& GetPresence() const   { return m_Presence; }
 
-      virtual void  SetJID(const JID& jid, PBoolean dirty = true)
+      virtual void  SetJID(const JID& jid, bool dirty = true)
                                                 { m_JID = jid; if (dirty) SetDirty(); }
-      virtual void  SetType(ItemType type, PBoolean dirty = true)
+      virtual void  SetType(ItemType type, bool dirty = true)
                                                 { m_Type = type; if (dirty) SetDirty(); }
-      virtual void  SetName(const PString& name, PBoolean dirty = true) 
+      virtual void  SetName(const PString& name, bool dirty = true) 
                                                 { m_Name = name; if (dirty) SetDirty(); }
 
-      virtual void  AddGroup(const PString& group, PBoolean dirty = true);
-      virtual void  RemoveGroup(const PString& group, PBoolean dirty = true);
+      virtual void  AddGroup(const PString& group, bool dirty = true);
+      virtual void  RemoveGroup(const PString& group, bool dirty = true);
 
       virtual void  SetPresence(const Presence& p);
 
-      void SetDirty(PBoolean b = true) { m_IsDirty = b; }
+      void SetDirty(bool b = true) { m_IsDirty = b; }
 
       /** This operator will set the dirty flag
        */
@@ -113,13 +113,13 @@ namespace XMPP
 
     virtual Item * FindItem(const PString& jid);
 
-    virtual PBoolean SetItem(Item * item, PBoolean localOnly = false);
-    virtual PBoolean RemoveItem(const PString& jid, PBoolean localOnly = false);
-    virtual PBoolean RemoveItem(Item * item, PBoolean localOnly = false);
+    virtual bool SetItem(Item * item, bool localOnly = false);
+    virtual bool RemoveItem(const PString& jid, bool localOnly = false);
+    virtual bool RemoveItem(Item * item, bool localOnly = false);
 
     virtual void  Attach(XMPP::C2S::StreamHandler * handler);
     virtual void  Detach();
-    virtual void  Refresh(PBoolean sendPresence = true);
+    virtual void  Refresh(bool sendPresence = true);
 
     virtual PNotifierList& ItemChangedHandlers()    { return m_ItemChangedHandlers; }
     virtual PNotifierList& RosterChangedHandlers()  { return m_RosterChangedHandlers; }

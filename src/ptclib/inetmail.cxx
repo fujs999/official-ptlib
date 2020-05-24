@@ -3,7 +3,7 @@
  *
  * Internet Mail classes.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-2002 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -75,7 +75,7 @@ bool PSMTP::SendMail(const Parameters & params, PString & error)
   if (server.IsEmpty())
     server = "127.0.0.1";
 
-  WORD port = params.m_port;
+  uint16_t port = params.m_port;
   if (port == 0)
     port = PSocket::GetPortByService("tcp", "smtp 25");
 
@@ -132,7 +132,7 @@ bool PSMTP::SendMail(const Parameters & params, PString & error)
         email.SetTransferEncoding("7bit", false);
       else
         email.SetTransferEncoding("base64", true);
-      BYTE buffer[1024];
+      uint8_t buffer[1024];
       for (;;) {
         if (!file.Read(buffer, sizeof(buffer)))
           break;
@@ -162,13 +162,13 @@ PSMTPClient::~PSMTPClient()
 }
 
 
-PBoolean PSMTPClient::OnOpen()
+bool PSMTPClient::OnOpen()
 {
   return ReadResponse() && m_lastResponseCode/100 == 2;
 }
 
 
-PBoolean PSMTPClient::Close()
+bool PSMTPClient::Close()
 {
   bool ok = true;
 
@@ -377,7 +377,7 @@ bool PSMTPClient::InternalBeginMessage(bool useEightBitMIME)
 }
 
 
-PBoolean PSMTPClient::EndMessage()
+bool PSMTPClient::EndMessage()
 {
   flush();
 
@@ -412,13 +412,13 @@ void PSMTPServer::ServerReset()
 }
 
 
-PBoolean PSMTPServer::OnOpen()
+bool PSMTPServer::OnOpen()
 {
   return WriteResponse(220, PIPSocket::GetHostName() + "ESMTP server ready");
 }
 
 
-PBoolean PSMTPServer::ProcessCommand()
+bool PSMTPServer::ProcessCommand()
 {
   PString args;
   PINDEX num;
@@ -764,9 +764,9 @@ void PSMTPServer::OnDATA()
 
   endMIMEDetectState = eightBitMIME ? StuffIdle : DontStuff;
 
-  PBoolean ok = true;
-  PBoolean completed = false;
-  PBoolean starting = true;
+  bool ok = true;
+  bool completed = false;
+  bool starting = true;
 
   while (ok && !completed) {
     PCharArray buffer;
@@ -787,14 +787,14 @@ void PSMTPServer::OnDATA()
 }
 
 
-PBoolean PSMTPServer::OnUnknown(const PCaselessString & command)
+bool PSMTPServer::OnUnknown(const PCaselessString & command)
 {
   WriteResponse(500, "Command \"" + command + "\" unrecognised.");
   return true;
 }
 
 
-PBoolean PSMTPServer::OnTextData(PCharArray & buffer, PBoolean & completed)
+bool PSMTPServer::OnTextData(PCharArray & buffer, bool & completed)
 {
   PString line;
   while (ReadLine(line)) {
@@ -819,7 +819,7 @@ PBoolean PSMTPServer::OnTextData(PCharArray & buffer, PBoolean & completed)
 }
 
 
-PBoolean PSMTPServer::OnMIMEData(PCharArray & buffer, PBoolean & completed)
+bool PSMTPServer::OnMIMEData(PCharArray & buffer, bool & completed)
 {
   PINDEX count = 0;
   int c;
@@ -901,7 +901,7 @@ PSMTPServer::LookUpResult PSMTPServer::LookUpName(const PCaselessString &,
 }
 
 
-PBoolean PSMTPServer::HandleMessage(PCharArray &, PBoolean, PBoolean)
+bool PSMTPServer::HandleMessage(PCharArray &, bool, bool)
 {
   return false;
 }
@@ -953,7 +953,7 @@ PPOP3Client::~PPOP3Client()
   Close();
 }
 
-PBoolean PPOP3Client::OnOpen()
+bool PPOP3Client::OnOpen()
 {
   if (!ReadResponse() || m_lastResponseCode <= 0)
     return false;
@@ -968,9 +968,9 @@ PBoolean PPOP3Client::OnOpen()
 }
 
 
-PBoolean PPOP3Client::Close()
+bool PPOP3Client::Close()
 {
-  PBoolean ok = true;
+  bool ok = true;
   if (IsOpen() && loggedIn) {
     SetReadTimeout(60000);
     ok = ExecuteCommand(QUIT, "") > 0;
@@ -979,7 +979,7 @@ PBoolean PPOP3Client::Close()
 }
 
 
-PBoolean PPOP3Client::LogIn(const PString & username, const PString & password, int options)
+bool PPOP3Client::LogIn(const PString & username, const PString & password, int options)
 {
 #if P_SASL
   PString mech;
@@ -1040,7 +1040,7 @@ PBoolean PPOP3Client::LogIn(const PString & username, const PString & password, 
       PMessageDigest5::Encode(apopBanner + password, bin_digest);
       PString digest;
 
-      const BYTE * data = bin_digest.GetPointer();
+      const uint8_t * data = bin_digest.GetPointer();
 
       for (PINDEX i = 0, max = bin_digest.GetSize(); i < max ; i++)
         digest.sprintf("%02x", (unsigned)data[i]);
@@ -1107,13 +1107,13 @@ PStringArray PPOP3Client::GetMessageHeaders()
 }
 
 
-PBoolean PPOP3Client::BeginMessage(PINDEX messageNumber)
+bool PPOP3Client::BeginMessage(PINDEX messageNumber)
 {
   return ExecuteCommand(RETR, PString(PString::Unsigned, messageNumber)) > 0;
 }
 
 
-PBoolean PPOP3Client::DeleteMessage(PINDEX messageNumber)
+bool PPOP3Client::DeleteMessage(PINDEX messageNumber)
 {
   return ExecuteCommand(DELE, PString(PString::Unsigned, messageNumber)) > 0;
 }
@@ -1127,7 +1127,7 @@ PPOP3Server::PPOP3Server()
 }
 
 
-PBoolean PPOP3Server::OnOpen()
+bool PPOP3Server::OnOpen()
 {
   return WriteResponse(okResponse(), PIPSocket::GetHostName() +
                      " POP3 server ready at " +
@@ -1135,7 +1135,7 @@ PBoolean PPOP3Server::OnOpen()
 }
 
 
-PBoolean PPOP3Server::ProcessCommand()
+bool PPOP3Server::ProcessCommand()
 {
   PString args;
   PINDEX num;
@@ -1239,7 +1239,7 @@ void PPOP3Server::OnNOOP()
 
 void PPOP3Server::OnSTAT()
 {
-  DWORD total = 0;
+  uint32_t total = 0;
   for (PINDEX i = 0; i < messageSizes.GetSize(); i++)
     total += messageSizes[i];
   WriteResponse(okResponse(), psprintf("%u %u", messageSizes.GetSize(), total));
@@ -1319,14 +1319,14 @@ void PPOP3Server::OnUIDL(PINDEX msg)
 }
 
 
-PBoolean PPOP3Server::OnUnknown(const PCaselessString & command)
+bool PPOP3Server::OnUnknown(const PCaselessString & command)
 {
   WriteResponse(errResponse(), "Command \"" + command + "\" unrecognised.");
   return true;
 }
 
 
-PBoolean PPOP3Server::HandleOpenMailbox(const PString &, const PString &)
+bool PPOP3Server::HandleOpenMailbox(const PString &, const PString &)
 {
   return false;
 }
@@ -1374,7 +1374,7 @@ PRFC822Channel::~PRFC822Channel()
 }
 
 
-PBoolean PRFC822Channel::Close()
+bool PRFC822Channel::Close()
 {
   flush();
   NextPart(""); // Flush out all the parts
@@ -1382,7 +1382,7 @@ PBoolean PRFC822Channel::Close()
 }
 
 
-PBoolean PRFC822Channel::Write(const void * buf, PINDEX len)
+bool PRFC822Channel::Write(const void * buf, PINDEX len)
 {
   flush();
 
@@ -1429,7 +1429,7 @@ PBoolean PRFC822Channel::Write(const void * buf, PINDEX len)
     flush();
   }
 
-  PBoolean ok;
+  bool ok;
   if (base64 == NULL)
     ok = PIndirectChannel::Write(buf, len);
   else {
@@ -1449,7 +1449,7 @@ PBoolean PRFC822Channel::Write(const void * buf, PINDEX len)
 }
 
 
-PBoolean PRFC822Channel::OnOpen()
+bool PRFC822Channel::OnOpen()
 {
   if (writeHeaders)
     return true;
@@ -1485,7 +1485,7 @@ PString PRFC822Channel::MultipartMessage()
 }
 
 
-PBoolean PRFC822Channel::MultipartMessage(const PString & boundary)
+bool PRFC822Channel::MultipartMessage(const PString & boundary)
 {
   writePartHeaders = true;
   for (PStringList::iterator i = boundaries.begin(); i != boundaries.end(); i++) {
@@ -1573,7 +1573,7 @@ void PRFC822Channel::SetContentAttachment(const PFilePath & file)
 }
 
 
-void PRFC822Channel::SetTransferEncoding(const PString & encoding, PBoolean autoTranslate)
+void PRFC822Channel::SetTransferEncoding(const PString & encoding, bool autoTranslate)
 {
   SetHeaderField(ContentTransferEncodingTag(), encoding);
   if ((encoding *= "base64") && autoTranslate)

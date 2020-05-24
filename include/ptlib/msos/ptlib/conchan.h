@@ -3,7 +3,7 @@
  *
  * Console I/O channel class.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -31,17 +31,17 @@
 // PConsoleChannel
 
   public:
-    virtual PBoolean Read(void * buf, PINDEX len);
+    virtual bool Read(void * buf, PINDEX len);
       // Low level read from the channel. This function will block until the
       // requested number of characters were read.
 
-    virtual PBoolean Write(const void * buf, PINDEX len);
+    virtual bool Write(const void * buf, PINDEX len);
       // Low level write to the channel. This function will block until the
       // requested number of characters were written.
 
   protected:
-    bool InternalSetConsoleMode(DWORD bit, bool on);
+    bool InternalSetConsoleMode(uint32_t bit, bool on);
     PWin32Handle m_hConsole;
-    DWORD m_lastMouseState;
+    uint32_t m_lastMouseState;
 
 // End Of File ///////////////////////////////////////////////////////////////

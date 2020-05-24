@@ -4,7 +4,7 @@
  * Extensible Messaging and Presence Protocol (XMPP)
  * JEP-0045 Multi-User Chat
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 2004 Reitek S.p.A.
  *
@@ -18,7 +18,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Post Increment
  *
@@ -89,10 +89,10 @@ namespace XMPP
       const User&   GetUser() const         { return m_User; }
       const Users&  GetOtherUsers() const   { return m_OtherUsers; }
 
-      virtual PBoolean  Enter();
-      virtual PBoolean  Leave();
-      virtual PBoolean  SendMessage(const PString& msg);
-      virtual PBoolean  SendMessage(Message& msg);
+      virtual bool  Enter();
+      virtual bool  Leave();
+      virtual bool  SendMessage(const PString& msg);
+      virtual bool  SendMessage(Message& msg);
 
       // Event methods
       virtual void  OnMessage(Message& msg);

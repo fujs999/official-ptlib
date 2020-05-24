@@ -89,7 +89,7 @@ class PODBC::Statement : public PObject
     /** GetChangedRowCount retreives the number of rows updated/altered by
     UPDATE/INSERT statements.
     */
-    DWORD GetChangedRowCount();
+    uint32_t GetChangedRowCount();
 
     /** Execute function is the Main function to pass SQL statements to retreive/
     add/Modify database data. It accepts generally acceptable SQL Statements.
@@ -857,7 +857,7 @@ PODBC::Statement::~Statement()
 }
 
 
-DWORD PODBC::Statement::GetChangedRowCount(void)
+uint32_t PODBC::Statement::GetChangedRowCount(void)
 {
   SQLLEN nRows = 0;
   return SQL_OK(SQLRowCount(m_hStmt,&nRows)) ? nRows : 0;

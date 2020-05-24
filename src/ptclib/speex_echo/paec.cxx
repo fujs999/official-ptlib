@@ -93,7 +93,7 @@ PAec::~PAec()
 }
 
 
-void PAec::Receive(BYTE * buffer, unsigned & length)
+void PAec::Receive(uint8_t * buffer, unsigned & length)
 {
  // PWaitAndSignal m(readwritemute);
 
@@ -113,7 +113,7 @@ void PAec::Receive(BYTE * buffer, unsigned & length)
 
 }
 
-void PAec::Send(BYTE * buffer, unsigned & length)
+void PAec::Send(uint8_t * buffer, unsigned & length)
 {
  // PWaitAndSignal m(readwritemute);
 
@@ -142,8 +142,8 @@ void PAec::Send(BYTE * buffer, unsigned & length)
 	    
   // Read from the PQueueChannel a reference echo frame
   PTimeInterval rec = lastTimeStamp;
-  PInt64 time =  (PTimer::Tick()).GetMilliSeconds();
-  PInt64 diff =  time - rec.GetMilliSeconds();
+  int64_t time =  (PTimer::Tick()).GetMilliSeconds();
+  int64_t diff =  time - rec.GetMilliSeconds();
 
   if (diff < minbuffer) {
 	  PTRACE(6,"AEC\tBuffer Time too short ignoring " << diff << " ms ");

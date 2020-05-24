@@ -3,7 +3,7 @@
  *
  * User Datagram Protocol socket I/O channel class.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -50,7 +50,7 @@ class PUDPSocket : public PIPDatagramSocket
        a "listening" socket is specified then the channel is also opened.
      */
     PUDPSocket(
-      WORD port = 0,             ///< Port number to use for the connection.
+      uint16_t port = 0,             ///< Port number to use for the connection.
       int iAddressFamily = AF_INET ///< Family
     );
     PUDPSocket(
@@ -59,7 +59,7 @@ class PUDPSocket : public PIPDatagramSocket
     );
     PUDPSocket(
       const PString & address,  ///< Address of remote machine to connect to.
-      WORD port                 ///< Port number to use for the connection.
+      uint16_t port                 ///< Port number to use for the connection.
     );
     PUDPSocket(
       const PString & address,  ///< Address of remote machine to connect to.
@@ -71,21 +71,21 @@ class PUDPSocket : public PIPDatagramSocket
   //@{
     /** Override of PChannel functions to allow connectionless reads
      */
-    PBoolean Read(
+    bool Read(
       void * buf,   ///< Pointer to a block of memory to read.
       PINDEX len    ///< Number of bytes to read.
     );
 
     /** Override of PChannel functions to allow connectionless writes
      */
-    PBoolean Write(
+    bool Write(
       const void * buf, ///< Pointer to a block of memory to write.
       PINDEX len        ///< Number of bytes to write.
     );
 
     /** Override of PSocket functions to allow connectionless writes
      */
-    PBoolean Connect(
+    bool Connect(
       const PString & address   ///< Address of remote machine to connect to.
     );
   //@}
@@ -100,7 +100,7 @@ class PUDPSocket : public PIPDatagramSocket
      */
     bool SetSendAddress(
       const Address & address,    ///< IP address to send packets.
-      WORD port,                  ///< Port to send packets.
+      uint16_t port,                  ///< Port to send packets.
       int mtuDiscovery = -1       ///< MTU discovery mode
     );
     bool SetSendAddress(
@@ -112,7 +112,7 @@ class PUDPSocket : public PIPDatagramSocket
      */
     void GetSendAddress(
       Address & address,    ///< IP address to send packets.
-      WORD & port           ///< Port to send packets.
+      uint16_t & port           ///< Port to send packets.
     ) const;
     void GetSendAddress(
       PIPSocketAddressAndPort & addressAndPort
@@ -125,7 +125,7 @@ class PUDPSocket : public PIPDatagramSocket
      */
     void GetLastReceiveAddress(
       Address & address,    ///< IP address to send packets.
-      WORD & port           ///< Port to send packets.
+      uint16_t & port           ///< Port to send packets.
     ) const;
     void GetLastReceiveAddress(
       PIPSocketAddressAndPort & addressAndPort    ///< IP address and port to send packets.
@@ -148,14 +148,14 @@ class PUDPSocket : public PIPDatagramSocket
 
   protected:
     // Open an IPv4 socket (for backward compatibility)
-    virtual PBoolean OpenSocket();
+    virtual bool OpenSocket();
 
     // Open an IPv4 or IPv6 socket
-    virtual PBoolean OpenSocket(
+    virtual bool OpenSocket(
       int ipAdressFamily
     );
 
-    virtual bool InternalListen(const Address & bind, unsigned queueSize, WORD port, Reusability reuse);
+    virtual bool InternalListen(const Address & bind, unsigned queueSize, uint16_t port, Reusability reuse);
 
     virtual const char * GetProtocolName() const;
 

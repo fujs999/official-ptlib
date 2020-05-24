@@ -3,7 +3,7 @@
  *
  * Thread library implementation for BeOS
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * The contents of this file are subject to the Mozilla Public License
  * Version 1.0 (the "License"); you may not use this file except in
@@ -15,7 +15,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -173,7 +173,7 @@ void PThread::Terminate()
    ::kill_thread(0);
 }
 
-PBoolean PThread::IsTerminated() const
+bool PThread::IsTerminated() const
 {
   return mId == B_BAD_THREAD_ID;
 }
@@ -185,7 +185,7 @@ void PThread::WaitForTermination() const
 }
 
 
-PBoolean PThread::WaitForTermination(const PTimeInterval & /*maxWait*/) const // Fix timeout
+bool PThread::WaitForTermination(const PTimeInterval & /*maxWait*/) const // Fix timeout
 {
   status_t result = B_NO_ERROR;
   status_t exit_value = B_NO_ERROR;
@@ -210,7 +210,7 @@ PBoolean PThread::WaitForTermination(const PTimeInterval & /*maxWait*/) const //
 }
 
 
-void PThread::Suspend(PBoolean susp)
+void PThread::Suspend(bool susp)
 {
 
   PAssert(!IsTerminated(), "Operation on terminated thread");
@@ -238,7 +238,7 @@ void PThread::Resume()
 }
 
 
-PBoolean PThread::IsSuspended() const
+bool PThread::IsSuspended() const
 {
   return (mSuspendCount > 0);
 }
@@ -377,7 +377,7 @@ int PThread::PXBlockOnIO(int handle, int type, const PTimeInterval & timeout)
   } while (retval < 0 && errno == EINTR);
 
   if ((retval == 1) && read_fds.IsPresent(unblockPipe[0])) {
-    BYTE ch;
+    uint8_t ch;
     ::read(unblockPipe[0], &ch, 1);
     errno = EINTR;
     retval =  -1;
@@ -389,7 +389,7 @@ int PThread::PXBlockOnIO(int handle, int type, const PTimeInterval & timeout)
 
 void PThread::PXAbortBlock(void) const
 {
-  BYTE ch;
+  uint8_t ch;
   ::write(unblockPipe[1], &ch, 1);
 }
 
@@ -418,7 +418,7 @@ void PProcess::HouseKeeping()
 }
 
 
-PBoolean PProcess::SetMaxHandles(int newMax)
+bool PProcess::SetMaxHandles(int newMax)
 {
   return false;
 }
@@ -432,7 +432,7 @@ PProcess::~PProcess()
 
 ///////////////////////////////////////////////////////////////////////////////
 // PSemaphore
-PSemaphore::PSemaphore(PBoolean fNested) : mfNested(fNested)
+PSemaphore::PSemaphore(bool fNested) : mfNested(fNested)
 {
 }
 
@@ -526,9 +526,9 @@ void PSemaphore::Wait()
   }
 }
 
-PBoolean PSemaphore::Wait(const PTimeInterval & timeout)
+bool PSemaphore::Wait(const PTimeInterval & timeout)
 {
-  PInt64 ms = timeout.GetMilliSeconds();
+  int64_t ms = timeout.GetMilliSeconds();
   bigtime_t microseconds = ms * 1000;
 
   status_t result = B_NO_ERROR;
@@ -598,7 +598,7 @@ void PSyncPoint::Wait()
   PSemaphore::Wait();
 }
                                                                                                       
-PBoolean PSyncPoint::Wait(const PTimeInterval & timeout)
+bool PSyncPoint::Wait(const PTimeInterval & timeout)
 {
   return PSemaphore::Wait(timeout);
 }
@@ -629,7 +629,7 @@ void PMutex::Wait()
   PSemaphore::Wait();
 }
                                                                                                       
-PBoolean PMutex::Wait(const PTimeInterval & timeout)
+bool PMutex::Wait(const PTimeInterval & timeout)
 {
   return PSemaphore::Wait(timeout);
 }

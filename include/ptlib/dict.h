@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -191,7 +191,7 @@ class PHashTableInfo : public PBaseArray<PHashTableList>
   public:
     PHashTableInfo(PINDEX initialSize = 0)
       : ParentClass(initialSize) { }
-    PHashTableInfo(PHashTableList const * buffer, PINDEX length, PBoolean dynamic = true)
+    PHashTableInfo(PHashTableList const * buffer, PINDEX length, bool dynamic = true)
       : ParentClass(buffer, length, dynamic) { }
     virtual PObject * Clone() const { return PNEW PHashTableInfo(*this, GetSize()); }
     virtual ~PHashTableInfo() { Destruct(); }
@@ -201,7 +201,7 @@ class PHashTableInfo : public PBaseArray<PHashTableList>
     PObject * RemoveElement(const PObject & key);
     PHashTableElement * GetElementAt(PINDEX index);
     PHashTableElement * GetElementAt(const PObject & key);
-    PINDEX GetElementsIndex(const PObject*obj,PBoolean byVal,PBoolean keys) const;
+    PINDEX GetElementsIndex(const PObject*obj,bool byVal,bool keys) const;
     PHashTableElement * NextElement(PHashTableElement * element) const;
     PHashTableElement * PrevElement(PHashTableElement * element) const;
 
@@ -260,7 +260,7 @@ class PHashTable : public PCollection
        @return
        Always true.
      */
-    virtual PBoolean SetSize(
+    virtual bool SetSize(
       PINDEX newSize  ///< New size for the hash table, this is ignored.
     );
   //@}
@@ -276,7 +276,7 @@ class PHashTable : public PCollection
        @return
        true if the object value is in the set.
      */
-    PINLINE PBoolean AbstractContains(
+    PINLINE bool AbstractContains(
       const PObject & key   ///< Key to look for in the set.
     ) const;
 
@@ -401,7 +401,7 @@ class PAbstractSet : public PHashTable
        @return
        true if the object was in the collection.
      */
-    virtual PBoolean Remove(
+    virtual bool Remove(
       const PObject * obj   ///< Existing object to remove from the collection.
     );
 
@@ -446,7 +446,7 @@ class PAbstractSet : public PHashTable
        @return
        true if the object was successfully added.
      */
-    virtual PBoolean SetAt(
+    virtual bool SetAt(
       PINDEX index,   ///< Index position in collection to set.
       PObject * val   ///< New value to place into the collection.
     );
@@ -518,7 +518,7 @@ template <class T> class PSet : public PAbstractSet
        deleted when removed or when all references to the set are destroyed.
        This is different from the default on most collection classes.
      */
-    inline PSet(PBoolean initialDeleteObjects = false)
+    inline PSet(bool initialDeleteObjects = false)
       : PAbstractSet() { this->AllowDeleteObjects(initialDeleteObjects); }
   //@}
 
@@ -587,7 +587,7 @@ template <class T> class PSet : public PAbstractSet
        @return
        true if the object value is in the set.
      */
-    PBoolean Contains(
+    bool Contains(
       const T & key  ///< Key to look for in the set.
     ) const { return this->AbstractContains(key); }
 
@@ -599,7 +599,7 @@ template <class T> class PSet : public PAbstractSet
        @return
        true if the object value is in the set.
      */
-    PBoolean operator[](
+    bool operator[](
       const T & key  ///< Key to look for in the set.
     ) const { return this->AbstractContains(key); }
 
@@ -795,7 +795,7 @@ class PAbstractDictionary : public PHashTable
        @return
        true if the object was successfully added.
      */
-    virtual PBoolean SetAt(
+    virtual bool SetAt(
       PINDEX index,   ///< Index position in collection to set.
       PObject * val   ///< New value to place into the collection.
     );
@@ -849,7 +849,7 @@ class PAbstractDictionary : public PHashTable
        @return
        true if the new object could be placed into the dictionary.
      */
-    P_DEPRECATED virtual PBoolean SetDataAt(
+    P_DEPRECATED virtual bool SetDataAt(
       PINDEX index,   ///< Ordinal index in the dictionary.
       PObject * obj   ///< New object to put into the dictionary.
     );
@@ -923,7 +923,7 @@ class PAbstractDictionary : public PHashTable
        @return
        true if the object was in the collection.
      */
-    virtual PBoolean Remove(
+    virtual bool Remove(
       const PObject * obj   ///< Existing object to remove from the collection.
     );
 
@@ -992,7 +992,7 @@ template <class K, class D> class PDictionary : public PAbstractDictionary
        @return
        true if the object value is in the dictionary.
      */
-    PBoolean Contains(
+    bool Contains(
       const K & key   ///< Key to look for in the dictionary.
     ) const { return this->AbstractContains(key); }
 
@@ -1020,7 +1020,7 @@ template <class K, class D> class PDictionary : public PAbstractDictionary
        @return
        true if the object was successfully added.
      */
-    virtual PBoolean SetAt(
+    virtual bool SetAt(
       const K & key,  // Key for position in dictionary to add object.
       D * obj         // New object to put into the dictionary.
     ) { return this->AbstractSetAt(key, obj) != NULL; }
@@ -1277,7 +1277,7 @@ template <class K> class POrdinalDictionary : public PDictionary<K, POrdinalKey>
        @return
        true if the new object could be placed into the dictionary.
      */
-    virtual PBoolean SetDataAt(
+    virtual bool SetDataAt(
       PINDEX index,   ///< Ordinal index in the dictionary.
       PINDEX ordinal  ///< New ordinal value to put into the dictionary.
     ) { return this->AbstractSetAt(this->AbstractGetKeyAt(index), PNEW POrdinalKey(ordinal)) != NULL; }
@@ -1293,7 +1293,7 @@ template <class K> class POrdinalDictionary : public PDictionary<K, POrdinalKey>
        @return
        true if the object was successfully added.
      */
-    virtual PBoolean SetAt(
+    virtual bool SetAt(
       const K & key,  ///< Key for position in dictionary to add object.
       PINDEX ordinal  ///< New ordinal value to put into the dictionary.
     ) { return this->AbstractSetAt(key, PNEW POrdinalKey(ordinal)) != NULL; }

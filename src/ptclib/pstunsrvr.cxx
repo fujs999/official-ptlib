@@ -50,7 +50,7 @@ PSTUNServer::PSTUNServer()
 {
 }
 
-bool PSTUNServer::Open(WORD port)
+bool PSTUNServer::Open(uint16_t port)
 {
   Close();
 
@@ -109,8 +109,8 @@ bool PSTUNServer::Open(WORD port)
     // primary socket
     PUDPSocket * primarySocket        = r->second.m_socket;
     PIPSocket::Address primaryAddress = r->second.m_socketAddress.GetAddress();
-    WORD primaryPort                  = r->second.m_socketAddress.GetPort();
-    WORD alternatePort                = primaryPort + 1;
+    uint16_t primaryPort                  = r->second.m_socketAddress.GetPort();
+    uint16_t alternatePort                = primaryPort + 1;
     ++r;
     PUDPSocket * secondarySocket        = r->second.m_socket;
     PIPSocket::Address secondaryAddress =  r->second.m_socketAddress.GetAddress();
@@ -166,7 +166,7 @@ bool PSTUNServer::Open(PUDPSocket * socket1, PUDPSocket * socket2)
 }
 
 void PSTUNServer::PopulateInfo(PUDPSocket * socket, 
-                               const PIPSocket::Address & alternateAddress, WORD alternatePort, 
+                               const PIPSocket::Address & alternateAddress, uint16_t alternatePort, 
                                PUDPSocket * alternatePortSocket, PUDPSocket * alternateAddressSocket, PUDPSocket * alternateAddressAndPortSocket)
 {
   SocketToSocketInfoMap::iterator it = m_socketToSocketInfoMap.find(socket);
@@ -180,7 +180,7 @@ void PSTUNServer::PopulateInfo(PUDPSocket * socket,
   info.m_alternateAddressAndPortSocket = alternateAddressAndPortSocket;
 }
 
-PSTUNServer::SocketInfo * PSTUNServer::CreateAndAddSocket(const PIPSocket::Address & address, WORD port)
+PSTUNServer::SocketInfo * PSTUNServer::CreateAndAddSocket(const PIPSocket::Address & address, uint16_t port)
 {
   PUDPSocket * sock = new PUDPSocket();
   if (!sock->Listen(address, 5, port)) {

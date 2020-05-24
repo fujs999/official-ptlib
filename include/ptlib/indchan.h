@@ -3,7 +3,7 @@
  *
  * Indirect I/O channel class.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -98,7 +98,7 @@ class PIndirectChannel : public PChannel
        @return
        true if the channel is closed.
      */
-    virtual PBoolean Close();
+    virtual bool Close();
 
     /**Determine if the channel is currently open and read and write operations
        can be executed on it. For example, in the <code>PFile</code> class it returns
@@ -107,7 +107,7 @@ class PIndirectChannel : public PChannel
        @return
        true if the channel is open.
      */
-    virtual PBoolean IsOpen() const;
+    virtual bool IsOpen() const;
 
     /**Low level read from the channel. This function may block until the
        requested number of characters were read or the read timeout was
@@ -124,7 +124,7 @@ class PIndirectChannel : public PChannel
        true indicates that at least one character was read from the channel.
        false means no bytes were read due to timeout or some other I/O error.
      */
-    virtual PBoolean Read(
+    virtual bool Read(
       void * buf,   ///< Pointer to a block of memory to receive the read bytes.
       PINDEX len    ///< Maximum number of bytes to read into the buffer.
     );
@@ -156,7 +156,7 @@ class PIndirectChannel : public PChannel
        @return
        true if at least len bytes were written to the channel.
      */
-    virtual PBoolean Write(
+    virtual bool Write(
       const void * buf, ///< Pointer to a block of memory to write.
       PINDEX len        ///< Number of bytes to write.
     );
@@ -169,7 +169,7 @@ class PIndirectChannel : public PChannel
        @return
        true if the shutdown was successfully performed.
      */
-    virtual PBoolean Shutdown(
+    virtual bool Shutdown(
       ShutdownValue option   ///< Flag for shut down of read, write or both.
     );
 
@@ -242,7 +242,7 @@ class PIndirectChannel : public PChannel
        @return
        true if both channels are set, open and OnOpen() returns true.
      */
-    PBoolean Open(
+    bool Open(
       PChannel & channel   ///< Channel to be used for both read and write operations.
     );
 
@@ -256,9 +256,9 @@ class PIndirectChannel : public PChannel
        @return
        true if both channels are set, open and OnOpen() returns true.
      */
-    PBoolean Open(
+    bool Open(
       PChannel * channel,      ///< Channel to be used for both read and write operations.
-      PBoolean autoDelete = true   ///< Automatically delete the channel
+      bool autoDelete = true   ///< Automatically delete the channel
     );
 
     /**Set the channel for both read and write operations. This then checks
@@ -272,11 +272,11 @@ class PIndirectChannel : public PChannel
        @return
        true if both channels are set, open and OnOpen() returns true.
      */
-    PBoolean Open(
+    bool Open(
       PChannel * readChannel,      ///< Channel to be used for both read operations.
       PChannel * writeChannel,     ///< Channel to be used for both write operations.
-      PBoolean autoDeleteRead = true,  ///< Automatically delete the read channel
-      PBoolean autoDeleteWrite = true  ///< Automatically delete the write channel
+      bool autoDeleteRead = true,  ///< Automatically delete the read channel
+      bool autoDeleteWrite = true  ///< Automatically delete the write channel
     );
 
     /** Detach without closing the read/write channel.
@@ -320,7 +320,7 @@ class PIndirectChannel : public PChannel
        @return
        Returns true if both channels are set and are both open.
     */
-    PBoolean SetWriteChannel(
+    bool SetWriteChannel(
       PChannel * channel,         ///< Channel to be used for both read operations.
       bool autoDelete = true,     ///< Automatically delete the channel
       bool closeExisting = false  ///< Close (and auto-delete) the existing read channel
@@ -354,7 +354,7 @@ class PIndirectChannel : public PChannel
        @return
        Returns true if the protocol handshaking is successful.
      */
-    virtual PBoolean OnOpen();
+    virtual bool OnOpen();
 
 
   // Member variables
@@ -362,13 +362,13 @@ class PIndirectChannel : public PChannel
     PChannel * readChannel;
 
     /// Automatically delete read channel on destruction.
-    PBoolean readAutoDelete;
+    bool readAutoDelete;
 
     /// Channel for write operations.
     PChannel * writeChannel;
 
     /// Automatically delete write channel on destruction.
-    PBoolean writeAutoDelete;
+    bool writeAutoDelete;
 
     /// Race condition prevention on closing channel
     PDECLARE_READ_WRITE_MUTEX(channelPointerMutex);

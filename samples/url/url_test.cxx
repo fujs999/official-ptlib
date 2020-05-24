@@ -116,7 +116,7 @@ void Test::Main()
     if (url.LoadResource(data)) {
       PFile out;
       if (out.Open(args[1], PFile::WriteOnly))
-        out.Write((const BYTE *)data, data.GetSize());
+        out.Write((const uint8_t *)data, data.GetSize());
       else
         cerr << "\nCould not open file \"" << args[1] << '"' << endl;
     }

@@ -3,7 +3,7 @@
  *
  * I/O channel classes implementation
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -61,7 +61,7 @@ void PChannel::Construct()
 //   can be used to determine which error occurred
 //
 
-PBoolean PChannel::PXSetIOBlock(PXBlockType type, const PTimeInterval & timeout)
+bool PChannel::PXSetIOBlock(PXBlockType type, const PTimeInterval & timeout)
 {
   if (CheckNotOpen())
     return false;
@@ -144,7 +144,7 @@ FILE * PChannel::FDOpen(const char * mode)
 }
 
 
-PBoolean PChannel::Read(void * buf, PINDEX len)
+bool PChannel::Read(void * buf, PINDEX len)
 {
   SetLastReadCount(0);
 
@@ -177,7 +177,7 @@ PBoolean PChannel::Read(void * buf, PINDEX len)
 }
 
 
-PBoolean PChannel::Write(const void * buf, PINDEX len)
+bool PChannel::Write(const void * buf, PINDEX len)
 {
   SetLastWriteCount(0);
 
@@ -255,7 +255,7 @@ bool PChannel::AsyncContext::Initialise(PChannel * channel, CompletionFunction o
 }
 
 
-PBoolean PChannel::ReadAsync(AsyncContext & context)
+bool PChannel::ReadAsync(AsyncContext & context)
 {
   PTRACE(6, "Async\tStarting ReadAsync");
   return PAssert(context.Initialise(this, &PChannel::OnReadComplete),
@@ -264,7 +264,7 @@ PBoolean PChannel::ReadAsync(AsyncContext & context)
 }
 
 
-PBoolean PChannel::WriteAsync(AsyncContext & context)
+bool PChannel::WriteAsync(AsyncContext & context)
 {
   PTRACE(6, "Async\tStarting WriteAsync");
   return PAssert(context.Initialise(this, &PChannel::OnWriteComplete),
@@ -287,13 +287,13 @@ bool PChannel::AsyncContext::Initialise(PChannel *, CompletionFunction)
 }
 
 
-PBoolean PChannel::ReadAsync(AsyncContext & context)
+bool PChannel::ReadAsync(AsyncContext & context)
 {
   return false;
 }
 
 
-PBoolean PChannel::WriteAsync(AsyncContext & context)
+bool PChannel::WriteAsync(AsyncContext & context)
 {
   return false;
 }
@@ -301,7 +301,7 @@ PBoolean PChannel::WriteAsync(AsyncContext & context)
 #endif // _AIO_H
 
 
-PBoolean PChannel::Close()
+bool PChannel::Close()
 {
   if (CheckNotOpen())
     return false;
@@ -376,7 +376,7 @@ PString PChannel::GetErrorText(Errors normalisedError, int osError /* =0 */)
 }
 
 
-PBoolean PChannel::ConvertOSError(P_INT_PTR libcReturnValue, ErrorGroup group)
+bool PChannel::ConvertOSError(P_INT_PTR libcReturnValue, ErrorGroup group)
 {
   int osError = (libcReturnValue >= 0) ? 0 : os_errno();
   Errors lastError;

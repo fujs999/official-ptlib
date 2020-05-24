@@ -3,7 +3,7 @@
  *
  * Service Process (daemon) class.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -59,7 +59,7 @@
        <A>MainEntry()</A> function on the PServiceProcess instance.
     */
 
-    void MainEntry(DWORD argc, LPTSTR * argv);
+    void MainEntry(uint32_t argc, LPTSTR * argv);
     /* Internal function function that takes care of actually starting the
        service, informing the service controller at each step along the way.
        After launching the worker thread, it waits on the event that the worker
@@ -82,26 +82,26 @@
        ControlService in reference to our service.
      */
 
-    void ControlEntry(DWORD code);
+    void ControlEntry(uint32_t code);
     /* This function is called by the Service Controller whenever someone calls
        ControlService in reference to our service.
      */
 
-    PBoolean ReportStatus(
-      DWORD dwCurrentState,
-      DWORD dwWin32ExitCode = NO_ERROR,
-      DWORD dwCheckPoint = 0,
-      DWORD dwWaitHint = 0
+    bool ReportStatus(
+      uint32_t dwCurrentState,
+      uint32_t dwWin32ExitCode = NO_ERROR,
+      uint32_t dwCheckPoint = 0,
+      uint32_t dwWaitHint = 0
     );
     /* This function is called by the Main() and Control() functions to update the
        service's status to the service control manager.
      */
 
 
-    PBoolean ProcessCommand(const char * cmd);
+    bool ProcessCommand(const char * cmd);
     // Process command line argument for controlling the service.
 
-    PBoolean CreateControlWindow(PBoolean createDebugWindow);
+    bool CreateControlWindow(bool createDebugWindow);
     static LPARAM WINAPI StaticWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
     LPARAM WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
     void DebugOutput(const char * out);

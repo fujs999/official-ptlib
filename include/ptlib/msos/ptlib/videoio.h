@@ -3,7 +3,7 @@
  *
  * Classes to support streaming video input (grabbing) and output.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-2000 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -28,16 +28,16 @@
 // PVideoDevice
 
   public:
-    virtual PBoolean SetColourFormat(const PString & colourFormat);
-    virtual PBoolean SetFrameRate(unsigned rate);
-    virtual PBoolean SetFrameSize(unsigned width, unsigned height);
+    virtual bool SetColourFormat(const PString & colourFormat);
+    virtual bool SetFrameRate(unsigned rate);
+    virtual bool SetFrameSize(unsigned width, unsigned height);
 
   protected:
     static LRESULT CALLBACK ErrorHandler(HWND hWnd, int id, LPCSTR err);
     LRESULT HandleError(int id, LPCSTR err);
     static LRESULT CALLBACK VideoHandler(HWND hWnd, LPVIDEOHDR vh);
     LRESULT HandleVideo(LPVIDEOHDR vh);
-    PBoolean InitialiseCapture();
+    bool InitialiseCapture();
     void HandleCapture();
 
     PThread     * captureThread;
@@ -49,7 +49,7 @@
     LPBYTE        lastFramePtr;
     unsigned      lastFrameSize;
     PMutex        lastFrameMutex;
-    PBoolean          isCapturingNow;
+    bool          isCapturingNow;
 
   friend class PVideoInputThread;
 

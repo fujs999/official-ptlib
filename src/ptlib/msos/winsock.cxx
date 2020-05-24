@@ -3,7 +3,7 @@
  *
  * WINSOCK implementation of Berkley sockets.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -155,7 +155,7 @@ void P_fd_set::Zero()
     FD_ZERO(set);
 }
 
-PBoolean P_fd_set::IsPresent(intptr_t fd) const
+bool P_fd_set::IsPresent(intptr_t fd) const
 {
   return FD_ISSET(fd, set);
 }
@@ -223,7 +223,7 @@ HANDLE PSocket::GetAsyncWriteHandle() const
 }
 
 
-PBoolean PSocket::Read(void * buf, PINDEX len)
+bool PSocket::Read(void * buf, PINDEX len)
 {
   SetLastReadCount(0);
 
@@ -239,7 +239,7 @@ PBoolean PSocket::Read(void * buf, PINDEX len)
 }
 
 
-PBoolean PSocket::Read(Slice * slices, size_t sliceCount)
+bool PSocket::Read(Slice * slices, size_t sliceCount)
 {
   SetLastReadCount(0);
 
@@ -251,7 +251,7 @@ PBoolean PSocket::Read(Slice * slices, size_t sliceCount)
 }
 
 
-PBoolean PSocket::Write(const void * buf, PINDEX len)
+bool PSocket::Write(const void * buf, PINDEX len)
 {
   SetLastWriteCount(0);
 
@@ -264,7 +264,7 @@ PBoolean PSocket::Write(const void * buf, PINDEX len)
 }
 
 
-PBoolean PSocket::Write(const Slice * slices, size_t sliceCount)
+bool PSocket::Write(const Slice * slices, size_t sliceCount)
 {
   SetLastWriteCount(0);
 
@@ -276,7 +276,7 @@ PBoolean PSocket::Write(const Slice * slices, size_t sliceCount)
 }
 
 
-PBoolean PSocket::Close()
+bool PSocket::Close()
 {
   if (CheckNotOpen())
     return false;
@@ -326,7 +326,7 @@ int PSocket::os_socket(int af, int type, int proto)
 }
 
 
-PBoolean PSocket::os_connect(struct sockaddr * addr, socklen_t size)
+bool PSocket::os_connect(struct sockaddr * addr, socklen_t size)
 {
   if (readTimeout == PMaxTimeInterval)
     return ConvertOSError(::connect(os_handle, addr, size));
@@ -335,7 +335,7 @@ PBoolean PSocket::os_connect(struct sockaddr * addr, socklen_t size)
   if (!ConvertOSError(::ioctlsocket(os_handle, FIONBIO, &fionbio)))
     return false;
 
-  DWORD err = ERROR_SUCCESS;
+  uint32_t err = ERROR_SUCCESS;
 
   if (::connect(os_handle, addr, size) == SOCKET_ERROR && (err = GetLastError()) == WSAEWOULDBLOCK) {
     P_fd_set writefds = os_handle;
@@ -404,7 +404,7 @@ PBoolean PSocket::os_connect(struct sockaddr * addr, socklen_t size)
 }
 
 
-PBoolean PSocket::os_accept(PSocket & listener, struct sockaddr * addr, socklen_t * size)
+bool PSocket::os_accept(PSocket & listener, struct sockaddr * addr, socklen_t * size)
 {
   if (listener.GetReadTimeout() != PMaxTimeInterval) {
     P_fd_set readfds = listener.GetHandle();
@@ -579,7 +579,7 @@ PChannel::Errors PSocket::Select(SelectList & read,
 
 static struct
 {
-  DWORD m_windows;
+  uint32_t m_windows;
   int   m_stdlib;
 } ErrorMap[] = {
   { WSAEBADF, EBADF },
@@ -610,7 +610,7 @@ static struct
 
 int PSocket::os_errno() const
 {
-  DWORD err = WSAGetLastError();
+  uint32_t err = WSAGetLastError();
   SetLastError(err);
 
   for (PINDEX i = 0; i < PARRAYSIZE(ErrorMap); ++i) {
@@ -636,7 +636,7 @@ PString PSocket::GetErrorText(ErrorGroup group) const
 //////////////////////////////////////////////////////////////////////////////
 // PIPSocket::Address
 
-PIPSocket::Address::Address(BYTE b1, BYTE b2, BYTE b3, BYTE b4)
+PIPSocket::Address::Address(uint8_t b1, uint8_t b2, uint8_t b3, uint8_t b4)
 {
   m_version = 4;
   m_v.m_four.S_un.S_un_b.s_b1 = b1;
@@ -646,13 +646,13 @@ PIPSocket::Address::Address(BYTE b1, BYTE b2, BYTE b3, BYTE b4)
 }
 
 
-PIPSocket::Address::Address(DWORD dw)
+PIPSocket::Address::Address(uint32_t dw)
 {
   operator=(dw);
 }
 
 
-PIPSocket::Address & PIPSocket::Address::operator=(DWORD dw)
+PIPSocket::Address & PIPSocket::Address::operator=(uint32_t dw)
 {
   m_version = 4;
   m_v.m_four.S_un.S_addr = dw;
@@ -660,31 +660,31 @@ PIPSocket::Address & PIPSocket::Address::operator=(DWORD dw)
 }
 
 
-PIPSocket::Address::operator DWORD() const
+PIPSocket::Address::operator uint32_t() const
 {
   return m_version != 4 ? 0 : m_v.m_four.S_un.S_addr;
 }
 
 
-BYTE PIPSocket::Address::Byte1() const
+uint8_t PIPSocket::Address::Byte1() const
 {
   return m_v.m_four.S_un.S_un_b.s_b1;
 }
 
 
-BYTE PIPSocket::Address::Byte2() const
+uint8_t PIPSocket::Address::Byte2() const
 {
   return m_v.m_four.S_un.S_un_b.s_b2;
 }
 
 
-BYTE PIPSocket::Address::Byte3() const
+uint8_t PIPSocket::Address::Byte3() const
 {
   return m_v.m_four.S_un.S_un_b.s_b3;
 }
 
 
-BYTE PIPSocket::Address::Byte4() const
+uint8_t PIPSocket::Address::Byte4() const
 {
   return m_v.m_four.S_un.S_un_b.s_b4;
 }
@@ -698,7 +698,7 @@ public:
   PIPRouteTable()
   {
     ULONG size = 0;
-    DWORD error = GetIpForwardTable(NULL, &size, TRUE);
+    uint32_t error = GetIpForwardTable(NULL, &size, TRUE);
     if (error == ERROR_INSUFFICIENT_BUFFER && m_buffer.SetSize(size))
       error = GetIpForwardTable((MIB_IPFORWARDTABLE *)m_buffer.GetPointer(), &size, TRUE);
     if (error != NO_ERROR) {
@@ -707,12 +707,12 @@ public:
     }
   }
 
-  const MIB_IPFORWARDTABLE * Ptr() const { return (const MIB_IPFORWARDTABLE *)(const BYTE *)m_buffer; }
+  const MIB_IPFORWARDTABLE * Ptr() const { return (const MIB_IPFORWARDTABLE *)(const uint8_t *)m_buffer; }
   const MIB_IPFORWARDTABLE * operator->() const { return  Ptr(); }
   const MIB_IPFORWARDTABLE & operator *() const { return *Ptr(); }
   operator const MIB_IPFORWARDTABLE *  () const { return  Ptr(); }
 
-  bool ValidateAddress(DWORD ifIndex, LPSOCKADDR lpSockAddr)
+  bool ValidateAddress(uint32_t ifIndex, LPSOCKADDR lpSockAddr)
   {
     int numEntries = Ptr()->dwNumEntries;
     if (numEntries == 0)
@@ -741,7 +741,7 @@ public:
   PIPInterfaceAddressTable()
   {
     ULONG size = 0;
-    DWORD error = GetIpAddrTable(NULL, &size, FALSE);
+    uint32_t error = GetIpAddrTable(NULL, &size, FALSE);
     if (error == ERROR_INSUFFICIENT_BUFFER && buffer.SetSize(size))
       error = GetIpAddrTable((MIB_IPADDRTABLE *)buffer.GetPointer(), &size, FALSE);
     if (error != NO_ERROR) {
@@ -750,7 +750,7 @@ public:
     }
   }
 
-  const MIB_IPADDRTABLE * Ptr() const { return (const MIB_IPADDRTABLE *)(const BYTE *)buffer; }
+  const MIB_IPADDRTABLE * Ptr() const { return (const MIB_IPADDRTABLE *)(const uint8_t *)buffer; }
   const MIB_IPADDRTABLE * operator->() const { return  Ptr(); }
   const MIB_IPADDRTABLE & operator *() const { return *Ptr(); }
   operator const MIB_IPADDRTABLE *  () const { return  Ptr(); }
@@ -765,13 +765,13 @@ class PIPAdaptersAddressTable
 {
 public:
 
-  PIPAdaptersAddressTable(DWORD dwFlags = GAA_FLAG_INCLUDE_PREFIX
+  PIPAdaptersAddressTable(uint32_t dwFlags = GAA_FLAG_INCLUDE_PREFIX
                                         | GAA_FLAG_SKIP_ANYCAST
                                         | GAA_FLAG_SKIP_DNS_SERVER
                                         | GAA_FLAG_SKIP_MULTICAST) 
   {
     ULONG size = 0;
-    DWORD error = GetAdaptersAddresses(AF_UNSPEC, dwFlags, NULL, NULL, &size);
+    uint32_t error = GetAdaptersAddresses(AF_UNSPEC, dwFlags, NULL, NULL, &size);
     if (buffer.SetSize(size))
       error = GetAdaptersAddresses(AF_UNSPEC, dwFlags, NULL, (IP_ADAPTER_ADDRESSES *)buffer.GetPointer(), &size);
 
@@ -781,7 +781,7 @@ public:
     }
   }
 
-  const IP_ADAPTER_ADDRESSES * Ptr() const { return  (const IP_ADAPTER_ADDRESSES *)(const BYTE *)buffer; }
+  const IP_ADAPTER_ADDRESSES * Ptr() const { return  (const IP_ADAPTER_ADDRESSES *)(const uint8_t *)buffer; }
   const IP_ADAPTER_ADDRESSES * operator->() const { return  Ptr(); }
   const IP_ADAPTER_ADDRESSES & operator *() const { return *Ptr(); }
   operator const IP_ADAPTER_ADDRESSES *  () const { return  Ptr(); }
@@ -817,13 +817,13 @@ public:
     }
   }
 
-  const MIB_IPFORWARD_TABLE2 * Ptr() const { return  (const MIB_IPFORWARD_TABLE2 *)(const BYTE *)m_buffer; }
+  const MIB_IPFORWARD_TABLE2 * Ptr() const { return  (const MIB_IPFORWARD_TABLE2 *)(const uint8_t *)m_buffer; }
   const MIB_IPFORWARD_TABLE2 * operator->() const { return  Ptr(); }
   const MIB_IPFORWARD_TABLE2 & operator *() const { return *Ptr(); }
   operator const MIB_IPFORWARD_TABLE2 *  () const { return  Ptr(); }
 
 
-  bool ValidateAddress(DWORD ifIndex, LPSOCKADDR lpSockAddr)
+  bool ValidateAddress(uint32_t ifIndex, LPSOCKADDR lpSockAddr)
   {
     int numEntries = Ptr()->NumEntries;
     if (numEntries == 0)
@@ -884,7 +884,7 @@ PIPSocket::PIPSocket()
 
 
 #if P_QWAVE
-PBoolean PIPSocket::Close()
+bool PIPSocket::Close()
 {
   if (IsOpen() && PWinSock::GetInstance().m_hQoS != NULL && m_qosFlowId != 0) {
     QOSRemoveSocketFromFlow(PWinSock::GetInstance().m_hQoS, os_handle, m_qosFlowId, 0);
@@ -900,7 +900,7 @@ PString PIPSocket::GetInterface(const Address & addr)
 {
   PIPInterfaceAddressTable byAddress;
   for (unsigned i = 0; i < byAddress->dwNumEntries; ++i) {
-    if (addr == byAddress->table[i].dwAddr) {
+    if (addr == Address(byAddress->table[i].dwAddr)) {
       MIB_IFROW info;
       info.dwIndex = byAddress->table[i].dwIndex;
       if (GetIfEntry(&info) == NO_ERROR)
@@ -1028,7 +1028,7 @@ bool PIPSocket::SetQoS(const QoS & qos)
     QOS qosBuf;
     memset(&qosBuf, 0, sizeof(qosBuf));
 
-    static DWORD const ServiceType[NumQoSType] = {
+    static uint32_t const ServiceType[NumQoSType] = {
       SERVICETYPE_BESTEFFORT,     // BackgroundQoS
       SERVICETYPE_BESTEFFORT,     // BestEffortQoS
       SERVICETYPE_CONTROLLEDLOAD, // ExcellentEffortQoS
@@ -1113,7 +1113,7 @@ bool PIPSocket::SetQoS(const QoS & qos)
     if (new_tos < 0)
       return true;
 
-    DWORD dscp = qos.m_dscp;
+    uint32_t dscp = qos.m_dscp;
     if (QOSSetFlow(PWinSock::GetInstance().m_hQoS, m_qosFlowId, QOSSetOutgoingDSCPValue, sizeof(dscp), &dscp, 0, NULL))
       return true;
 
@@ -1162,7 +1162,7 @@ bool PIPSocket::SetQoS(const QoS & qos)
 }
 
 
-PBoolean PIPSocket::GetRouteTable(RouteTable & table)
+bool PIPSocket::GetRouteTable(RouteTable & table)
 {
 #if P_HAS_IPV6
   PIPRouteTableIPv6 routes;
@@ -1244,7 +1244,7 @@ class Win32RouteTableDetector : public PIPSocket::RouteTableDetector
 
       if (m_pCancelIPChangeNotify != NULL) {
         memset(&overlap, 0, sizeof(overlap));
-        DWORD error = NotifyAddrChange(&hNotify, &overlap);
+        uint32_t error = NotifyAddrChange(&hNotify, &overlap);
         if (error != ERROR_IO_PENDING) {
           PTRACE(1, "Could not get network interface change notification: error=" << error);
           hNotify = NULL;
@@ -1318,14 +1318,14 @@ PIPSocket::Address PIPSocket::GetRouteInterfaceAddress(const PIPSocket::Address 
     // For some variants of Windows GetBestInterface will return 127.0.0.1
     // when we are trying to talk to one of our own interfaces.
     PIPInterfaceAddressTable interfaces;
-    for (DWORD i = 0; i < interfaces->dwNumEntries; ++i) {
-      if (remoteAddress == interfaces->table[i].dwAddr)
+    for (uint32_t i = 0; i < interfaces->dwNumEntries; ++i) {
+      if (remoteAddress == Address(interfaces->table[i].dwAddr))
         return remoteAddress;
     }
 
     DWORD best;
     if (GetBestInterface(remoteAddress, &best) == NO_ERROR) {
-      for (DWORD i = 0; i < interfaces->dwNumEntries; ++i) {
+      for (uint32_t i = 0; i < interfaces->dwNumEntries; ++i) {
         if (interfaces->table[i].dwIndex == best)
           return interfaces->table[i].dwAddr;
       }
@@ -1336,7 +1336,7 @@ PIPSocket::Address PIPSocket::GetRouteInterfaceAddress(const PIPSocket::Address 
 }
 
 
-PBoolean PIPSocket::GetInterfaceTable(InterfaceTable & table, PBoolean includeDown)
+bool PIPSocket::GetInterfaceTable(InterfaceTable & table, bool includeDown)
 {
   PIPInterfaceAddressTable byAddress;
 

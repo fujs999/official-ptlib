@@ -2,7 +2,7 @@
 /*
  * pnat.cxx
  *
- * NAT Strategy support for Portable Windows Library.
+ * NAT Strategy support for Portable Tools Library.
  *
  *
  * Copyright (c) 2004 ISVO (Asia) Pte Ltd. All Rights Reserved.
@@ -128,7 +128,7 @@ bool PNatMethods::IsLocalAddress(const PIPSocket::Address & ip) const
 }
 
 
-void PNatMethods::SetPortRanges(WORD portBase, WORD portMax, WORD portPairBase, WORD portPairMax)
+void PNatMethods::SetPortRanges(uint16_t portBase, uint16_t portMax, uint16_t portPairBase, uint16_t portPairMax)
 {
   for (iterator it = begin(); it != end(); ++it)
     it->SetPortRanges(portBase, portMax, portPairBase, portPairMax);
@@ -193,7 +193,7 @@ void PNatMethod::Activate(bool active)
 }
 
 
-bool PNatMethod::GetServerAddress(PIPSocket::Address & address, WORD & port) const
+bool PNatMethod::GetServerAddress(PIPSocket::Address & address, uint16_t & port) const
 {
   PIPSocketAddressAndPort ap;
   if (!InternalGetServerAddress(ap))
@@ -293,7 +293,7 @@ bool PNatMethod::Open(const PIPSocket::Address &)
 }
 
 
-bool PNatMethod::CreateSocket(PUDPSocket * & socket, const PIPSocket::Address & binding, WORD localPort, PObject * context, Component component)
+bool PNatMethod::CreateSocket(PUDPSocket * & socket, const PIPSocket::Address & binding, uint16_t localPort, PObject * context, Component component)
 {
   PWaitAndSignal m(m_mutex);
 
@@ -316,7 +316,7 @@ bool PNatMethod::CreateSocket(PUDPSocket * & socket, const PIPSocket::Address & 
 }
 
 
-PBoolean PNatMethod::CreateSocketPair(PUDPSocket * & socket1, PUDPSocket * & socket2, const PIPSocket::Address & binding, PObject * context)
+bool PNatMethod::CreateSocketPair(PUDPSocket * & socket1, PUDPSocket * & socket2, const PIPSocket::Address & binding, PObject * context)
 {
   PWaitAndSignal mutex(m_mutex);
 
@@ -400,7 +400,7 @@ PObject::Comparison PNatMethod::Compare(const PObject & obj) const
 }
 
 
-void PNatMethod::SetPortRanges(WORD portBase, WORD portMax, WORD portPairBase, WORD portPairMax) 
+void PNatMethod::SetPortRanges(uint16_t portBase, uint16_t portMax, uint16_t portPairBase, uint16_t portPairMax) 
 {
   PWaitAndSignal mutex(m_mutex);
   m_singlePortRange.Set(portBase, portMax);

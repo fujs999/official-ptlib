@@ -3,7 +3,7 @@
  *
  * Remote network connection (ppp) class implementation
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -128,15 +128,15 @@ PRemoteConnection::~PRemoteConnection()
 }
 
 
-PBoolean PRemoteConnection::Open(const PString & name, PBoolean existing)
+bool PRemoteConnection::Open(const PString & name, bool existing)
 {
   return Open(name, "", "", existing);
 }
 
-PBoolean PRemoteConnection::Open(const PString & name,
+bool PRemoteConnection::Open(const PString & name,
                              const PString & user,
                              const PString & pword,
-                             PBoolean existing)
+                             bool existing)
 {
   userName = user;
   password = pword;
@@ -306,7 +306,7 @@ void PRemoteConnection::Construct()
 }
 
 
-PBoolean PRemoteConnection::Open(PBoolean existing)
+bool PRemoteConnection::Open(bool existing)
 {
   return Open(remoteName, existing);
 }
@@ -432,7 +432,7 @@ PRemoteConnection::Status PRemoteConnection::GetConfiguration(
 
 PRemoteConnection::Status PRemoteConnection::SetConfiguration(
                  const Configuration & config,  // Configuration of remote connection
-                 PBoolean create            // Flag to create connection if not present
+                 bool create            // Flag to create connection if not present
                )
 {
   return SetConfiguration(remoteName, config, create);
@@ -442,7 +442,7 @@ PRemoteConnection::Status PRemoteConnection::SetConfiguration(
 PRemoteConnection::Status PRemoteConnection::SetConfiguration(
                  const PString & name,          // Remote connection name to configure
                  const Configuration & config,  // Configuration of remote connection
-                 PBoolean create            // Flag to create connection if not present
+                 bool create            // Flag to create connection if not present
                )
 {
   if (config.phoneNumber.IsEmpty())

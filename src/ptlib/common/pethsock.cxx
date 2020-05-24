@@ -3,7 +3,7 @@
  *
  * Direct Ethernet socket I/O channel class.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -129,7 +129,7 @@ PStringArray PEthSocket::EnumInterfaces(bool detailed)
 }
 
 
-PBoolean PEthSocket::Connect(const PString & newName)
+bool PEthSocket::Connect(const PString & newName)
 {
   Close();
 
@@ -147,7 +147,7 @@ PBoolean PEthSocket::Connect(const PString & newName)
 }
 
 
-PBoolean PEthSocket::Close()
+bool PEthSocket::Close()
 {
   os_handle = -1;
 
@@ -200,7 +200,7 @@ bool PEthSocket::SetFilter(const PString & filter)
 }
 
 
-PBoolean PEthSocket::Read(void * data, PINDEX length)
+bool PEthSocket::Read(void * data, PINDEX length)
 {
   if (CheckNotOpen())
     return false;
@@ -228,7 +228,7 @@ PBoolean PEthSocket::Read(void * data, PINDEX length)
 }
 
 
-PBoolean PEthSocket::Write(const void * data, PINDEX length)
+bool PEthSocket::Write(const void * data, PINDEX length)
 {
   if (!IsOpen())
     return false;
@@ -257,13 +257,13 @@ PStringArray PEthSocket::EnumInterfaces(bool)
 }
 
 
-PBoolean PEthSocket::Connect(const PString & /*newName*/)
+bool PEthSocket::Connect(const PString & /*newName*/)
 {
   return false;
 }
 
 
-PBoolean PEthSocket::Close()
+bool PEthSocket::Close()
 {
   os_handle = -1;
   return true;
@@ -282,13 +282,13 @@ bool PEthSocket::SetFilter(const PString &)
 }
 
 
-PBoolean PEthSocket::Read(void *, PINDEX)
+bool PEthSocket::Read(void *, PINDEX)
 {
   return false;
 }
 
 
-PBoolean PEthSocket::Write(const void *, PINDEX)
+bool PEthSocket::Write(const void *, PINDEX)
 {
   return false;
 }
@@ -319,14 +319,14 @@ const char * PEthSocket::GetProtocolName() const
 }
 
 
-PBoolean PEthSocket::OpenSocket()
+bool PEthSocket::OpenSocket()
 {
   PAssertAlways(PUnimplementedFunction);
   return false;
 }
 
 
-PBoolean PEthSocket::Listen(unsigned, WORD, Reusability)
+bool PEthSocket::Listen(unsigned, uint16_t, Reusability)
 {
   PAssertAlways(PUnimplementedFunction);
   return false;
@@ -483,7 +483,7 @@ int PEthSocket::Frame::GetDataLink(PBYTEArray & payload, Address & src, Address 
 }
 
 
-BYTE * PEthSocket::Frame::CreateDataLink(const Address & src, const Address & dst, unsigned proto, PINDEX length)
+uint8_t * PEthSocket::Frame::CreateDataLink(const Address & src, const Address & dst, unsigned proto, PINDEX length)
 {
   m_rawSize = length + 14;
   PEthFrameHeader & header = *(PEthFrameHeader *)m_rawData.GetPointer(sizeof(PEthFrameHeader));
@@ -584,7 +584,7 @@ int PEthSocket::Frame::GetIP(PBYTEArray & payload, PIPSocket::Address & src, PIP
 }
 
 
-BYTE * PEthSocket::Frame::CreateIP(const PIPSocket::Address & src, const PIPSocket::Address & dst, unsigned proto, PINDEX length)
+uint8_t * PEthSocket::Frame::CreateIP(const PIPSocket::Address & src, const PIPSocket::Address & dst, unsigned proto, PINDEX length)
 {
   length += 20;
 
@@ -592,7 +592,7 @@ BYTE * PEthSocket::Frame::CreateIP(const PIPSocket::Address & src, const PIPSock
   Address srcMac, dstMac;
   if ((size_t)m_rawSize > sizeof(PEthSocket::Address)*2)
     GetDataLink(dummy, srcMac, dstMac);
-  BYTE * ip = CreateDataLink(srcMac, dstMac, 0x800, length);
+  uint8_t * ip = CreateDataLink(srcMac, dstMac, 0x800, length);
   memset(ip, 0, 20);
   ip[0] = 0x45;
   *(PUInt16b*)(ip+2) = (uint16_t)length;
@@ -603,7 +603,7 @@ BYTE * PEthSocket::Frame::CreateIP(const PIPSocket::Address & src, const PIPSock
 }
 
 
-bool PEthSocket::Frame::GetUDP(PBYTEArray & payload, WORD & srcPort, WORD & dstPort)
+bool PEthSocket::Frame::GetUDP(PBYTEArray & payload, uint16_t & srcPort, uint16_t & dstPort)
 {
   PIPSocketAddressAndPort src, dst;
   if (!GetUDP(payload, src, dst))
@@ -637,22 +637,22 @@ bool PEthSocket::Frame::GetUDP(PBYTEArray & payload, PIPSocketAddressAndPort & s
 }
 
 
-BYTE * PEthSocket::Frame::CreateUDP(const PIPSocketAddressAndPort & src, const PIPSocketAddressAndPort & dst, PINDEX length, const void * data)
+uint8_t * PEthSocket::Frame::CreateUDP(const PIPSocketAddressAndPort & src, const PIPSocketAddressAndPort & dst, PINDEX length, const void * data)
 {
   PINDEX udpLength = length + 8;
-  BYTE * udp = CreateIP(src.GetAddress(), dst.GetAddress(), 0x11, udpLength);
+  uint8_t * udp = CreateIP(src.GetAddress(), dst.GetAddress(), 0x11, udpLength);
   *(PUInt16b*)(udp+0) = src.GetPort();
   *(PUInt16b*)(udp+2) = dst.GetPort();
   *(PUInt16b*)(udp+4) = (uint16_t)udpLength;
   *(uint16_t*)(udp+6) = 0;
-  BYTE * payload = udp+8;
+  uint8_t * payload = udp+8;
   if (data != NULL)
     memcpy(payload, data, length);
   return payload;
 }
 
 
-bool PEthSocket::Frame::GetTCP(PBYTEArray & payload, WORD & srcPort, WORD & dstPort)
+bool PEthSocket::Frame::GetTCP(PBYTEArray & payload, uint16_t & srcPort, uint16_t & dstPort)
 {
   PIPSocketAddressAndPort src, dst;
   if (!GetTCP(payload, src, dst))
@@ -687,14 +687,14 @@ bool PEthSocket::Frame::GetTCP(PBYTEArray & payload, PIPSocketAddressAndPort & s
 }
 
 
-BYTE * PEthSocket::Frame::CreateTCP(const PIPSocketAddressAndPort & src, const PIPSocketAddressAndPort & dst, PINDEX length, const void * data)
+uint8_t * PEthSocket::Frame::CreateTCP(const PIPSocketAddressAndPort & src, const PIPSocketAddressAndPort & dst, PINDEX length, const void * data)
 {
-  BYTE * tcp = CreateIP(src.GetAddress(), dst.GetAddress(), 6, length+20);
+  uint8_t * tcp = CreateIP(src.GetAddress(), dst.GetAddress(), 6, length+20);
   memset(tcp, 0, 20);
   tcp[12] = 0x50;
   *(PUInt16b*)(tcp+0) = src.GetPort();
   *(PUInt16b*)(tcp+2) = dst.GetPort();
-  BYTE * payload = tcp+20;
+  uint8_t * payload = tcp+20;
   if (data != NULL)
     memcpy(payload, data, length);
   return payload;
@@ -709,7 +709,7 @@ PEthSocket::Address::Address()
 }
 
 
-PEthSocket::Address::Address(const BYTE * addr)
+PEthSocket::Address::Address(const uint8_t * addr)
 {
   if (addr != NULL)
     memcpy(b, addr, sizeof(b));
@@ -770,7 +770,7 @@ PEthSocket::Address & PEthSocket::Address::operator=(const PString & str)
 }
 
 
-bool PEthSocket::Address::operator==(const BYTE * eth) const
+bool PEthSocket::Address::operator==(const uint8_t * eth) const
 {
   if (eth != NULL)
     return memcmp(b, eth, sizeof(b)) == 0;
@@ -779,7 +779,7 @@ bool PEthSocket::Address::operator==(const BYTE * eth) const
 }
 
 
-bool PEthSocket::Address::operator!=(const BYTE * eth) const
+bool PEthSocket::Address::operator!=(const uint8_t * eth) const
 {
   if (eth != NULL)
     return memcmp(b, eth, sizeof(b)) != 0;

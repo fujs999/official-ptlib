@@ -3,7 +3,7 @@
  *
  * Forms using HTTP user interface.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-2002 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -92,7 +92,7 @@ void PHTTPField::SetHelp(const PString & hotLinkURL,
 }
 
 
-static PBoolean FindSpliceBlock(const PRegularExpression & startExpr,
+static bool FindSpliceBlock(const PRegularExpression & startExpr,
                             const PRegularExpression & endExpr,
                             const PString & text,
                             PINDEX offset,
@@ -117,7 +117,7 @@ static PBoolean FindSpliceBlock(const PRegularExpression & startExpr,
 }
 
 
-static PBoolean FindSpliceBlock(const PRegularExpression & startExpr,
+static bool FindSpliceBlock(const PRegularExpression & startExpr,
                             const PString & text,
                             PINDEX offset,
                             PINDEX & pos,
@@ -131,7 +131,7 @@ static PBoolean FindSpliceBlock(const PRegularExpression & startExpr,
 }
 
 
-static PBoolean FindSpliceName(const PCaselessString & text,
+static bool FindSpliceName(const PCaselessString & text,
                            PINDEX start,
                            PINDEX finish,
                            PINDEX & pos,
@@ -165,7 +165,7 @@ static PBoolean FindSpliceName(const PCaselessString & text,
 }
 
 
-static PBoolean FindSpliceFieldName(const PString & text,
+static bool FindSpliceFieldName(const PString & text,
                             PINDEX offset,
                             PINDEX & pos,
                             PINDEX & len,
@@ -217,7 +217,7 @@ void PHTTPField::ExpandFieldNames(PString & text, PINDEX start, PINDEX & finish)
 }
 
 
-static PBoolean FindInputValue(const PString & text, PINDEX & before, PINDEX & after)
+static bool FindInputValue(const PString & text, PINDEX & before, PINDEX & after)
 {
   static PRegularExpression Value("value[ \t\r\n]*=[ \t\r\n]*(\"[^\"]*\"|[^> \t\r\n]+)",
                                   PRegularExpression::Extended|PRegularExpression::IgnoreCase);
@@ -452,7 +452,7 @@ void PHTTPField::SaveToJSON(PJSON::Base & json) const
 }
 
 
-PBoolean PHTTPField::Validated(const PString &, PStringStream &) const
+bool PHTTPField::Validated(const PString &, PStringStream &) const
 {
   return true;
 }
@@ -471,7 +471,7 @@ void PHTTPField::SetAllValues(const PStringToString & data)
 }
 
 
-PBoolean PHTTPField::ValidateAll(const PStringToString & data, PStringStream & msg) const
+bool PHTTPField::ValidateAll(const PStringToString & data, PStringStream & msg) const
 {
   if (data.Contains(m_fullName))
     return Validated(data[m_fullName], msg);
@@ -500,7 +500,7 @@ void PHTTPDividerField::GetHTMLTag(PHTML & html) const
 }
 
 
-PString PHTTPDividerField::GetValue(PBoolean) const
+PString PHTTPDividerField::GetValue(bool) const
 {
   return PString::Empty();
 }
@@ -640,7 +640,7 @@ void PHTTPCompositeField::GetHTMLHeading(PHTML & html) const
 }
 
 
-PString PHTTPCompositeField::GetValue(PBoolean dflt) const
+PString PHTTPCompositeField::GetValue(bool dflt) const
 {
   PStringStream value;
   for (PINDEX i = 0; i < m_fields.GetSize(); i++)
@@ -713,7 +713,7 @@ void PHTTPCompositeField::SetAllValues(const PStringToString & data)
 }
 
 
-PBoolean PHTTPCompositeField::ValidateAll(const PStringToString & data,
+bool PHTTPCompositeField::ValidateAll(const PStringToString & data,
                                       PStringStream & msg) const
 {
   for (PINDEX i = 0; i < m_fields.GetSize(); i++)
@@ -783,7 +783,7 @@ void PHTTPSubForm::GetHTMLHeading(PHTML &) const
 //////////////////////////////////////////////////////////////////////////////
 // PHTTPFieldArray
 
-PHTTPFieldArray::PHTTPFieldArray(PHTTPField * fld, PBoolean ordered, PINDEX fixedSize)
+PHTTPFieldArray::PHTTPFieldArray(PHTTPField * fld, bool ordered, PINDEX fixedSize)
   : PHTTPCompositeField(fld->GetName(), fld->GetTitle(), fld->GetHelp()),
     m_baseField(fld)
 {
@@ -828,7 +828,7 @@ static const char ArrayControlAddTop[] = "Add Top";
 static const char ArrayControlAddBottom[] = "Add Bottom";
 static const char ArrayControlAdd[] = "Add";
 
-static PStringArray GetArrayControlOptions(PINDEX fld, PINDEX size, PBoolean orderedArray)
+static PStringArray GetArrayControlOptions(PINDEX fld, PINDEX size, bool orderedArray)
 {
   PStringArray options;
 
@@ -925,7 +925,7 @@ void PHTTPFieldArray::ExpandFieldNames(PString & text, PINDEX start, PINDEX & fi
       PStringStream checkbox;
       if (m_canAddElements) {
         PINDEX titlepos = text.Find("row", start)+3;
-        PBoolean adding = text[titlepos] == 'a';
+        bool adding = text[titlepos] == 'a';
         if (( adding && fld >= m_fields.GetSize()-1) ||
             (!adding && fld <  m_fields.GetSize()-1)) {
           titlepos += adding ? 3 : 6;
@@ -1078,7 +1078,7 @@ void PHTTPFieldArray::SetAllValues(const PStringToString & data)
   for (i = 0; i < m_fields.GetSize(); i++)
     newFields.SetAt(i, m_fields.GetAt(i));
 
-  PBoolean lastFieldIsSet = false;
+  bool lastFieldIsSet = false;
   PINDEX size = m_fields.GetSize();
   for (i = 0; i < size; i++) {
     PHTTPField * fieldPtr = &m_fields[i];
@@ -1266,7 +1266,7 @@ void PHTTPStringField::SetValue(const PString & newVal)
 }
 
 
-PString PHTTPStringField::GetValue(PBoolean dflt) const
+PString PHTTPStringField::GetValue(bool dflt) const
 {
   if (dflt)
     return m_initialValue;
@@ -1322,7 +1322,7 @@ void PHTTPPasswordField::SetValue(const PString & newVal)
 }
 
 
-PString PHTTPPasswordField::GetValue(PBoolean dflt) const
+PString PHTTPPasswordField::GetValue(bool dflt) const
 {
   if (dflt)
     return m_initialValue;
@@ -1373,7 +1373,7 @@ void PHTTPDateField::SetValue(const PString & newValue)
 }
 
 
-PBoolean PHTTPDateField::Validated(const PString & newValue, PStringStream & msg) const
+bool PHTTPDateField::Validated(const PString & newValue, PStringStream & msg) const
 {
   if (newValue.IsEmpty())
     return true;
@@ -1434,7 +1434,7 @@ void PHTTPIntegerField::SetValue(const PString & newVal)
 }
 
 
-PString PHTTPIntegerField::GetValue(PBoolean dflt) const
+PString PHTTPIntegerField::GetValue(bool dflt) const
 {
   return PString(PString::Signed, dflt ? m_initialValue : m_value);
 }
@@ -1487,7 +1487,7 @@ void PHTTPIntegerField::SaveToJSON(PJSON::Base & json) const
 }
 
 
-PBoolean PHTTPIntegerField::Validated(const PString & newVal, PStringStream & msg) const
+bool PHTTPIntegerField::Validated(const PString & newVal, PStringStream & msg) const
 {
   int val = newVal.AsInteger();
   if (val >= m_low && val <= m_high)
@@ -1503,7 +1503,7 @@ PBoolean PHTTPIntegerField::Validated(const PString & newVal, PStringStream & ms
 // PHTTPBooleanField
 
 PHTTPBooleanField::PHTTPBooleanField(const char * name,
-                                     PBoolean initVal,
+                                     bool initVal,
                                    const char * help)
   : PHTTPField(name, NULL, help)
 {
@@ -1513,7 +1513,7 @@ PHTTPBooleanField::PHTTPBooleanField(const char * name,
 
 PHTTPBooleanField::PHTTPBooleanField(const char * name,
                                      const char * title,
-                                     PBoolean initVal,
+                                     bool initVal,
                                      const char * help)
   : PHTTPField(name, title, help)
 {
@@ -1533,7 +1533,7 @@ void PHTTPBooleanField::GetHTMLTag(PHTML & html) const
 }
 
 
-static void SpliceChecked(PString & text, PBoolean value)
+static void SpliceChecked(PString & text, bool value)
 {
   PINDEX pos = text.Find("checked");
   if (value) {
@@ -1592,7 +1592,7 @@ void PHTTPBooleanField::SetValue(const PString & val)
 }
 
 
-PString PHTTPBooleanField::GetValue(PBoolean dflt) const
+PString PHTTPBooleanField::GetValue(bool dflt) const
 {
   return ((dflt ? m_initialValue : m_value) ? "True" : "False");
 }
@@ -1802,7 +1802,7 @@ PString PHTTPRadioField::GetHTMLInput(const PString & input) const
 }
 
 
-PString PHTTPRadioField::GetValue(PBoolean dflt) const
+PString PHTTPRadioField::GetValue(bool dflt) const
 {
   if (dflt)
     return m_initialValue;
@@ -1908,7 +1908,7 @@ void PHTTPSelectField::GetHTMLTag(PHTML & html) const
 }
 
 
-PString PHTTPSelectField::GetValue(PBoolean dflt) const
+PString PHTTPSelectField::GetValue(bool dflt) const
 {
   if (!dflt)
     return m_value;
@@ -1960,7 +1960,7 @@ PHTTPForm::PHTTPForm(const PURL & url,
 }
 
 
-static PBoolean FindSpliceAccepted(const PString & text,
+static bool FindSpliceAccepted(const PString & text,
                               PINDEX offset,
                               PINDEX & pos,
                               PINDEX & len,
@@ -1973,7 +1973,7 @@ static PBoolean FindSpliceAccepted(const PString & text,
 }
 
 
-static PBoolean FindSpliceErrors(const PString & text,
+static bool FindSpliceErrors(const PString & text,
                             PINDEX offset,
                             PINDEX & pos,
                             PINDEX & len,
@@ -1986,7 +1986,7 @@ static PBoolean FindSpliceErrors(const PString & text,
 }
 
 
-static PBoolean FindSpliceField(const PRegularExpression & startExpr,
+static bool FindSpliceField(const PRegularExpression & startExpr,
                             const PRegularExpression & endExpr,
                             const PString & text,
                             PINDEX offset,
@@ -2214,7 +2214,7 @@ void PHTTPForm::BuildHTML(PHTML & html, BuildOptions option)
 }
 
 
-PBoolean PHTTPForm::Post(PHTTPRequest & request,
+bool PHTTPForm::Post(PHTTPRequest & request,
                      const PStringToString & data,
                      PHTML & msg)
 {
@@ -2263,7 +2263,7 @@ PBoolean PHTTPForm::Post(PHTTPRequest & request,
       while (FindSpliceAccepted(msg, pos, pos, len, start, finish))
         msg.Delete(pos, len);
 
-      PBoolean appendErrors = true;
+      bool appendErrors = true;
       pos = 0;
       while (FindSpliceErrors(msg, pos, pos, len, start, finish)) {
         PString block = msg(start, finish);
@@ -2369,7 +2369,7 @@ void PHTTPConfig::OnLoadedText(PHTTPRequest & request, PString & text)
 }
 
 
-PBoolean PHTTPConfig::Post(PHTTPRequest & request,
+bool PHTTPConfig::Post(PHTTPRequest & request,
                        const PStringToString & data,
                        PHTML & msg)
 {
@@ -2648,7 +2648,7 @@ void PHTTPConfigSectionList::OnLoadedText(PHTTPRequest &, PString & text)
 }
 
 
-PBoolean PHTTPConfigSectionList::Post(PHTTPRequest &,
+bool PHTTPConfigSectionList::Post(PHTTPRequest &,
                                   const PStringToString & data,
                                   PHTML & replyMessage)
 {

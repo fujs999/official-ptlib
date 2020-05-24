@@ -3,7 +3,7 @@
  *
  * Classes to support streaming video input (grabbing) and output.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-2000 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -102,7 +102,7 @@ class PColourConverter : public PColourPair
 
        Default behaviour calls SetSrcFrameSize() and SetDstFrameSize().
     */
-    virtual PBoolean SetFrameSize(
+    virtual bool SetFrameSize(
       unsigned width,   ///< New width of frame
       unsigned height   ///< New height of frame
     );
@@ -115,7 +115,7 @@ class PColourConverter : public PColourPair
 
        Returns false if the colour formats do not agree.
     */
-    virtual PBoolean SetSrcFrameInfo(
+    virtual bool SetSrcFrameInfo(
       const PVideoFrameInfo & info   ///< New info for frame
     );
 
@@ -127,7 +127,7 @@ class PColourConverter : public PColourPair
 
        Returns false if the colour formats do not agree.
     */
-    virtual PBoolean SetDstFrameInfo(
+    virtual bool SetDstFrameInfo(
       const PVideoFrameInfo & info  ///< New info for frame
     );
 
@@ -149,7 +149,7 @@ class PColourConverter : public PColourPair
        recalculates the frame buffer size in bytes then returns true if the size
        was calculated correctly.
     */
-    virtual PBoolean SetSrcFrameSize(
+    virtual bool SetSrcFrameSize(
       unsigned width,   ///< New width of frame
       unsigned height   ///< New height of frame
     );
@@ -160,14 +160,14 @@ class PColourConverter : public PColourPair
        and the scale / crop preference. It then recalculates the frame buffer
        size in bytes then returns true if the size was calculated correctly.
     */
-    virtual PBoolean SetDstFrameSize(
+    virtual bool SetDstFrameSize(
       unsigned width,   ///< New width of target frame
       unsigned height   ///< New height of target frame
     );
-    virtual PBoolean SetDstFrameSize(
+    virtual bool SetDstFrameSize(
       unsigned width,   ///< New width of target frame
       unsigned height,  ///< New height of target frame
-      PBoolean bScale   ///< Indicate if scaling or cropping is to be used
+      bool bScale   ///< Indicate if scaling or cropping is to be used
     );
 
     /**Get the maximum frame size in bytes for source frames.
@@ -201,9 +201,9 @@ class PColourConverter : public PColourPair
        The function should return false if srcFrameBuffer and dstFrameBuffer
        are the same and that form pf conversion is not allowed
     */
-    virtual PBoolean Convert(
-      const BYTE * srcFrameBuffer,  ///< Frame store for source pixels
-      BYTE * dstFrameBuffer,        ///< Frame store for destination pixels
+    virtual bool Convert(
+      const uint8_t * srcFrameBuffer,  ///< Frame store for source pixels
+      uint8_t * dstFrameBuffer,        ///< Frame store for destination pixels
       PINDEX * bytesReturned = NULL ///< Bytes written to dstFrameBuffer
     ) = 0;
 
@@ -223,10 +223,10 @@ class PColourConverter : public PColourPair
        is false) using an intermediate store, copying the intermediate store
        back to the original frame store.
     */
-    virtual PBoolean ConvertInPlace(
-      BYTE * frameBuffer,               ///< Frame buffer to translate data
+    virtual bool ConvertInPlace(
+      uint8_t * frameBuffer,               ///< Frame buffer to translate data
       PINDEX * bytesReturned = NULL,    ///< Bytes written to frameBuffer
-      PBoolean noIntermediateFrame = false  ///< Flag to use intermediate store
+      bool noIntermediateFrame = false  ///< Flag to use intermediate store
     );
 
 
@@ -247,14 +247,14 @@ class PColourConverter : public PColourPair
 
     /**Get the output frame size.
       */
-    PBoolean GetDstFrameSize(
+    bool GetDstFrameSize(
       unsigned & width, ///< Width of destination frame
       unsigned & height ///< Height of destination frame
     ) const;
 
     /**Get the input frame size.
       */
-    PBoolean GetSrcFrameSize(
+    bool GetSrcFrameSize(
       unsigned & width, ///< Width of source frame
       unsigned & height ///< Height of source frame
     ) const;
@@ -278,14 +278,14 @@ class PColourConverter : public PColourPair
       */
     static void RGBtoYUV(
       unsigned r, unsigned g, unsigned b,
-      BYTE   & y, BYTE   & u, BYTE   & v
+      uint8_t   & y, uint8_t   & u, uint8_t   & v
     );
 
     /**Convert YUV to RGB.
       */
     static void YUVtoRGB(
       unsigned y, unsigned u, unsigned v,
-      BYTE   & r, BYTE   & g, BYTE   & b
+      uint8_t   & r, uint8_t   & g, uint8_t   & b
     );
 
     /**Copy a section of the source frame to a section of the destination
@@ -293,9 +293,9 @@ class PColourConverter : public PColourPair
       */
     static bool CopyYUV420P(
       unsigned srcX, unsigned srcY, unsigned srcWidth, unsigned srcHeight,
-      unsigned srcFrameWidth, unsigned srcFrameHeight, const BYTE * srcYUV,
+      unsigned srcFrameWidth, unsigned srcFrameHeight, const uint8_t * srcYUV,
       unsigned dstX, unsigned dstY, unsigned dstWidth, unsigned dstHeight,
-      unsigned dstFrameWidth, unsigned dstFrameHeight, BYTE * dstYUV,
+      unsigned dstFrameWidth, unsigned dstFrameHeight, uint8_t * dstYUV,
       PVideoFrameInfo::ResizeMode resizeMode = PVideoFrameInfo::eScale,
       bool verticalFlip = false, std::ostream * error = NULL
     );
@@ -307,14 +307,14 @@ class PColourConverter : public PColourPair
        to the source memory.
       */
     static bool RotateYUV420P(
-      int angle, unsigned width, unsigned height, BYTE * srcYUV, BYTE * dstYUV = NULL
+      int angle, unsigned width, unsigned height, uint8_t * srcYUV, uint8_t * dstYUV = NULL
     );
 
     /**Fill a rectangle of the video buffer with the specified colour.
       */
     static bool FillYUV420P(
       unsigned x, unsigned y, unsigned width, unsigned height,
-      unsigned frameWidth, unsigned frameHeight, BYTE * yuv,
+      unsigned frameWidth, unsigned frameHeight, uint8_t * yuv,
       unsigned r_or_y, unsigned g_or_u, unsigned b_or_v,
       bool rgb = true
     );
@@ -334,7 +334,7 @@ class PColourConverter : public PColourPair
 
     PBYTEArray m_intermediateFrameStore;
 
-  P_REMOVE_VIRTUAL(PBoolean,Convert(const BYTE*,BYTE*,unsigned,PINDEX*),false);
+  P_REMOVE_VIRTUAL(bool,Convert(const uint8_t*,uint8_t*,unsigned,PINDEX*),false);
 };
 
 typedef PFactory<PColourConverter, PColourPair> PColourConverterFactory;
@@ -349,10 +349,10 @@ typedef PFactory<PColourConverter, PColourPair> PColourConverterFactory;
 class cls : public ancestor { \
   public: \
     cls() : ancestor(PColourPair(srcFmt, dstFmt)) { } \
-    virtual PBoolean Convert(const BYTE *, BYTE *, PINDEX * = NULL); \
+    virtual bool Convert(const uint8_t *, uint8_t *, PINDEX * = NULL); \
 }; \
 PFACTORY_CREATE(PColourConverterFactory, cls, PColourPair(srcFmt, dstFmt)); \
-PBoolean cls::Convert(const BYTE *srcFrameBuffer, BYTE *dstFrameBuffer, PINDEX * bytesReturned) \
+bool cls::Convert(const uint8_t *srcFrameBuffer, uint8_t *dstFrameBuffer, PINDEX * bytesReturned) \
 
 
 /**Declare a colour converter class with Convert() function.
@@ -413,9 +413,9 @@ class PJPEGConverter : public PColourConverter
     /** Convert JPEG information in a memory buffer to another memory buffer.
         Note if scaling is required
       */
-    virtual PBoolean Convert(
-      const BYTE * srcFrameBuffer,  ///< Frame store for source pixels
-      BYTE * dstFrameBuffer,        ///< Frame store for destination pixels
+    virtual bool Convert(
+      const uint8_t * srcFrameBuffer,  ///< Frame store for source pixels
+      uint8_t * dstFrameBuffer,        ///< Frame store for destination pixels
       PINDEX * bytesReturned = NULL ///< Bytes written to dstFrameBuffer
     );
 

@@ -3,7 +3,7 @@
  *
  * Classes to support streaming video input (grabbing) and output.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-2000 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -45,7 +45,7 @@ PVideoInputDevice_BSDCAPTURE::~PVideoInputDevice_BSDCAPTURE()
   Close();
 }
 
-PBoolean PVideoInputDevice_BSDCAPTURE::Open(const PString & devName, PBoolean startImmediate)
+bool PVideoInputDevice_BSDCAPTURE::Open(const PString & devName, bool startImmediate)
 {
   if (IsOpen())
   Close();
@@ -100,13 +100,13 @@ PBoolean PVideoInputDevice_BSDCAPTURE::Open(const PString & devName, PBoolean st
 }
 
 
-PBoolean PVideoInputDevice_BSDCAPTURE::IsOpen() 
+bool PVideoInputDevice_BSDCAPTURE::IsOpen() 
 {
     return videoFd >= 0;
 }
 
 
-PBoolean PVideoInputDevice_BSDCAPTURE::Close()
+bool PVideoInputDevice_BSDCAPTURE::Close()
 {
   if (!IsOpen())
     return false;
@@ -119,19 +119,19 @@ PBoolean PVideoInputDevice_BSDCAPTURE::Close()
   return true;
 }
 
-PBoolean PVideoInputDevice_BSDCAPTURE::Start()
+bool PVideoInputDevice_BSDCAPTURE::Start()
 {
   return true;
 }
 
 
-PBoolean PVideoInputDevice_BSDCAPTURE::Stop()
+bool PVideoInputDevice_BSDCAPTURE::Stop()
 {
   return true;
 }
 
 
-PBoolean PVideoInputDevice_BSDCAPTURE::IsCapturing()
+bool PVideoInputDevice_BSDCAPTURE::IsCapturing()
 {
   return IsOpen();
 }
@@ -154,7 +154,7 @@ PStringList PVideoInputDevice_BSDCAPTURE::GetInputDeviceNames()
 }
 
 
-PBoolean PVideoInputDevice_BSDCAPTURE::SetVideoFormat(VideoFormat newFormat)
+bool PVideoInputDevice_BSDCAPTURE::SetVideoFormat(VideoFormat newFormat)
 {
   if (!PVideoDevice::SetVideoFormat(newFormat))
     return false;
@@ -190,7 +190,7 @@ int PVideoInputDevice_BSDCAPTURE::GetNumChannels()
 }
 
 
-PBoolean PVideoInputDevice_BSDCAPTURE::SetChannel(int newChannel)
+bool PVideoInputDevice_BSDCAPTURE::SetChannel(int newChannel)
 {
   if (!PVideoDevice::SetChannel(newChannel))
     return false;
@@ -209,7 +209,7 @@ PBoolean PVideoInputDevice_BSDCAPTURE::SetChannel(int newChannel)
 }
 
 
-PBoolean PVideoInputDevice_BSDCAPTURE::SetColourFormat(const PString & newFormat)
+bool PVideoInputDevice_BSDCAPTURE::SetColourFormat(const PString & newFormat)
 {
   if (!PVideoDevice::SetColourFormat(newFormat))
     return false;
@@ -223,7 +223,7 @@ PBoolean PVideoInputDevice_BSDCAPTURE::SetColourFormat(const PString & newFormat
 }
 
 
-PBoolean PVideoInputDevice_BSDCAPTURE::SetFrameRate(unsigned rate)
+bool PVideoInputDevice_BSDCAPTURE::SetFrameRate(unsigned rate)
 {
   if (!PVideoDevice::SetFrameRate(rate))
     return false;
@@ -232,7 +232,7 @@ PBoolean PVideoInputDevice_BSDCAPTURE::SetFrameRate(unsigned rate)
 }
 
 
-PBoolean PVideoInputDevice_BSDCAPTURE::GetFrameSizeLimits(unsigned & minWidth,
+bool PVideoInputDevice_BSDCAPTURE::GetFrameSizeLimits(unsigned & minWidth,
                                            unsigned & minHeight,
                                            unsigned & maxWidth,
                                            unsigned & maxHeight) 
@@ -249,7 +249,7 @@ PBoolean PVideoInputDevice_BSDCAPTURE::GetFrameSizeLimits(unsigned & minWidth,
 }
 
 
-PBoolean PVideoInputDevice_BSDCAPTURE::SetFrameSize(unsigned width, unsigned height)
+bool PVideoInputDevice_BSDCAPTURE::SetFrameSize(unsigned width, unsigned height)
 {
   if (!PVideoDevice::SetFrameSize(width, height))
     return false;
@@ -268,7 +268,7 @@ PINDEX PVideoInputDevice_BSDCAPTURE::GetMaxFrameBytes()
 }
 
 
-bool PVideoInputDevice_BSDCAPTURE::InternalGetFrameData(BYTE * buffer, PINDEX & bytesReturned, bool & keyFrame, bool wait)
+bool PVideoInputDevice_BSDCAPTURE::InternalGetFrameData(uint8_t * buffer, PINDEX & bytesReturned, bool & keyFrame, bool wait)
 {
   if (wait)
     m_pacing.Delay(1000/GetFrameRate());
@@ -299,7 +299,7 @@ bool PVideoInputDevice_BSDCAPTURE::InternalGetFrameData(BYTE * buffer, PINDEX & 
     }
 
     mmap_size = frameBytes;
-    videoBuffer = (BYTE *)::mmap(0, mmap_size, PROT_READ, 0, videoFd, 0);
+    videoBuffer = (uint8_t *)::mmap(0, mmap_size, PROT_READ, 0, videoFd, 0);
     if (videoBuffer < 0) {
       return false;
     } else {
@@ -348,7 +348,7 @@ void PVideoInputDevice_BSDCAPTURE::ClearMapping()
   }
 }
 
-PBoolean PVideoInputDevice_BSDCAPTURE::VerifyHardwareFrameSize(unsigned width,
+bool PVideoInputDevice_BSDCAPTURE::VerifyHardwareFrameSize(unsigned width,
                                                 unsigned height)
 {
 	// Assume the size is valid
@@ -356,7 +356,7 @@ PBoolean PVideoInputDevice_BSDCAPTURE::VerifyHardwareFrameSize(unsigned width,
 }
 
 
-PBoolean PVideoInputDevice_BSDCAPTURE::TestAllFormats()
+bool PVideoInputDevice_BSDCAPTURE::TestAllFormats()
 {
   return true;
 }

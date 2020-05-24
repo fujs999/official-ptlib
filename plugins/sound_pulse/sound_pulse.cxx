@@ -3,7 +3,7 @@
  *
  * Sound driver implementation.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -263,7 +263,7 @@ bool PSoundChannelPulse::Open(const Params & params)
   return true;
 }
 
-PBoolean PSoundChannelPulse::Close()
+bool PSoundChannelPulse::Close()
 {
   PWaitAndSignal m(deviceMutex);
   PTRACE(6, "Pulse\tClose");
@@ -281,14 +281,14 @@ PBoolean PSoundChannelPulse::Close()
   return true;
 }
 
-PBoolean PSoundChannelPulse::IsOpen() const
+bool PSoundChannelPulse::IsOpen() const
 {
   PTRACE(6, "Pulse\t report is open as " << (os_handle >= 0));
   PulseLock lock;
   return os_handle >= 0;
 }
 
-PBoolean PSoundChannelPulse::Write(const void * buf, PINDEX len)
+bool PSoundChannelPulse::Write(const void * buf, PINDEX len)
 {
   PWaitAndSignal m(deviceMutex);
   PTRACE(6, "Pulse\tWrite " << len << " bytes");
@@ -320,7 +320,7 @@ PBoolean PSoundChannelPulse::Write(const void * buf, PINDEX len)
   return true;
 }
 
-PBoolean PSoundChannelPulse::Read(void * buf, PINDEX len)
+bool PSoundChannelPulse::Read(void * buf, PINDEX len)
 {
   PWaitAndSignal m(deviceMutex);
   PTRACE(6, "Pulse\tRead " << len << " bytes");
@@ -356,7 +356,7 @@ PBoolean PSoundChannelPulse::Read(void * buf, PINDEX len)
 }
 
 
-PBoolean PSoundChannelPulse::SetFormat(unsigned numChannels,
+bool PSoundChannelPulse::SetFormat(unsigned numChannels,
                               unsigned sampleRate,
                               unsigned bitsPerSample)
 {
@@ -391,7 +391,7 @@ unsigned PSoundChannelPulse::GetSampleSize() const
   return 16;
 }
 
-PBoolean PSoundChannelPulse::SetBuffers(PINDEX size, PINDEX count)
+bool PSoundChannelPulse::SetBuffers(PINDEX size, PINDEX count)
 {
   PTRACE(6, "Pulse\tSet buffers to " << size << " and " << count);
   bufferSize = size;
@@ -401,7 +401,7 @@ PBoolean PSoundChannelPulse::SetBuffers(PINDEX size, PINDEX count)
 }
 
 
-PBoolean PSoundChannelPulse::GetBuffers(PINDEX & size, PINDEX & count)
+bool PSoundChannelPulse::GetBuffers(PINDEX & size, PINDEX & count)
 {
   size = bufferSize;
   count = bufferCount;
@@ -410,43 +410,43 @@ PBoolean PSoundChannelPulse::GetBuffers(PINDEX & size, PINDEX & count)
 }
 
 
-PBoolean PSoundChannelPulse::HasPlayCompleted()
+bool PSoundChannelPulse::HasPlayCompleted()
 {
   return true;
 }
 
 
-PBoolean PSoundChannelPulse::WaitForPlayCompletion()
+bool PSoundChannelPulse::WaitForPlayCompletion()
 {
   return true;
 }
 
 
-PBoolean PSoundChannelPulse::StartRecording()
+bool PSoundChannelPulse::StartRecording()
 {
   return false;
 }
 
 
-PBoolean PSoundChannelPulse::IsRecordBufferFull()
+bool PSoundChannelPulse::IsRecordBufferFull()
 {
   return false;
 }
 
 
-PBoolean PSoundChannelPulse::AreAllRecordBuffersFull()
+bool PSoundChannelPulse::AreAllRecordBuffersFull()
 {
   return false;
 }
 
 
-PBoolean PSoundChannelPulse::WaitForRecordBufferFull()
+bool PSoundChannelPulse::WaitForRecordBufferFull()
 {
   return false;
 }
 
 
-PBoolean PSoundChannelPulse::WaitForAllRecordBuffersFull()
+bool PSoundChannelPulse::WaitForAllRecordBuffersFull()
 {
   return false;
 }
@@ -465,7 +465,7 @@ static void source_volume_cb(pa_context* context,const pa_source_info* i,int eol
   }
 }
 
-PBoolean PSoundChannelPulse::SetVolume(unsigned newVal)
+bool PSoundChannelPulse::SetVolume(unsigned newVal)
 {
   if (s) {
     PulseLock lock;
@@ -488,7 +488,7 @@ PBoolean PSoundChannelPulse::SetVolume(unsigned newVal)
   return true;
 }
 
-PBoolean  PSoundChannelPulse::GetVolume(unsigned &devVol)
+bool  PSoundChannelPulse::GetVolume(unsigned &devVol)
 {
   if (s) {
     PulseLock lock;

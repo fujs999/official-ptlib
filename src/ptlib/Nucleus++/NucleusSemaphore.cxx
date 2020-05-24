@@ -37,7 +37,7 @@ void PSemaphore::Wait()
   pNucleusSemaphore->Obtain();
   }
   
-PBoolean PSemaphore::Wait(const PTimeInterval & timeout)
+bool PSemaphore::Wait(const PTimeInterval & timeout)
   {
 // Convert timeout to a number of ticks!
   STATUS retval =  pNucleusSemaphore->Obtain( timeout.GetInterval()/

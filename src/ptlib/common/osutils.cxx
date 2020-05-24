@@ -3,7 +3,7 @@
  *
  * Operating System utilities.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -848,7 +848,7 @@ unsigned PTrace::GetLevel()
 }
 
 
-PBoolean PTrace::CanTrace(unsigned level)
+bool PTrace::CanTrace(unsigned level)
 {
   return PProcess::IsInitialised() && level <= GetLevel();
 }
@@ -1438,7 +1438,7 @@ PSimpleTimer::PSimpleTimer(const PSimpleTimer & timer)
 }
 
 
-PSimpleTimer & PSimpleTimer::operator=(DWORD milliseconds)
+PSimpleTimer & PSimpleTimer::operator=(uint32_t milliseconds)
 {
   PTimeInterval::operator=(milliseconds);
   m_startTick = PTimer::Tick();
@@ -1549,7 +1549,7 @@ int64_t PTimer::InternalGet() const
 }
 
 
-PBoolean PTimer::IsRunning() const
+bool PTimer::IsRunning() const
 {
   if (m_running)
       return true;
@@ -1763,7 +1763,7 @@ PTimeInterval PTimer::List::Process()
 
 PArgList::PArgList(const char * theArgStr,
                    const char * theArgumentSpec,
-                   PBoolean optionsBeforeParams)
+                   bool optionsBeforeParams)
 {
   // get the program arguments
   if (theArgStr != NULL)
@@ -1779,7 +1779,7 @@ PArgList::PArgList(const char * theArgStr,
 
 PArgList::PArgList(const PString & theArgStr,
                    const char * argumentSpecPtr,
-                   PBoolean optionsBeforeParams)
+                   bool optionsBeforeParams)
 {
   // get the program arguments
   SetArgs(theArgStr);
@@ -1792,7 +1792,7 @@ PArgList::PArgList(const PString & theArgStr,
 
 PArgList::PArgList(const PString & theArgStr,
                    const PString & argumentSpecStr,
-                   PBoolean optionsBeforeParams)
+                   bool optionsBeforeParams)
 {
   // get the program arguments
   SetArgs(theArgStr);
@@ -1804,7 +1804,7 @@ PArgList::PArgList(const PString & theArgStr,
 
 PArgList::PArgList(int theArgc, char ** theArgv,
                    const char * theArgumentSpec,
-                   PBoolean optionsBeforeParams)
+                   bool optionsBeforeParams)
 {
   // get the program arguments
   SetArgs(theArgc, theArgv);
@@ -1817,7 +1817,7 @@ PArgList::PArgList(int theArgc, char ** theArgv,
 
 PArgList::PArgList(int theArgc, char ** theArgv,
                    const PString & theArgumentSpec,
-                   PBoolean optionsBeforeParams)
+                   bool optionsBeforeParams)
 {
   // get the program name and path
   SetArgs(theArgc, theArgv);
@@ -1987,7 +1987,7 @@ bool PArgList::InternalSpecificationError(bool isError, const PString & msg)
 }
 
 
-bool PArgList::Parse(const char * spec, PBoolean optionsBeforeParams)
+bool PArgList::Parse(const char * spec, bool optionsBeforeParams)
 {
   m_parsed = false;
   m_parseError.MakeEmpty();
@@ -3041,7 +3041,7 @@ bool PProcess::OnInterrupt(bool)
 }
 
 
-PBoolean PProcess::IsInitialised()
+bool PProcess::IsInitialised()
 {
   return PProcessInstance != NULL;
 }
@@ -3076,7 +3076,7 @@ bool PProcess::IsMultipleInstance() const
 }
 
 
-PString PProcess::GetVersion(PBoolean full) const
+PString PProcess::GetVersion(bool full) const
 {
   return m_version.AsString(full);
 }
@@ -3451,19 +3451,19 @@ PString PThread::GetThreadName() const
 
 #if defined(_MSC_VER)
 
-static void SetOperatingSystemThreadName(DWORD threadId, const char * threadName)
+static void SetOperatingSystemThreadName(uint32_t threadId, const char * threadName)
 {
   struct THREADNAME_INFO
   {
-    DWORD dwType;      // must be 0x1000
+    uint32_t dwType;      // must be 0x1000
     LPCSTR szName;     // pointer to name (in user addr space)
-    DWORD dwThreadID;  // thread ID (-1=caller thread, but seems to set more than one thread's name)
-    DWORD dwFlags;     // reserved for future use, must be zero
+    uint32_t dwThreadID;  // thread ID (-1=caller thread, but seems to set more than one thread's name)
+    uint32_t dwFlags;     // reserved for future use, must be zero
   } threadInfo = { 0x1000, threadName, threadId, 0 };
 
   __try
   {
-    RaiseException(0x406D1388, 0, sizeof(threadInfo)/sizeof(DWORD), (const ULONG_PTR *)&threadInfo) ;
+    RaiseException(0x406D1388, 0, sizeof(threadInfo)/sizeof(uint32_t), (const ULONG_PTR *)&threadInfo) ;
     // if not running under debugger exception comes back
   }
   __except(EXCEPTION_CONTINUE_EXECUTION)
@@ -3907,7 +3907,7 @@ void PTimedMutex::Wait()
 }
 
 
-PBoolean PTimedMutex::Wait(const PTimeInterval & timeout)
+bool PTimedMutex::Wait(const PTimeInterval & timeout)
 {
   if (timeout == PMaxTimeInterval) {
     InternalWait(NULL);
@@ -4128,7 +4128,7 @@ void PIntCondMutex::PrintOn(ostream & strm) const
 }
 
 
-PBoolean PIntCondMutex::Condition()
+bool PIntCondMutex::Condition()
 {
   switch (operation) {
     case LT :
@@ -4578,7 +4578,7 @@ void PInstrumentedReadWriteMutex::ReleasedLock(const PObject & mutex, uint64_t s
 
 ///////////////////////////////////////////////////////////////////////////////
 
-PBoolean PCriticalSection::Wait(const PTimeInterval & timeout)
+bool PCriticalSection::Wait(const PTimeInterval & timeout)
 {
   if (timeout == 0)
     return Try();
@@ -4962,7 +4962,7 @@ bool PFile::RotateInfo::Rotate(PFile & file, bool force, const PTime & now)
 
     if (m_freeDisk != 0) {
       int64_t total, free;
-      DWORD cluster;
+      uint32_t cluster;
       while (!rotatedFiles.empty() && dir.GetVolumeSpace(total, free, cluster)) {
         int64_t limit = m_freeDisk > 0 ? m_freeDisk : (total * -m_freeDisk / 100);
         PTRACE(4, &file, "Disk:"

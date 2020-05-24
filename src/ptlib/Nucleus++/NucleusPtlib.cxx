@@ -21,7 +21,7 @@
 
 //NU_MEMORY_POOL System_Memory;
 
-ostream & operator<<(ostream & s, PInt64 v)
+ostream & operator<<(ostream & s, int64_t v)
 {
 /*  char buffer[25];*/
 
@@ -40,27 +40,27 @@ ostream & operator<<(ostream & s, PInt64 v)
 }
 
 
-ostream & operator<<(ostream & s, PUInt64 v)
+ostream & operator<<(ostream & s, uint64_t v)
 {
 /*  char buffer[25];*/
   return s/* << _ui64toa(v, buffer, (s.flags()&ios::oct) ? 8 : ((s.flags()&ios::hex) ? 16 : 10))*/;
 }
 
 
-PInt64 PString::AsInt64(unsigned base) const
+int64_t PString::AsInt64(unsigned base) const
 {
 //  if (base == 10)
 //    return _atoi64(theArray);
 
   PAssert(base >= 2 && base <= 36, PInvalidParameter);
 
-  PInt64 total = 0;
+  int64_t total = 0;
   const char * ptr = theArray;
 
   while (isspace(*ptr))
     ptr++;
 
-  PBoolean negative = *ptr == '-';
+  bool negative = *ptr == '-';
   if (*ptr == '-' || *ptr == '+')
     ptr++;
 

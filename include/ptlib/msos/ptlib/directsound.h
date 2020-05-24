@@ -3,7 +3,7 @@
  *
  * DirectX Sound driver implementation.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 2006-2007 Novacom, a division of IT-Optics
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original DirectSound Code is 
  * Vincent Luba <vincent.luba@novacom.be>
@@ -81,18 +81,18 @@ public:
 
   PString GetName() const;
 
-  PBoolean IsOpen() const
+  bool IsOpen() const
   {
     return (m_activeDirection == Player)? (m_playbackDevice != NULL) : (m_captureDevice != NULL);
   }
 
   /** Stop the Read/Write wait
    */
-  PBoolean Abort();
+  bool Abort();
 
   /** Destroy device
    */
-  PBoolean Close();
+  bool Close();
   //@}
 
   /**@name Channel set up functions */
@@ -100,7 +100,7 @@ public:
   /** Change the audio format
       Can be called while open, but Aborts I/O
     */
-    PBoolean SetFormat(unsigned numChannels,
+    bool SetFormat(unsigned numChannels,
                        unsigned sampleRate,
                        unsigned bitsPerSample);
 
@@ -116,9 +116,9 @@ public:
       Best performance requires count of 4
       Can be called while open, but Aborts I/O
     */
-    PBoolean SetBuffers(PINDEX size, PINDEX count);
+    bool SetBuffers(PINDEX size, PINDEX count);
 
-    PBoolean GetBuffers(PINDEX & size, PINDEX & count);
+    bool GetBuffers(PINDEX & size, PINDEX & count);
 
     /**Set the volume of the play/read process.
        The volume range is 0 == quiet, 100 == LOUDEST. The volume is a
@@ -128,7 +128,7 @@ public:
        @return
        true if there were no errors.
     */
-    PBoolean SetVolume (unsigned);
+    bool SetVolume (unsigned);
 
     /**Get the volume of the play/read process.
        The volume range is 0 == quiet, 100 == LOUDEST. The volume is a
@@ -138,7 +138,7 @@ public:
        @return
        true if there were no errors.
     */
-    PBoolean GetVolume (unsigned &);
+    bool GetVolume (unsigned &);
   //@}
 
   /**@name Error functions */
@@ -161,7 +161,7 @@ public:
   /** Write specified number of bytes from buf to playback device
       Blocks thread until all bytes have been transferred to device
     */
-  PBoolean Write(const void * buf, PINDEX len);
+  bool Write(const void * buf, PINDEX len);
 
   /** Resets I/O, changes audio format to match sound and configures the 
       device's transfer buffers into one huge buffer, into which the entire
@@ -169,10 +169,10 @@ public:
       Returns immediately when wait is false, so you can do other stuff while
       sound plays.
     */
-  PBoolean PlaySound(const PSound & sound, PBoolean wait);
+  bool PlaySound(const PSound & sound, bool wait);
 
-  PBoolean HasPlayCompleted();
-  PBoolean WaitForPlayCompletion();
+  bool HasPlayCompleted();
+  bool WaitForPlayCompletion();
   //@}
 
   /**@name Record functions */
@@ -180,15 +180,15 @@ public:
   /** Read specified number of bytes from capture device into buf
       Blocks thread until number of bytes have been received
     */
-  PBoolean Read(void * buf, PINDEX len);
+  bool Read(void * buf, PINDEX len);
 
-  PBoolean RecordSound(PSound & sound);
-  PBoolean RecordFile(const PFilePath & filename);
-  PBoolean StartRecording();
-  PBoolean IsRecordBufferFull();
-  PBoolean AreAllRecordBuffersFull();
-  PBoolean WaitForRecordBufferFull();
-  PBoolean WaitForAllRecordBuffersFull();
+  bool RecordSound(PSound & sound);
+  bool RecordFile(const PFilePath & filename);
+  bool StartRecording();
+  bool IsRecordBufferFull();
+  bool AreAllRecordBuffersFull();
+  bool WaitForRecordBufferFull();
+  bool WaitForAllRecordBuffersFull();
   //@}
 
   /**@name Notification/Reporting functions */
@@ -258,7 +258,7 @@ protected:
       Yields thread between checks.
       Loop can be ended by calling Abort()(from another thread!)
     */
-  PBoolean WaitForPlayBufferFree();
+  bool WaitForPlayBufferFree();
 
 private:
   void Construct();
@@ -272,13 +272,13 @@ private:
   CComPtr<IDirectSound8>      m_playbackDevice;
   CComPtr<IDirectSoundBuffer> m_playbackBuffer;
   
-  PBoolean SetBufferSections(PINDEX size, PINDEX count);
+  bool SetBufferSections(PINDEX size, PINDEX count);
 
   PTimeInterval GetInterval(void);
-  DWORD GetCyclesPassed(void);
+  uint32_t GetCyclesPassed(void);
 
-  PBoolean OpenPlayback(LPCGUID deviceId);
-  PBoolean OpenPlaybackBuffer (void);
+  bool OpenPlayback(LPCGUID deviceId);
+  bool OpenPlaybackBuffer (void);
   void ClosePlayback(void);
 
   /* Checks space available for writing audio to play.
@@ -287,8 +287,8 @@ private:
     */
   CheckBufferState CheckPlayBuffer();
 
-  PBoolean OpenCapture(LPCGUID deviceId);
-  PBoolean OpenCaptureBuffer(void);
+  bool OpenCapture(LPCGUID deviceId);
+  bool OpenCaptureBuffer(void);
   void CloseCapture(void);
 
   /** Checks for input available from recorder
@@ -297,13 +297,13 @@ private:
     */
   CheckBufferState CheckCaptureBuffer();
 
-  PBoolean m_isStreaming;   // causes play to loop old audio when no new audio submitted
+  bool m_isStreaming;   // causes play to loop old audio when no new audio submitted
   PINDEX m_bufferSectionCount;
   PINDEX m_bufferSectionSize;
   PINDEX m_bufferSize;      // directSound buffer is divided into Count notification sections, each of Size
-  DWORD m_movePos;          // byte offset from start of buffer to where we can write or read
-  DWORD m_available;        // number of bytes space available to write into, or number of bytes available to read
-  DWORD m_dsPos;            // DirectSound read/write byte position in buffer
+  uint32_t m_movePos;          // byte offset from start of buffer to where we can write or read
+  uint32_t m_available;        // number of bytes space available to write into, or number of bytes available to read
+  uint32_t m_dsPos;            // DirectSound read/write byte position in buffer
   PTimeInterval m_tick;        // time of last buffer poll
   unsigned __int64 m_dsMoved;// total number of bytes transferred between card and the world
   unsigned __int64 m_moved; // total number of bytes moved between card and application by Read/Write
@@ -324,7 +324,7 @@ private:
   HMIXER       m_mixer;     // for volume control
   MIXERCONTROL m_volumeControl;
 
-  PBoolean OpenMixer(UINT waveDeviceID);
+  bool OpenMixer(UINT waveDeviceID);
   void CloseMixer ();
 
   PNotifier m_notifier;     // hook for notification code handler

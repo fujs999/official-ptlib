@@ -3,7 +3,7 @@
  *
  * Container Classes
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -138,7 +138,7 @@ PINDEX PArrayObjects::GetSize() const
 }
 
 
-PBoolean PArrayObjects::SetSize(PINDEX newSize)
+bool PArrayObjects::SetSize(PINDEX newSize)
 {
   PINDEX sz = theArray->GetSize();
   if (reference->deleteObjects && sz > 0) {
@@ -168,7 +168,7 @@ PINDEX PArrayObjects::Insert(const PObject & before, PObject * obj)
 }
 
 
-PBoolean PArrayObjects::Remove(const PObject * obj)
+bool PArrayObjects::Remove(const PObject * obj)
 {
   PINDEX i = GetObjectsIndex(obj);
   if (i == P_MAX_INDEX)
@@ -184,7 +184,7 @@ PObject * PArrayObjects::GetAt(PINDEX index) const
 }
 
 
-PBoolean PArrayObjects::SetAt(PINDEX index, PObject * obj)
+bool PArrayObjects::SetAt(PINDEX index, PObject * obj)
 {
   if (!theArray->SetMinSize(index+1))
     return false;
@@ -311,7 +311,7 @@ PObject::Comparison PAbstractList::Compare(const PObject & obj) const
 }
 
 
-PBoolean PAbstractList::SetSize(PINDEX)
+bool PAbstractList::SetSize(PINDEX)
 {
   return true;
 }
@@ -386,7 +386,7 @@ PINDEX PAbstractList::InsertAt(PINDEX index, PObject * obj)
 }
 
 
-PBoolean PAbstractList::Remove(const PObject * obj)
+bool PAbstractList::Remove(const PObject * obj)
 {
   if (PAssertNULL(m_info) == NULL)
     return false;
@@ -491,7 +491,7 @@ PObject & PAbstractList::GetReferenceAt(PINDEX index) const
   return dummy;
 }
 
-PBoolean PAbstractList::SetAt(PINDEX index, PObject * val)
+bool PAbstractList::SetAt(PINDEX index, PObject * val)
 {
   Element * element = FindElement(index);
   if (element == NULL)
@@ -500,7 +500,7 @@ PBoolean PAbstractList::SetAt(PINDEX index, PObject * val)
   return true;
 }
 
-PBoolean PAbstractList::ReplaceAt(PINDEX index, PObject * val)
+bool PAbstractList::ReplaceAt(PINDEX index, PObject * val)
 {
   Element * element = FindElement(index);
   if (element == NULL)
@@ -644,7 +644,7 @@ void PAbstractSortedList::CloneContents(const PAbstractSortedList * list)
 }
 
 
-PBoolean PAbstractSortedList::SetSize(PINDEX)
+bool PAbstractSortedList::SetSize(PINDEX)
 {
   return true;
 }
@@ -757,7 +757,7 @@ PINDEX PAbstractSortedList::Append(PObject * obj)
 }
 
 
-PBoolean PAbstractSortedList::Remove(const PObject * obj)
+bool PAbstractSortedList::Remove(const PObject * obj)
 {
   PSortedListElement * element = FindElement(obj, NULL);
   if (element == NULL)
@@ -803,7 +803,7 @@ PINDEX PAbstractSortedList::InsertAt(PINDEX, PObject * obj)
 }
 
 
-PBoolean PAbstractSortedList::SetAt(PINDEX, PObject *)
+bool PAbstractSortedList::SetAt(PINDEX, PObject *)
 {
   return false;
 }
@@ -1098,7 +1098,7 @@ PINDEX PSortedListInfo::ValueSelect(PSortedListElement * node, const PObject & o
 }
 
 
-void PAbstractSortedList::DeleteSubTrees(PSortedListElement * node, PBoolean deleteObject)
+void PAbstractSortedList::DeleteSubTrees(PSortedListElement * node, bool deleteObject)
 {
   if (node->m_left != &m_info->nil) {
     DeleteSubTrees(node->m_left, deleteObject);
@@ -1246,7 +1246,7 @@ PHashTableElement * PHashTableInfo::GetElementAt(const PObject & key)
 }
 
 
-PINDEX PHashTableInfo::GetElementsIndex(const PObject * obj, PBoolean byValue, PBoolean keys) const
+PINDEX PHashTableInfo::GetElementsIndex(const PObject * obj, bool byValue, bool keys) const
 {
   PINDEX index = 0;
   for (PINDEX i = 0; i < GetSize(); i++) {
@@ -1351,7 +1351,7 @@ PObject::Comparison PHashTable::Compare(const PObject & obj) const
 }
 
 
-PBoolean PHashTable::SetSize(PINDEX)
+bool PHashTable::SetSize(PINDEX)
 {
   return true;
 }
@@ -1418,7 +1418,7 @@ PINDEX PAbstractSet::InsertAt(PINDEX, PObject * obj)
 }
 
 
-PBoolean PAbstractSet::Remove(const PObject * obj)
+bool PAbstractSet::Remove(const PObject * obj)
 {
   if (PAssertNULL(obj) == NULL)
     return false;
@@ -1465,7 +1465,7 @@ PObject * PAbstractSet::GetAt(PINDEX index) const
 }
 
 
-PBoolean PAbstractSet::SetAt(PINDEX, PObject * obj)
+bool PAbstractSet::SetAt(PINDEX, PObject * obj)
 {
   return Append(obj);
 }
@@ -1526,7 +1526,7 @@ PINDEX PAbstractDictionary::InsertAt(PINDEX index, PObject * obj)
 }
  
  
-PBoolean PAbstractDictionary::Remove(const PObject * obj)
+bool PAbstractDictionary::Remove(const PObject * obj)
 {
   PINDEX idx = GetObjectsIndex(obj);
   if (idx == P_MAX_INDEX)
@@ -1557,7 +1557,7 @@ PINDEX PAbstractDictionary::GetValuesIndex(const PObject & obj) const
 }
 
 
-PBoolean PAbstractDictionary::SetAt(PINDEX index, PObject * val)
+bool PAbstractDictionary::SetAt(PINDEX index, PObject * val)
 {
   return AbstractSetAt(AbstractGetKeyAt(index), val);
 }
@@ -1570,7 +1570,7 @@ PObject * PAbstractDictionary::GetAt(PINDEX index) const
 }
  
  
-PBoolean PAbstractDictionary::SetDataAt(PINDEX index, PObject * val)
+bool PAbstractDictionary::SetDataAt(PINDEX index, PObject * val)
 {
   return AbstractSetAt(AbstractGetKeyAt(index), val);
 }

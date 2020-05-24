@@ -3,7 +3,7 @@
  *
  * Implementation of sound file device
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (C) 2007 Post Increment
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is
  * Robert Jongbloed <robertj@postincrement.com>
@@ -151,12 +151,12 @@ bool PSoundChannel_WAVFile::Open(const Params & params)
 }
 
 
-PBoolean PSoundChannel_WAVFile::IsOpen() const
+bool PSoundChannel_WAVFile::IsOpen() const
 { 
   return m_WAVFile.IsOpen();
 }
 
-PBoolean PSoundChannel_WAVFile::Close()
+bool PSoundChannel_WAVFile::Close()
 {
   if (CheckNotOpen())
     return false;

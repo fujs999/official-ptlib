@@ -3,7 +3,7 @@
  *
  * Sub-process communicating with pipe I/O channel class
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -36,7 +36,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // PPipeChannel
 
-static PBoolean SplitArgs(const PString & cmdline,
+static bool SplitArgs(const PString & cmdline,
                       PString & progName,
                       PStringArray & arguments)
 {
@@ -56,8 +56,8 @@ static PBoolean SplitArgs(const PString & cmdline,
 
 PPipeChannel::PPipeChannel(const PString & subProgram,
                            OpenMode mode,
-                           PBoolean searchPath,
-                           PBoolean stderrSeparate)
+                           bool searchPath,
+                           bool stderrSeparate)
 {
   PString progName;
   PStringArray arguments;
@@ -69,8 +69,8 @@ PPipeChannel::PPipeChannel(const PString & subProgram,
 PPipeChannel::PPipeChannel(const PString & subProgram,
                            const PStringArray & arguments,
                            OpenMode mode,
-                           PBoolean searchPath,
-                           PBoolean stderrSeparate)
+                           bool searchPath,
+                           bool stderrSeparate)
 {
   PlatformOpen(subProgram, arguments, mode, searchPath, stderrSeparate, NULL);
 }
@@ -79,8 +79,8 @@ PPipeChannel::PPipeChannel(const PString & subProgram,
 PPipeChannel::PPipeChannel(const PString & subProgram,
                            const PStringToString & environment,
                            OpenMode mode,
-                           PBoolean searchPath,
-                           PBoolean stderrSeparate)
+                           bool searchPath,
+                           bool stderrSeparate)
 {
   PString progName;
   PStringArray arguments;
@@ -93,8 +93,8 @@ PPipeChannel::PPipeChannel(const PString & subProgram,
                            const PStringArray & arguments,
                            const PStringToString & environment,
                            OpenMode mode,
-                           PBoolean searchPath,
-                           PBoolean stderrSeparate)
+                           bool searchPath,
+                           bool stderrSeparate)
 {
   PlatformOpen(subProgram, arguments, mode, searchPath, stderrSeparate, &environment);
 }
@@ -113,10 +113,10 @@ PString PPipeChannel::GetName() const
 }
 
 
-PBoolean PPipeChannel::Open(const PString & subProgram,
+bool PPipeChannel::Open(const PString & subProgram,
                         OpenMode mode,
-                        PBoolean searchPath,
-                        PBoolean stderrSeparate)
+                        bool searchPath,
+                        bool stderrSeparate)
 {
   PString progName;
   PStringArray arguments;
@@ -126,21 +126,21 @@ PBoolean PPipeChannel::Open(const PString & subProgram,
 }
 
 
-PBoolean PPipeChannel::Open(const PString & subProgram,
+bool PPipeChannel::Open(const PString & subProgram,
                         const PStringArray & arguments,
                         OpenMode mode,
-                        PBoolean searchPath,
-                        PBoolean stderrSeparate)
+                        bool searchPath,
+                        bool stderrSeparate)
 {
   return PlatformOpen(subProgram, arguments, mode, searchPath, stderrSeparate, NULL);
 }
 
 
-PBoolean PPipeChannel::Open(const PString & subProgram,
+bool PPipeChannel::Open(const PString & subProgram,
                         const PStringToString & environment,
                         OpenMode mode,
-                        PBoolean searchPath,
-                        PBoolean stderrSeparate)
+                        bool searchPath,
+                        bool stderrSeparate)
 {
   PString progName;
   PStringArray arguments;
@@ -150,12 +150,12 @@ PBoolean PPipeChannel::Open(const PString & subProgram,
 }
 
 
-PBoolean PPipeChannel::Open(const PString & subProgram,
+bool PPipeChannel::Open(const PString & subProgram,
                         const PStringArray & arguments,
                         const PStringToString & environment,
                         OpenMode mode,
-                        PBoolean searchPath,
-                        PBoolean stderrSeparate)
+                        bool searchPath,
+                        bool stderrSeparate)
 {
   return PlatformOpen(subProgram, arguments, mode, searchPath, stderrSeparate, &environment);
 }

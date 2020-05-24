@@ -3,7 +3,7 @@
  *
  * Abstract Syntax Notation 1 classes for support of SNMP only.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-2002 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -36,9 +36,9 @@
 //
 // define some types used by the ASN classes
 //
-typedef PInt32  PASNInt;
-typedef DWORD   PASNUnsigned;
-typedef DWORD           PASNOid;
+typedef int32_t  PASNInt;
+typedef uint32_t   PASNUnsigned;
+typedef uint32_t           PASNOid;
 
 class PASNObject;
 class PASNSequence;
@@ -145,7 +145,7 @@ class PASNObject : public PObject
     /** Virtual function used to get the length of object when encoded into
        ASN format 
     */
-    virtual WORD GetEncodedLength();
+    virtual uint16_t GetEncodedLength();
 
     /** Virtual function used to duplicate objects */
     virtual PObject * Clone() const;
@@ -153,45 +153,45 @@ class PASNObject : public PObject
     /** Encode an ASN length value */
     static void EncodeASNLength (
       PBYTEArray & buffer,    ///< buffer to encode into
-      WORD length             ///< ASN length to encode
+      uint16_t length             ///< ASN length to encode
     );
 
     /** Return the length of an encoded ASN length value */
-    static WORD GetASNLengthLength (
-      WORD length             ///< length to find length of
+    static uint16_t GetASNLengthLength (
+      uint16_t length             ///< length to find length of
     );
 
     /** Decode an ASN length in the buffer at the given ptr. The ptr is moved
        to the byte after the end of the encoded length.
      */
-    static PBoolean DecodeASNLength (
+    static bool DecodeASNLength (
       const PBYTEArray & buffer,  ///< buffer to decode data from
       PINDEX & ptr,               ///< ptr to decode from
-      WORD & len                  ///< returned length
+      uint16_t & len                  ///< returned length
     );
 
     /** Encode a sequence header into the buffer at the specified offset. */
     static void EncodeASNSequenceStart (
       PBYTEArray & buffer,       ///< buffer to encode data into
-      BYTE type,                 ///< sequence type
-      WORD length                ///< length of sequence data
+      uint8_t type,                 ///< sequence type
+      uint16_t length                ///< length of sequence data
     );
 
     /** Return the encoded length of a sequence if it has the specified length */
-    static WORD GetASNSequenceStartLength (
-      WORD length               ///< length of sequence data
+    static uint16_t GetASNSequenceStartLength (
+      uint16_t length               ///< length of sequence data
     );
 
     /** Encode an ASN object header into the buffer */
     static void EncodeASNHeader(
       PBYTEArray & buffer,        ///< buffer to encode into
       PASNObject::ASNType type,   ///< ASN type of the object
-      WORD length                 ///< length of the object
+      uint16_t length                 ///< length of the object
     );
 
     /** Return the length of an ASN object header if the object is the specified length */
-    static WORD GetASNHeaderLength (
-      WORD length              ///< length of object
+    static uint16_t GetASNHeaderLength (
+      uint16_t length              ///< length of object
     );
 
     static void EncodeASNInteger    (
@@ -208,17 +208,17 @@ class PASNObject : public PObject
     );
     // Encode an ASN integer value into the specified buffer */
 
-    static WORD GetASNIntegerLength (
+    static uint16_t GetASNIntegerLength (
       PASNInt data      ///< value to get length of
     );
     // Return the length of an encoded ASN integer with the specified value 
 
-    static WORD GetASNUnsignedLength (
+    static uint16_t GetASNUnsignedLength (
       PASNUnsigned data   ///< value to get length of
     );
     // Return the length of an encoded ASN integer with the specified value 
 
-    static PBoolean DecodeASNInteger (
+    static bool DecodeASNInteger (
       const PBYTEArray & buffer,  ///< buffer to decode from
       PINDEX & ptr,               ///< ptr to data in buffer
       PASNInt & value,            ///< returned value
@@ -226,7 +226,7 @@ class PASNObject : public PObject
     );
     // Decode an ASN integer value in the specified buffer 
 
-    static PBoolean DecodeASNUnsigned (
+    static bool DecodeASNUnsigned (
       const PBYTEArray & buffer,  ///< buffer to decode from
       PINDEX & ptr,               ///< ptr to data in buffer
       PASNUnsigned & value,       ///< returned value
@@ -239,7 +239,7 @@ class PASNObject : public PObject
     PASNObject();
 
     /** Table to map <A>enum ASNType</A> values to ASN identifiers */
-    static BYTE ASNTypeToType[ASNTypeMax];
+    static uint8_t ASNTypeToType[ASNTypeMax];
 
 };
 
@@ -257,7 +257,7 @@ class PASNInteger : public PASNObject
 
     void PrintOn(ostream & strm) const;
     void Encode(PBYTEArray & buffer);
-    WORD GetEncodedLength();
+    uint16_t GetEncodedLength();
     PObject * Clone() const;
 
     PASNInt GetInteger() const;
@@ -279,7 +279,7 @@ class PASNString : public PASNObject
   PCLASSINFO(PASNString, PASNObject)
   public:
     PASNString(const PString & str);
-    PASNString(const BYTE * ptr, int len);
+    PASNString(const uint8_t * ptr, int len);
     PASNString(const PBYTEArray & buffer,               PASNObject::ASNType = String);
     PASNString(const PBYTEArray & buffer, PINDEX & ptr, PASNObject::ASNType = String);
 
@@ -288,7 +288,7 @@ class PASNString : public PASNObject
     void Encode(PBYTEArray & buffer)
       { Encode(buffer, String); }
 
-    WORD GetEncodedLength();
+    uint16_t GetEncodedLength();
     PObject * Clone() const;
 
     PString GetString() const;
@@ -296,11 +296,11 @@ class PASNString : public PASNObject
     PString GetTypeAsString() const;
 
   protected:
-    PBoolean Decode(const PBYTEArray & buffer, PINDEX & i, PASNObject::ASNType type);
+    bool Decode(const PBYTEArray & buffer, PINDEX & i, PASNObject::ASNType type);
     void Encode(PBYTEArray & buffer,             PASNObject::ASNType type);
 
     PString value;
-    WORD    valueLen;
+    uint16_t    valueLen;
 };
 
 
@@ -313,7 +313,7 @@ class PASNIPAddress : public PASNString
   PCLASSINFO(PASNIPAddress, PASNString)
   public:
     PASNIPAddress(const PIPSocket::Address & addr)
-      : PASNString((const BYTE *)addr.GetPointer(), addr.GetSize()) { }
+      : PASNString((const uint8_t *)addr.GetPointer(), addr.GetSize()) { }
 
     PASNIPAddress(const PString & str);
 
@@ -354,7 +354,7 @@ class PASNUnsignedInteger : public PASNObject
     PASNUnsignedInteger(const PBYTEArray & buffer, PINDEX & ptr);
 
     void PrintOn(ostream & strm) const;
-    WORD GetEncodedLength();
+    uint16_t GetEncodedLength();
     PString GetString () const;
     PASNUnsigned GetUnsigned() const;
 
@@ -362,7 +362,7 @@ class PASNUnsignedInteger : public PASNObject
     PASNUnsignedInteger()
       { value = 0; }
 
-    PBoolean Decode(const PBYTEArray & buffer, PINDEX & i, PASNObject::ASNType theType);
+    bool Decode(const PBYTEArray & buffer, PINDEX & i, PASNObject::ASNType theType);
     void Encode(PBYTEArray & buffer, PASNObject::ASNType theType);
 
   private:
@@ -438,7 +438,7 @@ class PASNGauge : public PASNUnsignedInteger
     PASNGauge(const PBYTEArray & buffer, PINDEX & ptr)
       { Decode(buffer, ptr); }
 
-    PBoolean Decode(const PBYTEArray & buffer, PINDEX & i)
+    bool Decode(const PBYTEArray & buffer, PINDEX & i)
       { return PASNUnsignedInteger::Decode(buffer, i, Gauge); }
 
     void Encode(PBYTEArray & buffer)
@@ -464,13 +464,13 @@ class PASNObjectID : public PASNObject
   PCLASSINFO(PASNObjectID, PASNObject)
   public:
     PASNObjectID(const PString & str);
-    PASNObjectID(PASNOid * val, BYTE theLen);
+    PASNObjectID(PASNOid * val, uint8_t theLen);
     PASNObjectID(const PBYTEArray & buffer);
     PASNObjectID(const PBYTEArray & buffer, PINDEX & ptr);
 
     void PrintOn(ostream & strm) const;
     void Encode(PBYTEArray & buffer);
-    WORD GetEncodedLength();
+    uint16_t GetEncodedLength();
     PObject * Clone() const;
 
     ASNType GetType() const;
@@ -478,7 +478,7 @@ class PASNObjectID : public PASNObject
     PString GetTypeAsString() const;
 
   protected:
-    PBoolean Decode(const PBYTEArray & buffer, PINDEX & i);
+    bool Decode(const PBYTEArray & buffer, PINDEX & i);
 
   private:
     PDWORDArray value;
@@ -499,7 +499,7 @@ class PASNNull : public PASNObject
     void PrintOn(ostream & strm) const;
 
     void Encode(PBYTEArray & buffer);
-    WORD GetEncodedLength();
+    uint16_t GetEncodedLength();
 
     PObject * Clone() const;
 
@@ -518,7 +518,7 @@ class PASNSequence : public PASNObject
   PCLASSINFO(PASNSequence, PASNObject)
   public:
     PASNSequence();
-    PASNSequence(BYTE selector);
+    PASNSequence(uint8_t selector);
     PASNSequence(const PBYTEArray & buffer);
     PASNSequence(const PBYTEArray & buffer, PINDEX & i);
 
@@ -530,7 +530,7 @@ class PASNSequence : public PASNObject
     void AppendInteger (PASNInt value);
     void AppendString  (const PString & str);
     void AppendObjectID(const PString & str);
-    void AppendObjectID(PASNOid * val, BYTE len);
+    void AppendObjectID(PASNOid * val, uint8_t len);
 
     int GetChoice() const;
 
@@ -539,19 +539,19 @@ class PASNSequence : public PASNObject
 
     void PrintOn(ostream & strm) const;
     void Encode(PBYTEArray & buffer);
-    PBoolean Decode(const PBYTEArray & buffer, PINDEX & i);
-    WORD GetEncodedLength();
+    bool Decode(const PBYTEArray & buffer, PINDEX & i);
+    uint16_t GetEncodedLength();
     ASNType GetType() const;
     PString GetTypeAsString() const;
 
-    PBoolean Encode(PBYTEArray & buffer, PINDEX maxLen) ;
+    bool Encode(PBYTEArray & buffer, PINDEX maxLen) ;
 
   private:
     PASNObjectArray sequence;
-    BYTE     type;
+    uint8_t     type;
     ASNType  asnType;
-    WORD     encodedLen;
-    WORD     seqLen;
+    uint16_t     encodedLen;
+    uint16_t     seqLen;
 };
 
 

@@ -3,7 +3,7 @@
  *
  * PWLib library for DNS lookup services
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 2003 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -49,8 +49,8 @@
   #if VER_PRODUCTBUILD < 6000
     typedef struct
     {
-        WORD            wOrder;
-        WORD            wPreference;
+        uint16_t            wOrder;
+        uint16_t            wPreference;
         PSTR            pFlags;
         PSTR            pService;
         PSTR            pRegularExpression;
@@ -99,16 +99,16 @@
 #define DNS_QUERY_BYPASS_CACHE 0
 
 typedef struct _DnsAData {
-  DWORD IpAddress;
+  uint32_t IpAddress;
 } DNS_A_DATA;
 
 typedef struct _DnsAAAAData {
-  DWORD Ip6Address[4];
+  uint32_t Ip6Address[4];
 } DNS_AAAA_DATA;
 
 typedef struct {
   char   pNameExchange[MAXDNAME];
-  WORD   wPreference;
+  uint16_t   wPreference;
 } DNS_MX_DATA;
 
 typedef struct {
@@ -117,13 +117,13 @@ typedef struct {
 
 typedef struct _DnsSRVData {
   char   pNameTarget[MAXDNAME];
-  WORD   wPriority;
-  WORD   wWeight;
-  WORD   wPort;
+  uint16_t   wPriority;
+  uint16_t   wWeight;
+  uint16_t   wPort;
 } DNS_SRV_DATA;
 
 typedef struct _DnsNULLData {
-  DWORD  dwByteCount;
+  uint32_t  dwByteCount;
   char   data[1];
 } DNS_NULL_DATA;
 
@@ -149,11 +149,11 @@ class DnsRecord {
   public:
     DnsRecord * pNext;
     char        pName[MAXDNAME];
-    WORD        wType;
-    WORD        wDataLength;
+    uint16_t        wType;
+    uint16_t        wDataLength;
 
     union {
-      DWORD               DW;     ///< flags as DWORD
+      uint32_t               DW;     ///< flags as uint32_t
       DNS_RECORD_FLAGS    S;      ///< flags as structure
     } Flags;
 
@@ -175,8 +175,8 @@ extern void DnsRecordListFree(PDNS_RECORD rec, int FreeType);
 extern PDNS_RECORD DnsRecordSetCopy(PDNS_RECORD src);
 
 extern DNS_STATUS DnsQuery_A(const char * service,
-          WORD requestType,
-          DWORD options,
+          uint16_t requestType,
+          uint32_t options,
           void *,
           PDNS_RECORD * results,
           void *);
@@ -190,8 +190,8 @@ namespace PDNS {
 
 DNS_STATUS Cached_DnsQuery(
     const char * name,
-    WORD       type,
-    DWORD      options,
+    uint16_t       type,
+    uint32_t      options,
     void *     extra,
     PDNS_RECORD * queryResults,
     void * reserved
@@ -220,7 +220,7 @@ class PDnsRecords
 //
 
 template <unsigned type, class RecordListType, class RecordType>
-PBoolean Lookup(const PString & name, RecordListType & recordList)
+bool Lookup(const PString & name, RecordListType & recordList)
 {
   if (name.IsEmpty())
     return false;
@@ -263,10 +263,10 @@ class SRVRecord : public PObject
 
     PString            hostName;
     PIPSocket::Address hostAddress;
-    PBoolean               used;
-    WORD port;
-    WORD priority;
-    WORD weight;
+    bool               used;
+    uint16_t port;
+    uint16_t priority;
+    uint16_t weight;
 };
 
 class SRVRecordList : public PSortedList<PDNS::SRVRecord>
@@ -288,13 +288,13 @@ class SRVRecordList : public PSortedList<PDNS::SRVRecord>
   * return a list of DNS SRV record with the specified service type
   */
 
-inline PBoolean GetRecords(const PString & service, SRVRecordList & serviceList)
+inline bool GetRecords(const PString & service, SRVRecordList & serviceList)
 { return Lookup<DNS_TYPE_SRV, SRVRecordList, SRVRecord>(service, serviceList); }
 
 /**
   * provided for backwards compatibility
   */
-inline PBoolean GetSRVRecords(
+inline bool GetSRVRecords(
       const PString & service,
       SRVRecordList & serviceList
 )
@@ -304,7 +304,7 @@ inline PBoolean GetSRVRecords(
   * return a list of DNS SRV record with the specified service, type and domain
   */
 
-PBoolean GetSRVRecords(
+bool GetSRVRecords(
       const PString & service,
       const PString & type,
       const PString & domain,
@@ -316,21 +316,21 @@ PBoolean GetSRVRecords(
   * @return true if the service could be resolved, else false
   */
 
-PBoolean LookupSRV(
+bool LookupSRV(
          const PString & srvQuery,
-         WORD defaultPort,
+         uint16_t defaultPort,
          PIPSocketAddressAndPortVector & addrList
 );
 
-PBoolean LookupSRV( 
+bool LookupSRV( 
          const PString & domain,                  ///< domain to lookup
          const PString & service,                 ///< service to use
-         WORD defaultPort,                        ///< default por to use
+         uint16_t defaultPort,                        ///< default por to use
          PIPSocketAddressAndPortVector & addrList ///< returned list of sockets and ports
 ); 
 
 #if P_URL
-PBoolean LookupSRV( 
+bool LookupSRV( 
          const PURL & url,          ///< URL to lookup
          const PString & service,   ///< service to use
          PStringList & returnStr    ///< resolved addresses, if return value is true
@@ -350,8 +350,8 @@ class MXRecord : public PObject
 
     PString            hostName;
     PIPSocket::Address hostAddress;
-    PBoolean               used;
-    WORD               preference;
+    bool               used;
+    uint16_t               preference;
 };
 
 class MXRecordList : public PSortedList<PDNS::MXRecord>
@@ -371,7 +371,7 @@ class MXRecordList : public PSortedList<PDNS::MXRecord>
 /**
   * return a list of MX records for the specified domain
   */
-inline PBoolean GetRecords(
+inline bool GetRecords(
       const PString & domain,
       MXRecordList & serviceList
 )
@@ -380,7 +380,7 @@ inline PBoolean GetRecords(
 /**
   * provided for backwards compatibility
   */
-inline PBoolean GetMXRecords(
+inline bool GetMXRecords(
       const PString & domain,
       MXRecordList & serviceList
 )

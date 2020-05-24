@@ -3,7 +3,7 @@
  *
  * Container Classes
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -145,7 +145,7 @@ void PContainer::DestroyReference()
 }
 
 
-PBoolean PContainer::SetMinSize(PINDEX minSize)
+bool PContainer::SetMinSize(PINDEX minSize)
 {
 #if PINDEX_SIGNED
   PASSERTINDEX(minSize);
@@ -158,7 +158,7 @@ PBoolean PContainer::SetMinSize(PINDEX minSize)
 }
 
 
-PBoolean PContainer::MakeUnique()
+bool PContainer::MakeUnique()
 {
   if (IsUnique())
     return true;
@@ -209,7 +209,7 @@ PAbstractArray::PAbstractArray(PINDEX elementSizeInBytes, PINDEX initialSize)
 PAbstractArray::PAbstractArray(PINDEX elementSizeInBytes,
                                const void *buffer,
                                PINDEX bufferSizeInElements,
-                               PBoolean dynamicAllocation)
+                               bool dynamicAllocation)
   : PContainer(bufferSizeInElements)
 {
   elementSize = elementSizeInBytes;
@@ -337,13 +337,13 @@ PObject::Comparison PAbstractArray::Compare(const PObject & obj) const
 }
 
 
-PBoolean PAbstractArray::SetSize(PINDEX newSize)
+bool PAbstractArray::SetSize(PINDEX newSize)
 {
   return InternalSetSize(newSize, false);
 }
 
 
-PBoolean PAbstractArray::InternalSetSize(PINDEX newSize, PBoolean force)
+bool PAbstractArray::InternalSetSize(PINDEX newSize, bool force)
 {
 #if PINDEX_SIGNED
   if (newSize < 0)
@@ -433,7 +433,7 @@ PINDEX PAbstractArray::GetLength() const
 }
 
 
-PBoolean PAbstractArray::Concatenate(const PAbstractArray & array)
+bool PAbstractArray::Concatenate(const PAbstractArray & array)
 {
   if (!allocatedDynamically || array.elementSize != elementSize)
     return false;
@@ -469,7 +469,7 @@ void PCharArray::PrintOn(ostream & strm) const
   else
     width = 0;
 
-  PBoolean left = (strm.flags()&ios::adjustfield) == ios::left;
+  bool left = (strm.flags()&ios::adjustfield) == ios::left;
   if (left)
     strm.write(theArray, GetSize());
 
@@ -557,7 +557,7 @@ void PBYTEArray::ReadFrom(istream &strm)
   while (strm.good()) {
     unsigned v;
     strm >> v;
-    theArray[size] = (BYTE)v;
+    theArray[size] = (uint8_t)v;
     if (!strm.fail()) {
       size++;
       if (size >= GetSize())
@@ -599,8 +599,8 @@ PBitArray::PBitArray(PINDEX initialSize)
 
 PBitArray::PBitArray(const void * buffer,
                      PINDEX length,
-                     PBoolean dynamic)
-  : PBYTEArray((const BYTE *)buffer, (length+7)>>3, dynamic)
+                     bool dynamic)
+  : PBYTEArray((const uint8_t *)buffer, (length+7)>>3, dynamic)
 {
 }
 
@@ -617,13 +617,13 @@ PINDEX PBitArray::GetSize() const
 }
 
 
-PBoolean PBitArray::SetSize(PINDEX newSize)
+bool PBitArray::SetSize(PINDEX newSize)
 {
   return PBYTEArray::SetSize((newSize+7)>>3);
 }
 
 
-PBoolean PBitArray::SetAt(PINDEX index, PBoolean val)
+bool PBitArray::SetAt(PINDEX index, bool val)
 {
   if (!SetMinSize(index+1))
     return false;
@@ -636,7 +636,7 @@ PBoolean PBitArray::SetAt(PINDEX index, PBoolean val)
 }
 
 
-PBoolean PBitArray::GetAt(PINDEX index) const
+bool PBitArray::GetAt(PINDEX index) const
 {
   PASSERTINDEX(index);
   if (index >= GetSize())
@@ -648,17 +648,17 @@ PBoolean PBitArray::GetAt(PINDEX index) const
 
 void PBitArray::Attach(const void * buffer, PINDEX bufferSize)
 {
-  PBYTEArray::Attach((const BYTE *)buffer, (bufferSize+7)>>3);
+  PBYTEArray::Attach((const uint8_t *)buffer, (bufferSize+7)>>3);
 }
 
 
-BYTE * PBitArray::GetPointer(PINDEX minSize)
+uint8_t * PBitArray::GetPointer(PINDEX minSize)
 {
   return PBYTEArray::GetPointer((minSize+7)>>3);
 }
 
 
-PBoolean PBitArray::Concatenate(const PBitArray & array)
+bool PBitArray::Concatenate(const PBitArray & array)
 {
   return PAbstractArray::Concatenate(array);
 }
@@ -919,27 +919,27 @@ static const char siTable[][2] = { "f", "p", "n", "u", "m", "", "k", "M", "G", "
 static const size_t siCount = sizeof(siTable)/2;
 static const size_t siZero = siCount/2;
 
-static void InternalConvertScaleSI(PInt64 value, unsigned precision, std::string & str)
+static void InternalConvertScaleSI(int64_t value, unsigned precision, std::string & str)
 {
   // Scale it according to SI multipliers
   if (value > -1000 && value < 1000)
-    return p_signed2string<PInt64, PUInt64>(value, 10, str);
+    return p_signed2string<int64_t, uint64_t>(value, 10, str);
 
   if (precision > 21)
     precision = 21;
 
-  PInt64 absValue = value;
+  int64_t absValue = value;
   if (absValue < 0) {
     absValue = -absValue;
     ++precision;
   }
 
   PINDEX length = 0;
-  PInt64 multiplier = 1;
+  int64_t multiplier = 1;
   for (size_t i = siZero+1; i < siCount; ++i) {
     multiplier *= 1000;
     if (absValue < multiplier*1000) {
-      p_signed2string<PInt64, PUInt64>(value/multiplier, 10, str);
+      p_signed2string<int64_t, uint64_t>(value/multiplier, 10, str);
       precision -= length;
       if (precision > 0 && absValue%multiplier != 0) {
         str += '.';
@@ -1586,7 +1586,7 @@ PINDEX PString::FindRegEx(const PRegularExpression & regex, PINDEX offset) const
 }
 
 
-PBoolean PString::FindRegEx(const PRegularExpression & regex,
+bool PString::FindRegEx(const PRegularExpression & regex,
                         PINDEX & pos,
                         PINDEX & len,
                         PINDEX offset,
@@ -1617,7 +1617,7 @@ PBoolean PString::FindRegEx(const PRegularExpression & regex,
   return true;
 }
 
-PBoolean PString::MatchesRegEx(const PRegularExpression & regex) const
+bool PString::MatchesRegEx(const PRegularExpression & regex) const
 {
   PINDEX pos = 0;
   PINDEX len = 0;
@@ -1628,7 +1628,7 @@ PBoolean PString::MatchesRegEx(const PRegularExpression & regex) const
   return (pos == 0) && (len == GetLength());
 }
 
-PString & PString::Replace(const PString & target, const PString & subs, PBoolean all, PINDEX offset)
+PString & PString::Replace(const PString & target, const PString & subs, bool all, PINDEX offset)
 {
 #if PINDEX_SIGNED
   if (offset < 0)
@@ -1698,7 +1698,7 @@ bool PString::InternalSplit(const PString & delimiter, PString & before, PString
 }
 
 
-PStringArray PString::Tokenise(const char * separators, PBoolean onePerSeparator) const
+PStringArray PString::Tokenise(const char * separators, bool onePerSeparator) const
 {
   PStringArray tokens;
   
@@ -1853,7 +1853,7 @@ long PString::AsInteger(unsigned base) const
 }
 
 
-DWORD PString::AsUnsigned(unsigned base) const
+uint32_t PString::AsUnsigned(unsigned base) const
 {
   PAssert(base != 1 && base <= 36, PInvalidParameter);
   char * dummy;
@@ -1995,16 +1995,16 @@ PWCharArray PString::AsWide() const
     while (i < length) {
       int c = at(i);
       if ((c&0x80) == 0)
-        wide[count++] = (BYTE)at(i++);
+        wide[count++] = (uint8_t)at(i++);
       else if ((c&0xe0) == 0xc0) {
         if (i < length-1)
-          wide[count++] = (WORD)(((at(i  )&0x1f)<<6)|
+          wide[count++] = (uint16_t)(((at(i  )&0x1f)<<6)|
                                   (at(i+1)&0x3f));
         i += 2;
       }
       else if ((c&0xf0) == 0xe0) {
         if (i < length-2)
-          wide[count++] = (WORD)(((at(i  )&0x0f)<<12)|
+          wide[count++] = (uint16_t)(((at(i  )&0x0f)<<12)|
                                  ((at(i+1)&0x3f)<< 6)|
                                   (at(i+2)&0x3f));
         i += 3;
@@ -2140,8 +2140,8 @@ PBYTEArray PString::ToPascal() const
 {
   PINDEX len = GetLength();
   PAssert(len < 256, "Cannot convert to PASCAL string");
-  BYTE buf[256];
-  buf[0] = (BYTE)len;
+  uint8_t buf[256];
+  buf[0] = (uint8_t)len;
   memcpy(&buf[1], c_str(), len);
   return PBYTEArray(buf, len);
 }
@@ -2237,7 +2237,7 @@ PString pvsprintf(const char * fmt, va_list arg)
 }
 
 
-PBoolean PString::MakeMinimumSize(PINDEX newLength)
+bool PString::MakeMinimumSize(PINDEX newLength)
 {
   if (newLength == 0)
     newLength = strlen(c_str());
@@ -2275,7 +2275,7 @@ int PCaselessString::internal_strncmp(const char * s1, const char *s2, size_t n)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-PStringArray::PStringArray(PINDEX count, char const * const * strarr, PBoolean caseless)
+PStringArray::PStringArray(PINDEX count, char const * const * strarr, bool caseless)
 {
   if (count == 0)
     return;
@@ -2434,7 +2434,7 @@ PString PStringArray::ToString(char separator) const
 
 ///////////////////////////////////////////////////////////////////////////////
 
-PStringList::PStringList(PINDEX count, char const * const * strarr, PBoolean caseless)
+PStringList::PStringList(PINDEX count, char const * const * strarr, bool caseless)
 {
   if (count == 0)
     return;
@@ -2509,7 +2509,7 @@ void PStringList::ReadFrom(istream & strm)
 
 PSortedStringList::PSortedStringList(PINDEX count,
                                      char const * const * strarr,
-                                     PBoolean caseless)
+                                     bool caseless)
 {
   if (count == 0)
     return;
@@ -2616,7 +2616,7 @@ PINDEX PSortedStringList::InternalStringSelect(const char * str,
 
 ///////////////////////////////////////////////////////////////////////////////
 
-PStringSet::PStringSet(PINDEX count, char const * const * strarr, PBoolean caseless)
+PStringSet::PStringSet(PINDEX count, char const * const * strarr, bool caseless)
   : BaseClass(true)
 {
   if (count == 0)
@@ -2704,7 +2704,7 @@ void POrdinalToString::ReadFrom(istream & strm)
 
 PStringToOrdinal::PStringToOrdinal(PINDEX count,
                                    const Initialiser * init,
-                                   PBoolean caseless)
+                                   bool caseless)
 {
   while (count-- > 0) {
     if (caseless)
@@ -2718,7 +2718,7 @@ PStringToOrdinal::PStringToOrdinal(PINDEX count,
 
 PStringToOrdinal::PStringToOrdinal(PINDEX count,
                                    const POrdinalToString::Initialiser * init,
-                                   PBoolean caseless)
+                                   bool caseless)
 {
   while (count-- > 0) {
     if (caseless)
@@ -2748,8 +2748,8 @@ void PStringToOrdinal::ReadFrom(istream & strm)
 
 PStringToString::PStringToString(PINDEX count,
                                  const Initialiser * init,
-                                 PBoolean caselessKeys,
-                                 PBoolean caselessValues)
+                                 bool caselessKeys,
+                                 bool caselessValues)
 {
   while (count-- > 0) {
     if (caselessValues)

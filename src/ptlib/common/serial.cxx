@@ -3,7 +3,7 @@
  *
  * Asynchronous Serial I/O channel class.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -42,8 +42,8 @@ PSerialChannel::PSerialChannel()
 }
 
 
-PSerialChannel::PSerialChannel(const PString & port, DWORD speed, BYTE data,
-       Parity parity, BYTE stop, FlowControl inputFlow, FlowControl outputFlow)
+PSerialChannel::PSerialChannel(const PString & port, uint32_t speed, uint8_t data,
+       Parity parity, uint8_t stop, FlowControl inputFlow, FlowControl outputFlow)
 {
   Construct();
   Open(port, speed, data, parity, stop, inputFlow, outputFlow);
@@ -76,14 +76,14 @@ static const char PortInputFlow[] = "PortInputFlow";
 static const char PortOutputFlow[] = "PortOutputFlow";
 
 
-PBoolean PSerialChannel::Open(PConfig & cfg)
+bool PSerialChannel::Open(PConfig & cfg)
 {
   PStringList ports = GetPortNames();
   return Open(cfg.GetString(PortName, ports.front()),
               cfg.GetInteger(PortSpeed, 9600),
-              (BYTE)cfg.GetInteger(PortDataBits, 8),
+              (uint8_t)cfg.GetInteger(PortDataBits, 8),
               (PSerialChannel::Parity)cfg.GetInteger(PortParity, 1),
-              (BYTE)cfg.GetInteger(PortStopBits, 1),
+              (uint8_t)cfg.GetInteger(PortStopBits, 1),
               (PSerialChannel::FlowControl)cfg.GetInteger(PortInputFlow, 1),
               (PSerialChannel::FlowControl)cfg.GetInteger(PortOutputFlow, 1));
 }

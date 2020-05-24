@@ -3,7 +3,7 @@
  *
  * Time and date classes.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -33,7 +33,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // PTimeInterval
 
-PTimeInterval::PTimeInterval(PInt64 millisecs,
+PTimeInterval::PTimeInterval(int64_t millisecs,
                              long seconds,
                              long minutes,
                              long hours,
@@ -60,7 +60,7 @@ PObject::Comparison PTimeInterval::Compare(const PObject & obj) const
 
 void PTimeInterval::PrintOn(ostream & strm) const
 {
-  PInt64 ns = GetNanoSeconds();
+  int64_t ns = GetNanoSeconds();
 
   std::streamsize decimals = strm.precision();
 
@@ -172,8 +172,8 @@ PString PTimeInterval::AsString(int precision, Formats format, int width) const
 
 
 #ifdef _WIN32
-static const DWORD TimeIntervalLimit = UINT_MAX;
-static const DWORD TimeIntervalInfinite = INFINITE;
+static const uint32_t TimeIntervalLimit = UINT_MAX;
+static const uint32_t TimeIntervalInfinite = INFINITE;
 #else
 static const int TimeIntervalLimit = INT_MAX;
 static const int TimeIntervalInfinite = -1;
@@ -184,7 +184,7 @@ PTimeInterval::IntervalType PTimeInterval::GetInterval() const
   if (*this == PMaxTimeInterval)
     return TimeIntervalInfinite;
 
-  PInt64 msecs = GetMilliSeconds();
+  int64_t msecs = GetMilliSeconds();
   if (msecs <= 0)
     return 0;
 
@@ -195,13 +195,13 @@ PTimeInterval::IntervalType PTimeInterval::GetInterval() const
 }
 
 
-void PTimeInterval::SetInterval(PInt64 millisecs,
+void PTimeInterval::SetInterval(int64_t millisecs,
                                 long seconds,
                                 long minutes,
                                 long hours,
                                 int days)
 {
-  PInt64 milliseconds;
+  int64_t milliseconds;
 
   milliseconds = days;
   milliseconds *= 24;
@@ -292,17 +292,17 @@ PObject::Comparison PTime::Compare(const PObject & obj) const
 }
 
 
-static PUInt64 const SecondsFrom1900to1970 = (70*365+17)*24*60*60U;
-static PUInt64 const MicrosecondsToFraction = 4294;
+static uint64_t const SecondsFrom1900to1970 = (70*365+17)*24*60*60U;
+static uint64_t const MicrosecondsToFraction = 4294;
 
-PTime & PTime::SetNTP(PUInt64 ntp)
+PTime & PTime::SetNTP(uint64_t ntp)
 {
   m_microSecondsSinceEpoch.store(((ntp>>32) - SecondsFrom1900to1970)*Micro + (ntp&0xffffffff)/MicrosecondsToFraction);
   return *this;
 }
 
 
-PUInt64 PTime::GetNTP() const
+uint64_t PTime::GetNTP() const
 {
   if (!IsValid())
     return 0;
@@ -432,7 +432,7 @@ PString PTime::AsString(TimeFormat format, int zone) const
   PString fmt, dsep;
 
   PString tsep = GetTimeSeparator();
-  PBoolean is12hour = GetTimeAMPM();
+  bool is12hour = GetTimeAMPM();
 
   switch (format ) {
     case LongDateTime :

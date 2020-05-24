@@ -3,7 +3,7 @@
  *
  * Multipurpose Internet Mail Extensions support classes.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-2002 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -87,7 +87,7 @@ class PMIMEInfo : public PStringOptions
        @return
        true if the MIME information was successfully read.
      */
-    PBoolean Read(
+    bool Read(
       PInternetProtocol & socket   ///< Application socket to read MIME info.
     );
 
@@ -96,7 +96,7 @@ class PMIMEInfo : public PStringOptions
        @return
        true if the MIME information was successfully read.
      */
-    PBoolean Write(
+    bool Write(
       PInternetProtocol & socket   ///< Application socket to write MIME info.
     ) const;
 
@@ -251,7 +251,7 @@ class PMIMEInfo : public PStringOptions
      */
     static void SetAssociation(
       const PStringToString & allTypes,  ///< MIME content type associations.
-      PBoolean merge = true                  ///< Flag for merging associations.
+      bool merge = true                  ///< Flag for merging associations.
     );
     static void SetAssociation(
       const PString & fileType,         ///< File type (extension) to match.

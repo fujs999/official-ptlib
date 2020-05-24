@@ -3,7 +3,7 @@
  *
  * STUN client
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 2003 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -207,8 +207,8 @@ struct PSTUNAttribute
   PUInt16b length;
 
   PSTUNAttribute(Types newType = ERROR_CODE, size_t len = 0)
-    : type((WORD)newType)
-    , length((WORD)len)
+    : type((uint16_t)newType)
+    , length((uint16_t)len)
   {
   }
 
@@ -244,10 +244,10 @@ class PSTUNAttributeTemplate : public PSTUNAttribute, public PARAMS_TYPE
 class PSTUNAddressAttribute : public PSTUNAttribute
 {
   protected:
-    BYTE     pad;
-    BYTE     family;
+    uint8_t     pad;
+    uint8_t     family;
     PUInt16b port;
-    BYTE     ip[4];
+    uint8_t     ip[4];
 
   public:
     PSTUNAddressAttribute(Types newType, const PIPSocketAddressAndPort & addrAndPort)
@@ -258,13 +258,13 @@ class PSTUNAddressAttribute : public PSTUNAttribute
       SetIPAndPort(addrAndPort);
     }
 
-    WORD GetPort() const;
+    uint16_t GetPort() const;
     PIPSocket::Address GetIP() const;
     void SetIPAndPort(const PIPSocketAddressAndPort & addrAndPort);
     void GetIPAndPort(PIPSocketAddressAndPort & addrAndPort);
 
   protected:
-    enum { SizeofAddressAttribute = sizeof(BYTE)+sizeof(BYTE)+sizeof(WORD)+4 };
+    enum { SizeofAddressAttribute = sizeof(uint8_t)+sizeof(uint8_t)+sizeof(uint16_t)+4 };
     bool IsValidAddrAttr(Types checkType) const { return type == checkType && length == SizeofAddressAttribute; }
 };
 
@@ -295,7 +295,7 @@ class PSTUNStringAttribute : public PSTUNAttribute
 class PSTUNChangeRequest : public PSTUNAttribute
 {
   public:
-    BYTE flags[4];
+    uint8_t flags[4];
     
     PSTUNChangeRequest(bool changeIP = false, bool changePort = false)
       : PSTUNAttribute(CHANGE_REQUEST, sizeof(flags))
@@ -319,9 +319,9 @@ class PSTUNChangeRequest : public PSTUNAttribute
 class PSTUNMessageIntegrity : public PSTUNAttribute
 {
   public:
-    BYTE m_hmac[PMessageDigestSHA1::DigestLength];
+    uint8_t m_hmac[PMessageDigestSHA1::DigestLength];
 
-    PSTUNMessageIntegrity(const BYTE * hmac = NULL)
+    PSTUNMessageIntegrity(const uint8_t * hmac = NULL)
       : PSTUNAttribute(MESSAGE_INTEGRITY, sizeof(m_hmac))
     {
       if (hmac == NULL)
@@ -373,10 +373,10 @@ class PSTUNErrorCode : public PSTUNAttribute
       SetErrorCode(code, reason);
     }
 
-    BYTE m_zero1;
-    BYTE m_zero2;
-    BYTE m_hundreds;
-    BYTE m_units;
+    uint8_t m_zero1;
+    uint8_t m_zero2;
+    uint8_t m_hundreds;
+    uint8_t m_units;
     char m_reason[256];   // not actually 256, but this will do
    
     void Initialise();
@@ -401,7 +401,7 @@ struct PSTUNMessageHeader
 {
   PUInt16b       msgType;
   PUInt16b       msgLength;
-  BYTE           transactionId[16];
+  uint8_t           transactionId[16];
 };
 
 P_POP_MSVC_WARNINGS()
@@ -497,8 +497,8 @@ class PSTUNMessage : public PBYTEArray
     };
     
     PSTUNMessage();
-    PSTUNMessage(MsgType newType, const BYTE * id = NULL);
-    PSTUNMessage(const BYTE * data, PINDEX size, const PIPSocketAddressAndPort & srcAddr);
+    PSTUNMessage(MsgType newType, const uint8_t * id = NULL);
+    PSTUNMessage(const uint8_t * data, PINDEX size, const PIPSocketAddressAndPort & srcAddr);
 
 #if PTRACING
     void PrintOn(ostream & strm) const;
@@ -514,8 +514,8 @@ class PSTUNMessage : public PBYTEArray
     const PSTUNMessageHeader * operator->() const { return (const PSTUNMessageHeader *)theArray; }
 
     MsgType GetType() const;
-    void SetType(MsgType newType, const BYTE * id = NULL);
-    void SetErrorType(int code, const BYTE * id, const char * reason = NULL);
+    void SetType(MsgType newType, const uint8_t * id = NULL);
+    void SetErrorType(int code, const uint8_t * id, const char * reason = NULL);
 
     bool IsRequest()         const { return (GetType() & 0x0110) == 0x0000; }
     bool IsIndication()      const { return (GetType() & 0x0110) == 0x0010; }
@@ -540,10 +540,10 @@ class PSTUNMessage : public PBYTEArray
 
 #if P_SSL
     void AddMessageIntegrity(const PBYTEArray & credentialsHash) { AddMessageIntegrity(credentialsHash, credentialsHash.GetSize()); }
-    void AddMessageIntegrity(const BYTE * credentialsHashPtr, PINDEX credentialsHashLen, PSTUNMessageIntegrity * mi = NULL);
+    void AddMessageIntegrity(const uint8_t * credentialsHashPtr, PINDEX credentialsHashLen, PSTUNMessageIntegrity * mi = NULL);
 
     unsigned CheckMessageIntegrity(const PBYTEArray & credentialsHash) const { return CheckMessageIntegrity(credentialsHash, credentialsHash.GetSize()); }
-    unsigned CheckMessageIntegrity(const BYTE * credentialsHashPtr, PINDEX credentialsHashLen) const;
+    unsigned CheckMessageIntegrity(const uint8_t * credentialsHashPtr, PINDEX credentialsHashLen) const;
 #endif // P_SSL
 
     void AddFingerprint(PSTUNFingerprint * fp = NULL);
@@ -552,10 +552,10 @@ class PSTUNMessage : public PBYTEArray
   protected:
     PSTUNAttribute * GetFirstAttribute() const;
 #if P_SSL
-    void CalculateMessageIntegrity(const BYTE * credentialsHash, PINDEX credentialsHashLen,
-                                   PSTUNMessageIntegrity * mi, BYTE * hmacPtr, PINDEX hmacSize) const;
+    void CalculateMessageIntegrity(const uint8_t * credentialsHash, PINDEX credentialsHashLen,
+                                   PSTUNMessageIntegrity * mi, uint8_t * hmacPtr, PINDEX hmacSize) const;
 #endif // P_SSL
-    DWORD CalculateFingerprint(PSTUNFingerprint * fp) const;
+    uint32_t CalculateFingerprint(PSTUNFingerprint * fp) const;
 
     PIPSocketAddressAndPort m_sourceAddressAndPort;
 };
@@ -640,7 +640,7 @@ class PSTUNClient : public PNatMethod, public PSTUN
     virtual bool CreateSocket(
       PUDPSocket * & socket,
       const PIPSocket::Address & binding = PIPSocket::GetDefaultIpAny(),
-      WORD localPort = 0,
+      uint16_t localPort = 0,
       PObject * context = NULL,
       Component component = eComponent_Unknown
     );
@@ -693,15 +693,15 @@ class PTURNRequestedTransport : public PSTUNAttribute
       ProtocolUDP = IPPROTO_UDP,
       ProtocolTCP = IPPROTO_TCP
     };
-    BYTE m_protocol;
-    BYTE m_rffu1;
-    BYTE m_rffu2;
-    BYTE m_rffu3;
+    uint8_t m_protocol;
+    uint8_t m_rffu1;
+    uint8_t m_rffu2;
+    uint8_t m_rffu3;
 
-    PTURNRequestedTransport(BYTE protocol = ProtocolUDP)
+    PTURNRequestedTransport(uint8_t protocol = ProtocolUDP)
     { Initialise(protocol); }
    
-    void Initialise(BYTE protocol = ProtocolUDP);
+    void Initialise(uint8_t protocol = ProtocolUDP);
     bool IsValid() const { return (type == REQUESTED_TRANSPORT) && (length == 4); }
 };
 
@@ -711,20 +711,20 @@ class PTURNLifetime : public PSTUNAttribute
   public:
     PUInt32b m_lifetime;
 
-    PTURNLifetime(DWORD lifetime = 600)
+    PTURNLifetime(uint32_t lifetime = 600)
       : m_lifetime(lifetime)
     { type = LIFETIME; length = 4; }
    
     bool IsValid() const { return (type == LIFETIME) && (length == 8); }
 
-    DWORD GetLifetime() const { return m_lifetime; }
+    uint32_t GetLifetime() const { return m_lifetime; }
 };
 
 
 class PTURNEvenPort : public PSTUNAttribute
 {
   public:
-    BYTE m_bits;
+    uint8_t m_bits;
 
     PTURNEvenPort(bool evenPort = true)
     { type = EVEN_PORT; m_bits = evenPort ? 1 : 0; length = 1; }
@@ -777,18 +777,18 @@ class PTURNUDPSocket : public PSTUNUDPSocket, public PSTUN
     int m_channelNumber;
     bool m_usingTURN;
 
-    BYTE m_protocol;
+    uint8_t m_protocol;
     PIPSocketAddressAndPort m_relayedAddress;
-    DWORD m_lifeTime;
+    uint32_t m_lifeTime;
     PIPSocketAddressAndPort m_peerIpAndPort;
 
     std::vector<Slice> m_txVect;
     PTURNChannelHeader m_txHeader;
-    BYTE m_txPadding[4];
+    uint8_t m_txPadding[4];
 
     std::vector<Slice> m_rxVect;
     PTURNChannelHeader m_rxHeader;
-    BYTE m_rxPadding[4];
+    uint8_t m_rxPadding[4];
 };
 
 ///////////////////////////////////////////////////////
@@ -812,7 +812,7 @@ class PTURNClient : public PSTUNClient
     bool CreateSocket(
       PUDPSocket * & socket,
       const PIPSocket::Address & binding = PIPSocket::GetDefaultIpAny(),
-      WORD localPort = 0,
+      uint16_t localPort = 0,
       PObject * context = NULL,
       Component component = eComponent_Unknown
     );
@@ -834,7 +834,7 @@ class PTURNClient : public PSTUNClient
   protected:
     virtual PNATUDPSocket * InternalCreateSocket(Component component, PObject * context);
     // New functions
-    virtual bool RefreshAllocation(DWORD lifetime = 600);
+    virtual bool RefreshAllocation(uint32_t lifetime = 600);
 };
 
 

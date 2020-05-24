@@ -3,7 +3,7 @@
  *
  * Classes to support streaming video input (grabbing) and output.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-2001 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -40,43 +40,43 @@ PVideoInputDevice::PVideoInputDevice()
 }
 
 
-PBoolean PVideoInputDevice::Open(const PString & devName, PBoolean startImmediate)
+bool PVideoInputDevice::Open(const PString & devName, bool startImmediate)
 {
   return false;    
 }
 
 
-PBoolean PVideoInputDevice::IsOpen() 
+bool PVideoInputDevice::IsOpen() 
 {
   return false;    
 }
 
 
-PBoolean PVideoInputDevice::Close()
+bool PVideoInputDevice::Close()
 {
   return false;    
 }
 
 
-PBoolean PVideoInputDevice::Start()
+bool PVideoInputDevice::Start()
 {
   return false;
 }
 
 
-PBoolean PVideoInputDevice::Stop()
+bool PVideoInputDevice::Stop()
 {
   return false;
 }
 
 
-PBoolean PVideoInputDevice::IsCapturing()
+bool PVideoInputDevice::IsCapturing()
 {
   return false;
 }
 
 
-PBoolean PVideoInputDevice::SetVideoFormat(VideoFormat newFormat)
+bool PVideoInputDevice::SetVideoFormat(VideoFormat newFormat)
 {
   return false;
 }
@@ -88,7 +88,7 @@ int PVideoInputDevice::GetBrightness()
 }
 
 
-PBoolean PVideoInputDevice::SetBrightness(unsigned newBrightness)
+bool PVideoInputDevice::SetBrightness(unsigned newBrightness)
 {
   return false;
 }
@@ -100,7 +100,7 @@ int PVideoInputDevice::GetHue()
 }
 
 
-PBoolean PVideoInputDevice::SetHue(unsigned newHue)
+bool PVideoInputDevice::SetHue(unsigned newHue)
 {
   return false;
 }
@@ -112,13 +112,13 @@ int PVideoInputDevice::GetContrast()
 }
 
 
-PBoolean PVideoInputDevice::SetContrast(unsigned newContrast)
+bool PVideoInputDevice::SetContrast(unsigned newContrast)
 {
   return false;
 }
 
 
-PBoolean PVideoInputDevice::GetParameters (int *whiteness, int *brightness,
+bool PVideoInputDevice::GetParameters (int *whiteness, int *brightness,
                                        int *colour, int *contrast, int *hue)
 {
   return false;
@@ -131,25 +131,25 @@ int PVideoInputDevice::GetNumChannels()
 }
 
 
-PBoolean PVideoInputDevice::SetChannel(int newChannel)
+bool PVideoInputDevice::SetChannel(int newChannel)
 {
   return false;
 }
 
 
-PBoolean PVideoInputDevice::SetColourFormat(const PString & newFormat)
+bool PVideoInputDevice::SetColourFormat(const PString & newFormat)
 {
   return false;
 }
 
 
-PBoolean PVideoInputDevice::SetFrameRate(unsigned rate)
+bool PVideoInputDevice::SetFrameRate(unsigned rate)
 {
   return false;
 }
 
 
-PBoolean PVideoInputDevice::GetFrameSizeLimits(unsigned & minWidth,
+bool PVideoInputDevice::GetFrameSizeLimits(unsigned & minWidth,
                                            unsigned & minHeight,
                                            unsigned & maxWidth,
                                            unsigned & maxHeight) 
@@ -158,7 +158,7 @@ PBoolean PVideoInputDevice::GetFrameSizeLimits(unsigned & minWidth,
 }
 
 
-PBoolean PVideoInputDevice::SetFrameSize(unsigned width, unsigned height)
+bool PVideoInputDevice::SetFrameSize(unsigned width, unsigned height)
 {
   return false;
 }
@@ -171,7 +171,7 @@ PINDEX PVideoInputDevice::GetMaxFrameBytes()
 
 
 
-bool PVideoInputDevice::InternalGetFrameData(BYTE * buffer, PINDEX & bytesReturned, bool & keyFrame, bool wait)
+bool PVideoInputDevice::InternalGetFrameData(uint8_t * buffer, PINDEX & bytesReturned, bool & keyFrame, bool wait)
 {
   return false;
 }
@@ -181,14 +181,14 @@ void PVideoInputDevice::ClearMapping()
 {
 }
 
-PBoolean PVideoInputDevice::VerifyHardwareFrameSize(unsigned width,
+bool PVideoInputDevice::VerifyHardwareFrameSize(unsigned width,
                                                 unsigned height)
 {
 	// Assume the size is valid
 	return true;
 }
 
-PBoolean PVideoInputDevice::TestAllFormats()
+bool PVideoInputDevice::TestAllFormats()
 {
   return true;
 }

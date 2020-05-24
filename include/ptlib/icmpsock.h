@@ -3,7 +3,7 @@
  *
  * Internet Control Message Protocol socket I/O channel class.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -74,18 +74,18 @@ class PICMPSocket : public PIPDatagramSocket
     class PingInfo {
       public:
         /// Create Ping information structure.
-        PingInfo(WORD id = (WORD)PProcess::GetCurrentProcessID());
+        PingInfo(uint16_t id = (uint16_t)PProcess::GetCurrentProcessID());
 
         /**@name Supplied data */
         //@{
         /// Arbitrary identifier for the ping.
-        WORD identifier;         
+        uint16_t identifier;         
         /// Sequence number for ping packet.
-        WORD sequenceNum;        
+        uint16_t sequenceNum;        
         /// Time To Live for packet.
-        BYTE ttl;                
+        uint8_t ttl;                
         /// Send buffer (if NULL, defaults to 32 bytes).
-        const BYTE * buffer;     
+        const uint8_t * buffer;     
         /// Size of buffer (< 64k).
         PINDEX bufferSize;       
         //@}
@@ -112,7 +112,7 @@ class PICMPSocket : public PIPDatagramSocket
        @return
        false if host not found or no response.
      */
-    PBoolean Ping(
+    bool Ping(
       const PString & host   ///< Host to send ping.
     );
     /**Send an ECHO_REPLY message to the specified host and wait for a reply
@@ -121,7 +121,7 @@ class PICMPSocket : public PIPDatagramSocket
        @return
        false if host not found or no response.
      */
-    PBoolean Ping(
+    bool Ping(
       const PString & host,   ///< Host to send ping.
       PingInfo & info         ///< Information on the ping and reply.
     );
@@ -129,8 +129,8 @@ class PICMPSocket : public PIPDatagramSocket
 
   protected:
     const char * GetProtocolName() const;
-    virtual PBoolean OpenSocket();
-    virtual PBoolean OpenSocket(int ipAdressFamily);
+    virtual bool OpenSocket();
+    virtual bool OpenSocket(int ipAdressFamily);
 
 
 // Include platform dependent part of class

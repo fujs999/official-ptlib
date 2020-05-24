@@ -3,7 +3,7 @@
  *
  * Simple Authentication Security Layer interface classes
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 2004 Reitek S.p.A.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Post Increment
  *
@@ -58,7 +58,7 @@ protected:
     const PString   m_AuthID;
     const PString   m_Password;
 
-    PBoolean            Start(const PString& mechanism, const char ** output, unsigned& len);
+    bool            Start(const PString& mechanism, const char ** output, unsigned& len);
     PSASLResult     Negotiate(const char * input, const char ** output);
 
 public:
@@ -76,10 +76,10 @@ public:
     const PString&  GetAuthID() const   { return m_AuthID; }
     const PString&  GetPassword() const { return m_Password; }
 
-    PBoolean            Init(const PString& fqdn, PStringSet& supportedMechanisms);
-    PBoolean            Start(const PString& mechanism, PString& output);
+    bool            Init(const PString& fqdn, PStringSet& supportedMechanisms);
+    bool            Start(const PString& mechanism, PString& output);
     PSASLResult     Negotiate(const PString& input, PString& output);
-    PBoolean            End();
+    bool            End();
 };
 
 #endif  // P_SASL

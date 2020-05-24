@@ -151,7 +151,7 @@ void QueueProcess::Main()
 void QueueProcess::GenerateBlockData(PThread &, INT )
 {
     PAdaptiveDelay delay;
-    BYTE buffer[writeSize];
+    uint8_t buffer[writeSize];
     PINDEX count = 0;
 
     for (PINDEX i = 0; i < iterations; i++) {
@@ -170,7 +170,7 @@ void QueueProcess::GenerateBlockData(PThread &, INT )
 void QueueProcess::ConsumeBlockData(PThread &, INT)
 {
     PAdaptiveDelay delay;
-    BYTE buffer[readSize];
+    uint8_t buffer[readSize];
     PINDEX count = 0;
     PINDEX readCount = 0;
     while (queue.GetLength() < (readSize * 2)) {

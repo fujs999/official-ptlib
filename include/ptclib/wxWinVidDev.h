@@ -54,21 +54,21 @@ class P_WXWINDOWS_DEVICE_CLASS : public PVideoOutputDeviceRGB, public wxFrame
   
     /**Open the device given the device name.
     */
-    virtual PBoolean Open(
+    virtual bool Open(
       const PString & deviceName,   ///< Device name to open
-      PBoolean /*startImmediate*/ = true    ///< Immediately start device
+      bool /*startImmediate*/ = true    ///< Immediately start device
     );
   
     /**Synonymous with the destructor.
     */
-    virtual PBoolean Close();
+    virtual bool Close();
 
     /**Stop the video device I/O display.
     */
-    virtual PBoolean Stop();
+    virtual bool Stop();
 
     /**Indicate if this video rendering class is open.*/
-    virtual PBoolean IsOpen();
+    virtual bool IsOpen();
   
     /**Set the colour format to be used.
        Note that this function does not do any conversion. If it returns true
@@ -80,7 +80,7 @@ class P_WXWINDOWS_DEVICE_CLASS : public PVideoOutputDeviceRGB, public wxFrame
        Default behaviour sets the value of the colourFormat variable and then
        returns true.
     */
-    virtual PBoolean SetColourFormat(
+    virtual bool SetColourFormat(
       const PString & colourFormat ///< New colour format for device.
     );
 
@@ -92,14 +92,14 @@ class P_WXWINDOWS_DEVICE_CLASS : public PVideoOutputDeviceRGB, public wxFrame
        Default behaviour sets the frameWidth and frameHeight variables and
        returns true.
     */
-    virtual PBoolean SetFrameSize(
+    virtual bool SetFrameSize(
       unsigned width,   ///< New width of frame
       unsigned height   ///< New height of frame
     );
 
     /**Set a section of the output frame buffer.
       */
-    virtual PBoolean FrameComplete();
+    virtual bool FrameComplete();
 
   protected:
     void InternalOpen();
@@ -166,7 +166,7 @@ PStringArray P_WXWINDOWS_DEVICE_CLASS::GetOutputDeviceNames()
 }
   
 
-PBoolean P_WXWINDOWS_DEVICE_CLASS::Open(const PString & deviceName, PBoolean /*startImmediate*/)
+bool P_WXWINDOWS_DEVICE_CLASS::Open(const PString & deviceName, bool /*startImmediate*/)
 {
   m_state = e_Opening;
   m_deviceName = deviceName;
@@ -196,7 +196,7 @@ void P_WXWINDOWS_DEVICE_CLASS::InternalOpen()
 }
   
 
-PBoolean P_WXWINDOWS_DEVICE_CLASS::Close()
+bool P_WXWINDOWS_DEVICE_CLASS::Close()
 {
   if (!IsOpen())
     return false;
@@ -238,19 +238,19 @@ void P_WXWINDOWS_DEVICE_CLASS::OnClose(wxCloseEvent & evt)
 }
 
 
-PBoolean P_WXWINDOWS_DEVICE_CLASS::Stop()
+bool P_WXWINDOWS_DEVICE_CLASS::Stop()
 {
   return Close();
 }
 
 
-PBoolean P_WXWINDOWS_DEVICE_CLASS::IsOpen()
+bool P_WXWINDOWS_DEVICE_CLASS::IsOpen()
 {
   return m_state >= e_Open;
 }
   
 
-PBoolean P_WXWINDOWS_DEVICE_CLASS::SetColourFormat(const PString & colourFormat)
+bool P_WXWINDOWS_DEVICE_CLASS::SetColourFormat(const PString & colourFormat)
 {
   PWaitAndSignal lock(m_mutex);
   return (colourFormat *= psprintf("BGR%u", m_bitmap.GetDepth()))
@@ -258,7 +258,7 @@ PBoolean P_WXWINDOWS_DEVICE_CLASS::SetColourFormat(const PString & colourFormat)
 }
 
 
-PBoolean P_WXWINDOWS_DEVICE_CLASS::SetFrameSize(unsigned width, unsigned height)
+bool P_WXWINDOWS_DEVICE_CLASS::SetFrameSize(unsigned width, unsigned height)
 {
   PWaitAndSignal lock(m_mutex);
 
@@ -281,7 +281,7 @@ PBoolean P_WXWINDOWS_DEVICE_CLASS::SetFrameSize(unsigned width, unsigned height)
 }
 
 
-PBoolean P_WXWINDOWS_DEVICE_CLASS::FrameComplete()
+bool P_WXWINDOWS_DEVICE_CLASS::FrameComplete()
 {
   PWaitAndSignal lock(m_mutex);
 
@@ -297,7 +297,7 @@ PBoolean P_WXWINDOWS_DEVICE_CLASS::FrameComplete()
 
   if (bmdata.GetRowStride() < 0)
     it.Offset(bmdata, 0, m_frameHeight - 1);
-  memcpy((BYTE *)&it.Data(), m_frameStore.GetPointer(), m_frameStore.GetSize());
+  memcpy((uint8_t *)&it.Data(), m_frameStore.GetPointer(), m_frameStore.GetSize());
 
   CallAfter(&P_WXWINDOWS_DEVICE_CLASS::InternalFrameComplete);
   return true;

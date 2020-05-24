@@ -3,7 +3,7 @@
  *
  * Internet Protocol ancestor class.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-2002 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -65,7 +65,7 @@ void PInternetProtocol::SetReadLineTimeout(const PTimeInterval & t)
 }
 
 
-PBoolean PInternetProtocol::Read(void * buf, PINDEX len)
+bool PInternetProtocol::Read(void * buf, PINDEX len)
 {
   if (unReadCount == 0) {
     char readAhead[1000];
@@ -111,7 +111,7 @@ int PInternetProtocol::ReadChar()
 }
 
 
-PBoolean PInternetProtocol::Write(const void * buf, PINDEX len)
+bool PInternetProtocol::Write(const void * buf, PINDEX len)
 {
   if (len == 0 || stuffingState == DontStuff)
     return PIndirectChannel::Write(buf, len);
@@ -177,7 +177,7 @@ PBoolean PInternetProtocol::Write(const void * buf, PINDEX len)
 }
 
 
-PBoolean PInternetProtocol::AttachSocket(PIPSocket * socket)
+bool PInternetProtocol::AttachSocket(PIPSocket * socket)
 {
   if (socket->IsOpen()) {
     if (Open(socket))
@@ -194,7 +194,7 @@ PBoolean PInternetProtocol::AttachSocket(PIPSocket * socket)
 }
 
 
-PBoolean PInternetProtocol::Connect(const PString & address, WORD port)
+bool PInternetProtocol::Connect(const PString & address, uint16_t port)
 {
   if (port == 0)
     return Connect(address, defaultServiceName);
@@ -209,7 +209,7 @@ PBoolean PInternetProtocol::Connect(const PString & address, WORD port)
 }
 
 
-PBoolean PInternetProtocol::Connect(const PString & address, const PString & service)
+bool PInternetProtocol::Connect(const PString & address, const PString & service)
 {
   if (readTimeout == PMaxTimeInterval)
     return AttachSocket(new PTCPSocket(address, service));
@@ -222,7 +222,7 @@ PBoolean PInternetProtocol::Connect(const PString & address, const PString & ser
 }
 
 
-PBoolean PInternetProtocol::Accept(PSocket & listener)
+bool PInternetProtocol::Accept(PSocket & listener)
 {
   if (readTimeout == PMaxTimeInterval)
     return AttachSocket(new PTCPSocket(listener));
@@ -249,7 +249,7 @@ PIPSocket * PInternetProtocol::GetSocket() const
 }
 
 
-PBoolean PInternetProtocol::WriteLine(const PString & line)
+bool PInternetProtocol::WriteLine(const PString & line)
 {
   if (line.FindOneOf(CRLF) == P_MAX_INDEX)
     return WriteString(line + CRLF);
@@ -263,13 +263,13 @@ PBoolean PInternetProtocol::WriteLine(const PString & line)
 }
 
 
-PBoolean PInternetProtocol::ReadLine(PString & line, PBoolean allowContinuation)
+bool PInternetProtocol::ReadLine(PString & line, bool allowContinuation)
 {
   if (!line.SetMinSize(1000))
     return false;
 
   PINDEX count = 0;
-  PBoolean gotEndOfLine = false;
+  bool gotEndOfLine = false;
 
   int c = ReadChar();
   if (c < 0)
@@ -359,7 +359,7 @@ void PInternetProtocol::UnRead(const void * buffer, PINDEX len)
 }
 
 
-PBoolean PInternetProtocol::WriteCommand(PINDEX cmdNumber, const PString & param)
+bool PInternetProtocol::WriteCommand(PINDEX cmdNumber, const PString & param)
 {
   if (cmdNumber >= commandNames.GetSize())
     return false;
@@ -374,7 +374,7 @@ PBoolean PInternetProtocol::WriteCommand(PINDEX cmdNumber, const PString & param
 }
 
 
-PBoolean PInternetProtocol::WriteCommand(PINDEX cmdNumber, const PString & param, const PMIMEInfo & mime)
+bool PInternetProtocol::WriteCommand(PINDEX cmdNumber, const PString & param, const PMIMEInfo & mime)
 {
   if (cmdNumber >= commandNames.GetSize())
     return false;
@@ -384,7 +384,7 @@ PBoolean PInternetProtocol::WriteCommand(PINDEX cmdNumber, const PString & param
 }
 
 
-PBoolean PInternetProtocol::ReadCommand(PINDEX & num, PString & args)
+bool PInternetProtocol::ReadCommand(PINDEX & num, PString & args)
 {
   do {
     if (!ReadLine(args))
@@ -404,7 +404,7 @@ PBoolean PInternetProtocol::ReadCommand(PINDEX & num, PString & args)
 }
 
 
-PBoolean PInternetProtocol::ReadCommand(PINDEX & num, PString & args, PMIMEInfo & mime)
+bool PInternetProtocol::ReadCommand(PINDEX & num, PString & args, PMIMEInfo & mime)
 {
   if (!ReadCommand(num, args))
     return false;
@@ -413,13 +413,13 @@ PBoolean PInternetProtocol::ReadCommand(PINDEX & num, PString & args, PMIMEInfo 
 }
 
 
-PBoolean PInternetProtocol::WriteResponse(unsigned code, const PString & info)
+bool PInternetProtocol::WriteResponse(unsigned code, const PString & info)
 {
   return WriteResponse(psprintf("%03u", code), info);
 }
 
 
-PBoolean PInternetProtocol::WriteResponse(const PString & code,
+bool PInternetProtocol::WriteResponse(const PString & code,
                                        const PString & info)
 {
   if (info.FindOneOf(CRLF) == P_MAX_INDEX)
@@ -435,7 +435,7 @@ PBoolean PInternetProtocol::WriteResponse(const PString & code,
 }
 
 
-PBoolean PInternetProtocol::ReadResponse()
+bool PInternetProtocol::ReadResponse()
 {
   PString line;
   if (!ReadLine(line))
@@ -464,7 +464,7 @@ PBoolean PInternetProtocol::ReadResponse()
 }
 
 
-PBoolean PInternetProtocol::ReadResponse(int & code, PString & info)
+bool PInternetProtocol::ReadResponse(int & code, PString & info)
 {
   bool retval = ReadResponse();
 
@@ -475,7 +475,7 @@ PBoolean PInternetProtocol::ReadResponse(int & code, PString & info)
 }
 
 
-PBoolean PInternetProtocol::ReadResponse(int & code, PString & info, PMIMEInfo & mime)
+bool PInternetProtocol::ReadResponse(int & code, PString & info, PMIMEInfo & mime)
 {
   if (!ReadResponse(code, info))
     return false;
@@ -642,7 +642,7 @@ void PMIMEInfo::ReadFrom(istream &strm)
 }
 
 
-PBoolean PMIMEInfo::Read(PInternetProtocol & socket)
+bool PMIMEInfo::Read(PInternetProtocol & socket)
 {
   RemoveAll();
 
@@ -694,7 +694,7 @@ bool PMIMEInfo::AddMIME(const PMIMEInfo & mime)
 }
 
 
-PBoolean PMIMEInfo::Write(PInternetProtocol & socket) const
+bool PMIMEInfo::Write(PInternetProtocol & socket) const
 {
   for (const_iterator it = begin(); it != end(); ++it) {
     PString name = it->first + ": ";
@@ -866,7 +866,7 @@ PStringToString & PMIMEInfo::GetContentTypes()
 }
 
 
-void PMIMEInfo::SetAssociation(const PStringToString & allTypes, PBoolean merge)
+void PMIMEInfo::SetAssociation(const PStringToString & allTypes, bool merge)
 {
   PStringToString & types = GetContentTypes();
   if (!merge)
@@ -1024,7 +1024,7 @@ bool PMultiPartList::Decode(const PString & entityBody, const PStringToString & 
     if (encoding == "7bit" || encoding == "8bit" || (typeInfo("charset") *= "UTF-8") || memchr(partPtr, 0, partLen) == NULL)
       info->m_textBody = PString(partPtr, partLen);
     else
-      info->m_binaryBody = PBYTEArray((const BYTE *)partPtr, partLen);
+      info->m_binaryBody = PBYTEArray((const uint8_t *)partPtr, partLen);
 
     // add the data to the array
     if (startContentId.IsEmpty() || startContentId != info->m_mime.GetString(PMIMEInfo::ContentIdTag))
@@ -1130,7 +1130,7 @@ void PMultiPartInfo::PrintOn(ostream & strm) const
     }
     else
 #endif
-      strm.write((const char *)(const BYTE *)m_binaryBody, m_binaryBody.GetSize());
+      strm.write((const char *)(const uint8_t *)m_binaryBody, m_binaryBody.GetSize());
   }
 }
 

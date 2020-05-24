@@ -3,7 +3,7 @@
  *
  * System/application configuration class implementation
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -87,22 +87,22 @@ PDECLARE_LIST(PXConfig, PXConfigSection)
     void Wait()   { mutex.Wait(); }
     void Signal() { mutex.Signal(); }
 
-    PBoolean ReadFromFile (const PFilePath & filename);
+    bool ReadFromFile (const PFilePath & filename);
     void ReadFromEnvironment (char **envp);
 
-    PBoolean WriteToFile(const PFilePath & filename);
-    PBoolean Flush(const PFilePath & filename, PBoolean force);
+    bool WriteToFile(const PFilePath & filename);
+    bool Flush(const PFilePath & filename, bool force);
 
     void SetDirty()   { dirty = true; }
 
-    PBoolean      AddInstance();
-    PBoolean      RemoveInstance(const PFilePath & filename);
+    bool      AddInstance();
+    bool      RemoveInstance(const PFilePath & filename);
 
   protected:
     int       instanceCount;
     PMutex    mutex;
-    PBoolean      dirty;
-    PBoolean      saveOnExit;
+    bool      dirty;
+    bool      saveOnExit;
 };
 
 //
@@ -115,7 +115,7 @@ PDECLARE_DICTIONARY(PXConfigDictionary, PFilePath, PXConfig)
     PXConfig * GetFileConfigInstance(const PFilePath & key, const PFilePath & readKey);
     PXConfig * GetEnvironmentInstance();
     void RemoveInstance(PXConfig * instance);
-    void WriteChangedInstances(PBoolean force);
+    void WriteChangedInstances(bool force);
 
   protected:
     PMutex        mutex;
@@ -178,22 +178,22 @@ PXConfig::PXConfig(int)
   saveOnExit = true;
 }
 
-PBoolean PXConfig::AddInstance()
+bool PXConfig::AddInstance()
 {
   mutex.Wait();
-  PBoolean stat = instanceCount++ == 0;
+  bool stat = instanceCount++ == 0;
   mutex.Signal();
 
   return stat;
 }
 
-PBoolean PXConfig::RemoveInstance(const PFilePath & /*filename*/)
+bool PXConfig::RemoveInstance(const PFilePath & /*filename*/)
 {
   mutex.Wait();
 
   PAssert(instanceCount != 0, "PConfig instance count dec past zero");
 
-  PBoolean stat = --instanceCount == 0;
+  bool stat = --instanceCount == 0;
 
 /*
   this code required if no write thread used
@@ -210,11 +210,11 @@ PBoolean PXConfig::RemoveInstance(const PFilePath & /*filename*/)
   return stat;
 }
 
-PBoolean PXConfig::Flush(const PFilePath & filename, PBoolean force)
+bool PXConfig::Flush(const PFilePath & filename, bool force)
 {
   mutex.Wait();
 
-  PBoolean stat = instanceCount == 0;
+  bool stat = instanceCount == 0;
 
   if ((force || (instanceCount == 0)) && saveOnExit && dirty) {
     if (instanceCount != 0) 
@@ -228,7 +228,7 @@ PBoolean PXConfig::Flush(const PFilePath & filename, PBoolean force)
   return stat;
 }
 
-PBoolean PXConfig::WriteToFile(const PFilePath & filename)
+bool PXConfig::WriteToFile(const PFilePath & filename)
 {
 #ifdef WOT_NO_FILESYSTEM
   PTRACE(1, "No filing system for PXConfig::WriteToFile");
@@ -268,7 +268,7 @@ PBoolean PXConfig::WriteToFile(const PFilePath & filename)
 }
 
 
-PBoolean PXConfig::ReadFromFile (const PFilePath & filename)
+bool PXConfig::ReadFromFile (const PFilePath & filename)
 {
 #ifdef WOT_NO_FILESYSTEM
   return true;
@@ -345,7 +345,7 @@ void PXConfig::ReadFromEnvironment (char **envp)
 }
 
 
-static PBoolean LocateFile(const PString & baseName,
+static bool LocateFile(const PString & baseName,
                        PFilePath & readFilename,
                        PFilePath & filename)
 {
@@ -442,7 +442,7 @@ void PXConfigDictionary::RemoveInstance(PXConfig * instance)
   mutex.Signal();
 }
 
-void PXConfigDictionary::WriteChangedInstances(PBoolean force)
+void PXConfigDictionary::WriteChangedInstances(bool force)
 {
   mutex.Wait();
 
@@ -706,12 +706,12 @@ void PConfig::SetString(const PString & theSection,
 //
 ////////////////////////////////////////////////////////////
 
-PBoolean PConfig::HasKey(const PString & theSection, const PString & theKey) const
+bool PConfig::HasKey(const PString & theSection, const PString & theKey) const
 {
   PAssert(config != NULL, "config instance not set");
   config->Wait();
 
-  PBoolean present = false;
+  bool present = false;
   PINDEX index;
   if ((index = config->GetValuesIndex(theSection)) != P_MAX_INDEX) {
     PXConfigSectionList & section = (*config)[index].GetList();

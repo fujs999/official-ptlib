@@ -8,7 +8,7 @@
  * use sample code shm2wav to capture audio stream
  *    shm2wav mywav.wav
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 2009 Matthias Kattanek
  *
@@ -223,7 +223,7 @@ DPRINT(("ashm construc() frameBytes=%d 4x=storedSize=%d val=%d\n", frameBytes,st
 }
 
 
-PBoolean PSoundChannelSHM::Setup()
+bool PSoundChannelSHM::Setup()
 {
   DPRINT(("ashm setup\n"));
 
@@ -237,7 +237,7 @@ PBoolean PSoundChannelSHM::Setup()
 }
 
 
-PBoolean PSoundChannelSHM::Close()
+bool PSoundChannelSHM::Close()
 {
   DPRINT(("ashm close\n"));
 
@@ -253,7 +253,7 @@ PBoolean PSoundChannelSHM::Close()
   return true;
 }
 
-PBoolean PSoundChannelSHM::Write (const void *buf, PINDEX len)
+bool PSoundChannelSHM::Write (const void *buf, PINDEX len)
 {
   int bytesPerSec = mSampleRate * mNumChannels * mBitsPerSample /8;
   int delay = len * 1000 / bytesPerSec;
@@ -277,7 +277,7 @@ PBoolean PSoundChannelSHM::Write (const void *buf, PINDEX len)
 }
 
 
-PBoolean PSoundChannelSHM::Read (void * buf, PINDEX len)
+bool PSoundChannelSHM::Read (void * buf, PINDEX len)
 {
   DPRINT(("ashm read\n"));
 
@@ -288,7 +288,7 @@ PBoolean PSoundChannelSHM::Read (void * buf, PINDEX len)
 }
 
 
-PBoolean PSoundChannelSHM::SetFormat (unsigned numChannels,
+bool PSoundChannelSHM::SetFormat (unsigned numChannels,
                                    unsigned sampleRate,
                                    unsigned bitsPerSample)
 {
@@ -329,7 +329,7 @@ unsigned PSoundChannelSHM::GetSampleSize() const
 }
 
 
-PBoolean PSoundChannelSHM::SetBuffers (PINDEX size, PINDEX count)
+bool PSoundChannelSHM::SetBuffers (PINDEX size, PINDEX count)
 {
   storedPeriods = count;
   storedSize = size;
@@ -340,7 +340,7 @@ PBoolean PSoundChannelSHM::SetBuffers (PINDEX size, PINDEX count)
 }
 
 
-PBoolean PSoundChannelSHM::GetBuffers(PINDEX & size, PINDEX & count)
+bool PSoundChannelSHM::GetBuffers(PINDEX & size, PINDEX & count)
 {
   size = storedSize;
   count = storedPeriods;
@@ -349,13 +349,13 @@ PBoolean PSoundChannelSHM::GetBuffers(PINDEX & size, PINDEX & count)
 }
 
 
-PBoolean PSoundChannelSHM::PlaySound(const PSound & sound, PBoolean wait)
+bool PSoundChannelSHM::PlaySound(const PSound & sound, bool wait)
 {
   DPRINT(("ashm playSound\n"));
 
   PINDEX pos = 0;
   PINDEX len = 0;
-  char *buf = (char *) (const BYTE *) sound;
+  char *buf = (char *) (const uint8_t *) sound;
 
   if (!os_handle)
     return SetErrorValues(NotOpen, EBADF);
@@ -375,10 +375,10 @@ PBoolean PSoundChannelSHM::PlaySound(const PSound & sound, PBoolean wait)
 }
 
 
-PBoolean PSoundChannelSHM::PlayFile(const PFilePath & filename, PBoolean wait)
+bool PSoundChannelSHM::PlayFile(const PFilePath & filename, bool wait)
 {
   DPRINT(("ashm playFile\n"));
-  BYTE buffer [512];
+  uint8_t buffer [512];
   
   if (!os_handle)
     return SetErrorValues(NotOpen, EBADF);
@@ -409,63 +409,63 @@ PBoolean PSoundChannelSHM::PlayFile(const PFilePath & filename, PBoolean wait)
 }
 
 
-PBoolean PSoundChannelSHM::HasPlayCompleted()
+bool PSoundChannelSHM::HasPlayCompleted()
 {
   DPRINT(("ashm hasplayCompleted\n"));
   return false;
 }
 
 
-PBoolean PSoundChannelSHM::WaitForPlayCompletion()
+bool PSoundChannelSHM::WaitForPlayCompletion()
 {
   DPRINT(("ashm wait4playCompleted\n"));
   return false;
 }
 
 
-PBoolean PSoundChannelSHM::RecordSound(PSound & sound)
+bool PSoundChannelSHM::RecordSound(PSound & sound)
 {
   return false;
 }
 
 
-PBoolean PSoundChannelSHM::RecordFile(const PFilePath & filename)
+bool PSoundChannelSHM::RecordFile(const PFilePath & filename)
 {
   return false;
 }
 
 
-PBoolean PSoundChannelSHM::StartRecording()
+bool PSoundChannelSHM::StartRecording()
 {
   return false;
 }
 
 
-PBoolean PSoundChannelSHM::IsRecordBufferFull()
+bool PSoundChannelSHM::IsRecordBufferFull()
 {
   return true;
 }
 
 
-PBoolean PSoundChannelSHM::AreAllRecordBuffersFull()
+bool PSoundChannelSHM::AreAllRecordBuffersFull()
 {
   return true;
 }
 
 
-PBoolean PSoundChannelSHM::WaitForRecordBufferFull()
+bool PSoundChannelSHM::WaitForRecordBufferFull()
 {
   return true;
 }
 
 
-PBoolean PSoundChannelSHM::WaitForAllRecordBuffersFull()
+bool PSoundChannelSHM::WaitForAllRecordBuffersFull()
 {
   return false;
 }
 
 
-PBoolean PSoundChannelSHM::Abort()
+bool PSoundChannelSHM::Abort()
 {
   if (!os_handle)
     return false;
@@ -474,7 +474,7 @@ PBoolean PSoundChannelSHM::Abort()
 
 
 
-PBoolean PSoundChannelSHM::SetVolume (unsigned newVal)
+bool PSoundChannelSHM::SetVolume (unsigned newVal)
 {
   unsigned i = 0;
 
@@ -482,19 +482,19 @@ PBoolean PSoundChannelSHM::SetVolume (unsigned newVal)
 }
 
 
-PBoolean  PSoundChannelSHM::GetVolume(unsigned &devVol)
+bool  PSoundChannelSHM::GetVolume(unsigned &devVol)
 {
   return Volume (false, 0, devVol);
 }
   
 
-PBoolean PSoundChannelSHM::IsOpen () const
+bool PSoundChannelSHM::IsOpen () const
 {
   return (os_handle != NULL);
 }
 
 
-PBoolean PSoundChannelSHM::Volume (PBoolean set, unsigned set_vol, unsigned &get_vol)
+bool PSoundChannelSHM::Volume (bool set, unsigned set_vol, unsigned &get_vol)
 {
     return false;
 }

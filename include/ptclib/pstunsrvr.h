@@ -45,7 +45,7 @@ class PSTUNServer : public PObject, public PSTUN
   public:
     PSTUNServer();
     
-    bool Open(WORD port = DefaultPort);
+    bool Open(uint16_t port = DefaultPort);
     bool Open(PUDPSocket * socket1, PUDPSocket * socket2 = NULL);
 
     bool IsOpen() const;
@@ -92,10 +92,10 @@ class PSTUNServer : public PObject, public PSTUN
     );
 
   protected:
-    void PopulateInfo(PUDPSocket * socket, const PIPSocket::Address & alternateAddress, WORD alternatePort, 
+    void PopulateInfo(PUDPSocket * socket, const PIPSocket::Address & alternateAddress, uint16_t alternatePort, 
              PUDPSocket * alternatePortSocket, PUDPSocket * alternateAddressSocket, PUDPSocket * alternateAddressAndPortSocket);
 
-    SocketInfo * CreateAndAddSocket(const PIPSocket::Address & addess, WORD port);
+    SocketInfo * CreateAndAddSocket(const PIPSocket::Address & addess, uint16_t port);
 
     typedef std::map<PUDPSocket *, SocketInfo> SocketToSocketInfoMap;
     SocketToSocketInfoMap m_socketToSocketInfoMap;

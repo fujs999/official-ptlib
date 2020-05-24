@@ -3,7 +3,7 @@
  *
  * Classes to support streaming video input (grabbing) and output.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-2000 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -212,7 +212,7 @@ void PVideoFrameInfo::PrintOn(ostream & strm) const
 }
 
 
-PBoolean PVideoFrameInfo::SetFrameSize(unsigned width, unsigned height)
+bool PVideoFrameInfo::SetFrameSize(unsigned width, unsigned height)
 {
   if (!PAssert(width >= 1 && height >= 1 && width < 65536 && height < 65536, PInvalidParameter))
     return false;
@@ -223,7 +223,7 @@ PBoolean PVideoFrameInfo::SetFrameSize(unsigned width, unsigned height)
 }
 
 
-PBoolean PVideoFrameInfo::GetFrameSize(unsigned & width, unsigned & height) const
+bool PVideoFrameInfo::GetFrameSize(unsigned & width, unsigned & height) const
 {
   width = m_frameWidth;
   height = m_frameHeight;
@@ -247,7 +247,7 @@ unsigned PVideoFrameInfo::GetFrameHeight() const
 }
 
 
-PBoolean PVideoFrameInfo::SetFrameSar(unsigned width, unsigned height)
+bool PVideoFrameInfo::SetFrameSar(unsigned width, unsigned height)
 {
   if (!PAssert(width < 65536 && height < 65536, PInvalidParameter))
     return false;
@@ -258,7 +258,7 @@ PBoolean PVideoFrameInfo::SetFrameSar(unsigned width, unsigned height)
 }
 
 
-PBoolean PVideoFrameInfo::GetSarSize(unsigned & width, unsigned & height) const
+bool PVideoFrameInfo::GetSarSize(unsigned & width, unsigned & height) const
 {
   width  = m_sarWidth;
   height = m_sarHeight;
@@ -280,7 +280,7 @@ unsigned PVideoFrameInfo::GetSarHeight() const
   return h;
 }
 
-PBoolean PVideoFrameInfo::SetFrameRate(unsigned rate)
+bool PVideoFrameInfo::SetFrameRate(unsigned rate)
 {
   if (!PAssert(rate > 0 && rate < 1000, PInvalidParameter))
     return false;
@@ -296,7 +296,7 @@ unsigned PVideoFrameInfo::GetFrameRate() const
 }
 
 
-PBoolean PVideoFrameInfo::SetColourFormat(const PString & colourFmt)
+bool PVideoFrameInfo::SetColourFormat(const PString & colourFmt)
 {
   if (!colourFmt.IsEmpty()) {
     // Check for synonyms
@@ -560,7 +560,7 @@ PString PVideoDevice::GetDeviceNameFromOpenArgs(const OpenArgs & args) const
 }
 
 
-PBoolean PVideoDevice::OpenFull(const OpenArgs & args, PBoolean startImmediate)
+bool PVideoDevice::OpenFull(const OpenArgs & args, bool startImmediate)
 {
   if (!Open(GetDeviceNameFromOpenArgs(args), false))
     return false;
@@ -606,25 +606,25 @@ PBoolean PVideoDevice::OpenFull(const OpenArgs & args, PBoolean startImmediate)
 }
 
 
-PBoolean PVideoDevice::Close()
+bool PVideoDevice::Close()
 {
   return true;  
 }
 
 
-PBoolean PVideoDevice::Start()
+bool PVideoDevice::Start()
 {
   return true;
 }
 
 
-PBoolean PVideoDevice::Stop()
+bool PVideoDevice::Stop()
 {
   return true;
 }
 
 
-PBoolean PVideoDevice::SetVideoFormat(VideoFormat videoFmt)
+bool PVideoDevice::SetVideoFormat(VideoFormat videoFmt)
 {
   m_videoFormat = videoFmt;
   return true;
@@ -653,7 +653,7 @@ PStringArray PVideoDevice::GetChannelNames()
 }
 
 
-PBoolean PVideoDevice::SetChannel(int newChannelNumber)
+bool PVideoDevice::SetChannel(int newChannelNumber)
 {
   if (newChannelNumber < 0) { // No change
     int numChannels = GetNumChannels();
@@ -713,7 +713,7 @@ bool PVideoDevice::SetFrameInfoConverter(const PVideoFrameInfo & info)
 }
 
 
-PBoolean PVideoDevice::SetColourFormatConverter(const PString & newColourFmt)
+bool PVideoDevice::SetColourFormatConverter(const PString & newColourFmt)
 {
   if (m_converter != NULL) {
     if (CanCaptureVideo()) {
@@ -789,7 +789,7 @@ PBoolean PVideoDevice::SetColourFormatConverter(const PString & newColourFmt)
 }
 
 
-PBoolean PVideoDevice::GetVFlipState()
+bool PVideoDevice::GetVFlipState()
 {
   if (m_converter != NULL)
     return m_converter->GetVFlipState() ^ m_nativeVerticalFlip;
@@ -798,7 +798,7 @@ PBoolean PVideoDevice::GetVFlipState()
 }
 
 
-PBoolean PVideoDevice::SetVFlipState(PBoolean newVFlip)
+bool PVideoDevice::SetVFlipState(bool newVFlip)
 {
   if (newVFlip && m_converter == NULL) {
     m_converter = PColourConverter::Create(*this, *this);
@@ -813,7 +813,7 @@ PBoolean PVideoDevice::SetVFlipState(PBoolean newVFlip)
 }
 
 
-PBoolean PVideoDevice::GetFrameSizeLimits(unsigned & minWidth,
+bool PVideoDevice::GetFrameSizeLimits(unsigned & minWidth,
                                       unsigned & minHeight,
                                       unsigned & maxWidth,
                                       unsigned & maxHeight) 
@@ -824,7 +824,7 @@ PBoolean PVideoDevice::GetFrameSizeLimits(unsigned & minWidth,
 }
 
 
-PBoolean PVideoDevice::SetFrameSizeConverter(unsigned width, unsigned height, ResizeMode resizeMode)
+bool PVideoDevice::SetFrameSizeConverter(unsigned width, unsigned height, ResizeMode resizeMode)
 {
   // Try and get the most compatible physical frame size to convert from/to
   if (!SetNearestFrameSize(width, height)) {
@@ -876,7 +876,7 @@ PBoolean PVideoDevice::SetFrameSizeConverter(unsigned width, unsigned height, Re
 }
 
 
-PBoolean PVideoDevice::SetNearestFrameSize(unsigned width, unsigned height)
+bool PVideoDevice::SetNearestFrameSize(unsigned width, unsigned height)
 {
   unsigned minWidth, minHeight, maxWidth, maxHeight;
   if (GetFrameSizeLimits(minWidth, minHeight, maxWidth, maxHeight)) {
@@ -895,7 +895,7 @@ PBoolean PVideoDevice::SetNearestFrameSize(unsigned width, unsigned height)
 }
 
 
-PBoolean PVideoDevice::SetFrameSize(unsigned width, unsigned height)
+bool PVideoDevice::SetFrameSize(unsigned width, unsigned height)
 {
 #if PTRACING
   unsigned oldWidth = m_frameWidth;
@@ -916,7 +916,7 @@ PBoolean PVideoDevice::SetFrameSize(unsigned width, unsigned height)
 }
 
 
-PBoolean PVideoDevice::GetFrameSize(unsigned & width, unsigned & height) const
+bool PVideoDevice::GetFrameSize(unsigned & width, unsigned & height) const
 {
   // Channels get very upset at this not returning the output size.
   if (m_converter == NULL)
@@ -965,9 +965,9 @@ bool PVideoDevice::SetAttributes(const Attributes &)
 }
 
 
-PBoolean PVideoDevice::SetVideoChannelFormat (int newNumber, VideoFormat newFormat) 
+bool PVideoDevice::SetVideoChannelFormat (int newNumber, VideoFormat newFormat) 
 {
-  PBoolean err1, err2;
+  bool err1, err2;
 
   err1 = SetChannel (newNumber);
   err2 = SetVideoFormat (newFormat);
@@ -1073,13 +1073,13 @@ PVideoOutputDevice::PVideoOutputDevice()
 }
 
 
-PBoolean PVideoOutputDevice::CanCaptureVideo() const
+bool PVideoOutputDevice::CanCaptureVideo() const
 {
   return false;
 }
 
 
-PBoolean PVideoOutputDevice::GetPosition(int &, int &) const
+bool PVideoOutputDevice::GetPosition(int &, int &) const
 {
   return false;
 }
@@ -1103,7 +1103,7 @@ PVideoOutputDeviceRGB::PVideoOutputDeviceRGB()
 }
 
 
-PBoolean PVideoOutputDeviceRGB::SetColourFormat(const PString & colourFormat)
+bool PVideoOutputDeviceRGB::SetColourFormat(const PString & colourFormat)
 {
   PWaitAndSignal lock(m_mutex);
 
@@ -1137,7 +1137,7 @@ PBoolean PVideoOutputDeviceRGB::SetColourFormat(const PString & colourFormat)
 }
 
 
-PBoolean PVideoOutputDeviceRGB::SetFrameSize(unsigned width, unsigned height)
+bool PVideoOutputDeviceRGB::SetFrameSize(unsigned width, unsigned height)
 {
   PWaitAndSignal lock(m_mutex);
 
@@ -1159,7 +1159,7 @@ PINDEX PVideoOutputDeviceRGB::GetMaxFrameBytes()
 }
 
 
-PBoolean PVideoOutputDeviceRGB::SetFrameData(const FrameData & frameData)
+bool PVideoOutputDeviceRGB::SetFrameData(const FrameData & frameData)
 {
   {
     PWaitAndSignal lock(m_mutex);
@@ -1202,7 +1202,7 @@ PBoolean PVideoOutputDeviceRGB::SetFrameData(const FrameData & frameData)
 ///////////////////////////////////////////////////////////////////////////////
 // PVideoInputDevice
 
-PBoolean PVideoInputDevice::CanCaptureVideo() const
+bool PVideoInputDevice::CanCaptureVideo() const
 {
   return true;
 }
@@ -1365,7 +1365,7 @@ PVideoInputDevice * PVideoInputDevice::CreateOpenedDevice(const OpenArgs & args,
 }
 
 
-PBoolean PVideoInputDevice::SetNearestFrameSize(unsigned width, unsigned height)
+bool PVideoInputDevice::SetNearestFrameSize(unsigned width, unsigned height)
 {
   if (PVideoDevice::SetNearestFrameSize(width, height))
     return true;
@@ -1431,13 +1431,13 @@ PBoolean PVideoInputDevice::SetNearestFrameSize(unsigned width, unsigned height)
 }
 
 
-PBoolean PVideoInputDevice::GetFrame(BYTE * buffer, PINDEX & bytesReturned, bool & keyFrame, bool wait)
+bool PVideoInputDevice::GetFrame(uint8_t * buffer, PINDEX & bytesReturned, bool & keyFrame, bool wait)
 {
   return InternalGetFrameData(buffer, bytesReturned, keyFrame, wait);
 }
 
 
-PBoolean PVideoInputDevice::GetFrame(PBYTEArray & frame)
+bool PVideoInputDevice::GetFrame(PBYTEArray & frame)
 {
   PINDEX size = GetMaxFrameBytes();
   if (size == 0) {
@@ -1455,20 +1455,20 @@ PBoolean PVideoInputDevice::GetFrame(PBYTEArray & frame)
 }
 
 
-PBoolean PVideoInputDevice::GetFrame(PBYTEArray & frame, unsigned & width, unsigned & height)
+bool PVideoInputDevice::GetFrame(PBYTEArray & frame, unsigned & width, unsigned & height)
 {
   return GetFrame(frame) && GetFrameSize(width, height);
 }
 
 
-PBoolean PVideoInputDevice::GetFrameData(BYTE * buffer, PINDEX * bytesReturned, bool & keyFrame)
+bool PVideoInputDevice::GetFrameData(uint8_t * buffer, PINDEX * bytesReturned, bool & keyFrame)
 {
   PINDEX dummy;
   return InternalGetFrameData(buffer, bytesReturned != NULL ? *bytesReturned : dummy, keyFrame, true);
 }
 
 
-PBoolean PVideoInputDevice::GetFrameData(BYTE * buffer, PINDEX * bytesReturned)
+bool PVideoInputDevice::GetFrameData(uint8_t * buffer, PINDEX * bytesReturned)
 {
   PINDEX dummy;
   bool keyFrame = true;
@@ -1476,14 +1476,14 @@ PBoolean PVideoInputDevice::GetFrameData(BYTE * buffer, PINDEX * bytesReturned)
 }
 
 
-bool PVideoInputDevice::GetFrameDataNoDelay(BYTE * buffer, PINDEX * bytesReturned, bool & keyFrame)
+bool PVideoInputDevice::GetFrameDataNoDelay(uint8_t * buffer, PINDEX * bytesReturned, bool & keyFrame)
 {
   PINDEX dummy;
   return InternalGetFrameData(buffer, bytesReturned != NULL ? *bytesReturned : dummy, keyFrame, false);
 }
 
 
-bool PVideoInputDevice::GetFrameDataNoDelay(BYTE * buffer, PINDEX * bytesReturned)
+bool PVideoInputDevice::GetFrameDataNoDelay(uint8_t * buffer, PINDEX * bytesReturned)
 {
   PINDEX dummy;
   bool keyFrame = true;
@@ -1517,7 +1517,7 @@ bool PVideoInputDevice::SetControl(PVideoControlInfo::Types, int, ControlMode)
 
 bool PVideoOutputDevice::SetFrameData(unsigned x, unsigned y,
                                       unsigned width, unsigned height,
-                                      const BYTE * pixels, bool endFrame)
+                                      const uint8_t * pixels, bool endFrame)
 {
   FrameData frameData;
   frameData.x = x;
@@ -1532,7 +1532,7 @@ bool PVideoOutputDevice::SetFrameData(unsigned x, unsigned y,
 
 bool PVideoOutputDevice::SetFrameData(unsigned x, unsigned y,
                                       unsigned width, unsigned height,
-                                      const BYTE * pixels, bool endFrame,
+                                      const uint8_t * pixels, bool endFrame,
                                       bool & keyFrameNeeded)
 {
   FrameData frameData;
@@ -1547,7 +1547,7 @@ bool PVideoOutputDevice::SetFrameData(unsigned x, unsigned y,
 }
 
 
-PBoolean PVideoOutputDevice::DisableDecode() 
+bool PVideoOutputDevice::DisableDecode() 
 {
   return false;
 }
@@ -1600,28 +1600,28 @@ void PVideoInputDeviceIndirect::PrintOn(ostream & strm) const
 }
 
 
-PBoolean PVideoInputDeviceIndirect::SetFrameSize(unsigned width, unsigned height)
+bool PVideoInputDeviceIndirect::SetFrameSize(unsigned width, unsigned height)
 {
   PWaitAndSignal lock(m_actualDeviceMutex);
   return PVideoInputDevice::SetFrameSize(width, height) && m_actualDevice != NULL && m_actualDevice->SetFrameSize(width, height);
 }
 
 
-PBoolean PVideoInputDeviceIndirect::SetFrameSar(unsigned width, unsigned height)
+bool PVideoInputDeviceIndirect::SetFrameSar(unsigned width, unsigned height)
 {
   PWaitAndSignal lock(m_actualDeviceMutex);
   return PVideoInputDevice::SetFrameSar(width, height) && m_actualDevice != NULL && m_actualDevice->SetFrameSar(width, height);
 }
 
 
-PBoolean PVideoInputDeviceIndirect::SetFrameRate(unsigned rate)
+bool PVideoInputDeviceIndirect::SetFrameRate(unsigned rate)
 {
   PWaitAndSignal lock(m_actualDeviceMutex);
   return PVideoInputDevice::SetFrameRate(rate) && m_actualDevice != NULL && m_actualDevice->SetFrameRate(rate);
 }
 
 
-PBoolean PVideoInputDeviceIndirect::SetColourFormat(const PString & colourFormat)
+bool PVideoInputDeviceIndirect::SetColourFormat(const PString & colourFormat)
 {
   PWaitAndSignal lock(m_actualDeviceMutex);
   return PVideoInputDevice::SetColourFormat(colourFormat) && m_actualDevice != NULL && m_actualDevice->SetColourFormat(colourFormat);
@@ -1668,49 +1668,49 @@ PStringArray PVideoInputDeviceIndirect::GetDeviceNames() const
 }
 
 
-PBoolean PVideoInputDeviceIndirect::OpenFull(const OpenArgs & args, PBoolean startImmediate)
+bool PVideoInputDeviceIndirect::OpenFull(const OpenArgs & args, bool startImmediate)
 {
   PWaitAndSignal lock(m_actualDeviceMutex);
   return m_actualDevice != NULL && m_actualDevice->OpenFull(args, startImmediate);
 }
 
 
-PBoolean PVideoInputDeviceIndirect::Open(const PString & deviceName, PBoolean startImmediate)
+bool PVideoInputDeviceIndirect::Open(const PString & deviceName, bool startImmediate)
 {
   PWaitAndSignal lock(m_actualDeviceMutex);
   return m_actualDevice != NULL && m_actualDevice->Open(deviceName, startImmediate);
 }
 
 
-PBoolean PVideoInputDeviceIndirect::IsOpen()
+bool PVideoInputDeviceIndirect::IsOpen()
 {
   PWaitAndSignal lock(m_actualDeviceMutex);
   return m_actualDevice != NULL && m_actualDevice->IsOpen();
 }
 
 
-PBoolean PVideoInputDeviceIndirect::Close()
+bool PVideoInputDeviceIndirect::Close()
 {
   PWaitAndSignal lock(m_actualDeviceMutex);
   return m_actualDevice != NULL && m_actualDevice->Close();
 }
 
 
-PBoolean PVideoInputDeviceIndirect::Start()
+bool PVideoInputDeviceIndirect::Start()
 {
   PWaitAndSignal lock(m_actualDeviceMutex);
   return m_actualDevice != NULL && m_actualDevice->Start();
 }
 
 
-PBoolean PVideoInputDeviceIndirect::Stop()
+bool PVideoInputDeviceIndirect::Stop()
 {
   PWaitAndSignal lock(m_actualDeviceMutex);
   return m_actualDevice != NULL && m_actualDevice->Stop();
 }
 
 
-PBoolean PVideoInputDeviceIndirect::SetVideoFormat(VideoFormat videoFormat)
+bool PVideoInputDeviceIndirect::SetVideoFormat(VideoFormat videoFormat)
 {
   PWaitAndSignal lock(m_actualDeviceMutex);
   return PVideoInputDevice::SetVideoFormat(videoFormat) && m_actualDevice != NULL && m_actualDevice->SetVideoFormat(videoFormat);
@@ -1731,7 +1731,7 @@ PStringArray PVideoInputDeviceIndirect::GetChannelNames()
 }
 
 
-PBoolean PVideoInputDeviceIndirect::SetChannel(int channelNumber)
+bool PVideoInputDeviceIndirect::SetChannel(int channelNumber)
 {
   PWaitAndSignal lock(m_actualDeviceMutex);
   return PVideoInputDevice::SetChannel(channelNumber) && m_actualDevice != NULL && m_actualDevice->SetChannel(channelNumber);
@@ -1745,14 +1745,14 @@ int PVideoInputDeviceIndirect::GetChannel() const
 }
 
 
-PBoolean PVideoInputDeviceIndirect::SetVFlipState(PBoolean newVFlipState)
+bool PVideoInputDeviceIndirect::SetVFlipState(bool newVFlipState)
 {
   PWaitAndSignal lock(m_actualDeviceMutex);
   return PVideoInputDevice::SetVFlipState(newVFlipState) && m_actualDevice != NULL && m_actualDevice->SetVFlipState(newVFlipState);
 }
 
 
-PBoolean PVideoInputDeviceIndirect::GetFrameSizeLimits(unsigned & minWidth, unsigned & minHeight, unsigned & maxWidth, unsigned & maxHeight)
+bool PVideoInputDeviceIndirect::GetFrameSizeLimits(unsigned & minWidth, unsigned & minHeight, unsigned & maxWidth, unsigned & maxHeight)
 {
   PWaitAndSignal lock(m_actualDeviceMutex);
   return m_actualDevice != NULL ? m_actualDevice->GetFrameSizeLimits(minWidth, minHeight, maxWidth, maxHeight)
@@ -1760,7 +1760,7 @@ PBoolean PVideoInputDeviceIndirect::GetFrameSizeLimits(unsigned & minWidth, unsi
 }
 
 
-PBoolean PVideoInputDeviceIndirect::SetNearestFrameSize(unsigned width, unsigned height)
+bool PVideoInputDeviceIndirect::SetNearestFrameSize(unsigned width, unsigned height)
 {
   PWaitAndSignal lock(m_actualDeviceMutex);
   return m_actualDevice != NULL ? m_actualDevice->SetNearestFrameSize(width, height) : PVideoInputDevice::SetNearestFrameSize(width, height);
@@ -1781,7 +1781,7 @@ bool PVideoInputDeviceIndirect::SetFrameInfoConverter(const PVideoFrameInfo & in
 }
 
 
-PBoolean PVideoInputDeviceIndirect::SetColourFormatConverter(const PString & colourFormat)
+bool PVideoInputDeviceIndirect::SetColourFormatConverter(const PString & colourFormat)
 {
   PWaitAndSignal lock(m_actualDeviceMutex);
   if (m_actualDevice == NULL)
@@ -1795,7 +1795,7 @@ PBoolean PVideoInputDeviceIndirect::SetColourFormatConverter(const PString & col
 }
 
 
-PBoolean PVideoInputDeviceIndirect::SetFrameSizeConverter(unsigned width, unsigned height, ResizeMode resizeMode)
+bool PVideoInputDeviceIndirect::SetFrameSizeConverter(unsigned width, unsigned height, ResizeMode resizeMode)
 {
   PWaitAndSignal lock(m_actualDeviceMutex);
   if (m_actualDevice == NULL)
@@ -1830,7 +1830,7 @@ bool PVideoInputDeviceIndirect::SetAttributes(const Attributes & attributes)
 }
 
 
-PBoolean PVideoInputDeviceIndirect::SetVideoChannelFormat(int channelNumber, VideoFormat videoFormat)
+bool PVideoInputDeviceIndirect::SetVideoChannelFormat(int channelNumber, VideoFormat videoFormat)
 {
   PWaitAndSignal lock(m_actualDeviceMutex);
   return m_actualDevice != NULL ? m_actualDevice->SetVideoChannelFormat(channelNumber, videoFormat)
@@ -1845,14 +1845,14 @@ bool PVideoInputDeviceIndirect::GetDeviceCapabilities(Capabilities * capabilitie
 }
 
 
-PBoolean PVideoInputDeviceIndirect::IsCapturing()
+bool PVideoInputDeviceIndirect::IsCapturing()
 {
   PWaitAndSignal lock(m_actualDeviceMutex);
   return m_actualDevice != NULL && m_actualDevice->IsCapturing();
 }
 
 
-bool PVideoInputDeviceIndirect::InternalGetFrameData(BYTE * buffer, PINDEX & bytesReturned, bool & keyFrame, bool wait)
+bool PVideoInputDeviceIndirect::InternalGetFrameData(uint8_t * buffer, PINDEX & bytesReturned, bool & keyFrame, bool wait)
 {
   PWaitAndSignal lock(m_actualDeviceMutex);
   return m_actualDevice != NULL && m_actualDevice->GetFrame(buffer, bytesReturned, keyFrame, wait);
@@ -1904,25 +1904,25 @@ PVideoInputEmulatedDevice::~PVideoInputEmulatedDevice()
 }
 
 
-PBoolean PVideoInputEmulatedDevice::Start()
+bool PVideoInputEmulatedDevice::Start()
 {
   return true;
 }
 
 
-PBoolean PVideoInputEmulatedDevice::Stop()
+bool PVideoInputEmulatedDevice::Stop()
 {
   return true;
 }
 
 
-PBoolean PVideoInputEmulatedDevice::IsCapturing()
+bool PVideoInputEmulatedDevice::IsCapturing()
 {
   return IsOpen();
 }
 
 
-bool PVideoInputEmulatedDevice::InternalGetFrameData(BYTE * buffer, PINDEX & bytesReturned, bool & keyFrame, bool wait)
+bool PVideoInputEmulatedDevice::InternalGetFrameData(uint8_t * buffer, PINDEX & bytesReturned, bool & keyFrame, bool wait)
 {
   if (wait)
     m_pacing.Delay(1000/m_frameRate);
@@ -1956,7 +1956,7 @@ bool PVideoInputEmulatedDevice::InternalGetFrameData(BYTE * buffer, PINDEX & byt
   }
 
   PINDEX frameBytes = GetMaxFrameBytes();
-  BYTE * readBuffer = m_converter != NULL ? m_frameStore.GetPointer(frameBytes) : buffer;
+  uint8_t * readBuffer = m_converter != NULL ? m_frameStore.GetPointer(frameBytes) : buffer;
 
   if (!InternalReadFrameData(readBuffer)) {
     switch (m_channelNumber) {
@@ -2012,7 +2012,7 @@ bool PVideoInputEmulatedDevice::InternalGetFrameData(BYTE * buffer, PINDEX & byt
 }
 
 
-PBoolean PVideoInputEmulatedDevice::SetColourFormat(const PString & newFormat)
+bool PVideoInputEmulatedDevice::SetColourFormat(const PString & newFormat)
 {
   return (m_colourFormat *= newFormat);
 }
@@ -2035,7 +2035,7 @@ PStringArray PVideoInputEmulatedDevice::GetChannelNames()
 }
 
 
-PBoolean PVideoInputEmulatedDevice::GetFrameSizeLimits(unsigned & minWidth,
+bool PVideoInputEmulatedDevice::GetFrameSizeLimits(unsigned & minWidth,
                                                        unsigned & minHeight,
                                                        unsigned & maxWidth,
                                                        unsigned & maxHeight) 
@@ -2049,13 +2049,13 @@ PBoolean PVideoInputEmulatedDevice::GetFrameSizeLimits(unsigned & minWidth,
 }
 
 
-PBoolean PVideoInputEmulatedDevice::SetFrameRate(unsigned rate)
+bool PVideoInputEmulatedDevice::SetFrameRate(unsigned rate)
 {
   return rate == m_frameRate;
 }
 
 
-PBoolean PVideoInputEmulatedDevice::SetFrameSize(unsigned width, unsigned height)
+bool PVideoInputEmulatedDevice::SetFrameSize(unsigned width, unsigned height)
 {
   return width == m_frameWidth && height == m_frameHeight;
 }

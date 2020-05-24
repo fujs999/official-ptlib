@@ -3,7 +3,7 @@
  *
  * Abstract Factory Classes
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (C) 2004 Post Increment
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Post Increment
  *
@@ -273,7 +273,7 @@ class PFactoryTemplate : public PFactoryBase
       return true;
     }
 
-    PBoolean InternalRegisterAs(const Key_T & newKey, const Key_T & oldKey)
+    bool InternalRegisterAs(const Key_T & newKey, const Key_T & oldKey)
     {
       PWaitAndSignal mutex(m_mutex);
       typename WorkerMap_T::iterator itOld = m_workers.find(oldKey);

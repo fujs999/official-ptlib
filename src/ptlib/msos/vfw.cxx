@@ -3,7 +3,7 @@
  *
  * Classes to support streaming video input (grabbing) and output.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-2000 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -56,7 +56,7 @@
 
 extern "C" {
 #ifdef _MSC_VER
-BOOL VFWAPI capGetDriverDescriptionA (WORD wDriverIndex, LPSTR lpszName,
+BOOL VFWAPI capGetDriverDescriptionA (uint16_t wDriverIndex, LPSTR lpszName,
               int cbName, LPSTR lpszVer, int cbVer);
 #endif
 }
@@ -91,37 +91,37 @@ class PVideoInputDevice_VideoForWindows : public PVideoInputDevice
 
     /**Open the device given the device name.
       */
-    virtual PBoolean Open(
+    virtual bool Open(
       const PString & deviceName,   /// Device name to open
-      PBoolean startImmediate = true    /// Immediately start device
+      bool startImmediate = true    /// Immediately start device
     );
 
     /**Determine if the device is currently open.
       */
-    virtual PBoolean IsOpen();
+    virtual bool IsOpen();
 
     /**Close the device.
       */
-    virtual PBoolean Close();
+    virtual bool Close();
 
     /**Retrieve a list of Device Capabilities
       */
     virtual bool GetDeviceCapabilities(
       Capabilities * /*caps*/         ///< List of supported capabilities
     );
-    static PBoolean GetInputDeviceCapabilities(const PString & deviceName, Capabilities * capabilities);
+    static bool GetInputDeviceCapabilities(const PString & deviceName, Capabilities * capabilities);
 
     /**Start the video device I/O.
       */
-    virtual PBoolean Start();
+    virtual bool Start();
 
     /**Stop the video device I/O capture.
       */
-    virtual PBoolean Stop();
+    virtual bool Stop();
 
     /**Determine if the video device I/O capture is in progress.
       */
-    virtual PBoolean IsCapturing();
+    virtual bool IsCapturing();
 
     /**Set the colour format to be used.
        Note that this function does not do any conversion. If it returns true
@@ -133,7 +133,7 @@ class PVideoInputDevice_VideoForWindows : public PVideoInputDevice
        Default behaviour sets the value of the colourFormat variable and then
        returns true.
     */
-    virtual PBoolean SetColourFormat(
+    virtual bool SetColourFormat(
       const PString & colourFormat // New colour format for device.
     );
 
@@ -142,7 +142,7 @@ class PVideoInputDevice_VideoForWindows : public PVideoInputDevice
        Default behaviour sets the value of the frameRate variable and then
        returns true.
     */
-    virtual PBoolean SetFrameRate(
+    virtual bool SetFrameRate(
       unsigned rate  /// Frames  per second
     );
 
@@ -154,7 +154,7 @@ class PVideoInputDevice_VideoForWindows : public PVideoInputDevice
        Default behaviour sets the frameWidth and frameHeight variables and
        returns true.
     */
-    virtual PBoolean SetFrameSize(
+    virtual bool SetFrameSize(
       unsigned width,   /// New width of frame
       unsigned height   /// New height of frame
     );
@@ -171,8 +171,8 @@ class PVideoInputDevice_VideoForWindows : public PVideoInputDevice
 
 
   protected:
-    virtual bool InternalGetFrameData(BYTE * buffer, PINDEX & bytesReturned, bool & keyFrame, bool wait);
-    PBoolean VerifyHardwareFrameSize(unsigned width, unsigned height);
+    virtual bool InternalGetFrameData(uint8_t * buffer, PINDEX & bytesReturned, bool & keyFrame, bool wait);
+    bool VerifyHardwareFrameSize(unsigned width, unsigned height);
 
     PDECLARE_NOTIFIER(PThread, PVideoInputDevice_VideoForWindows, HandleCapture);
 
@@ -180,7 +180,7 @@ class PVideoInputDevice_VideoForWindows : public PVideoInputDevice
     LRESULT HandleError(int id, LPCSTR err);
     static LRESULT CALLBACK VideoHandler(HWND hWnd, LPVIDEOHDR vh);
     LRESULT HandleVideo(LPVIDEOHDR vh);
-    PBoolean InitialiseCapture();
+    bool InitialiseCapture();
 
     PThread      * m_captureThread;
     PSyncPoint     m_threadStarted;
@@ -204,7 +204,7 @@ class PCapStatus : public CAPSTATUS
 {
   public:
     PCapStatus(HWND hWnd);
-    PBoolean IsOK()
+    bool IsOK()
        { return uiImageWidth != 0; }
 };
 
@@ -212,11 +212,11 @@ class PCapStatus : public CAPSTATUS
 
 static struct FormatTableEntry { 
   const char * colourFormat; 
-  WORD  bitCount;
-  PBoolean  negHeight; // MS documentation suggests that negative height will request
+  uint16_t  bitCount;
+  bool  negHeight; // MS documentation suggests that negative height will request
                   // top down scan direction from video driver
                   // HOWEVER, not all drivers honor this request
-  DWORD compression; 
+  uint32_t compression; 
 } FormatTable[] = {
   { "BGR32",   32, TRUE,  BI_RGB },
   { "BGR24",   24, TRUE,  BI_RGB },
@@ -258,14 +258,14 @@ static struct {
 class PVideoDeviceBitmap : PBYTEArray
 {
   public:
-    // the following method is replaced by PVideoDeviceBitmap(HWND hWnd, WORD bpp)
+    // the following method is replaced by PVideoDeviceBitmap(HWND hWnd, uint16_t bpp)
     // PVideoDeviceBitmap(unsigned width, unsigned height, const PString & fmt);
     //returns object with gray color pallet if needed for 8 bpp formats
-    PVideoDeviceBitmap(HWND hWnd, WORD bpp);
+    PVideoDeviceBitmap(HWND hWnd, uint16_t bpp);
     // does not build color pallet
     PVideoDeviceBitmap(HWND hWnd); 
     // apply video format to capture device
-    PBoolean ApplyFormat(HWND hWnd, const FormatTableEntry & formatTableEntry);
+    bool ApplyFormat(HWND hWnd, const FormatTableEntry & formatTableEntry);
 
     BITMAPINFO * operator->() const 
     { return (BITMAPINFO *)theArray; }
@@ -282,7 +282,7 @@ PVideoDeviceBitmap::PVideoDeviceBitmap(HWND hCaptureWindow)
   }
 }
 
-PVideoDeviceBitmap::PVideoDeviceBitmap(HWND hCaptureWindow, WORD bpp)
+PVideoDeviceBitmap::PVideoDeviceBitmap(HWND hCaptureWindow, uint16_t bpp)
 {
   PINDEX sz = capGetVideoFormatSize(hCaptureWindow);
   SetSize(sz);
@@ -296,12 +296,12 @@ PVideoDeviceBitmap::PVideoDeviceBitmap(HWND hCaptureWindow, WORD bpp)
     SetSize(sizeof(BITMAPINFOHEADER)+sizeof(RGBQUAD)*256);
     RGBQUAD * bmiColors = ((BITMAPINFO*)theArray)->bmiColors;
     for (int i = 0; i < 256; i++)
-      bmiColors[i].rgbBlue  = bmiColors[i].rgbGreen = bmiColors[i].rgbRed = (BYTE)i;
+      bmiColors[i].rgbBlue  = bmiColors[i].rgbGreen = bmiColors[i].rgbRed = (uint8_t)i;
   }
   ((BITMAPINFO*)theArray)->bmiHeader.biBitCount = bpp;
 }
 
-PBoolean PVideoDeviceBitmap::ApplyFormat(HWND hWnd, const FormatTableEntry & formatTableEntry)
+bool PVideoDeviceBitmap::ApplyFormat(HWND hWnd, const FormatTableEntry & formatTableEntry)
 {
   // NB it is necessary to set the biSizeImage value appropriate to frame size
   // assume bmiHeader.biBitCount has already been set appropriatly for format
@@ -430,7 +430,7 @@ bool PVideoInputDevice_VideoForWindows::SetCaptureMode(unsigned mode)
 }
 
 
-PBoolean PVideoInputDevice_VideoForWindows::Open(const PString & devName, PBoolean startImmediate)
+bool PVideoInputDevice_VideoForWindows::Open(const PString & devName, bool startImmediate)
 {
   Close();
 
@@ -458,13 +458,13 @@ PBoolean PVideoInputDevice_VideoForWindows::Open(const PString & devName, PBoole
 }
 
 
-PBoolean PVideoInputDevice_VideoForWindows::IsOpen() 
+bool PVideoInputDevice_VideoForWindows::IsOpen() 
 {
   return m_hCaptureWindow != NULL;
 }
 
 
-PBoolean PVideoInputDevice_VideoForWindows::Close()
+bool PVideoInputDevice_VideoForWindows::Close()
 {
   PWaitAndSignal mutex(m_operationMutex);
 
@@ -492,7 +492,7 @@ PBoolean PVideoInputDevice_VideoForWindows::Close()
 }
 
 
-PBoolean PVideoInputDevice_VideoForWindows::GetInputDeviceCapabilities(const PString & deviceName,
+bool PVideoInputDevice_VideoForWindows::GetInputDeviceCapabilities(const PString & deviceName,
                                                                   Capabilities * capabilities)
 {
   PVideoInputDevice_VideoForWindows instance;
@@ -520,7 +520,7 @@ bool PVideoInputDevice_VideoForWindows::GetDeviceCapabilities(Capabilities * cap
 }
 
 
-PBoolean PVideoInputDevice_VideoForWindows::Start()
+bool PVideoInputDevice_VideoForWindows::Start()
 {
   PWaitAndSignal mutex(m_operationMutex);
 
@@ -548,7 +548,7 @@ PBoolean PVideoInputDevice_VideoForWindows::Start()
 }
 
 
-PBoolean PVideoInputDevice_VideoForWindows::Stop()
+bool PVideoInputDevice_VideoForWindows::Stop()
 {
   PWaitAndSignal mutex(m_operationMutex);
 
@@ -570,20 +570,20 @@ PBoolean PVideoInputDevice_VideoForWindows::Stop()
 }
 
 
-PBoolean PVideoInputDevice_VideoForWindows::IsCapturing()
+bool PVideoInputDevice_VideoForWindows::IsCapturing()
 {
   return m_isCapturingNow;
 }
 
 
-PBoolean PVideoInputDevice_VideoForWindows::SetColourFormat(const PString & colourFmt)
+bool PVideoInputDevice_VideoForWindows::SetColourFormat(const PString & colourFmt)
 {
   PWaitAndSignal mutex(m_operationMutex);
 
   if (!IsOpen())
     return PVideoDevice::SetColourFormat(colourFmt); // Not open yet, just set internal variables
 
-  PBoolean running = IsCapturing();
+  bool running = IsCapturing();
   if (running)
     Stop();
 
@@ -627,7 +627,7 @@ PBoolean PVideoInputDevice_VideoForWindows::SetColourFormat(const PString & colo
 }
 
 
-PBoolean PVideoInputDevice_VideoForWindows::SetFrameRate(unsigned rate)
+bool PVideoInputDevice_VideoForWindows::SetFrameRate(unsigned rate)
 {
   PWaitAndSignal mutex(m_operationMutex);
 
@@ -637,7 +637,7 @@ PBoolean PVideoInputDevice_VideoForWindows::SetFrameRate(unsigned rate)
   if (!IsOpen())
     return true; // Not open yet, just set internal variables
 
-  PBoolean running = IsCapturing();
+  bool running = IsCapturing();
   if (running)
     Stop();
 
@@ -674,14 +674,14 @@ PBoolean PVideoInputDevice_VideoForWindows::SetFrameRate(unsigned rate)
 }
 
 
-PBoolean PVideoInputDevice_VideoForWindows::SetFrameSize(unsigned width, unsigned height)
+bool PVideoInputDevice_VideoForWindows::SetFrameSize(unsigned width, unsigned height)
 {
   PWaitAndSignal mutex(m_operationMutex);
 
   if (!IsOpen())
     return PVideoDevice::SetFrameSize(width, height); // Not open yet, just set internal variables
 
-  PBoolean running = IsCapturing();
+  bool running = IsCapturing();
   if (running)
     Stop();
 
@@ -724,7 +724,7 @@ PBoolean PVideoInputDevice_VideoForWindows::SetFrameSize(unsigned width, unsigne
 //return true if absolute value of height reported by driver 
 //  is equal to absolute value of current frame height AND
 //  width reported by driver is equal to current frame width
-PBoolean PVideoInputDevice_VideoForWindows::VerifyHardwareFrameSize(unsigned width, unsigned height)
+bool PVideoInputDevice_VideoForWindows::VerifyHardwareFrameSize(unsigned width, unsigned height)
 {
   PCapStatus status(m_hCaptureWindow);
 
@@ -748,7 +748,7 @@ PStringArray PVideoInputDevice_VideoForWindows::GetInputDeviceNames()
 {
   PStringArray devices;
 
-  for (WORD devId = 0; devId < 10; devId++) {
+  for (uint16_t devId = 0; devId < 10; devId++) {
     char name[100];
     char version[200];
     if (capGetDriverDescription(devId, name, sizeof(name), version, sizeof(version)))
@@ -770,7 +770,7 @@ PINDEX PVideoInputDevice_VideoForWindows::GetMaxFrameBytes()
 }
 
 
-bool PVideoInputDevice_VideoForWindows::InternalGetFrameData(BYTE * buffer, PINDEX & bytesReturned, bool & keyFrame, bool wait)
+bool PVideoInputDevice_VideoForWindows::InternalGetFrameData(uint8_t * buffer, PINDEX & bytesReturned, bool & keyFrame, bool wait)
 {
   if (wait) {
     // Wait for frame to be available
@@ -858,7 +858,7 @@ LRESULT PVideoInputDevice_VideoForWindows::HandleVideo(LPVIDEOHDR vh)
 
       // ... and allocate a new one.
       m_lastFrameSize = vh->dwBytesUsed;
-      m_lastFrameData = new BYTE[m_lastFrameSize];
+      m_lastFrameData = new uint8_t[m_lastFrameSize];
 
       memcpy(m_lastFrameData, vh->lpData, m_lastFrameSize);
     }
@@ -871,7 +871,7 @@ LRESULT PVideoInputDevice_VideoForWindows::HandleVideo(LPVIDEOHDR vh)
 }
 
 
-PBoolean PVideoInputDevice_VideoForWindows::InitialiseCapture()
+bool PVideoInputDevice_VideoForWindows::InitialiseCapture()
 {
   if ((m_hCaptureWindow = capCreateCaptureWindow("Capture Window",
                                                  WS_POPUP | WS_CAPTION,
@@ -899,7 +899,7 @@ PBoolean PVideoInputDevice_VideoForWindows::InitialiseCapture()
     return false;
   }
 
-  WORD devId;
+  uint16_t devId;
 
 #if PTRACING
   if (PTrace::CanTrace(4)) { // list available video capture drivers
@@ -916,7 +916,7 @@ PBoolean PVideoInputDevice_VideoForWindows::InitialiseCapture()
 #endif
 
   if (m_deviceName.GetLength() == 1 && isdigit(m_deviceName[0]))
-    devId = (WORD)(m_deviceName[0] - '0');
+    devId = (uint16_t)(m_deviceName[0] - '0');
   else {
     for (devId = 0; devId < 10; devId++) {
       char name[100];
@@ -985,7 +985,7 @@ PBoolean PVideoInputDevice_VideoForWindows::InitialiseCapture()
 
 void PVideoInputDevice_VideoForWindows::HandleCapture(PThread &, P_INT_PTR)
 {
-  PBoolean initSucceeded = InitialiseCapture();
+  bool initSucceeded = InitialiseCapture();
 
   if (initSucceeded) {
     m_threadStarted.Signal();
@@ -1034,26 +1034,26 @@ class PVideoOutputDevice_Window : public PVideoOutputDeviceRGB
 
     /**Open the device given the device name.
       */
-    virtual PBoolean Open(
+    virtual bool Open(
       const PString & deviceName,   /// Device name (filename base) to open
-      PBoolean startImmediate = true    /// Immediately start device
+      bool startImmediate = true    /// Immediately start device
     );
 
     /**Determine if the device is currently open.
       */
-    virtual PBoolean IsOpen();
+    virtual bool IsOpen();
 
     /**Close the device.
       */
-    virtual PBoolean Close();
+    virtual bool Close();
 
     /**Start the video device I/O display.
       */
-    virtual PBoolean Start();
+    virtual bool Start();
 
     /**Stop the video device I/O display.
       */
-    virtual PBoolean Stop();
+    virtual bool Stop();
 
     /**Get a list of all of the devices available.
       */
@@ -1085,7 +1085,7 @@ class PVideoOutputDevice_Window : public PVideoOutputDeviceRGB
        The channel number is an integer from 0 to GetNumChannels()-1. The
        special value of -1 will find the first working channel number.
     */
-    virtual PBoolean SetChannel(
+    virtual bool SetChannel(
       int channelNumber  ///< New channel number for device.
     );
 
@@ -1103,20 +1103,20 @@ class PVideoOutputDevice_Window : public PVideoOutputDeviceRGB
        Default behaviour sets the value of the colourFormat variable and then
        returns true.
     */
-    virtual PBoolean SetColourFormat(
+    virtual bool SetColourFormat(
       const PString & colourFormat // New colour format for device.
     );
 
     /**Get the video conversion vertical flip state.
        Default action is to return false.
      */
-    virtual PBoolean GetVFlipState();
+    virtual bool GetVFlipState();
 
     /**Set the video conversion vertical flip state.
        Default action is to return false.
      */
-    virtual PBoolean SetVFlipState(
-      PBoolean newVFlipState    /// New vertical flip state
+    virtual bool SetVFlipState(
+      bool newVFlipState    /// New vertical flip state
     );
 
     /**Set the frame size to be used.
@@ -1127,20 +1127,20 @@ class PVideoOutputDevice_Window : public PVideoOutputDeviceRGB
        Default behaviour sets the frameWidth and frameHeight variables and
        returns true.
     */
-    virtual PBoolean SetFrameSize(
+    virtual bool SetFrameSize(
       unsigned width,   /// New width of frame
       unsigned height   /// New height of frame
     );
 
     /**Set a section of the output frame buffer.
       */
-    virtual PBoolean FrameComplete();
+    virtual bool FrameComplete();
 
     /**Get the position of the output device, where relevant. For devices such as
        files, this always returns zeros. For devices such as Windows, this is the
        position of the window on the screen.
       */
-    virtual PBoolean GetPosition(
+    virtual bool GetPosition(
       int & x,  // X position of device surface
       int & y   // Y position of device surface
     ) const;
@@ -1166,8 +1166,8 @@ class PVideoOutputDevice_Window : public PVideoOutputDeviceRGB
 
     HWND       m_hWnd;
     HWND       m_hParent;
-    DWORD      m_dwStyle;
-    DWORD      m_dwExStyle;
+    uint32_t      m_dwStyle;
+    uint32_t      m_dwExStyle;
     COLORREF   m_bgColour;
     int        m_rotation;
     bool       m_mouseEnabled;
@@ -1276,7 +1276,7 @@ VOID CALLBACK PVideoOutputDevice_Window::CreateProc(_In_  HWND, _In_  UINT, _In_
 }
 
 
-PBoolean PVideoOutputDevice_Window::Open(const PString & name, PBoolean startImmediate)
+bool PVideoOutputDevice_Window::Open(const PString & name, bool startImmediate)
 {
   if (name.NumCompare(P_MSWIN_VIDEO_PREFIX) != EqualTo)
     return false;
@@ -1293,7 +1293,7 @@ PBoolean PVideoOutputDevice_Window::Open(const PString & name, PBoolean startImm
     return false;
   }
 
-  m_dwStyle = (DWORD)ParseDeviceNameTokenUnsigned("STYLE", DEFAULT_STYLE);
+  m_dwStyle = (uint32_t)ParseDeviceNameTokenUnsigned("STYLE", DEFAULT_STYLE);
   if ((m_dwStyle&(WS_POPUP|WS_CHILD)) == 0) {
     PTRACE(1, "Window must be WS_POPUP or WS_CHILD window.");
     return false;
@@ -1367,13 +1367,13 @@ PBoolean PVideoOutputDevice_Window::Open(const PString & name, PBoolean startImm
 }
 
 
-PBoolean PVideoOutputDevice_Window::IsOpen()
+bool PVideoOutputDevice_Window::IsOpen()
 {
   return m_hWnd != NULL;
 }
 
 
-PBoolean PVideoOutputDevice_Window::Close()
+bool PVideoOutputDevice_Window::Close()
 {
   PWaitAndSignal m(m_openCloseMutex);
 
@@ -1388,7 +1388,7 @@ PBoolean PVideoOutputDevice_Window::Close()
 }
 
 
-PBoolean PVideoOutputDevice_Window::Start()
+bool PVideoOutputDevice_Window::Start()
 {
   PWaitAndSignal m(m_openCloseMutex);
 
@@ -1400,7 +1400,7 @@ PBoolean PVideoOutputDevice_Window::Start()
 }
 
 
-PBoolean PVideoOutputDevice_Window::Stop()
+bool PVideoOutputDevice_Window::Stop()
 {
   PWaitAndSignal m(m_openCloseMutex);
 
@@ -1423,7 +1423,7 @@ PStringArray PVideoOutputDevice_Window::GetChannelNames()
 }
 
 
-PBoolean PVideoOutputDevice_Window::SetChannel(int newChannelNumber)
+bool PVideoOutputDevice_Window::SetChannel(int newChannelNumber)
 {
   if (!PVideoOutputDeviceRGB::SetChannel(newChannelNumber))
     return false;
@@ -1504,13 +1504,13 @@ PBoolean PVideoOutputDevice_Window::SetChannel(int newChannelNumber)
 }
 
 
-PBoolean PVideoOutputDevice_Window::SetColourFormat(const PString & colourFormat)
+bool PVideoOutputDevice_Window::SetColourFormat(const PString & colourFormat)
 {
   PWaitAndSignal lock(m_mutex);
 
   if (((colourFormat *= "BGR24") || (colourFormat *= "BGR32")) &&
                 PVideoOutputDeviceRGB::SetColourFormat(colourFormat)) {
-    m_bitmap.bmiHeader.biBitCount = (WORD)(m_bytesPerPixel*8);
+    m_bitmap.bmiHeader.biBitCount = (uint16_t)(m_bytesPerPixel*8);
     m_bitmap.bmiHeader.biSizeImage = m_frameStore.GetSize();
     return true;
   }
@@ -1519,13 +1519,13 @@ PBoolean PVideoOutputDevice_Window::SetColourFormat(const PString & colourFormat
 }
 
 
-PBoolean PVideoOutputDevice_Window::GetVFlipState()
+bool PVideoOutputDevice_Window::GetVFlipState()
 {
   return m_flipped;
 }
 
 
-PBoolean PVideoOutputDevice_Window::SetVFlipState(PBoolean newVFlip)
+bool PVideoOutputDevice_Window::SetVFlipState(bool newVFlip)
 {
   m_flipped = newVFlip;
   m_bitmap.bmiHeader.biHeight = m_flipped ? m_frameHeight : -(int)m_frameHeight;
@@ -1533,7 +1533,7 @@ PBoolean PVideoOutputDevice_Window::SetVFlipState(PBoolean newVFlip)
 }
 
 
-PBoolean PVideoOutputDevice_Window::SetFrameSize(unsigned width, unsigned height)
+bool PVideoOutputDevice_Window::SetFrameSize(unsigned width, unsigned height)
 {
   {
     PWaitAndSignal lock(m_mutex);
@@ -1556,7 +1556,7 @@ PBoolean PVideoOutputDevice_Window::SetFrameSize(unsigned width, unsigned height
 }
 
 
-PBoolean PVideoOutputDevice_Window::FrameComplete()
+bool PVideoOutputDevice_Window::FrameComplete()
 {
   if (m_hidden)
     m_hidden = !ShowWindow(m_hWnd, SW_SHOW);
@@ -1577,7 +1577,7 @@ PBoolean PVideoOutputDevice_Window::FrameComplete()
 }
 
 
-PBoolean PVideoOutputDevice_Window::GetPosition(int & x, int & y) const
+bool PVideoOutputDevice_Window::GetPosition(int & x, int & y) const
 {
   x = m_lastPosition.x;
   y = m_lastPosition.y;
@@ -1634,13 +1634,13 @@ static void Rotate(PBYTEArray & frameStore, int frameWidth, int frameHeight, uns
     }
   }
   else {
-    const BYTE * src = frameStore;
-    BYTE * dst = destination.GetPointer();
+    const uint8_t * src = frameStore;
+    uint8_t * dst = destination.GetPointer();
     switch (angle) {
       case -90 :
         dst += frameWidth*frameHeight*bytesPerPixel;
         for (int y = frameHeight; y > 0; --y) {
-          BYTE * tempY = dst - y*bytesPerPixel;
+          uint8_t * tempY = dst - y*bytesPerPixel;
           for (int x = frameWidth; x > 0; --x) {
             for (unsigned i = 0; i < bytesPerPixel; ++i)
               tempY[i] = *src++;
@@ -1651,7 +1651,7 @@ static void Rotate(PBYTEArray & frameStore, int frameWidth, int frameHeight, uns
 
       case 90 :
         for (int y = frameHeight-1; y >= 0; --y) {
-          BYTE * tempY = dst + y*bytesPerPixel;
+          uint8_t * tempY = dst + y*bytesPerPixel;
           for (int x = frameWidth; x > 0; --x) {
             for (unsigned i = 0; i < bytesPerPixel; ++i)
               tempY[i] = *src++;

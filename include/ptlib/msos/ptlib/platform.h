@@ -1,9 +1,7 @@
 /*
- * contain.h
+ * platform.h
  *
- * General container classes.
- *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +15,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -29,6 +27,8 @@
 
 #ifndef PTLIB_PLATFORM_H
 #define PTLIB_PLATFORM_H
+
+#include <stdint.h>
 
 
 #ifdef _MSC_VER
@@ -77,93 +77,37 @@
 #define P_64BIT 1
 #endif
 
-#if defined(_WINDOWS) || defined(_WIN32)
-
-  // At least Windows 2000, configure.ac will generally uprate this
-  #ifndef WINVER
-    #define WINVER 0x0500
-  #endif
-
-  #if !defined(_WIN32_WINNT)
-    #define _WIN32_WINNT WINVER
-  #endif
-
-  #if defined(_WIN32_WINNT) && (_WIN32_WINNT == 0x0500) && P_HAS_IPV6 && !defined(NTDDI_VERSION)
-    #define NTDDI_VERSION NTDDI_WIN2KSP1
-  #endif
-
-  #ifndef STRICT
-    #define STRICT
-  #endif
-
-  #ifndef WIN32_LEAN_AND_MEAN
-    #define WIN32_LEAN_AND_MEAN
-  #endif
-
-  #include <windows.h>
-
-  // Remove some stupid defines from Windows headers.
-  #undef DELETE
-  #undef min
-  #undef max
-
-
-#else
-
-  typedef unsigned char  BYTE;  //  8 bit unsigned integer quantity
-  typedef unsigned short WORD;  // 16 bit unsigned integer quantity
-  typedef unsigned long  DWORD; // 32 bit unsigned integer quantity
-  typedef int            BOOL;  // type returned by expresion (i != j)
-
-  #define TRUE 1
-  #define FALSE 0
-
-  #define NEAR __near
-
+// At least Windows 2000, configure.ac will generally uprate this
+#ifndef WINVER
+  #define WINVER 0x0500
 #endif
 
-
-// Declaration for exported callback functions to OS
-#if defined(_WIN32)
-  #define PEXPORTED __stdcall
-#elif defined(_WINDOWS)
-  #define PEXPORTED WINAPI __export
-#else
-  #define PEXPORTED __far __pascal
+#if !defined(_WIN32_WINNT)
+  #define _WIN32_WINNT WINVER
 #endif
 
-
-// Declaration for static global variables (WIN16 compatibility)
-#if defined(_WIN32)
-  #define PSTATIC
-#else
-  #define PSTATIC __near
+#if defined(_WIN32_WINNT) && (_WIN32_WINNT == 0x0500) && P_HAS_IPV6 && !defined(NTDDI_VERSION)
+  #define NTDDI_VERSION NTDDI_WIN2KSP1
 #endif
+
+#ifndef STRICT
+  #define STRICT
+#endif
+
+#ifndef WIN32_LEAN_AND_MEAN
+  #define WIN32_LEAN_AND_MEAN
+#endif
+
+#include <windows.h>
+
+// Remove some stupid defines from Windows headers.
+#undef DELETE
+#undef min
+#undef max
 
 
 // Declaration for platform independent architectures
-#define PCHAR8 PANSI_CHAR
 #define PBYTE_ORDER PLITTLE_ENDIAN
-
-#if !defined(__MINGW32__) && _MSC_VER < 1600
-  #include <ptlib/msos/stdint.h>
-#else
-  #include <stdint.h>
-#endif
-
-
-/////////////////////////////////////////////////////////////////
-// Some backward compatbility stuff, really should use stdint now
-
-// Declaration for signed integer that is 16 bits
-typedef int16_t PInt16;
-
-// Declaration for signed integer that is 32 bits
-typedef int32_t PInt32;
-
-#define P_HAS_INT64
-typedef int64_t PInt64;
-typedef uint64_t PUInt64;
 
 
 // Standard array index type (depends on compiler)
@@ -215,8 +159,8 @@ class PWin32Handle
     PWin32Handle & operator=(HANDLE h);
     operator HANDLE() const { return m_handle; }
 
-    bool Wait(DWORD timeout) const;
-    bool Duplicate(HANDLE h, DWORD flags = DUPLICATE_SAME_ACCESS, DWORD access = 0);
+    bool Wait(uint32_t timeout) const;
+    bool Duplicate(HANDLE h, uint32_t flags = DUPLICATE_SAME_ACCESS, uint32_t access = 0);
 
   private:
     PWin32Handle(const PWin32Handle &) { }
@@ -240,16 +184,16 @@ class RegistryKey
     RegistryKey(const PString & subkey, OpenMode mode);
     ~RegistryKey();
 
-    BOOL EnumKey(PINDEX idx, PString & str);
-    BOOL EnumValue(PINDEX idx, PString & str);
-    BOOL DeleteKey(const PString & subkey);
-    BOOL DeleteValue(const PString & value);
-    BOOL QueryValue(const PString & value, PString & str);
-    BOOL QueryValue(const PString & value, DWORD & num, BOOL boolean);
-    BOOL SetValue(const PString & value, const PString & str);
-    BOOL SetValue(const PString & value, DWORD num);
+    bool EnumKey(PINDEX idx, PString & str);
+    bool EnumValue(PINDEX idx, PString & str);
+    bool DeleteKey(const PString & subkey);
+    bool DeleteValue(const PString & value);
+    bool QueryValue(const PString & value, PString & str);
+    bool QueryValue(const PString & value, uint32_t & num, bool boolean);
+    bool SetValue(const PString & value, const PString & str);
+    bool SetValue(const PString & value, uint32_t num);
   private:
-    HKEY key;
+    HKEY m_hKey;
 };
 
 #define PDEFINE_WINMAIN(hInstance, hPrevInstance, lpCmdLine, nCmdShow) \
@@ -261,18 +205,13 @@ extern "C" PDEFINE_WINMAIN(hInstance, hPrevInstance, lpCmdLine, nCmdShow);
   extern "C" char ** __argv;
 #endif
 
-#ifdef __BORLANDC__
-  #define __argc _argc
-  #define __argv _argv
-#endif
-
 #undef Yield
 
 #define PNullThreadIdentifier ((PThreadIdentifier)0)
 typedef UINT  PThreadIdentifier;
 #define P_THREAD_ID_FMT "%u"
 typedef UINT  PUniqueThreadIdentifier;
-typedef DWORD PProcessIdentifier;
+typedef uint32_t PProcessIdentifier;
 
 #ifdef _DEBUG
   __inline void PBreakToDebugger() { ::DebugBreak(); }

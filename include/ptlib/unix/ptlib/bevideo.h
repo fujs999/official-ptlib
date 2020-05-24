@@ -33,30 +33,30 @@ class PVideoInputDevice_BeOSVideo : public PVideoInputDevice
 
     /**Open the device given the device name.
       */
-    virtual PBoolean Open(
+    virtual bool Open(
       const PString & deviceName,   /// Device name to open
-      PBoolean startImmediate = true    /// Immediately start device
+      bool startImmediate = true    /// Immediately start device
     );
 
     /**Determine if the device is currently open.
       */
-    virtual PBoolean IsOpen();
+    virtual bool IsOpen();
 
     /**Close the device.
       */
-    virtual PBoolean Close();
+    virtual bool Close();
 
     /**Start the video device I/O.
       */
-    virtual PBoolean Start();
+    virtual bool Start();
 
     /**Stop the video device I/O capture.
       */
-    virtual PBoolean Stop();
+    virtual bool Stop();
 
     /**Determine if the video device I/O capture is in progress.
       */
-    virtual PBoolean IsCapturing();
+    virtual bool IsCapturing();
 
     /**Get the maximum frame size in bytes.
 
@@ -67,18 +67,18 @@ class PVideoInputDevice_BeOSVideo : public PVideoInputDevice
 
     /**Grab a frame.
       */
-    virtual PBoolean GetFrame(
+    virtual bool GetFrame(
       PBYTEArray & frame
     );
 
     /**Try all known video formats & see which ones are accepted by the video driver
      */
-    virtual PBoolean TestAllFormats();
+    virtual bool TestAllFormats();
 
   public:
-    virtual PBoolean SetColourFormat(const PString & colourFormat);
-    virtual PBoolean SetFrameRate(unsigned rate);
-    virtual PBoolean SetFrameSize(unsigned width, unsigned height);
+    virtual bool SetColourFormat(const PString & colourFormat);
+    virtual bool SetFrameRate(unsigned rate);
+    virtual bool SetFrameSize(unsigned width, unsigned height);
 
     friend PVideoInputThread;
   private:
@@ -86,7 +86,7 @@ class PVideoInputDevice_BeOSVideo : public PVideoInputDevice
     void StopNodes();
 
   protected:
-    virtual bool InternalGetFrameData(BYTE * buffer, PINDEX & bytesReturned, bool & keyFrame, bool wait);
+    virtual bool InternalGetFrameData(uint8_t * buffer, PINDEX & bytesReturned, bool & keyFrame, bool wait);
 
     BMediaRoster* fMediaRoster;
     VideoConsumer* fVideoConsumer;
@@ -99,7 +99,7 @@ class PVideoInputDevice_BeOSVideo : public PVideoInputDevice
 
     port_id fPort;
 
-    PBoolean          isCapturingNow;
+    bool          isCapturingNow;
     PVideoInputThread* captureThread;
     
 };

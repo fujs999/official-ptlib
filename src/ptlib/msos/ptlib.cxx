@@ -3,7 +3,7 @@
  *
  * General implementation of classes for Microsoft operating systems.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -46,7 +46,7 @@
 #define PTraceModule() "PTLib"
 
 
-ostream & operator<<(ostream & s, PInt64 v)
+ostream & operator<<(ostream & s, int64_t v)
 {
   char buffer[25];
 
@@ -65,7 +65,7 @@ ostream & operator<<(ostream & s, PInt64 v)
 }
 
 
-ostream & operator<<(ostream & s, PUInt64 v)
+ostream & operator<<(ostream & s, uint64_t v)
 {
   char buffer[25];
   return s << _ui64toa(v, buffer, (s.flags()&ios::oct) ? 8 : ((s.flags()&ios::hex) ? 16 : 10));
@@ -74,7 +74,7 @@ ostream & operator<<(ostream & s, PUInt64 v)
 
 const PINDEX MaxDigits = (64+2)/3+1; // Maximum is 22 digit octal number, plus sign
 
-static void GetDigits(PBoolean sign, istream & s, char * buffer)
+static void GetDigits(bool sign, istream & s, char * buffer)
 {
   PINDEX count = 0;
 
@@ -108,7 +108,7 @@ static void GetDigits(PBoolean sign, istream & s, char * buffer)
 }
 
 
-istream & operator>>(istream & s, PInt64 & v)
+istream & operator>>(istream & s, int64_t & v)
 {
   char b[MaxDigits+1];
   GetDigits(true, s, b);
@@ -117,7 +117,7 @@ istream & operator>>(istream & s, PInt64 & v)
 }
 
 
-istream & operator>>(istream & s, PUInt64 & v)
+istream & operator>>(istream & s, uint64_t & v)
 {
   char b[MaxDigits+1];
   GetDigits(false, s, b);
@@ -157,21 +157,21 @@ void PChannel::Construct()
 }
 
 
-PBoolean PChannel::Read(void *, PINDEX)
+bool PChannel::Read(void *, PINDEX)
 {
   PAssertAlways(PUnimplementedFunction);
   return false;
 }
 
 
-PBoolean PChannel::Write(const void *, PINDEX)
+bool PChannel::Write(const void *, PINDEX)
 {
   PAssertAlways(PUnimplementedFunction);
   return false;
 }
 
 
-PBoolean PChannel::Close()
+bool PChannel::Close()
 {
   return false;
 }
@@ -353,7 +353,7 @@ bool PFile::Access(const PFilePath & name, OpenMode mode)
 }
 
 
-PBoolean PFile::Remove(const PString & name, PBoolean force)
+bool PFile::Remove(const PString & name, bool force)
 {
   if (remove(name) == 0)
     return true;
@@ -556,7 +556,7 @@ bool PFile::SetPermissions(const PFilePath & name, PFileInfo::Permissions permis
 }
 
 
-PBoolean PFile::IsTextFile() const
+bool PFile::IsTextFile() const
 {
   return false;
 }
@@ -620,7 +620,7 @@ bool PFile::InternalOpen(OpenMode mode, OpenOptions opts, PFileInfo::Permissions
 }
 
 
-PBoolean PFile::SetLength(off_t len)
+bool PFile::SetLength(off_t len)
 {
   return ConvertOSError(_chsize(GetOSHandleAsInt(), len));
 }
@@ -637,7 +637,7 @@ FILE * PFile::FDOpen(const char * mode)
 ///////////////////////////////////////////////////////////////////////////////
 // PTextFile
 
-PBoolean PTextFile::IsTextFile() const
+bool PTextFile::IsTextFile() const
 {
   return true;
 }
@@ -659,12 +659,12 @@ PConsoleChannel::PConsoleChannel(ConsoleType type)
 }
 
 
-PBoolean PConsoleChannel::Open(ConsoleType type)
+bool PConsoleChannel::Open(ConsoleType type)
 {
   if (!PAssert(type >= StandardInput && type <= StandardError, PInvalidParameter))
     return false;
 
-  static DWORD HandleNames[] = { STD_INPUT_HANDLE, STD_OUTPUT_HANDLE, STD_ERROR_HANDLE };
+  static uint32_t HandleNames[] = { STD_INPUT_HANDLE, STD_OUTPUT_HANDLE, STD_ERROR_HANDLE };
   if (!m_hConsole.Duplicate(GetStdHandle(HandleNames[type])))
     return ConvertOSError(-2);
 
@@ -751,8 +751,8 @@ int PConsoleChannel::ReadChar()
         if (input.Event.MouseEvent.dwButtonState != m_lastMouseState) {
           int code = MouseEvent;
 
-          DWORD buttons = m_lastMouseState|input.Event.MouseEvent.dwButtonState;
-          static const DWORD Mask[] = { FROM_LEFT_1ST_BUTTON_PRESSED, RIGHTMOST_BUTTON_PRESSED, FROM_LEFT_2ND_BUTTON_PRESSED, FROM_LEFT_3RD_BUTTON_PRESSED };
+          uint32_t buttons = m_lastMouseState|input.Event.MouseEvent.dwButtonState;
+          static const uint32_t Mask[] = { FROM_LEFT_1ST_BUTTON_PRESSED, RIGHTMOST_BUTTON_PRESSED, FROM_LEFT_2ND_BUTTON_PRESSED, FROM_LEFT_3RD_BUTTON_PRESSED };
           for (PINDEX btn = 0; btn < PARRAYSIZE(Mask); ++btn) {
             if (buttons&Mask[btn]) {
               code |= MouseButton1 << btn;
@@ -776,7 +776,7 @@ int PConsoleChannel::ReadChar()
 }
 
 
-PBoolean PConsoleChannel::Read(void * buffer, PINDEX length)
+bool PConsoleChannel::Read(void * buffer, PINDEX length)
 {
   if (CheckNotOpen())
     return false;
@@ -789,7 +789,7 @@ PBoolean PConsoleChannel::Read(void * buffer, PINDEX length)
 }
 
 
-PBoolean PConsoleChannel::Write(const void * buffer, PINDEX length)
+bool PConsoleChannel::Write(const void * buffer, PINDEX length)
 {
   if (CheckNotOpen())
     return false;
@@ -804,7 +804,7 @@ PBoolean PConsoleChannel::Write(const void * buffer, PINDEX length)
 }
 
 
-PBoolean PConsoleChannel::Close()
+bool PConsoleChannel::Close()
 {
   if (!IsOpen())
     return false;
@@ -854,7 +854,7 @@ bool PConsoleChannel::GetTerminalSize(unsigned & rows, unsigned & columns)
 }
 
 
-bool PConsoleChannel::InternalSetConsoleMode(DWORD bit, bool on)
+bool PConsoleChannel::InternalSetConsoleMode(uint32_t bit, bool on)
 {
   if (CheckNotOpen())
     return false;
@@ -892,7 +892,7 @@ LONG WINAPI MyExceptionHandler(_EXCEPTION_POINTERS * info)
 
 #else // _WIN32
 
-PBoolean PProcess::IsGUIProcess() const
+bool PProcess::IsGUIProcess() const
 {
   return false;
 }
@@ -956,7 +956,7 @@ void PProcess::PlatformDestruct()
 }
 
 
-PBoolean PProcess::SetMaxHandles(int /*newLimit*/)
+bool PProcess::SetMaxHandles(int /*newLimit*/)
 {
   // Not applicable
   return true;

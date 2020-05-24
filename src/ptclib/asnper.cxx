@@ -3,12 +3,12 @@
  *
  * Abstract Syntax Notation 1 Encoding Rules
  *
- * Portable Windows Library
+ * Portable Tools Library
  */
 
 ///////////////////////////////////////////////////////////////////////
 
-PBoolean PPER_Stream::NullDecode(PASN_Null &)
+bool PPER_Stream::NullDecode(PASN_Null &)
 {
   return true;
 }
@@ -20,7 +20,7 @@ void PPER_Stream::NullEncode(const PASN_Null &)
 
 ///////////////////////////////////////////////////////////////////////
 
-PBoolean PASN_ConstrainedObject::ConstrainedLengthDecode(PPER_Stream & strm, unsigned & length)
+bool PASN_ConstrainedObject::ConstrainedLengthDecode(PPER_Stream & strm, unsigned & length)
 {
   // The execution order is important in the following. The SingleBitDecode() function
   // must be called if extendable is true, no matter what.
@@ -40,12 +40,12 @@ void PASN_ConstrainedObject::ConstrainedLengthEncode(PPER_Stream & strm, unsigne
 }
 
 
-PBoolean PASN_ConstrainedObject::ConstraintEncode(PPER_Stream & strm, unsigned value) const
+bool PASN_ConstrainedObject::ConstraintEncode(PPER_Stream & strm, unsigned value) const
 {
   if (!m_extendable)
     return constraint != FixedConstraint;
 
-  PBoolean needsExtending = value > upperLimit;
+  bool needsExtending = value > upperLimit;
 
   if (!needsExtending) {
     if (lowerLimit < 0) {
@@ -65,13 +65,13 @@ PBoolean PASN_ConstrainedObject::ConstraintEncode(PPER_Stream & strm, unsigned v
 
 ///////////////////////////////////////////////////////////////////////
 
-PBoolean PPER_Stream::BooleanDecode(PASN_Boolean & value)
+bool PPER_Stream::BooleanDecode(PASN_Boolean & value)
 {
   if (IsAtEnd())
     return false;
 
   // X.691 Section 11
-  value = (PBoolean)SingleBitDecode();
+  value = (bool)SingleBitDecode();
   return true;
 }
 
@@ -79,10 +79,10 @@ PBoolean PPER_Stream::BooleanDecode(PASN_Boolean & value)
 void PPER_Stream::BooleanEncode(const PASN_Boolean & value)
 {
   // X.691 Section 11
-  SingleBitEncode((PBoolean)value);
+  SingleBitEncode((bool)value);
 }
 
-PBoolean PPER_Stream::IntegerDecode(PASN_Integer & value)
+bool PPER_Stream::IntegerDecode(PASN_Integer & value)
 {
   return value.DecodePER(*this);
 }
@@ -95,7 +95,7 @@ void PPER_Stream::IntegerEncode(const PASN_Integer & value)
 
 ///////////////////////////////////////////////////////////////////////
 
-PBoolean PASN_Integer::DecodePER(PPER_Stream & strm)
+bool PASN_Integer::DecodePER(PPER_Stream & strm)
 {
   // X.691 Sections 12
 
@@ -166,7 +166,7 @@ void PASN_Integer::EncodePER(PPER_Stream & strm) const
 
 ///////////////////////////////////////////////////////////////////////
 
-PBoolean PPER_Stream::EnumerationDecode(PASN_Enumeration & value)
+bool PPER_Stream::EnumerationDecode(PASN_Enumeration & value)
 {
   return value.DecodePER(*this);
 }
@@ -178,7 +178,7 @@ void PPER_Stream::EnumerationEncode(const PASN_Enumeration & value)
 }
 
 
-PBoolean PASN_Enumeration::DecodePER(PPER_Stream & strm)
+bool PASN_Enumeration::DecodePER(PPER_Stream & strm)
 {
   // X.691 Section 13
 
@@ -200,7 +200,7 @@ void PASN_Enumeration::EncodePER(PPER_Stream & strm) const
   // X.691 Section 13
 
   if (m_extendable) {  // 13.3
-    PBoolean extended = value > maxEnumValue;
+    bool extended = value > maxEnumValue;
     strm.SingleBitEncode(extended);
     if (extended) {
       strm.SmallUnsignedEncode(1+value);
@@ -214,7 +214,7 @@ void PASN_Enumeration::EncodePER(PPER_Stream & strm) const
 
 ///////////////////////////////////////////////////////////////////////
 
-PBoolean PPER_Stream::RealDecode(PASN_Real &)
+bool PPER_Stream::RealDecode(PASN_Real &)
 {
   // X.691 Section 14
 
@@ -241,7 +241,7 @@ void PPER_Stream::RealEncode(const PASN_Real &)
 
 ///////////////////////////////////////////////////////////////////////
 
-PBoolean PPER_Stream::ObjectIdDecode(PASN_ObjectId & value)
+bool PPER_Stream::ObjectIdDecode(PASN_ObjectId & value)
 {
   // X.691 Section 23
 
@@ -266,7 +266,7 @@ void PPER_Stream::ObjectIdEncode(const PASN_ObjectId & value)
 
 ///////////////////////////////////////////////////////////////////////
 
-PBoolean PASN_BitString::DecodeSequenceExtensionBitmap(PPER_Stream & strm)
+bool PASN_BitString::DecodeSequenceExtensionBitmap(PPER_Stream & strm)
 {
   if (!strm.SmallUnsignedDecode(totalBits))
     return false;
@@ -286,14 +286,14 @@ PBoolean PASN_BitString::DecodeSequenceExtensionBitmap(PPER_Stream & strm)
   while (bitsLeft >= 8) {
     if (!strm.MultiBitDecode(8, theBits))
       return false;
-    bitData[idx++] = (BYTE)theBits;
+    bitData[idx++] = (uint8_t)theBits;
     bitsLeft -= 8;
   }
 
   if (bitsLeft > 0) {
     if (!strm.MultiBitDecode(bitsLeft, theBits))
       return false;
-    bitData[idx] = (BYTE)(theBits << (8-bitsLeft));
+    bitData[idx] = (uint8_t)(theBits << (8-bitsLeft));
   }
 
   return true;
@@ -321,7 +321,7 @@ void PASN_BitString::EncodeSequenceExtensionBitmap(PPER_Stream & strm) const
 }
 
 
-PBoolean PASN_BitString::DecodePER(PPER_Stream & strm)
+bool PASN_BitString::DecodePER(PPER_Stream & strm)
 {
   // X.691 Section 15
 
@@ -347,18 +347,18 @@ PBoolean PASN_BitString::DecodePER(PPER_Stream & strm)
     if (!strm.MultiBitDecode(totalBits, theBits))
       return false;
 
-    bitData[0] = (BYTE)(theBits << (8-totalBits));
+    bitData[0] = (uint8_t)(theBits << (8-totalBits));
   }
   else {  // 15.8
     if (!strm.MultiBitDecode(8, theBits))
       return false;
 
-    bitData[0] = (BYTE)theBits;
+    bitData[0] = (uint8_t)theBits;
 
     if (!strm.MultiBitDecode(totalBits-8, theBits))
       return false;
 
-    bitData[1] = (BYTE)(theBits << (16-totalBits));
+    bitData[1] = (uint8_t)(theBits << (16-totalBits));
   }
 
   return true;
@@ -386,7 +386,7 @@ void PASN_BitString::EncodePER(PPER_Stream & strm) const
 
 ///////////////////////////////////////////////////////////////////////
 
-PBoolean PPER_Stream::BitStringDecode(PASN_BitString & value)
+bool PPER_Stream::BitStringDecode(PASN_BitString & value)
 {
   return value.DecodePER(*this);
 }
@@ -399,7 +399,7 @@ void PPER_Stream::BitStringEncode(const PASN_BitString & value)
 
 ///////////////////////////////////////////////////////////////////////
 
-PBoolean PASN_OctetString::DecodeSubType(PASN_Object & obj) const
+bool PASN_OctetString::DecodeSubType(PASN_Object & obj) const
 {
   PPER_Stream stream = GetValue();
   return obj.Decode(stream);
@@ -414,7 +414,7 @@ void PASN_OctetString::EncodeSubType(const PASN_Object & obj)
   SetValue(stream);
 }
 
-PBoolean PASN_OctetString::DecodePER(PPER_Stream & strm)
+bool PASN_OctetString::DecodePER(PPER_Stream & strm)
 {
   // X.691 Section 16
 
@@ -436,16 +436,16 @@ PBoolean PASN_OctetString::DecodePER(PPER_Stream & strm)
     case 1 :  // 16.6
       if (!strm.MultiBitDecode(8, theBits))
         return false;
-      value[0] = (BYTE)theBits;
+      value[0] = (uint8_t)theBits;
       break;
 
     case 2 :  // 16.6
       if (!strm.MultiBitDecode(8, theBits))
         return false;
-      value[0] = (BYTE)theBits;
+      value[0] = (uint8_t)theBits;
       if (!strm.MultiBitDecode(8, theBits))
         return false;
-      value[1] = (BYTE)theBits;
+      value[1] = (uint8_t)theBits;
       break;
 
     default: // 16.7
@@ -486,7 +486,7 @@ void PASN_OctetString::EncodePER(PPER_Stream & strm) const
   }
 }
 
-PBoolean PPER_Stream::OctetStringDecode(PASN_OctetString & value)
+bool PPER_Stream::OctetStringDecode(PASN_OctetString & value)
 {
   return value.DecodePER(*this);
 }
@@ -499,7 +499,7 @@ void PPER_Stream::OctetStringEncode(const PASN_OctetString & value)
 
 ///////////////////////////////////////////////////////////////////////
 
-PBoolean PASN_ConstrainedString::DecodePER(PPER_Stream & strm)
+bool PASN_ConstrainedString::DecodePER(PPER_Stream & strm)
 {
   // X.691 Section 26
 
@@ -519,7 +519,7 @@ PBoolean PASN_ConstrainedString::DecodePER(PPER_Stream & strm)
   if (constraint == Unconstrained ||
             (lowerLimit == (int)upperLimit ? (totalBits > 16) : (totalBits >= 16))) {
     if (nBits == 8)
-      return strm.BlockDecode((BYTE *)value.GetPointerAndSetLength(len), len) == len;
+      return strm.BlockDecode((uint8_t *)value.GetPointerAndSetLength(len), len) == len;
     if (strm.IsAligned())
       strm.ByteAlign();
   }
@@ -563,7 +563,7 @@ void PASN_ConstrainedString::EncodePER(PPER_Stream & strm) const
             (lowerLimit == (int)upperLimit ? (totalBits > 16) : (totalBits >= 16))) {
     // 26.5.7
     if (nBits == 8) {
-      strm.BlockEncode((const BYTE *)(const char *)value, len);
+      strm.BlockEncode((const uint8_t *)(const char *)value, len);
       return;
     }
     if (strm.IsAligned())
@@ -585,7 +585,7 @@ void PASN_ConstrainedString::EncodePER(PPER_Stream & strm) const
 
 ///////////////////////////////////////////////////////////////////////
 
-PBoolean PPER_Stream::ConstrainedStringDecode(PASN_ConstrainedString & value)
+bool PPER_Stream::ConstrainedStringDecode(PASN_ConstrainedString & value)
 {
   return value.DecodePER(*this);
 }
@@ -598,7 +598,7 @@ void PPER_Stream::ConstrainedStringEncode(const PASN_ConstrainedString & value)
 
 ///////////////////////////////////////////////////////////////////////
 
-PBoolean PASN_BMPString::DecodePER(PPER_Stream & strm)
+bool PASN_BMPString::DecodePER(PPER_Stream & strm)
 {
   // X.691 Section 26
 
@@ -622,7 +622,7 @@ PBoolean PASN_BMPString::DecodePER(PPER_Stream & strm)
     if (!strm.MultiBitDecode(nBits, theBits))
       return false;
     if (characterSet.IsEmpty())
-      value[i] = (WORD)(theBits + firstChar);
+      value[i] = (uint16_t)(theBits + firstChar);
     else
       value[i] = characterSet[(PINDEX)theBits];
   }
@@ -658,7 +658,7 @@ void PASN_BMPString::EncodePER(PPER_Stream & strm) const
 }
 
 
-PBoolean PPER_Stream::BMPStringDecode(PASN_BMPString & value)
+bool PPER_Stream::BMPStringDecode(PASN_BMPString & value)
 {
   return value.DecodePER(*this);
 }
@@ -671,7 +671,7 @@ void PPER_Stream::BMPStringEncode(const PASN_BMPString & value)
 
 ///////////////////////////////////////////////////////////////////////
 
-PBoolean PASN_Choice::DecodePER(PPER_Stream & strm)
+bool PASN_Choice::DecodePER(PPER_Stream & strm)
 {
   // X.691 Section 22
   delete choice;
@@ -691,7 +691,7 @@ PBoolean PASN_Choice::DecodePER(PPER_Stream & strm)
       if (!strm.LengthDecode(0, INT_MAX, len))
         return false;
 
-      PBoolean ok;
+      bool ok;
       if (CreateObject()) {
         PINDEX nextPos = strm.GetPosition() + len;
         ok = choice->Decode(strm);
@@ -728,7 +728,7 @@ void PASN_Choice::EncodePER(PPER_Stream & strm) const
   PAssert(CheckCreate(), PLogicError);
 
   if (m_extendable) {
-    PBoolean extended = m_tag >= numChoices;
+    bool extended = m_tag >= numChoices;
     strm.SingleBitEncode(extended);
     if (extended) {
       strm.SmallUnsignedEncode(m_tag - numChoices);
@@ -744,7 +744,7 @@ void PASN_Choice::EncodePER(PPER_Stream & strm) const
 }
 
 
-PBoolean PPER_Stream::ChoiceDecode(PASN_Choice & value)
+bool PPER_Stream::ChoiceDecode(PASN_Choice & value)
 {
   return value.DecodePER(*this);
 }
@@ -757,7 +757,7 @@ void PPER_Stream::ChoiceEncode(const PASN_Choice & value)
 
 ///////////////////////////////////////////////////////////////////////
 
-PBoolean PASN_Sequence::PreambleDecodePER(PPER_Stream & strm)
+bool PASN_Sequence::PreambleDecodePER(PPER_Stream & strm)
 {
   // X.691 Section 18
 
@@ -780,7 +780,7 @@ void PASN_Sequence::PreambleEncodePER(PPER_Stream & strm) const
   // X.691 Section 18
 
   if (m_extendable) {
-    PBoolean hasExtensions = false;
+    bool hasExtensions = false;
     for (unsigned i = 0; i < extensionMap.GetSize(); i++) {
       if (extensionMap[i]) {
         hasExtensions = true;
@@ -794,7 +794,7 @@ void PASN_Sequence::PreambleEncodePER(PPER_Stream & strm) const
 }
 
 
-PBoolean PASN_Sequence::NoExtensionsToDecode(PPER_Stream & strm)
+bool PASN_Sequence::NoExtensionsToDecode(PPER_Stream & strm)
 {
   if (totalExtensions == 0)
     return true;
@@ -809,7 +809,7 @@ PBoolean PASN_Sequence::NoExtensionsToDecode(PPER_Stream & strm)
 }
 
 
-PBoolean PASN_Sequence::NoExtensionsToEncode(PPER_Stream & strm)
+bool PASN_Sequence::NoExtensionsToEncode(PPER_Stream & strm)
 {
   if (totalExtensions == 0)
     return true;
@@ -823,7 +823,7 @@ PBoolean PASN_Sequence::NoExtensionsToEncode(PPER_Stream & strm)
 }
 
 
-PBoolean PASN_Sequence::KnownExtensionDecodePER(PPER_Stream & strm, PINDEX fld, PASN_Object & field)
+bool PASN_Sequence::KnownExtensionDecodePER(PPER_Stream & strm, PINDEX fld, PASN_Object & field)
 {
   if (NoExtensionsToDecode(strm))
     return true;
@@ -836,7 +836,7 @@ PBoolean PASN_Sequence::KnownExtensionDecodePER(PPER_Stream & strm, PINDEX fld, 
     return false;
 
   PINDEX nextExtensionPosition = strm.GetPosition() + len;
-  PBoolean ok = field.Decode(strm);
+  bool ok = field.Decode(strm);
   strm.SetPosition(nextExtensionPosition);
   return ok;
 }
@@ -854,7 +854,7 @@ void PASN_Sequence::KnownExtensionEncodePER(PPER_Stream & strm, PINDEX fld, cons
 }
 
 
-PBoolean PASN_Sequence::UnknownExtensionsDecodePER(PPER_Stream & strm)
+bool PASN_Sequence::UnknownExtensionsDecodePER(PPER_Stream & strm)
 {
   if (NoExtensionsToDecode(strm))
     return true;
@@ -906,7 +906,7 @@ void PASN_Sequence::UnknownExtensionsEncodePER(PPER_Stream & strm) const
 }
 
 
-PBoolean PPER_Stream::SequencePreambleDecode(PASN_Sequence & seq)
+bool PPER_Stream::SequencePreambleDecode(PASN_Sequence & seq)
 {
   return seq.PreambleDecodePER(*this);
 }
@@ -918,7 +918,7 @@ void PPER_Stream::SequencePreambleEncode(const PASN_Sequence & seq)
 }
 
 
-PBoolean PPER_Stream::SequenceKnownDecode(PASN_Sequence & seq, PINDEX fld, PASN_Object & field)
+bool PPER_Stream::SequenceKnownDecode(PASN_Sequence & seq, PINDEX fld, PASN_Object & field)
 {
   return seq.KnownExtensionDecodePER(*this, fld, field);
 }
@@ -930,7 +930,7 @@ void PPER_Stream::SequenceKnownEncode(const PASN_Sequence & seq, PINDEX fld, con
 }
 
 
-PBoolean PPER_Stream::SequenceUnknownDecode(PASN_Sequence & seq)
+bool PPER_Stream::SequenceUnknownDecode(PASN_Sequence & seq)
 {
   return seq.UnknownExtensionsDecodePER(*this);
 }
@@ -943,7 +943,7 @@ void PPER_Stream::SequenceUnknownEncode(const PASN_Sequence & seq)
 
 ///////////////////////////////////////////////////////////////////////
 
-PBoolean PPER_Stream::ArrayDecode(PASN_Array & array)
+bool PPER_Stream::ArrayDecode(PASN_Array & array)
 {
   array.RemoveAll();
 
@@ -979,14 +979,14 @@ PPER_Stream::PPER_Stream(int alignment)
 }
 
 
-PPER_Stream::PPER_Stream(const PBYTEArray & bytes, PBoolean alignment)
+PPER_Stream::PPER_Stream(const PBYTEArray & bytes, bool alignment)
   : PASN_Stream(bytes)
 {
   aligned = alignment;
 }
 
 
-PPER_Stream::PPER_Stream(const BYTE * buf, PINDEX size, PBoolean alignment)
+PPER_Stream::PPER_Stream(const uint8_t * buf, PINDEX size, bool alignment)
   : PASN_Stream(buf, size)
 {
   aligned = alignment;
@@ -1008,13 +1008,13 @@ unsigned PPER_Stream::GetBitsLeft() const
 }
 
 
-PBoolean PPER_Stream::Read(PChannel & chan)
+bool PPER_Stream::Read(PChannel & chan)
 {
   ResetDecoder();
   SetSize(0);
 
   // Get RFC1006 TPKT length
-  BYTE tpkt[4];
+  uint8_t tpkt[4];
   if (!chan.ReadBlock(tpkt, sizeof(tpkt)))
     return false;
 
@@ -1027,33 +1027,33 @@ PBoolean PPER_Stream::Read(PChannel & chan)
 }
 
 
-PBoolean PPER_Stream::Write(PChannel & chan)
+bool PPER_Stream::Write(PChannel & chan)
 {
   CompleteEncoding();
 
   PINDEX size = GetSize();
 
   // Put RFC1006 TPKT length
-  BYTE tpkt[4];
+  uint8_t tpkt[4];
   tpkt[0] = 3;  // Version 3
   tpkt[1] = 0;
 
   PINDEX len = size + sizeof(tpkt);
-  tpkt[2] = (BYTE)(len >> 8);
-  tpkt[3] = (BYTE)len;
+  tpkt[2] = (uint8_t)(len >> 8);
+  tpkt[3] = (uint8_t)len;
 
   return chan.Write(tpkt, sizeof(tpkt)) && chan.Write(theArray, size);
 }
 
 
-PBoolean PPER_Stream::SingleBitDecode()
+bool PPER_Stream::SingleBitDecode()
 {
   if (!CheckByteOffset(byteOffset) || ((GetSize() - byteOffset)*8 - (8 - bitOffset) == 0))
     return false;
 
   bitOffset--;
 
-  PBoolean value = (theArray[byteOffset] & (1 << bitOffset)) != 0;
+  bool value = (theArray[byteOffset] & (1 << bitOffset)) != 0;
 
   if (bitOffset == 0) {
     bitOffset = 8;
@@ -1064,7 +1064,7 @@ PBoolean PPER_Stream::SingleBitDecode()
 }
 
 
-void PPER_Stream::SingleBitEncode(PBoolean value)
+void PPER_Stream::SingleBitEncode(bool value)
 {
   if (!CheckByteOffset(byteOffset))
     return;
@@ -1082,7 +1082,7 @@ void PPER_Stream::SingleBitEncode(PBoolean value)
 }
 
 
-PBoolean PPER_Stream::MultiBitDecode(unsigned nBits, unsigned & value)
+bool PPER_Stream::MultiBitDecode(unsigned nBits, unsigned & value)
 {
   if (nBits > sizeof(value)*8)
     return false;
@@ -1111,14 +1111,14 @@ PBoolean PPER_Stream::MultiBitDecode(unsigned nBits, unsigned & value)
   byteOffset++;
 
   while (nBits >= 8) {
-    value = (value << 8) | (BYTE)theArray[byteOffset];
+    value = (value << 8) | (uint8_t)theArray[byteOffset];
     byteOffset++;
     nBits -= 8;
   }
 
   if (nBits > 0) {
     bitOffset = 8 - nBits;
-    value = (value << nBits) | ((BYTE)theArray[byteOffset] >> bitOffset);
+    value = (value << nBits) | ((uint8_t)theArray[byteOffset] >> bitOffset);
   }
 
   return true;
@@ -1149,24 +1149,24 @@ void PPER_Stream::MultiBitEncode(unsigned value, unsigned nBits)
   }
 
   nBits -= bitOffset;
-  theArray[byteOffset] |= (BYTE)(value >> nBits);
+  theArray[byteOffset] |= (uint8_t)(value >> nBits);
   bitOffset = 8;
   byteOffset++;
 
   while (nBits >= 8) {
     nBits -= 8;
-    theArray[byteOffset] = (BYTE)(value >> nBits);
+    theArray[byteOffset] = (uint8_t)(value >> nBits);
     byteOffset++;
   }
 
   if (nBits > 0) {
     bitOffset = 8 - nBits;
-    theArray[byteOffset] |= (BYTE)((value & ((1 << nBits)-1)) << bitOffset);
+    theArray[byteOffset] |= (uint8_t)((value & ((1 << nBits)-1)) << bitOffset);
   }
 }
 
 
-PBoolean PPER_Stream::SmallUnsignedDecode(unsigned & value)
+bool PPER_Stream::SmallUnsignedDecode(unsigned & value)
 {
   // X.691 Section 10.6
 
@@ -1204,7 +1204,7 @@ void PPER_Stream::SmallUnsignedEncode(unsigned value)
 }
 
 
-PBoolean PPER_Stream::UnsignedDecode(unsigned lower, unsigned upper, unsigned & value)
+bool PPER_Stream::UnsignedDecode(unsigned lower, unsigned upper, unsigned & value)
 {
   // X.691 section 10.5
 
@@ -1273,7 +1273,7 @@ void PPER_Stream::UnsignedEncode(int value, unsigned lower, unsigned upper)
 }
 
 
-PBoolean PPER_Stream::LengthDecode(unsigned lower, unsigned upper, unsigned & len)
+bool PPER_Stream::LengthDecode(unsigned lower, unsigned upper, unsigned & len)
 {
   // X.691 section 10.9
 
@@ -1363,7 +1363,7 @@ void PPER_Stream::AnyTypeEncode(const PASN_Object * value)
 
   PINDEX nBytes = substream.GetSize();
   if (nBytes == 0) {
-    const BYTE null[1] = { 0 };
+    const uint8_t null[1] = { 0 };
     nBytes = sizeof(null);
     substream = PBYTEArray(null, nBytes, false);
   }

@@ -15,7 +15,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -42,7 +42,7 @@ class DelayThread : public PThread
 public:
   DelayThread(PINDEX _delay);
     
-  DelayThread(PINDEX _delay, PBoolean);
+  DelayThread(PINDEX _delay, bool);
   
   ~DelayThread();
 
@@ -98,7 +98,7 @@ public:
  protected:
   PINDEX iteration;
   PTime startTime;
-  PBoolean  keepGoing;
+  bool  keepGoing;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -114,11 +114,11 @@ class Threadex : public PProcess
 
     PINDEX Delay()    { return delay; }
 
-    PBoolean AutoDelete() { return doAutoDelete; }
+    bool AutoDelete() { return doAutoDelete; }
 
-    PBoolean BusyWait()   { return doBusyWait; }
+    bool BusyWait()   { return doBusyWait; }
 
-    PBoolean Create()     { return doCreate; }
+    bool Create()     { return doCreate; }
 
     PINDEX GapIteration() { return gapIteration; }
 
@@ -131,11 +131,11 @@ class Threadex : public PProcess
 
     PINDEX delay;
 
-    PBoolean doAutoDelete;
+    bool doAutoDelete;
 
-    PBoolean doBusyWait;
+    bool doBusyWait;
 
-    PBoolean doCreate;
+    bool doCreate;
 };
 
 

@@ -3,7 +3,7 @@
  *
  * Extensible Messaging and Presence Protocol (XMPP) Core
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 2004 Reitek S.p.A.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Post Increment
  *
@@ -82,7 +82,7 @@ namespace XMPP
     virtual void SetServer(const PString& server);
     virtual void SetResource(const PString& resource);
 
-    virtual PBoolean IsBare() const       { return m_Resource.IsEmpty(); }
+    virtual bool IsBare() const       { return m_Resource.IsEmpty(); }
     virtual void PrintOn(ostream & strm) const;
 
   protected:
@@ -94,7 +94,7 @@ namespace XMPP
     PString   m_Resource;
 
     mutable PString m_JID;
-    mutable PBoolean    m_IsDirty;
+    mutable bool    m_IsDirty;
   };
 
   // A bare jid is a jid with no resource
@@ -119,7 +119,7 @@ namespace XMPP
     virtual PObject * Clone() const { return new BareJID(m_JID); }
     virtual PString GetResource() const { return PString::Empty(); }
     virtual void SetResource(const PString&) { }
-    virtual PBoolean IsBare() const { return true; }
+    virtual bool IsBare() const { return true; }
   };
 
   /** This interface is the base class of each XMPP transport class
@@ -132,8 +132,8 @@ namespace XMPP
     PCLASSINFO(Transport, PIndirectChannel);
 
   public:
-    virtual PBoolean Open() = 0;
-    virtual PBoolean Close() = 0;
+    virtual bool Open() = 0;
+    virtual bool Close() = 0;
   };
 
 
@@ -151,14 +151,14 @@ namespace XMPP
     virtual bool        OnOpen()            { m_OpenHandlers(*this, 0); return true; }
     PNotifierList&      OpenHandlers()      { return m_OpenHandlers; }
 
-    virtual PBoolean        Close();
+    virtual bool        Close();
     virtual void        OnClose()           { m_CloseHandlers(*this, 0); }
     PNotifierList&      CloseHandlers()     { return m_CloseHandlers; }
 
-    virtual PBoolean        Write(const void * buf, PINDEX len);
-    virtual PBoolean        Write(const PString& data);
-//    virtual PBoolean        Write(const PXMLElement & pdu);
-    virtual PBoolean        Write(const PXML & pdu);
+    virtual bool        Write(const void * buf, PINDEX len);
+    virtual bool        Write(const PString& data);
+//    virtual bool        Write(const PXMLElement & pdu);
+    virtual bool        Write(const PXML & pdu);
 
     /** Read a XMPP stanza from the stream
     */
@@ -186,18 +186,18 @@ namespace XMPP
     BaseStreamHandler();
     ~BaseStreamHandler();
 
-    virtual PBoolean Start(Transport * transport = 0);
-    virtual PBoolean Stop(const PString& error = PString::Empty());
+    virtual bool Start(Transport * transport = 0);
+    virtual bool Stop(const PString& error = PString::Empty());
 
-    void SetAutoReconnect(PBoolean b = true, long timeout = 1000);
+    void SetAutoReconnect(bool b = true, long timeout = 1000);
 
     void AddNotifier(const PNotifierTemplate<PXMLElement&> & notifier) { m_ElementHandlers.Add(notifier); }
 
     Stream * GetStream() const { return m_Stream; }
 
-    virtual PBoolean        Write(const void * buf, PINDEX len);
-    virtual PBoolean        Write(const PString& data);
-    virtual PBoolean        Write(const PXML & pdu);
+    virtual bool        Write(const void * buf, PINDEX len);
+    virtual bool        Write(const PString& data);
+    virtual bool        Write(const PXML & pdu);
     virtual void        OnElement(PXMLElement& pdu);
 
     virtual void        Main();
@@ -229,7 +229,7 @@ namespace XMPP
     static const PCaselessString & FromTag();
     static const PCaselessString & ToTag();
 
-    virtual PBoolean IsValid() const = 0;
+    virtual bool IsValid() const = 0;
 
     virtual PString GetID() const;
     virtual PString GetFrom() const;
@@ -278,7 +278,7 @@ namespace XMPP
     */
     Message(PXMLElement & pdu);
 
-    virtual PBoolean IsValid() const;
+    virtual bool IsValid() const;
 
     virtual MessageType GetType(PString * typeName = 0) const;
     virtual PString     GetLanguage() const;
@@ -347,11 +347,11 @@ namespace XMPP
     */
     Presence(PXMLElement & pdu);
 
-    virtual PBoolean IsValid() const;
+    virtual bool IsValid() const;
 
     virtual PresenceType GetType(PString * typeName = 0) const;
     virtual ShowType     GetShow(PString * showName = 0) const;
-    virtual BYTE         GetPriority() const;
+    virtual uint8_t         GetPriority() const;
 
     /** Get the status for the specified language. The default status (if any)
     is returned in case no language is specified or a matching one cannot be
@@ -364,7 +364,7 @@ namespace XMPP
     virtual void SetType(const PString& type); // custom, possibly non standard, type
     virtual void SetShow(ShowType show);
     virtual void SetShow(const PString& show); // custom, possibly non standard, type
-    virtual void SetPriority(BYTE priority);
+    virtual void SetPriority(uint8_t priority);
 
     virtual void SetStatus(const PString& status, const PString& lang = PString::Empty());
   };
@@ -391,7 +391,7 @@ namespace XMPP
     IQ(PXMLElement & pdu);
     ~IQ();
 
-    virtual PBoolean IsValid() const;
+    virtual bool IsValid() const;
 
     /** This method signals that the message was taken care of
     If the stream handler, after firing all the notifiers finds
@@ -399,7 +399,7 @@ namespace XMPP
     an error to the sender
     */
     void SetProcessed()             { m_Processed = true; }
-    PBoolean HasBeenProcessed() const   { return m_Processed; }
+    bool HasBeenProcessed() const   { return m_Processed; }
 
     virtual IQType        GetType(PString * typeName = 0) const;
     virtual PXMLElement * GetBody();

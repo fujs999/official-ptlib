@@ -3,7 +3,7 @@
  *
  * Global object support.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -162,7 +162,7 @@ static PDebugLocation const s_ExceptionLocation("try/catch");
 static void InternalAssertFunc(const PDebugLocation & location, const char * msg)
 {
 #if defined(_WIN32)
-  DWORD errorCode = GetLastError();
+  uint32_t errorCode = GetLastError();
 #else
   int errorCode = errno;
 #endif
@@ -615,7 +615,7 @@ void * PMemoryHeap::InternalAllocate(size_t nSize, const char * file, int line, 
 
   obj->m_size      = nSize;
   obj->m_fileName  = file;
-  obj->m_line      = (WORD)line;
+  obj->m_line      = (uint16_t)line;
   obj->m_threadId  = PThread::GetCurrentThreadId();
   obj->m_className = className;
   obj->m_flags     = m_flags;
@@ -687,7 +687,7 @@ void * PMemoryHeap::InternalReallocate(void * ptr, size_t nSize, const char * fi
 
   obj->m_size     = nSize;
   obj->m_fileName = file;
-  obj->m_line     = (WORD)line;
+  obj->m_line     = (uint16_t)line;
 
   char * data = (char *)&obj[1];
 
@@ -825,7 +825,7 @@ PMemoryHeap::Validation PMemoryHeap::InternalValidate(const void * ptr,
 }
 
 
-PBoolean PMemoryHeap::ValidateHeap(ostream * error)
+bool PMemoryHeap::ValidateHeap(ostream * error)
 {
   return GetInstance().InternalValidateHeap(error);
 }
@@ -877,11 +877,11 @@ bool PMemoryHeap::InternalValidateHeap(ostream * error)
 }
 
 
-PBoolean PMemoryHeap::SetIgnoreAllocations(PBoolean ignore)
+bool PMemoryHeap::SetIgnoreAllocations(bool ignore)
 {
   PMemoryHeap & mem = GetInstance();
 
-  PBoolean ignoreAllocations = (mem.m_flags&NoLeakPrint) != 0;
+  bool ignoreAllocations = (mem.m_flags&NoLeakPrint) != 0;
 
   if (ignore)
     mem.m_flags |= NoLeakPrint;
@@ -984,7 +984,7 @@ void PMemoryHeap::DumpObjectsSince(const State & state, ostream & strm)
 }
 
 
-void PMemoryHeap::InternalDumpObjectsSince(DWORD objectNumber, ostream & strm)
+void PMemoryHeap::InternalDumpObjectsSince(uint32_t objectNumber, ostream & strm)
 {
   Lock();
 
@@ -1002,7 +1002,7 @@ void PMemoryHeap::InternalDumpObjectsSince(DWORD objectNumber, ostream & strm)
       first = false;
     }
 
-    BYTE * data = (BYTE *)&obj[1];
+    uint8_t * data = (uint8_t *)&obj[1];
 
     if (obj->m_fileName != NULL)
       strm << obj->m_fileName << '(' << obj->m_line << ") : ";
@@ -1111,14 +1111,14 @@ PMemoryHeap::Validation PMemoryHeap::Validate(const void * ptr, const char * cla
 }
 
 
-PBoolean PMemoryHeap::ValidateHeap(ostream * /*strm*/)
+bool PMemoryHeap::ValidateHeap(ostream * /*strm*/)
 {
   CreateInstance();
   return _CrtCheckMemory();
 }
 
 
-PBoolean PMemoryHeap::SetIgnoreAllocations(PBoolean ignoreAlloc)
+bool PMemoryHeap::SetIgnoreAllocations(bool ignoreAlloc)
 {
   CreateInstance();
   int flags = _CrtSetDbgFlag(_CRTDBG_REPORT_FLAG);
@@ -1207,10 +1207,10 @@ void PInt64__::Sub(const PInt64__ & v)
 
 void PInt64__::Mul(const PInt64__ & v)
 {
-  DWORD p1 = (low&0xffff)*(v.low&0xffff);
-  DWORD p2 = (low >> 16)*(v.low >> 16);
-  DWORD p3 = (high&0xffff)*(v.high&0xffff);
-  DWORD p4 = (high >> 16)*(v.high >> 16);
+  uint32_t p1 = (low&0xffff)*(v.low&0xffff);
+  uint32_t p2 = (low >> 16)*(v.low >> 16);
+  uint32_t p3 = (high&0xffff)*(v.high&0xffff);
+  uint32_t p4 = (high >> 16)*(v.high >> 16);
   low = p1 + (p2 << 16);
   high = (p2 >> 16) + p3 + (p4 << 16);
 }
@@ -1267,7 +1267,7 @@ void PInt64__::ShiftRight(int bits)
 }
 
 
-PBoolean PInt64::Lt(const PInt64 & v) const
+bool int64_t::Lt(const int64_t & v) const
 {
   if ((long)high < (long)v.high)
     return true;
@@ -1279,7 +1279,7 @@ PBoolean PInt64::Lt(const PInt64 & v) const
 }
 
 
-PBoolean PInt64::Gt(const PInt64 & v) const
+bool int64_t::Gt(const int64_t & v) const
 {
   if ((long)high > (long)v.high)
     return true;
@@ -1291,7 +1291,7 @@ PBoolean PInt64::Gt(const PInt64 & v) const
 }
 
 
-PBoolean PUInt64::Lt(const PUInt64 & v) const
+bool uint64_t::Lt(const uint64_t & v) const
 {
   if (high < v.high)
     return true;
@@ -1301,7 +1301,7 @@ PBoolean PUInt64::Lt(const PUInt64 & v) const
 }
 
 
-PBoolean PUInt64::Gt(const PUInt64 & v) const
+bool uint64_t::Gt(const uint64_t & v) const
 {
   if (high > v.high)
     return true;
@@ -1311,7 +1311,7 @@ PBoolean PUInt64::Gt(const PUInt64 & v) const
 }
 
 
-static void Out64(ostream & stream, PUInt64 num)
+static void Out64(ostream & stream, uint64_t num)
 {
   char buf[25];
   char * p = &buf[sizeof(buf)];
@@ -1348,7 +1348,7 @@ static void Out64(ostream & stream, PUInt64 num)
 }
 
 
-ostream & operator<<(ostream & stream, const PInt64 & v)
+ostream & operator<<(ostream & stream, const int64_t & v)
 {
   if (v >= 0)
     Out64(stream, v);
@@ -1364,14 +1364,14 @@ ostream & operator<<(ostream & stream, const PInt64 & v)
 }
 
 
-ostream & operator<<(ostream & stream, const PUInt64 & v)
+ostream & operator<<(ostream & stream, const uint64_t & v)
 {
   Out64(stream, v);
   return stream;
 }
 
 
-static PUInt64 Inp64(istream & stream)
+static uint64_t Inp64(istream & stream)
 {
   int base;
   switch (stream.flags()&ios::basefield) {
@@ -1388,7 +1388,7 @@ static PUInt64 Inp64(istream & stream)
   if (isspace(stream.peek()))
     stream.get();
 
-  PInt64 num = 0;
+  int64_t num = 0;
   while (isxdigit(stream.peek())) {
     int c = stream.get() - '0';
     if (c > 9)
@@ -1402,7 +1402,7 @@ static PUInt64 Inp64(istream & stream)
 }
 
 
-istream & operator>>(istream & stream, PInt64 & v)
+istream & operator>>(istream & stream, int64_t & v)
 {
   if (isspace(stream.peek()))
     stream.get();
@@ -1410,19 +1410,19 @@ istream & operator>>(istream & stream, PInt64 & v)
   switch (stream.peek()) {
     case '-' :
       stream.ignore();
-      v = -(PInt64)Inp64(stream);
+      v = -(int64_t)Inp64(stream);
       break;
     case '+' :
       stream.ignore();
     default :
-      v = (PInt64)Inp64(stream);
+      v = (int64_t)Inp64(stream);
   }
 
   return stream;
 }
 
 
-istream & operator>>(istream & stream, PUInt64 & v)
+istream & operator>>(istream & stream, uint64_t & v)
 {
   v = Inp64(stream);
   return stream;
@@ -1437,24 +1437,24 @@ istream & operator>>(istream & stream, PUInt64 & v)
 // the library provided with Tornado 2.0 does not contain implementation 
 // for the functions defined below, therefor the own implementation
 
-ostream & ostream::operator<<(PInt64 v)
+ostream & ostream::operator<<(int64_t v)
 {
   return *this << (long)(v >> 32) << (long)(v & 0xFFFFFFFF);
 }
 
 
-ostream & ostream::operator<<(PUInt64 v)
+ostream & ostream::operator<<(uint64_t v)
 {
   return *this << (long)(v >> 32) << (long)(v & 0xFFFFFFFF);
 }
 
-istream & istream::operator>>(PInt64 & v)
+istream & istream::operator>>(int64_t & v)
 {
   return *this >> (long)(v >> 32) >> (long)(v & 0xFFFFFFFF);
 }
 
 
-istream & istream::operator>>(PUInt64 & v)
+istream & istream::operator>>(uint64_t & v)
 {
   return *this >> (long)(v >> 32) >> (long)(v & 0xFFFFFFFF);
 }

@@ -3,7 +3,7 @@
  *
  * Classes to support streaming video input (grabbing) and output.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-2000 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library (V4L plugin).
+ * The Original Code is Portable Tools Library (V4L plugin).
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *

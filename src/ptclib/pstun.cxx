@@ -3,7 +3,7 @@
  *
  * STUN Client
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 2003 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -295,7 +295,7 @@ int PSTUN::MakeAuthenticatedRequest(PSTUNUDPSocket * socket, PSTUNMessage & requ
   PSTUNErrorCode * errorAttribute;
 
   std::set<std::string> triedServers;
-  WORD unauthenticatedLength = ((PSTUNMessageHeader *)request.GetPointer())->msgLength;
+  uint16_t unauthenticatedLength = ((PSTUNMessageHeader *)request.GetPointer())->msgLength;
 
   for (;;) {
     // reset message length
@@ -457,27 +457,27 @@ PSTUNMessage::PSTUNMessage()
 }
 
 
-PSTUNMessage::PSTUNMessage(MsgType newType, const BYTE * id)
+PSTUNMessage::PSTUNMessage(MsgType newType, const uint8_t * id)
   : PBYTEArray(sizeof(PSTUNMessageHeader))
 {
   SetType(newType, id);
 }
 
 
-PSTUNMessage::PSTUNMessage(const BYTE * data, PINDEX size, const PIPSocketAddressAndPort & srcAddr)
+PSTUNMessage::PSTUNMessage(const uint8_t * data, PINDEX size, const PIPSocketAddressAndPort & srcAddr)
   : PBYTEArray(data, size)
   , m_sourceAddressAndPort(srcAddr)
 {
 }
 
 
-void PSTUNMessage::SetType(MsgType newType, const BYTE * id)
+void PSTUNMessage::SetType(MsgType newType, const uint8_t * id)
 {
   if (!SetMinSize(sizeof(PSTUNMessageHeader)))
     return;
 
   PSTUNMessageHeader * hdr = (PSTUNMessageHeader *)theArray;
-  hdr->msgType = (WORD)newType;
+  hdr->msgType = (uint16_t)newType;
 
   if (id != NULL)
     memcpy(hdr->transactionId, id, sizeof(hdr->transactionId));
@@ -490,7 +490,7 @@ void PSTUNMessage::SetType(MsgType newType, const BYTE * id)
 }
 
 
-void PSTUNMessage::SetErrorType(int code, const BYTE * id, const char * reason)
+void PSTUNMessage::SetErrorType(int code, const uint8_t * id, const char * reason)
 {
   SetType(BindingError, id);
   AddAttribute(PSTUNErrorCode(code, reason));
@@ -511,7 +511,7 @@ bool PSTUNMessage::IsRFC5389() const
   if (GetSize() < (PINDEX)sizeof(PSTUNMessageHeader))
     return false;
 
-  const BYTE * ptr = (*this)->transactionId;
+  const uint8_t * ptr = (*this)->transactionId;
 
   return *((const PUInt32b *)ptr) == RFC5389_MAGIC_COOKIE;
 }
@@ -547,7 +547,7 @@ PSTUNAttribute * PSTUNMessage::GetFirstAttribute() const
     return NULL;
 
   while (ptr && 
-         ((BYTE*)ptr < (BYTE*)(theArray+GetSize())) && 
+         ((uint8_t*)ptr < (uint8_t*)(theArray+GetSize())) && 
          (length >= CalcPaddedAttributeLength(ptr->length))) {
     length -= CalcPaddedAttributeLength(ptr->length);
     ptr = ptr->GetNext();
@@ -561,7 +561,7 @@ PSTUNAttribute * PSTUNMessage::GetFirstAttribute() const
 
 PSTUNAttribute * PSTUNAttribute::GetNext() const
 { 
-  return (PSTUNAttribute *)(((const BYTE *)this)+CalcPaddedAttributeLength(length)); 
+  return (PSTUNAttribute *)(((const uint8_t *)this)+CalcPaddedAttributeLength(length)); 
 }
 
 
@@ -589,7 +589,7 @@ bool PSTUNMessage::IsValid() const
     return false;
 
   // do checks for RFC5389: magic cookie and top two bits of type must be 00
-  const BYTE * ptr = header->transactionId;
+  const uint8_t * ptr = header->transactionId;
   if (*(PUInt32b *)ptr == RFC5389_MAGIC_COOKIE && ((header->msgType & 0x00c0) != 0x00)) {
     PTRACE(3, "Packet received with magic cookie, but type bits are incorrect.");
     return false;
@@ -622,7 +622,7 @@ PSTUNAttribute * PSTUNMessage::AddAttribute(const PSTUNAttribute & attribute)
 
   int oldLength = ((PSTUNMessageHeader *)theArray)->msgLength;
   int newLength = oldLength + paddedLength;
-  ((PSTUNMessageHeader *)theArray)->msgLength = (WORD)newLength;
+  ((PSTUNMessageHeader *)theArray)->msgLength = (uint16_t)newLength;
 
   // theArray pointer may be invalidated by next statement
   SetMinSize(sizeof(PSTUNMessageHeader) + newLength);
@@ -743,7 +743,7 @@ bool PSTUNMessage::Poll(PUDPSocket & socket, const PSTUNMessage & request, PINDE
 
 
 #if P_SSL
-void PSTUNMessage::AddMessageIntegrity(const BYTE * credentialsHashPtr, PINDEX credentialsHashLen, PSTUNMessageIntegrity * mi)
+void PSTUNMessage::AddMessageIntegrity(const uint8_t * credentialsHashPtr, PINDEX credentialsHashLen, PSTUNMessageIntegrity * mi)
 {
   if (credentialsHashPtr == NULL || credentialsHashLen == 0)
     return;
@@ -755,7 +755,7 @@ void PSTUNMessage::AddMessageIntegrity(const BYTE * credentialsHashPtr, PINDEX c
 }
 
 
-unsigned PSTUNMessage::CheckMessageIntegrity(const BYTE * credentialsHashPtr, PINDEX credentialsHashLen) const
+unsigned PSTUNMessage::CheckMessageIntegrity(const uint8_t * credentialsHashPtr, PINDEX credentialsHashLen) const
 {
   if (credentialsHashPtr == NULL || credentialsHashLen == 0)
     return 0;
@@ -765,27 +765,27 @@ unsigned PSTUNMessage::CheckMessageIntegrity(const BYTE * credentialsHashPtr, PI
   if (mi == NULL)
     return 401;
 
-  BYTE hmac[sizeof(mi->m_hmac)];
+  uint8_t hmac[sizeof(mi->m_hmac)];
   CalculateMessageIntegrity(credentialsHashPtr, credentialsHashLen, mi, hmac, sizeof(hmac));
   return memcmp(hmac, mi->m_hmac, sizeof(hmac)) == 0 ? 0 : 431;
 }
 
 
-void PSTUNMessage::CalculateMessageIntegrity(const BYTE * credentialsHashPtr, PINDEX credentialsHashLen,
-                                             PSTUNMessageIntegrity * mi, BYTE * hmacPtr, PINDEX hmacSize) const
+void PSTUNMessage::CalculateMessageIntegrity(const uint8_t * credentialsHashPtr, PINDEX credentialsHashLen,
+                                             PSTUNMessageIntegrity * mi, uint8_t * hmacPtr, PINDEX hmacSize) const
 {
   // calculate hash up to, but not including, MESSAGE_INTEGRITY attribute itself
   // Note the value used for msgLength is prior to things like FINGERPRINT, so need to
   // change it back temporarily.
-  WORD checkLength = (WORD)((char *)mi - theArray);
+  uint16_t checkLength = (uint16_t)((char *)mi - theArray);
   PSTUNMessageHeader * hdr = (PSTUNMessageHeader *)theArray;
-  WORD oldLength = hdr->msgLength;
+  uint16_t oldLength = hdr->msgLength;
   hdr->msgLength = checkLength - sizeof(PSTUNMessageHeader) + sizeof(PSTUNMessageIntegrity);
 
   PHMAC_SHA1 hmac;
   hmac.SetKey(credentialsHashPtr, credentialsHashLen);
   PHMAC_SHA1::Result result;
-  hmac.Process((BYTE *)theArray, checkLength, result);
+  hmac.Process((uint8_t *)theArray, checkLength, result);
 
   hdr->msgLength = oldLength;
 
@@ -811,13 +811,13 @@ bool PSTUNMessage::CheckFingerprint(bool required) const
 }
 
 
-DWORD PSTUNMessage::CalculateFingerprint(PSTUNFingerprint * fp) const
+uint32_t PSTUNMessage::CalculateFingerprint(PSTUNFingerprint * fp) const
 {
-  static DWORD Crc32Table[256];
+  static uint32_t Crc32Table[256];
 
   if (!Crc32Table_initialised.exchange(true)) {
     for (PINDEX i = 0; i < PARRAYSIZE(Crc32Table); ++i) {
-      DWORD c = i;
+      uint32_t c = i;
       for (PINDEX j = 0; j < 8; ++j) {
         if (c & 1)
           c = 0xEDB88320 ^ (c >> 1);
@@ -829,9 +829,9 @@ DWORD PSTUNMessage::CalculateFingerprint(PSTUNFingerprint * fp) const
   }
 
   // calculate hash up to, but not including, FINGERPRINT attribute
-  DWORD c = 0xFFFFFFFF;
-  const BYTE * ptr = (BYTE *)theArray;
-  while (ptr < (BYTE *)fp)
+  uint32_t c = 0xFFFFFFFF;
+  const uint8_t * ptr = (uint8_t *)theArray;
+  while (ptr < (uint8_t *)fp)
     c = Crc32Table[(c ^ *ptr++) & 0xFF] ^ (c >> 8);
 
   return c ^ 0xffffffff ^ 0x5354554e;
@@ -948,20 +948,20 @@ void PSTUNErrorCode::Initialise()
   m_hundreds  = 0;
   m_units     = 0;
   m_reason[0] = '\0';
-  length      = (WORD)(4 + strlen(m_reason) + 1);
+  length      = (uint16_t)(4 + strlen(m_reason) + 1);
 }
 
 
 void PSTUNErrorCode::SetErrorCode(int code, const PString & reason)
 { 
-  m_hundreds = (BYTE)((code / 100) & 7);
-  m_units    = (BYTE) (code % 100);
+  m_hundreds = (uint8_t)((code / 100) & 7);
+  m_units    = (uint8_t) (code % 100);
   int len = reason.GetLength();
   if (len > (int)sizeof(m_reason)-1)
     len = sizeof(m_reason)-1;
   memcpy(m_reason, (const char *)reason, len);
   m_reason[len] = '\0';
-  length      = (WORD)(4 + len + 1);
+  length      = (uint16_t)(4 + len + 1);
 }
 
 
@@ -989,7 +989,7 @@ static bool TypeIsXOR(int type)
   }
 }
 
-WORD PSTUNAddressAttribute::GetPort() const
+uint16_t PSTUNAddressAttribute::GetPort() const
 { 
   if (TypeIsXOR(type))
     return port ^ (RFC5389_MAGIC_COOKIE >> 16);
@@ -1001,10 +1001,10 @@ PIPSocket::Address PSTUNAddressAttribute::GetIP() const
 { 
   if (TypeIsXOR(type))
     return PIPSocket::Address(
-      (BYTE)(ip[0] ^ (RFC5389_MAGIC_COOKIE >> 24)),
-      (BYTE)(ip[1] ^ (RFC5389_MAGIC_COOKIE >> 16)),
-      (BYTE)(ip[2] ^ (RFC5389_MAGIC_COOKIE >> 8)),
-      (BYTE)(ip[3] ^ RFC5389_MAGIC_COOKIE)
+      (uint8_t)(ip[0] ^ (RFC5389_MAGIC_COOKIE >> 24)),
+      (uint8_t)(ip[1] ^ (RFC5389_MAGIC_COOKIE >> 16)),
+      (uint8_t)(ip[2] ^ (RFC5389_MAGIC_COOKIE >> 8)),
+      (uint8_t)(ip[3] ^ RFC5389_MAGIC_COOKIE)
     );
   else
     return PIPSocket::Address(4, ip); 
@@ -1024,10 +1024,10 @@ void PSTUNAddressAttribute::SetIPAndPort(const PIPSocketAddressAndPort & addrAnd
   if (TypeIsXOR(type)) {
     port   = addrAndPort.GetPort() ^ (RFC5389_MAGIC_COOKIE >> 16);
     PIPSocket::Address addr = addrAndPort.GetAddress();
-    ip[0] = (BYTE)(addr.Byte1() ^ (RFC5389_MAGIC_COOKIE >> 24));
-    ip[1] = (BYTE)(addr.Byte2() ^ (RFC5389_MAGIC_COOKIE >> 16));
-    ip[2] = (BYTE)(addr.Byte3() ^ (RFC5389_MAGIC_COOKIE >> 8));
-    ip[3] = (BYTE)(addr.Byte4() ^ RFC5389_MAGIC_COOKIE);
+    ip[0] = (uint8_t)(addr.Byte1() ^ (RFC5389_MAGIC_COOKIE >> 24));
+    ip[1] = (uint8_t)(addr.Byte2() ^ (RFC5389_MAGIC_COOKIE >> 16));
+    ip[2] = (uint8_t)(addr.Byte3() ^ (RFC5389_MAGIC_COOKIE >> 8));
+    ip[3] = (uint8_t)(addr.Byte4() ^ RFC5389_MAGIC_COOKIE);
   }
   else {
     port   = addrAndPort.GetPort();
@@ -1411,7 +1411,7 @@ void PSTUNClient::InternalUpdate(bool externalAddressOnly)
 }
 
 
-bool PSTUNClient::CreateSocket(PUDPSocket * & udpSocket, const PIPSocket::Address & binding, WORD port, PObject * context, Component component)
+bool PSTUNClient::CreateSocket(PUDPSocket * & udpSocket, const PIPSocket::Address & binding, uint16_t port, PObject * context, Component component)
 {
   PWaitAndSignal m(m_mutex);
 
@@ -1523,7 +1523,7 @@ bool PSTUNClient::CreateSocketPair(PUDPSocket * & socket1,
   // Look for an even/odd pair.
   for (PINDEX evenIndex = 0; evenIndex < m_numSocketsForPairing; ++evenIndex) {
     PSTUNSocketPairInfo & even = socketInfo[evenIndex];
-    WORD evenPort = even.m_socket->m_serverReflexiveAddress.GetPort();
+    uint16_t evenPort = even.m_socket->m_serverReflexiveAddress.GetPort();
     if (even.m_ready && (evenPort & 1) == 0) {
       for (PINDEX oddIndex = 0; oddIndex < m_numSocketsForPairing; ++oddIndex) {
         PSTUNSocketPairInfo & odd = socketInfo[oddIndex];
@@ -1554,7 +1554,7 @@ bool PSTUNClient::CreateSocketPair(PUDPSocket * & socket1,
    
 #if P_TURN
 
-void PTURNRequestedTransport::Initialise(BYTE protocol)
+void PTURNRequestedTransport::Initialise(uint8_t protocol)
 {
   m_protocol = protocol;
   type       = REQUESTED_TRANSPORT;
@@ -1608,7 +1608,7 @@ PTURNUDPSocket::PTURNUDPSocket(PNatMethod::Component component)
   m_txVect.resize(3);
   m_txVect[0].SetBase(&m_txHeader);
   m_txVect[0].SetLength(sizeof(m_txHeader));
-  m_txHeader.m_channelNumber = (WORD)m_channelNumber;
+  m_txHeader.m_channelNumber = (uint16_t)m_channelNumber;
 
   // first slice for TURN header
   m_rxVect.resize(3);
@@ -1749,7 +1749,7 @@ bool PTURNUDPSocket::InternalSetSendAddress(const PIPSocketAddressAndPort & ipAn
     PSTUNMessage permissionRequest(PSTUNMessage::ChannelBind);
     {
       PSTUNChannelNumber attr;
-      attr.m_channelNumber = (WORD)m_channelNumber;
+      attr.m_channelNumber = (uint16_t)m_channelNumber;
       permissionRequest.AddAttribute(attr);
       m_txHeader.m_channelNumber = attr.m_channelNumber;
 
@@ -1802,7 +1802,7 @@ bool PTURNUDPSocket::InternalWriteTo(const Slice * slices, size_t sliceCount, co
     len += slices[i].GetLength();
   }
 
-  m_txHeader.m_length = (WORD)len;
+  m_txHeader.m_length = (uint16_t)len;
 
   if ((len & 3) != 0) {
     // extra slice for padding
@@ -1866,7 +1866,7 @@ PSTUNClient::RTPSupportTypes PTURNClient::GetRTPSupport(bool force)
 }
 
 struct AllocateSocketFunctor {
-  AllocateSocketFunctor(PTURNClient & client, BYTE component, const PIPSocket::Address & iface, PIPSocket::PortRange & portRange)
+  AllocateSocketFunctor(PTURNClient & client, uint8_t component, const PIPSocket::Address & iface, PIPSocket::PortRange & portRange)
     : m_client(client)
     , m_component(component)
     , m_interface(iface)
@@ -1878,7 +1878,7 @@ struct AllocateSocketFunctor {
   void operator()(PThread & thread);
     
   PTURNClient & m_client;
-  BYTE m_component;
+  uint8_t m_component;
   PIPSocket::Address m_interface;
   PTURNUDPSocket * m_turnSocket;
   PIPSocket::PortRange & m_portRange;
@@ -1935,7 +1935,7 @@ void AllocateSocketFunctor::operator () (PThread &)
 
 typedef PThreadFunctor<AllocateSocketFunctor> AllocateSocketThread;
 
-bool PTURNClient::CreateSocket(PUDPSocket * & socket, const PIPSocket::Address & binding, WORD port, PObject * context, Component component)
+bool PTURNClient::CreateSocket(PUDPSocket * & socket, const PIPSocket::Address & binding, uint16_t port, PObject * context, Component component)
 {
   if (component != PNatMethod::eComponent_RTP && component != PNatMethod::eComponent_RTCP)
     return PSTUNClient::CreateSocket(socket, binding, port, context, component);
@@ -1952,7 +1952,7 @@ bool PTURNClient::CreateSocket(PUDPSocket * & socket, const PIPSocket::Address &
   else
     portRange = &m_singlePortRange;
 
-  AllocateSocketFunctor op(*this, (BYTE)component, m_interface, *portRange);
+  AllocateSocketFunctor op(*this, (uint8_t)component, m_interface, *portRange);
 
   op.operator()(*PThread::Current());
 
@@ -2015,7 +2015,7 @@ bool PTURNClient::CreateSocketPair(PUDPSocket * & socket1,
 }
 
 
-bool PTURNClient::RefreshAllocation(DWORD lifetime)
+bool PTURNClient::RefreshAllocation(uint32_t lifetime)
 {
   PSTUNMessage request(PSTUNMessage::Refresh);
   if (lifetime > 0)

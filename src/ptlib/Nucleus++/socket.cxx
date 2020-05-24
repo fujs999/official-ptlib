@@ -3,7 +3,7 @@
  *
  * Berkley sockets classes implementation
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -80,7 +80,7 @@ int PSocket::os_socket(int af, int type, int protocol)
     // make the socket non-blocking and close on exec
 #ifndef P_BEOS
 #ifndef P_PTHREADS
-    DWORD cmd = 1;
+    uint32_t cmd = 1;
 #endif
 #else
     int cmd = -1;
@@ -104,7 +104,7 @@ int PSocket::os_socket(int af, int type, int protocol)
   return handle;
 }
 
-PBoolean PSocket::os_connect(struct sockaddr * addr, PINDEX size)
+bool PSocket::os_connect(struct sockaddr * addr, PINDEX size)
 {
   int val = ::connect(os_handle, addr, size);
   if (val == 0 || errno != EINPROGRESS)
@@ -126,7 +126,7 @@ PBoolean PSocket::os_connect(struct sockaddr * addr, PINDEX size)
 }
 
 
-PBoolean PSocket::os_accept(int sock, struct sockaddr * addr, PINDEX * size,
+bool PSocket::os_accept(int sock, struct sockaddr * addr, PINDEX * size,
                        const PTimeInterval & timeout)
 {
   if (!listener.PXSetIOBlock(PXAcceptBlock, listener.GetReadTimeout()))
@@ -198,54 +198,54 @@ int PSocket::os_select(int maxHandle,
 #endif
 
 
-PIPSocket::Address::Address(DWORD dw)
+PIPSocket::Address::Address(uint32_t dw)
 {
   s_addr = dw;
 }
 
 
-PIPSocket::Address & PIPSocket::Address::operator=(DWORD dw)
+PIPSocket::Address & PIPSocket::Address::operator=(uint32_t dw)
 {
   s_addr = dw;
   return *this;
 }
 
 
-PIPSocket::Address::operator DWORD() const
+PIPSocket::Address::operator uint32_t() const
 {
-  return (DWORD)s_addr;
+  return (uint32_t)s_addr;
 }
 
-BYTE PIPSocket::Address::Byte1() const
+uint8_t PIPSocket::Address::Byte1() const
 {
-  return *(((BYTE *)&s_addr)+0);
+  return *(((uint8_t *)&s_addr)+0);
 }
 
-BYTE PIPSocket::Address::Byte2() const
+uint8_t PIPSocket::Address::Byte2() const
 {
-  return *(((BYTE *)&s_addr)+1);
+  return *(((uint8_t *)&s_addr)+1);
 }
 
-BYTE PIPSocket::Address::Byte3() const
+uint8_t PIPSocket::Address::Byte3() const
 {
-  return *(((BYTE *)&s_addr)+2);
+  return *(((uint8_t *)&s_addr)+2);
 }
 
-BYTE PIPSocket::Address::Byte4() const
+uint8_t PIPSocket::Address::Byte4() const
 {
-  return *(((BYTE *)&s_addr)+3);
+  return *(((uint8_t *)&s_addr)+3);
 }
 
-PIPSocket::Address::Address(BYTE b1, BYTE b2, BYTE b3, BYTE b4)
+PIPSocket::Address::Address(uint8_t b1, uint8_t b2, uint8_t b3, uint8_t b4)
 {
-  BYTE * p = (BYTE *)&s_addr;
+  uint8_t * p = (uint8_t *)&s_addr;
   p[0] = b1;
   p[1] = b2;
   p[2] = b3;
   p[3] = b4;
 }
 
-PBoolean PIPSocket::IsLocalHost(const PString & hostname)
+bool PIPSocket::IsLocalHost(const PString & hostname)
 {
   if (hostname.IsEmpty())
     return true;
@@ -257,7 +257,7 @@ PBoolean PIPSocket::IsLocalHost(const PString & hostname)
   Address addr = hostname;
   if (addr == 16777343)  // Is 127.0.0.1
     return true;
-  if (addr == (DWORD)-1)
+  if (addr == (uint32_t)-1)
     return false;
 
   if (!GetHostAddress(hostname, addr))
@@ -310,7 +310,7 @@ PBoolean PIPSocket::IsLocalHost(const PString & hostname)
 //
 //  PTCPSocket
 //
-PBoolean PTCPSocket::Read(void * buf, PINDEX maxLen)
+bool PTCPSocket::Read(void * buf, PINDEX maxLen)
 
 {
   lastReadCount = 0;
@@ -408,7 +408,7 @@ int PSocket::os_sendto(
 }
 
 
-PBoolean PSocket::Read(void * buf, PINDEX len)
+bool PSocket::Read(void * buf, PINDEX len)
 {
   if (os_handle < 0) {
     lastError = NotOpen;
@@ -448,7 +448,7 @@ PEthSocket::~PEthSocket()
 }
 
 
-PBoolean PEthSocket::Connect(const PString & interfaceName)
+bool PEthSocket::Connect(const PString & interfaceName)
 {
   Close();
 
@@ -493,7 +493,7 @@ PBoolean PEthSocket::Connect(const PString & interfaceName)
 }
 
 
-PBoolean PEthSocket::OpenSocket()
+bool PEthSocket::OpenSocket()
 {
 #ifdef SOCK_PACKET
   if (!ConvertOSError(os_handle = os_socket(AF_INET, SOCK_PACKET, htons(filterType))))
@@ -514,14 +514,14 @@ PBoolean PEthSocket::OpenSocket()
 }
 
 
-PBoolean PEthSocket::Close()
+bool PEthSocket::Close()
 {
   SetFilter(FilterDirected, filterType);  // Turn off promiscuous mode
   return PSocket::Close();
 }
 
 
-PBoolean PEthSocket::EnumInterfaces(PINDEX idx, PString & name)
+bool PEthSocket::EnumInterfaces(PINDEX idx, PString & name)
 {
 #ifndef P_BEOS
   PUDPSocket ifsock;
@@ -553,7 +553,7 @@ PBoolean PEthSocket::EnumInterfaces(PINDEX idx, PString & name)
 }
 
 
-PBoolean PEthSocket::GetAddress(Address & addr)
+bool PEthSocket::GetAddress(Address & addr)
 {
   if (!IsOpen())
     return false;
@@ -563,7 +563,7 @@ PBoolean PEthSocket::GetAddress(Address & addr)
 }
 
 
-PBoolean PEthSocket::EnumIpAddress(PINDEX idx,
+bool PEthSocket::EnumIpAddress(PINDEX idx,
                                PIPSocket::Address & addr,
                                PIPSocket::Address & net_mask)
 {
@@ -600,7 +600,7 @@ PBoolean PEthSocket::EnumIpAddress(PINDEX idx,
 }
 
 
-PBoolean PEthSocket::GetFilter(unsigned & mask, WORD & type)
+bool PEthSocket::GetFilter(unsigned & mask, uint16_t & type)
 {
   if (!IsOpen())
     return false;
@@ -626,7 +626,7 @@ PBoolean PEthSocket::GetFilter(unsigned & mask, WORD & type)
 }
 
 
-PBoolean PEthSocket::SetFilter(unsigned filter, WORD type)
+bool PEthSocket::SetFilter(unsigned filter, uint16_t type)
 {
   if (!IsOpen())
     return false;
@@ -668,18 +668,18 @@ PEthSocket::MediumTypes PEthSocket::GetMedium()
 }
 
 
-PBoolean PEthSocket::ResetAdaptor()
+bool PEthSocket::ResetAdaptor()
 {
   // No implementation
   return true;
 }
 
 
-PBoolean PEthSocket::Read(void * buf, PINDEX len)
+bool PEthSocket::Read(void * buf, PINDEX len)
 {
-  static const BYTE macHeader[] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0, 0, 0, 0, 0, 0, 8, 0 };
+  static const uint8_t macHeader[] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0, 0, 0, 0, 0, 0, 8, 0 };
 
-  BYTE * bufptr = (BYTE *)buf;
+  uint8_t * bufptr = (uint8_t *)buf;
 
   if (fakeMacHeader) {
     if (len <= sizeof(macHeader)) {
@@ -737,7 +737,7 @@ PBoolean PEthSocket::Read(void * buf, PINDEX len)
 }
 
 
-PBoolean PEthSocket::Write(const void * buf, PINDEX len)
+bool PEthSocket::Write(const void * buf, PINDEX len)
 {
   sockaddr to;
   strcpy(to.sa_data, channelName);
@@ -747,7 +747,7 @@ PBoolean PEthSocket::Write(const void * buf, PINDEX len)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-PBoolean PIPSocket::GetGatewayAddress(Address & addr)
+bool PIPSocket::GetGatewayAddress(Address & addr)
 {
   RouteTable table;
   if (GetRouteTable(table)) {
@@ -776,7 +776,7 @@ PString PIPSocket::GetGatewayInterface()
 }
 
 
-PBoolean PIPSocket::GetRouteTable(RouteTable & table)
+bool PIPSocket::GetRouteTable(RouteTable & table)
 {
 #if defined(P_LINUX)
 

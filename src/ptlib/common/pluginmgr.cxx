@@ -20,7 +20,7 @@
  * level 2 = list plugin that are not compatible (old version, not a PWLIB plugin etc).
  * level 4 = list directories.
  * level 5 = list plugin before checking suffix .
- *  * Portable Windows Library
+ *  * Portable Tools Library
  *
  * Contributor(s): Snark at GnomeMeeting
  */
@@ -185,7 +185,7 @@ void PPluginManager::LoadDirectory(const PDirectory & directory)
 }
 
 
-PBoolean PPluginManager::LoadPlugin(const PString & fileName)
+bool PPluginManager::LoadPlugin(const PString & fileName)
 {
   PDynaLink *dll = new PDynaLink(fileName);
   if (!dll->IsLoaded()) {
@@ -369,7 +369,7 @@ PStringArray PPluginManager::GetPluginDeviceNames(const PString & serviceName,
 }
 
 
-PBoolean PPluginManager::GetPluginsDeviceCapabilities(const PString & serviceType,
+bool PPluginManager::GetPluginsDeviceCapabilities(const PString & serviceType,
                                                       const PString & serviceName,
                                                       const PString & deviceName,
                                                       void * capabilities) const
@@ -435,7 +435,7 @@ void PPluginManager::OnShutdown()
 }
 
 
-void PPluginManager::AddNotifier(const PNotifier & notifyFunction, PBoolean existing)
+void PPluginManager::AddNotifier(const PNotifier & notifyFunction, bool existing)
 {
   m_notifiersMutex.Wait();
   m_notifiers.Append(new PNotifier(notifyFunction));

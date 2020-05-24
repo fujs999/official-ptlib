@@ -3,7 +3,7 @@
  *
  * Video file declaration
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (C) 2004 Post Increment
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is
  * Craig Southeren <craigs@postincrement.com>
@@ -52,24 +52,24 @@ class PVideoFile : public PFile
 
   public:
     virtual off_t GetLength() const;
-    virtual PBoolean SetLength(
+    virtual bool SetLength(
       off_t len   // New length of file in frames.
     );
 
     virtual off_t GetPosition() const;
-    virtual PBoolean SetPosition(
+    virtual bool SetPosition(
       off_t pos,                                       ///< New position to set.
       PFile::FilePositionOrigin origin = PFile::Start  ///< Origin for position change.
     );
 
-    virtual PBoolean WriteFrame(const void * frame);
-    virtual PBoolean ReadFrame(void * frame);
+    virtual bool WriteFrame(const void * frame);
+    virtual bool ReadFrame(void * frame);
 
-    virtual PBoolean SetFrameSize(
+    virtual bool SetFrameSize(
       unsigned width,   ///< New width of frame
       unsigned height   ///< New height of frame
     );
-    virtual PBoolean SetFrameRate(
+    virtual bool SetFrameRate(
       unsigned rate  ///< Frames  per second
     );
 
@@ -108,8 +108,8 @@ class PYUVFile : public PVideoFile
   public:
     PYUVFile();
 
-    virtual PBoolean WriteFrame(const void * frame);
-    virtual PBoolean ReadFrame(void * frame);
+    virtual bool WriteFrame(const void * frame);
+    virtual bool ReadFrame(void * frame);
 
   protected:
     virtual bool InternalOpen(OpenMode mode, OpenOptions opts, PFileInfo::Permissions permissions);

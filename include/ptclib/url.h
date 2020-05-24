@@ -3,7 +3,7 @@
  *
  * Universal Resource Locator (for HTTP/HTML) class.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-2002 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -119,12 +119,12 @@ class PURL : public PObject
   /**@name New functions for class. */
   //@{
     /**Parse the URL string into the fields in the object instance. */
-    inline PBoolean Parse(
+    inline bool Parse(
       const char * cstr,   ///< URL as a string to parse.
       const char * defaultScheme = NULL ///< Default scheme for URL
     ) { return InternalParse(cstr, defaultScheme); }
     /**Parse the URL string into the fields in the object instance. */
-    inline PBoolean Parse(
+    inline bool Parse(
       const PString & str, ///< URL as a string to parse.
       const char * defaultScheme = NULL ///< Default scheme for URL
     ) { return InternalParse((const char *)str, defaultScheme); }
@@ -250,19 +250,19 @@ class PURL : public PObject
     void SetHostName(const PString & hostname);
 
     /// Get the port field of the URL.
-    WORD GetPort() const { return m_port; }
+    uint16_t GetPort() const { return m_port; }
 
     /// Set the port field in the URL. Zero resets to default.
-    void SetPort(WORD newPort);
+    void SetPort(uint16_t newPort);
     
     /// Get if explicit port is specified.
-    PBoolean GetPortSupplied() const { return m_portSupplied; }
+    bool GetPortSupplied() const { return m_portSupplied; }
 
     /// Get the hostname and optional port fields of the URL.
     PString GetHostPort() const;
 
     /// Get if path is relative or absolute
-    PBoolean GetRelativePath() const { return m_relativePath; }
+    bool GetRelativePath() const { return m_relativePath; }
 
     /// Get the path field of the URL as a string.
     PString GetPathStr() const;
@@ -339,7 +339,7 @@ class PURL : public PObject
     void SetContents(const PString & str);
 
     /// Return true if the URL is an empty string.
-    PBoolean IsEmpty() const { return m_urlString.IsEmpty(); }
+    bool IsEmpty() const { return m_urlString.IsEmpty(); }
 
 
     struct LoadParams {
@@ -401,7 +401,7 @@ class PURL : public PObject
 
   protected:
     void CopyContents(const PURL & other);
-    virtual PBoolean InternalParse(
+    virtual bool InternalParse(
       const char * cstr,         ///< URL as a string to parse.
       const char * defaultScheme ///< Default scheme for URL
     );
@@ -414,7 +414,7 @@ class PURL : public PObject
     PString         m_username;
     PString         m_password;
     PCaselessString m_hostname;
-    WORD            m_port;
+    uint16_t            m_port;
     bool            m_portSupplied;          /// port was supplied in string input
     bool            m_relativePath;
     PStringArray    m_path;
@@ -434,7 +434,7 @@ class PURLScheme : public PObject
   public:
     virtual bool Parse(const char * cstr, PURL & url) const = 0;
     virtual PString AsString(PURL::UrlFormat fmt, const PURL & purl) const = 0;
-    virtual WORD GetDefaultPort() const { return 0; }
+    virtual uint16_t GetDefaultPort() const { return 0; }
 };
 
 typedef PFactory<PURLScheme> PURLSchemeFactory;
@@ -457,7 +457,7 @@ class PURLLegacyScheme : public PURLScheme
       bool frags   = false,
       bool path    = false,
       bool rel     = false,
-      WORD port    = 0
+      uint16_t port    = 0
     )
       : hasUsername           (user)
       , hasPassword           (pass)
@@ -482,7 +482,7 @@ class PURLLegacyScheme : public PURLScheme
       return url.LegacyAsString(fmt, this);
     }
 
-    virtual WORD GetDefaultPort() const { return defaultPort; }
+    virtual uint16_t GetDefaultPort() const { return defaultPort; }
 
     bool hasUsername;
     bool hasPassword;
@@ -494,7 +494,7 @@ class PURLLegacyScheme : public PURLScheme
     bool hasFragments;
     bool hasPath;
     bool relativeImpliesScheme;
-    WORD defaultPort;
+    uint16_t defaultPort;
 };
 
 /** Define a scheme based on basic legacy syntax.

@@ -55,7 +55,7 @@ class AsyncTest : public PProcess
     class MyContext : public PChannel::AsyncContext
     {
     public:
-      MyContext(int index, const PChannel::AsyncNotifier & notifer, WORD port)
+      MyContext(int index, const PChannel::AsyncNotifier & notifer, uint16_t port)
         : PChannel::AsyncContext(m_storage, sizeof(m_storage), notifer)
         , m_index(index)
         , m_port(port)
@@ -63,8 +63,8 @@ class AsyncTest : public PProcess
       }
 
       int  m_index;
-      BYTE m_storage[1000];
-      WORD m_port;
+      uint8_t m_storage[1000];
+      uint16_t m_port;
     };
 
     vector<MyContext> m_readContexts;
@@ -142,7 +142,7 @@ void AsyncTest::Main()
   unsigned concurrent;
 
   m_binding = args.GetOptionString('i', "127.0.0.1");
-  WORD port = (WORD)args.GetOptionString('p', "0").AsUnsigned();
+  uint16_t port = (uint16_t)args.GetOptionString('p', "0").AsUnsigned();
 
   if (receiverMode != DisabledMode) {
     for (concurrent = 0; concurrent < m_concurrent; ++concurrent) {
@@ -229,9 +229,9 @@ void AsyncTest::SenderMain(int index)
 
   PTRACE(4, "Async\tStarted sender thread " << index << ", socket=" << socket.GetLocalAddress());
 
-  BYTE buffer[1000];
+  uint8_t buffer[1000];
   PIPSocket::Address ip;
-  WORD port = m_readSockets[index].GetPort();
+  uint16_t port = m_readSockets[index].GetPort();
 
   for (unsigned i = 0; i < m_numTests; ++i) {
     if (!socket.WriteTo(buffer, sizeof(buffer), m_binding, port)) {
@@ -260,9 +260,9 @@ void AsyncTest::Receiver(PThread &, P_INT_PTR index)
 
   PUDPSocket & socket = m_readSockets[index];
 
-  BYTE buffer[1000];
+  uint8_t buffer[1000];
   PIPSocket::Address ip;
-  WORD port;
+  uint16_t port;
 
   for (;;) {
     if (!socket.ReadFrom(buffer, sizeof(buffer), ip, port)) {

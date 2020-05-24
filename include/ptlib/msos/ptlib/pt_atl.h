@@ -3,7 +3,7 @@
  *
  * File needed to fake some Win32 ATL stuff.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-2001 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -118,7 +118,7 @@ template <class T> class CComPtr
     __checkReturn HRESULT CoCreateInstance(
       __in     REFCLSID  rclsid,
       __in_opt LPUNKNOWN pUnkOuter    = NULL,
-      __in     DWORD     dwClsContext = CLSCTX_ALL,
+      __in     uint32_t     dwClsContext = CLSCTX_ALL,
       __in     REFIID    riid         = __uuidof(T))
     {
       return ::CoCreateInstance(rclsid, pUnkOuter, dwClsContext, riid, (void**)&m_pointer);

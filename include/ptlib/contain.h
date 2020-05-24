@@ -3,7 +3,7 @@
  *
  * Umbrella include for Container Classes.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -161,7 +161,7 @@ class PContainer : public PObject
        true if the size was successfully changed. The value false usually
        indicates failure due to insufficient memory.
      */
-    virtual PBoolean SetSize(
+    virtual bool SetSize(
       PINDEX newSize  ///< New size for the container.
     ) = 0;
 
@@ -170,7 +170,7 @@ class PContainer : public PObject
        specified. The <code>SetSize()</code> function is always called, either with the
        new value or the previous size, whichever is the larger.
      */
-    PBoolean SetMinSize(
+    bool SetMinSize(
       PINDEX minSize  ///< Possible, new size for the container.
     );
 
@@ -180,7 +180,7 @@ class PContainer : public PObject
 
        @return true if <code>GetSize()</code> returns zero.
      */
-    virtual PBoolean IsEmpty() const;
+    virtual bool IsEmpty() const;
     __inline bool empty() const { return IsEmpty(); }
 
     /**Determine if container is unique reference.
@@ -189,7 +189,7 @@ class PContainer : public PObject
 
        @return true if the reference count is one.
      */
-    PBoolean IsUnique() const;
+    bool IsUnique() const;
 
     /**Make this instance to be the one and only reference to the container
        contents. This implicitly does a clone of the contents of the container
@@ -199,7 +199,7 @@ class PContainer : public PObject
        @return
        true if the instance was already unique.
      */
-    virtual PBoolean MakeUnique();
+    virtual bool MakeUnique();
   //@}
 
   protected:
@@ -325,7 +325,7 @@ class PContainer : public PObject
           Destruct();
         }
 
-        PBoolean MakeUnique()
+        bool MakeUnique()
         {
           if (par::MakeUnique())
             return true;
@@ -344,7 +344,7 @@ class PContainer : public PObject
     cls & operator=(const cls & c) \
       { AssignContents(c); return *this; } \
     virtual ~cls() { Destruct(); } \
-    virtual PBoolean MakeUnique() \
+    virtual bool MakeUnique() \
       { if(par::MakeUnique())return true; CloneContents(this);return false; } \
   protected: \
     cls(int dummy, const cls * c) : par(dummy, c) { CloneContents(c); } \
@@ -484,7 +484,7 @@ class PCollection : public PContainer
 
        @return true if the object was in the collection.
      */
-    virtual PBoolean Remove(
+    virtual bool Remove(
       const PObject * obj   ///< Existing object to remove from the collection.
     ) = 0;
     __inline void remove(const PObject * obj) { Remove(obj); }
@@ -523,7 +523,7 @@ class PCollection : public PContainer
 
        @return true if the object was successfully added.
      */
-    virtual PBoolean SetAt(
+    virtual bool SetAt(
       PINDEX index,   ///< Index position in collection to set.
       PObject * val   ///< New value to place into the collection.
     ) = 0;
@@ -573,7 +573,7 @@ class PCollection : public PContainer
        call to SetAt().
      */
     PINLINE void AllowDeleteObjects(
-      PBoolean yes = true   ///< New value for flag for deleting objects
+      bool yes = true   ///< New value for flag for deleting objects
     );
 
     /**Disallow the deletion of the objects contained in the collection. See

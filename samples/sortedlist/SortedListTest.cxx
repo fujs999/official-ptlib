@@ -42,9 +42,9 @@ void SortedListTest::Main()
   {
     PString str("fred");
     PCharArray chars("fred", 4);
-    PBYTEArray bytes((const BYTE *)"fred", 4);
+    PBYTEArray bytes((const uint8_t *)"fred", 4);
     PShortArray shorts((const short *)L"fred", 4);
-    PWORDArray words((const WORD *)L"fred", 4);
+    PWORDArray words((const uint16_t *)L"fred", 4);
     PArray<Fred> a_fred; a_fred.Append(new Fred('f')); a_fred.Append(new Fred('r')); a_fred.Append(new Fred('e')); a_fred.Append(new Fred('d'));
     PStringArray a_strings; a_strings.AppendString('f'); a_strings.AppendString('r'); a_strings.AppendString('e'); a_strings.AppendString('d');
     PList<Fred> l_fred; l_fred.Append(new Fred('f')); l_fred.Append(new Fred('r')); l_fred.Append(new Fred('e')); l_fred.Append(new Fred('d'));

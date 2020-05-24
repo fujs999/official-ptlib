@@ -3,7 +3,7 @@
  *
  * TELNET Socket class.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-2002 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -66,7 +66,7 @@ class PTelnetSocket : public PTCPSocket
        true indicates that at least one character was read from the channel.
        false means no bytes were read due to timeout or some other I/O error.
      */
-    PBoolean Read(
+    bool Read(
       void * buf,   ///< Pointer to a block of memory to receive the read bytes.
       PINDEX len    ///< Maximum number of bytes to read into the buffer.
     );
@@ -84,7 +84,7 @@ class PTelnetSocket : public PTCPSocket
 
        Returns true if at least len bytes were written to the channel.
      */
-    PBoolean Write(
+    bool Write(
       const void * buf, ///< Pointer to a block of memory to write.
       PINDEX len        ///< Number of bytes to write.
     );
@@ -112,7 +112,7 @@ class PTelnetSocket : public PTCPSocket
        @return
        true if the channel was successfully connected to the remote host.
      */
-    virtual PBoolean Connect(
+    virtual bool Connect(
       const PString & address   ///< Address of remote machine to connect to.
     );
 
@@ -131,7 +131,7 @@ class PTelnetSocket : public PTCPSocket
        @return
        true if the channel was successfully opened.
      */
-    virtual PBoolean Accept(
+    virtual bool Accept(
       PSocket & socket          ///< Listening socket making the connection.
     );
 
@@ -193,7 +193,7 @@ class PTelnetSocket : public PTCPSocket
        @return
        true if the command was successfully sent.
      */
-    PBoolean SendCommand(
+    bool SendCommand(
       Command cmd,  ///< Command code to send
       int opt = 0  ///< Option for command code.
     );
@@ -251,8 +251,8 @@ class PTelnetSocket : public PTCPSocket
        @return
        true if the command was successfully sent.
      */
-    virtual PBoolean SendDo(
-      BYTE option    ///< Option to DO
+    virtual bool SendDo(
+      uint8_t option    ///< Option to DO
     );
 
     /** Send DONT command.
@@ -260,8 +260,8 @@ class PTelnetSocket : public PTCPSocket
        @return
        true if the command was successfully sent.
      */
-    virtual PBoolean SendDont(
-      BYTE option    ///< Option to DONT
+    virtual bool SendDont(
+      uint8_t option    ///< Option to DONT
     );
 
     /** Send WILL request.
@@ -269,8 +269,8 @@ class PTelnetSocket : public PTCPSocket
        @return
        true if the command was successfully sent.
      */
-    virtual PBoolean SendWill(
-      BYTE option    ///< Option to WILL
+    virtual bool SendWill(
+      uint8_t option    ///< Option to WILL
     );
 
     /** Send WONT command.
@@ -278,8 +278,8 @@ class PTelnetSocket : public PTCPSocket
        @return
        true if the command was successfully sent.
      */
-    virtual PBoolean SendWont(
-      BYTE option    ///< Option to WONT
+    virtual bool SendWont(
+      uint8_t option    ///< Option to WONT
     );
 
     enum SubOptionCodes {
@@ -293,9 +293,9 @@ class PTelnetSocket : public PTCPSocket
        @return
        true if the command was successfully sent.
      */
-    PBoolean SendSubOption(
-      BYTE code,          ///< Suboptions option code.
-      const BYTE * info,  ///< Information to send.
+    bool SendSubOption(
+      uint8_t code,          ///< Suboptions option code.
+      const uint8_t * info,  ///< Information to send.
       PINDEX len,         ///< Length of information.
       int subCode = -1    ///< Suboptions sub-code, -1 indicates no sub-code.
     );
@@ -304,16 +304,16 @@ class PTelnetSocket : public PTCPSocket
        it only means that in response to a DO we WILL rather than WONT.
      */
     void SetOurOption(
-      BYTE code,          ///< Option to check.
-      PBoolean state = true   ///< New state for for option.
+      uint8_t code,          ///< Option to check.
+      bool state = true   ///< New state for for option.
     ) { m_option[code].weCan = state; }
 
     /** Set if the option on their side is desired, this does not mean it is set
        it only means that in response to a WILL we DO rather than DONT.
      */
     void SetTheirOption(
-      BYTE code,          ///< Option to check.
-      PBoolean state = true  ///< New state for for option.
+      uint8_t code,          ///< Option to check.
+      bool state = true  ///< New state for for option.
     ) { m_option[code].theyShould = state; }
 
     /** Determine if the option on our side is enabled.
@@ -321,8 +321,8 @@ class PTelnetSocket : public PTCPSocket
        @return
        true if option is enabled.
      */
-    PBoolean IsOurOption(
-      BYTE code    ///< Option to check.
+    bool IsOurOption(
+      uint8_t code    ///< Option to check.
     ) const { return m_option[code].ourState == OptionInfo::IsYes; }
 
     /** Determine if the option on their side is enabled.
@@ -330,8 +330,8 @@ class PTelnetSocket : public PTCPSocket
        @return
        true if option is enabled.
      */
-    PBoolean IsTheirOption(
-      BYTE code    ///< Option to check.
+    bool IsTheirOption(
+      uint8_t code    ///< Option to check.
     ) const { return m_option[code].theirState == OptionInfo::IsYes; }
 
     void SetTerminalType(
@@ -343,14 +343,14 @@ class PTelnetSocket : public PTCPSocket
     // Get the terminal type description string for TELNET protocol.
 
     void SetWindowSize(
-      WORD width,   ///< New window width.
-      WORD height   ///< New window height.
+      uint16_t width,   ///< New window width.
+      uint16_t height   ///< New window height.
     );
     // Set the width and height of the Network Virtual Terminal window.
 
     void GetWindowSize(
-      WORD & width,   ///< Old window width.
-      WORD & height   ///< Old window height.
+      uint16_t & width,   ///< Old window width.
+      uint16_t & height   ///< Old window height.
     ) const;
     // Get the width and height of the Network Virtual Terminal window.
 
@@ -369,7 +369,7 @@ class PTelnetSocket : public PTCPSocket
        true if option is accepted.
      */
     virtual void OnDo(
-      BYTE option   ///< Option to DO
+      uint8_t option   ///< Option to DO
     );
 
     /** This callback function is called by the system when it receives a DONT
@@ -379,7 +379,7 @@ class PTelnetSocket : public PTCPSocket
        standard TELNET class. All others are ignored.
      */
     virtual void OnDont(
-      BYTE option   ///< Option to DONT
+      uint8_t option   ///< Option to DONT
     );
 
     /** This callback function is called by the system when it receives a WILL
@@ -389,7 +389,7 @@ class PTelnetSocket : public PTCPSocket
        the standard TELNET class and a DONT for all others.
      */
     virtual void OnWill(
-      BYTE option   ///< Option to WILL
+      uint8_t option   ///< Option to WILL
     );
 
     /** This callback function is called by the system when it receives a WONT
@@ -399,15 +399,15 @@ class PTelnetSocket : public PTCPSocket
        standard TELNET class. All others are ignored.
      */
     virtual void OnWont(
-      BYTE option   ///< Option to WONT
+      uint8_t option   ///< Option to WONT
     );
 
     /** This callback function is called by the system when it receives a
        sub-option command from the remote system.
      */
     virtual void OnSubOption(
-      BYTE code,          ///< Option code for sub-option data.
-      const BYTE * info,  ///< Extra information being sent in the sub-option.
+      uint8_t code,          ///< Option code for sub-option data.
+      const uint8_t * info,  ///< Extra information being sent in the sub-option.
       PINDEX len          ///< Number of extra bytes.
     );
 
@@ -421,8 +421,8 @@ class PTelnetSocket : public PTCPSocket
        @return
        true if next byte is not part of the command.
      */
-    virtual PBoolean OnCommand(
-      BYTE code  ///< Code received that could not be precessed.
+    virtual bool OnCommand(
+      uint8_t code  ///< Code received that could not be precessed.
     );
 
 
@@ -443,7 +443,7 @@ class PTelnetSocket : public PTCPSocket
     PString m_terminalType;
     // Type of terminal connected to telnet socket, defaults to "UNKNOWN"
 
-    WORD m_windowWidth, m_windowHeight;
+    uint16_t m_windowWidth, m_windowHeight;
     // Size of the "window" used by the NVT.
 
 

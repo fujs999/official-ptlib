@@ -3,7 +3,7 @@
  *
  * Sound driver implementation.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -39,7 +39,7 @@ PSound::PSound(unsigned channels,
                unsigned samplesPerSecond,
                unsigned bitsPerSample,
                PINDEX   bufferSize,
-               const BYTE * buffer)
+               const uint8_t * buffer)
 {
   encoding = 0;
   numChannels = channels;
@@ -80,13 +80,13 @@ void PSound::SetFormat(unsigned channels,
 }
 
 
-PBoolean PSound::Load(const PFilePath & /*filename*/)
+bool PSound::Load(const PFilePath & /*filename*/)
 {
   return false;
 }
 
 
-PBoolean PSound::Save(const PFilePath & /*filename*/)
+bool PSound::Save(const PFilePath & /*filename*/)
 {
   return false;
 }
@@ -139,7 +139,7 @@ PString PSoundChannel::GetDefaultDevice(Directions /*dir*/)
 }
 
 
-PBoolean PSoundChannel::Open(const PString & device,
+bool PSoundChannel::Open(const PString & device,
                          Directions dir,
                          unsigned numChannels,
                          unsigned sampleRate,
@@ -163,13 +163,13 @@ PBoolean PSoundChannel::Open(const PString & device,
 }
 
 
-PBoolean PSoundChannel::Close()
+bool PSoundChannel::Close()
 {
   return PChannel::Close();
 }
 
 
-PBoolean PSoundChannel::SetFormat(unsigned numChannels,
+bool PSoundChannel::SetFormat(unsigned numChannels,
                               unsigned sampleRate,
                               unsigned bitsPerSample){
   PAssert(numChannels >= 1 && numChannels <= 2, PInvalidParameter);
@@ -210,7 +210,7 @@ PBoolean PSoundChannel::SetFormat(unsigned numChannels,
 }
 
 
-PBoolean PSoundChannel::SetBuffers(PINDEX size, PINDEX count)
+bool PSoundChannel::SetBuffers(PINDEX size, PINDEX count)
 {
   PAssert(size > 0 && count > 0 && count < 65536, PInvalidParameter);
 
@@ -231,13 +231,13 @@ PBoolean PSoundChannel::SetBuffers(PINDEX size, PINDEX count)
 }
 
 
-PBoolean PSoundChannel::GetBuffers(PINDEX & size, PINDEX & count)
+bool PSoundChannel::GetBuffers(PINDEX & size, PINDEX & count)
 {
   return true;
 }
 
 
-PBoolean PSoundChannel::Write(const void * buf, PINDEX len)
+bool PSoundChannel::Write(const void * buf, PINDEX len)
 {
   return PChannel::Write(buf, len);
 
@@ -251,11 +251,11 @@ PBoolean PSoundChannel::Write(const void * buf, PINDEX len)
 }
 
 
-PBoolean PSoundChannel::PlaySound(const PSound & sound, PBoolean wait)
+bool PSoundChannel::PlaySound(const PSound & sound, bool wait)
 {
   Abort();
 
-  if (!Write((const BYTE *)sound, sound.GetSize()))
+  if (!Write((const uint8_t *)sound, sound.GetSize()))
     return false;
 
   if (wait)
@@ -265,53 +265,53 @@ PBoolean PSoundChannel::PlaySound(const PSound & sound, PBoolean wait)
 }
 
 
-PBoolean PSoundChannel::PlayFile(const PFilePath & filename, PBoolean wait)
+bool PSoundChannel::PlayFile(const PFilePath & filename, bool wait)
 {
 }
 
 
-PBoolean PSoundChannel::HasPlayCompleted()
+bool PSoundChannel::HasPlayCompleted()
 {
 }
 
 
-PBoolean PSoundChannel::WaitForPlayCompletion()
+bool PSoundChannel::WaitForPlayCompletion()
 {
 }
 
 
-PBoolean PSoundChannel::Read(void * buffer, PINDEX length)
+bool PSoundChannel::Read(void * buffer, PINDEX length)
 {
   return PChannel::Read(buffer, length);
 }
 
 
-PBoolean PSoundChannel::RecordSound(PSound & sound)
+bool PSoundChannel::RecordSound(PSound & sound)
 {
 }
 
 
-PBoolean PSoundChannel::RecordFile(const PFilePath & filename)
+bool PSoundChannel::RecordFile(const PFilePath & filename)
 {
 }
 
 
-PBoolean PSoundChannel::StartRecording()
+bool PSoundChannel::StartRecording()
 {
 }
 
 
-PBoolean PSoundChannel::IsRecordBufferFull()
+bool PSoundChannel::IsRecordBufferFull()
 {
 }
 
 
-PBoolean PSoundChannel::AreAllRecordBuffersFull()
+bool PSoundChannel::AreAllRecordBuffersFull()
 {
 }
 
 
-PBoolean PSoundChannel::WaitForRecordBufferFull()
+bool PSoundChannel::WaitForRecordBufferFull()
 {
   if (os_handle < 0)
     return SetErrorValues(NotOpen, EBADF);
@@ -320,23 +320,23 @@ PBoolean PSoundChannel::WaitForRecordBufferFull()
 }
 
 
-PBoolean PSoundChannel::WaitForAllRecordBuffersFull()
+bool PSoundChannel::WaitForAllRecordBuffersFull()
 {
   return false;
 }
 
 
-PBoolean PSoundChannel::Abort()
+bool PSoundChannel::Abort()
 {
 }
 
-PBoolean PSoundChannel::SetVolume(unsigned newVolume)
+bool PSoundChannel::SetVolume(unsigned newVolume)
 {
   cerr << __FILE__ << "PSoundChannel :: SetVolume called in error. Please fix"<<endl;
   return false;
 }
 
-PBoolean  PSoundChannel::GetVolume(unsigned & volume)
+bool  PSoundChannel::GetVolume(unsigned & volume)
 {
   cerr << __FILE__ << "PSoundChannel :: GetVolume called in error. Please fix"<<endl;
   return false;

@@ -3,7 +3,7 @@
  *
  * Miscelaneous class implementation
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -231,7 +231,7 @@ PString PProcess::GetUserName() const
 }
 
 
-PBoolean PProcess::SetUserName(const PString & username, PBoolean permanent)
+bool PProcess::SetUserName(const PString & username, bool permanent)
 {
 #ifdef P_VXWORKS
   PAssertAlways("PProcess::SetUserName - not implemented for VxWorks");
@@ -342,7 +342,7 @@ PString PProcess::GetGroupName() const
 }
 
 
-PBoolean PProcess::SetGroupName(const PString & groupname, PBoolean permanent)
+bool PProcess::SetGroupName(const PString & groupname, bool permanent)
 {
 #ifdef P_VXWORKS
   PAssertAlways("PProcess::SetGroupName - not implemented for VxWorks");
@@ -520,7 +520,7 @@ void PProcess::PlatformDestruct()
 }
 
 
-PBoolean PProcess::SetMaxHandles(int newMax)
+bool PProcess::SetMaxHandles(int newMax)
 {
 #ifndef P_RTEMS
   // get the current process limit
@@ -852,7 +852,7 @@ P_fd_set::P_fd_set()
   Zero();
 }
 
-PBoolean P_fd_set::IsPresent(intptr_t fd) const
+bool P_fd_set::IsPresent(intptr_t fd) const
 {
   const int fd_num = fd / FD_SETSIZE;
   const int fd_off = fd % FD_SETSIZE;
@@ -947,7 +947,7 @@ void PThread::Restart()
 }
 
 
-void PThread::Suspend(PBoolean susp)
+void PThread::Suspend(bool susp)
 {
 }
 
@@ -957,7 +957,7 @@ void PThread::Resume()
 }
 
 
-PBoolean PThread::IsSuspended() const
+bool PThread::IsSuspended() const
 {
   return true;
 }
@@ -990,7 +990,7 @@ void PThread::Terminate()
 }
 
 
-PBoolean PThread::IsTerminated() const
+bool PThread::IsTerminated() const
 {
   return false;
 }
@@ -1002,7 +1002,7 @@ void PThread::WaitForTermination() const
 }
 
 
-PBoolean PThread::WaitForTermination(const PTimeInterval & maxWait) const
+bool PThread::WaitForTermination(const PTimeInterval & maxWait) const
 {
   return true;
 }
@@ -1041,7 +1041,7 @@ void PSemaphore::Wait()
 }
 
 
-PBoolean PSemaphore::Wait(const PTimeInterval & waitTime)
+bool PSemaphore::Wait(const PTimeInterval & waitTime)
 {
   return false;
 }
@@ -1068,7 +1068,7 @@ void PTimedMutex::Wait()
 }
 
 
-PBoolean PTimedMutex::Wait(const PTimeInterval & waitTime)
+bool PTimedMutex::Wait(const PTimeInterval & waitTime)
 {
   return true;
 }
@@ -1092,7 +1092,7 @@ void PSyncPoint::Wait()
 }
 
 
-PBoolean PSyncPoint::Wait(const PTimeInterval & waitTime)
+bool PSyncPoint::Wait(const PTimeInterval & waitTime)
 {
   return false;
 }

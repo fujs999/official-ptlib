@@ -3,7 +3,7 @@
  *
  * TCP socket I/O channel class.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -23,7 +23,7 @@
 #include "../../tcpsock.h"
 
 public:
-  virtual PBoolean Read(void * buf, PINDEX len);
+  virtual bool Read(void * buf, PINDEX len);
 };
 
 #endif

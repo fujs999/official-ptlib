@@ -3,7 +3,7 @@
  *
  * Asynchronous Serial I/O channel class.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -102,11 +102,11 @@ class PSerialChannel : public PChannel
          platform dependent, but the standard value of 300, 1200, 2400, 4800,
          9600, 19200, 38400 always be legal.
        */
-      DWORD speed = 0,
+      uint32_t speed = 0,
       /**Number of data bits for serial port. The actual values possible here
          are platform dependent, but 7 and 8 should always be legal.
        */
-      BYTE data = 0,
+      uint8_t data = 0,
       /**Parity for serial port. The actual values possible here are platform
          dependent, but <code>NoParity</code>, <code>OddParity</code> and
          <code>EvenParity</code> should always be legal.
@@ -115,7 +115,7 @@ class PSerialChannel : public PChannel
       /**Number of stop bits for serial port. The actual values possible here
          are platform dependent, but 1 and 2 should always be legal.
        */
-      BYTE stop = 0,
+      uint8_t stop = 0,
       /**Flow control for data from the remote system into this conputer.*/
       FlowControl inputFlow = DefaultFlowControl,
       /**Flow control for data from this conputer out to remote system. */
@@ -151,7 +151,7 @@ class PSerialChannel : public PChannel
        The channel is opened it on the specified port and with the specified
        attributes.
      */
-    virtual PBoolean Open(
+    virtual bool Open(
       /**The name of the serial port to connect to. This is a platform
          dependent string and woiuld rarely be a literal. The static function
          <code>GetPortNames()</code> can be used to find the platforms serial ports.
@@ -161,11 +161,11 @@ class PSerialChannel : public PChannel
          platform dependent, but the standard value of 300, 1200, 2400, 4800,
          9600, 19200, 38400 always be legal.
        */
-      DWORD speed = 0,
+      uint32_t speed = 0,
       /**Number of data bits for serial port. The actual values possible here
          are platform dependent, but 7 and 8 should always be legal.
        */
-      BYTE data = 0,
+      uint8_t data = 0,
       /**Parity for serial port. The actual values possible here are platform
          dependent, but <code>NoParity</code>, <code>OddParity</code> and
          <code>EvenParity</code> should always be legal.
@@ -174,7 +174,7 @@ class PSerialChannel : public PChannel
       /**Number of stop bits for serial port. The actual values possible here
          are platform dependent, but 1 and 2 should always be legal.
        */
-      BYTE stop = 0,
+      uint8_t stop = 0,
       /**Flow control for data from the remote system into this conputer.*/
       FlowControl inputFlow = DefaultFlowControl,
       /**Flow control for data from this conputer out to remote system. */
@@ -187,7 +187,7 @@ class PSerialChannel : public PChannel
        in the configuration file. Note that it assumed that the correct
        configuration file section is already set.
      */
-    virtual PBoolean Open(
+    virtual bool Open(
       PConfig & cfg  ///< Configuration file to read serial port attributes from.
     );
 #endif // P_CONFIG_FILE
@@ -211,8 +211,8 @@ class PSerialChannel : public PChannel
        @return
        true if the change was successfully made.
      */
-    PBoolean SetSpeed(
-      DWORD speed   ///< New speed for serial channel.
+    bool SetSpeed(
+      uint32_t speed   ///< New speed for serial channel.
     );
 
     /**Get the speed (baud rate) of the serial channel.
@@ -220,15 +220,15 @@ class PSerialChannel : public PChannel
        @return
        current setting.
      */
-    DWORD GetSpeed() const;
+    uint32_t GetSpeed() const;
 
     /**Set the data bits (5, 6, 7 or 8) of the serial port.
 
        @return
        true if the change was successfully made.
      */
-    PBoolean SetDataBits(
-      BYTE data   ///< New number of data bits for serial channel.
+    bool SetDataBits(
+      uint8_t data   ///< New number of data bits for serial channel.
     );
 
     /**Get the data bits (5, 6, 7 or 8) of the serial port.
@@ -236,14 +236,14 @@ class PSerialChannel : public PChannel
        @return
        current setting.
      */
-    BYTE GetDataBits() const;
+    uint8_t GetDataBits() const;
 
     /**Set the parity of the serial port.
 
        @return
        true if the change was successfully made.
      */
-    PBoolean SetParity(
+    bool SetParity(
       Parity parity   ///< New parity option for serial channel.
     );
 
@@ -259,8 +259,8 @@ class PSerialChannel : public PChannel
        @return
        true if the change was successfully made.
      */
-    PBoolean SetStopBits(
-      BYTE stop   ///< New number of stop bits for serial channel.
+    bool SetStopBits(
+      uint8_t stop   ///< New number of stop bits for serial channel.
     );
 
     /**Get the stop bits (1 or 2) of the serial port.
@@ -268,7 +268,7 @@ class PSerialChannel : public PChannel
        @return
        current setting.
      */
-    BYTE GetStopBits() const;
+    uint8_t GetStopBits() const;
 
     /**Set the flow control (handshaking) protocol of the input to the serial
        port.
@@ -276,7 +276,7 @@ class PSerialChannel : public PChannel
        @return
        true if the change was successfully made.
      */
-    PBoolean SetInputFlowControl(
+    bool SetInputFlowControl(
       FlowControl flowControl   ///< New flow control for serial channel input.
     );
 
@@ -294,7 +294,7 @@ class PSerialChannel : public PChannel
        @return
        true if the change was successfully made.
      */
-    PBoolean SetOutputFlowControl(
+    bool SetOutputFlowControl(
       FlowControl flowControl   ///< New flow control for serial channel output.
     );
 
@@ -321,7 +321,7 @@ class PSerialChannel : public PChannel
   //@{
     /** Set the Data Terminal Ready signal of the serial port. */
     void SetDTR(
-      PBoolean state = true   ///< New state of the DTR signal.
+      bool state = true   ///< New state of the DTR signal.
     );
 
     /**Clear the Data Terminal Ready signal of the serial port. This is
@@ -331,7 +331,7 @@ class PSerialChannel : public PChannel
 
     /**Set the Request To Send signal of the serial port. */
     void SetRTS(
-      PBoolean state = true   ///< New state of the RTS signal.
+      bool state = true   ///< New state of the RTS signal.
     );
 
     /**Clear the Request To Send signal of the serial port. This is equivalent
@@ -341,7 +341,7 @@ class PSerialChannel : public PChannel
 
     /** Set the break condition of the serial port. */
     void SetBreak(
-      PBoolean state = true   ///< New state of the serial port break condition.
+      bool state = true   ///< New state of the serial port break condition.
     );
 
     /**Clear the break condition of the serial port. This is equivalent to
@@ -354,28 +354,28 @@ class PSerialChannel : public PChannel
        @return
        true if the CTS signal is asserted.
      */
-    PBoolean GetCTS();
+    bool GetCTS();
 
     /**Get the Data Set Ready signal of the serial port.
     
        @return
        true if the DSR signal is asserted.
      */
-    PBoolean GetDSR();
+    bool GetDSR();
 
     /**Get the Data Carrier Detect signal of the serial port.
     
        @return
        true if the DCD signal is asserted.
      */
-    PBoolean GetDCD();
+    bool GetDCD();
 
     /**Get the Ring Indicator signal of the serial port.
     
        @return
        true if the RI signal is asserted.
      */
-    PBoolean GetRing();
+    bool GetRing();
   //@}
 
 

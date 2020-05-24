@@ -3,7 +3,7 @@
  *
  * SSL implementation for PTLib using the SSLeay package
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-2002 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -274,7 +274,7 @@ PSSLPrivateKey::PSSLPrivateKey(const PFilePath & keyFile, PSSLFileTypes fileType
 }
 
 
-PSSLPrivateKey::PSSLPrivateKey(const BYTE * keyData, PINDEX keySize)
+PSSLPrivateKey::PSSLPrivateKey(const uint8_t * keyData, PINDEX keySize)
   : m_pkey(NULL)
 {
   SetData(PBYTEArray(keyData, keySize, false));
@@ -349,7 +349,7 @@ void PSSLPrivateKey::Attach(evp_pkey_st * key)
 }
 
 
-PBoolean PSSLPrivateKey::Create(unsigned modulus,
+bool PSSLPrivateKey::Create(unsigned modulus,
                             void (*callback)(int,int,void *),
                             void *cb_arg)
 {
@@ -374,11 +374,11 @@ bool PSSLPrivateKey::SetData(const PBYTEArray & keyData)
 {
   FreePrivateKey();
 
-  const BYTE * keyPtr = keyData;
+  const uint8_t * keyPtr = keyData;
 #if P_SSL_USE_CONST
   m_pkey = d2i_AutoPrivateKey(NULL, &keyPtr, keyData.GetSize());
 #else
-  m_pkey = d2i_AutoPrivateKey(NULL, (BYTE **)&keyPtr, keyData.GetSize());
+  m_pkey = d2i_AutoPrivateKey(NULL, (uint8_t **)&keyPtr, keyData.GetSize());
 #endif
 
   return m_pkey != NULL;
@@ -390,7 +390,7 @@ PBYTEArray PSSLPrivateKey::GetData() const
   PBYTEArray data;
 
   if (m_pkey != NULL) {
-    BYTE * keyPtr = data.GetPointer(i2d_PrivateKey(m_pkey, NULL));
+    uint8_t * keyPtr = data.GetPointer(i2d_PrivateKey(m_pkey, NULL));
     i2d_PrivateKey(m_pkey, &keyPtr);
   }
 
@@ -411,7 +411,7 @@ bool PSSLPrivateKey::Parse(const PString & keyStr)
 }
 
 
-PBoolean PSSLPrivateKey::Load(const PFilePath & keyFile, PSSLFileTypes fileType, const PSSLPasswordNotifier & notifier)
+bool PSSLPrivateKey::Load(const PFilePath & keyFile, PSSLFileTypes fileType, const PSSLPasswordNotifier & notifier)
 {
   FreePrivateKey();
 
@@ -467,7 +467,7 @@ PBoolean PSSLPrivateKey::Load(const PFilePath & keyFile, PSSLFileTypes fileType,
 }
 
 
-PBoolean PSSLPrivateKey::Save(const PFilePath & keyFile, PBoolean append, PSSLFileTypes fileType)
+bool PSSLPrivateKey::Save(const PFilePath & keyFile, bool append, PSSLFileTypes fileType)
 {
   if (m_pkey == NULL)
     return false;
@@ -517,7 +517,7 @@ PSSLCertificate::PSSLCertificate(const PFilePath & certFile, PSSLFileTypes fileT
 }
 
 
-PSSLCertificate::PSSLCertificate(const BYTE * certData, PINDEX certSize)
+PSSLCertificate::PSSLCertificate(const uint8_t * certData, PINDEX certSize)
   : m_certificate(NULL)
 {
   SetData(PBYTEArray(certData, certSize, false));
@@ -705,7 +705,7 @@ bool PSSLCertificate::SetData(const PBYTEArray & certData)
 {
   FreeCertificate();
 
-  const BYTE * certPtr = certData;
+  const uint8_t * certPtr = certData;
 #if P_SSL_USE_CONST
   m_certificate = d2i_X509(NULL, &certPtr, certData.GetSize());
 #else
@@ -720,7 +720,7 @@ PBYTEArray PSSLCertificate::GetData() const
   PBYTEArray data;
 
   if (m_certificate != NULL) {
-    BYTE * certPtr = data.GetPointer(i2d_X509(m_certificate, NULL));
+    uint8_t * certPtr = data.GetPointer(i2d_X509(m_certificate, NULL));
     i2d_X509(m_certificate, &certPtr);
   }
 
@@ -741,7 +741,7 @@ bool PSSLCertificate::Parse(const PString & certStr)
 }
 
 
-PBoolean PSSLCertificate::Load(const PFilePath & certFile, PSSLFileTypes fileType)
+bool PSSLCertificate::Load(const PFilePath & certFile, PSSLFileTypes fileType)
 {
   if (fileType == PSSLFileTypeDEFAULT)
     return Load(certFile, PSSLFileTypePEM) || Load(certFile, PSSLFileTypeASN1);
@@ -785,7 +785,7 @@ PBoolean PSSLCertificate::Load(const PFilePath & certFile, PSSLFileTypes fileTyp
 }
 
 
-PBoolean PSSLCertificate::Save(const PFilePath & certFile, PBoolean append, PSSLFileTypes fileType)
+bool PSSLCertificate::Save(const PFilePath & certFile, bool append, PSSLFileTypes fileType)
 {
   if (m_certificate == NULL)
     return false;
@@ -1169,7 +1169,7 @@ bool PSSLCipherContext::SetAlgorithm(const PString & name)
 }
 
 
-bool PSSLCipherContext::SetKey(const BYTE * keyPtr, PINDEX keyLen)
+bool PSSLCipherContext::SetKey(const uint8_t * keyPtr, PINDEX keyLen)
 {
   PTRACE(4, "Setting key: " << PHexDump(keyPtr, keyLen));
 
@@ -1193,7 +1193,7 @@ bool PSSLCipherContext::SetPadding(PadMode pad)
 }
 
 
-bool PSSLCipherContext::SetIV(const BYTE * ivPtr, PINDEX ivLen)
+bool PSSLCipherContext::SetIV(const uint8_t * ivPtr, PINDEX ivLen)
 {
   if (ivLen < (PINDEX)EVP_CIPHER_CTX_iv_length(m_context)) {
     PTRACE(2, "Incorrect inital vector length for encryption");
@@ -1558,7 +1558,7 @@ bool PSSLCipherContext::DecryptFinalLoose(unsigned char *out, int *outl)
   return true;
 }
 
-bool PSSLCipherContext::Process(const BYTE * inPtr, PINDEX inLen, BYTE * outPtr, PINDEX & outLen, bool partial)
+bool PSSLCipherContext::Process(const uint8_t * inPtr, PINDEX inLen, uint8_t * outPtr, PINDEX & outLen, bool partial)
 {
   if (outLen < (m_encrypt ? GetBlockedDataSize(inLen) : inLen))
     return false;
@@ -1678,7 +1678,7 @@ void PSHA1Context::Update(const void * data, PINDEX length)
 }
 
 
-void PSHA1Context::Finalise(BYTE * result)
+void PSHA1Context::Finalise(uint8_t * result)
 {
   SHA1_Final(result, m_context);
 }
@@ -1705,7 +1705,7 @@ PSSLDiffieHellman::PSSLDiffieHellman(const PFilePath & dhFile, PSSLFileTypes fil
 }
 
 
-PSSLDiffieHellman::PSSLDiffieHellman(PINDEX numBits, const BYTE * pData, const BYTE * gData, const BYTE * pubKey)
+PSSLDiffieHellman::PSSLDiffieHellman(PINDEX numBits, const uint8_t * pData, const uint8_t * gData, const uint8_t * pubKey)
   : m_dh(DH_new())
 {
   if (PAssertNULL(m_dh) == NULL)
@@ -1736,9 +1736,9 @@ PSSLDiffieHellman::PSSLDiffieHellman(const PBYTEArray & pData,
 }
 
 
-bool PSSLDiffieHellman::Construct(const BYTE * pData, PINDEX pSize,
-                                  const BYTE * gData, PINDEX gSize,
-                                  const BYTE * kData, PINDEX kSize)
+bool PSSLDiffieHellman::Construct(const uint8_t * pData, PINDEX pSize,
+                                  const uint8_t * gData, PINDEX gSize,
+                                  const uint8_t * kData, PINDEX kSize)
 {
   if (!PAssert(pSize >= 64 && pSize%4 == 0 && gSize <= pSize && kSize <= pSize, PInvalidParameter))
     return false;
@@ -1825,7 +1825,7 @@ PSSLDiffieHellman::~PSSLDiffieHellman()
 )
 #endif
 
-PBoolean PSSLDiffieHellman::Load(const PFilePath & dhFile, PSSLFileTypes fileType)
+bool PSSLDiffieHellman::Load(const PFilePath & dhFile, PSSLFileTypes fileType)
 {
   if (m_dh != NULL) {
     DH_free(m_dh);
@@ -1960,9 +1960,9 @@ void PSSLInitialiser::OnStartup()
   SSL_load_error_strings();
 
   // Seed the random number generator
-  BYTE seed[128];
+  uint8_t seed[128];
   for (size_t i = 0; i < sizeof(seed); i++)
-    seed[i] = (BYTE)rand();
+    seed[i] = (uint8_t)rand();
   RAND_seed(seed, sizeof(seed));
 
 #if (OPENSSL_VERSION_NUMBER < 0x10100000L)
@@ -2154,7 +2154,7 @@ void PSSLContext::Construct(const void * sessionId, PINDEX idSize)
   if (sessionId != NULL) {
     if (idSize == 0)
       idSize = ::strlen((const char *)sessionId)+1;
-    SSL_CTX_set_session_id_context(m_context, (const BYTE *)sessionId, idSize);
+    SSL_CTX_set_session_id_context(m_context, (const uint8_t *)sessionId, idSize);
     SSL_CTX_sess_set_cache_size(m_context, 128);
   }
 
@@ -2543,7 +2543,7 @@ bool PSSLContext::SetExtension(const char * extension)
 //  SSLChannel
 //
 
-PSSLChannel::PSSLChannel(PSSLContext * ctx, PBoolean autoDel)
+PSSLChannel::PSSLChannel(PSSLContext * ctx, bool autoDel)
 {
   if (ctx != NULL)
     Construct(ctx, autoDel);
@@ -2558,7 +2558,7 @@ PSSLChannel::PSSLChannel(PSSLContext & ctx)
 }
 
 
-void PSSLChannel::Construct(PSSLContext * ctx, PBoolean autoDel)
+void PSSLChannel::Construct(PSSLContext * ctx, bool autoDel)
 {
   m_context = ctx;
   m_autoDeleteContext = autoDel;
@@ -2610,7 +2610,7 @@ PSSLChannel::~PSSLChannel()
 }
 
 
-PBoolean PSSLChannel::Read(void * buf, PINDEX len)
+bool PSSLChannel::Read(void * buf, PINDEX len)
 {
   if (PAssertNULL(m_ssl) == NULL)
     return false;
@@ -2619,7 +2619,7 @@ PBoolean PSSLChannel::Read(void * buf, PINDEX len)
 
   SetLastReadCount(0);
 
-  PBoolean returnValue = false;
+  bool returnValue = false;
   if (readChannel == NULL)
     SetErrorValues(NotOpen, EBADF, LastReadError);
   else if (readTimeout == 0 && SSL_pending(m_ssl) == 0)
@@ -2673,7 +2673,7 @@ int PSSLChannel::BioRead(char * buf, int len)
 }
 
 
-PBoolean PSSLChannel::Write(const void * buf, PINDEX len)
+bool PSSLChannel::Write(const void * buf, PINDEX len)
 {
   if (PAssertNULL(m_ssl) == NULL)
     return false;
@@ -2688,7 +2688,7 @@ PBoolean PSSLChannel::Write(const void * buf, PINDEX len)
 
   SetLastWriteCount(0);
 
-  PBoolean returnValue;
+  bool returnValue;
   if (writeChannel == NULL) {
     SetErrorValues(NotOpen, EBADF, LastWriteError);
     returnValue = false;
@@ -2741,7 +2741,7 @@ int PSSLChannel::BioWrite(const char * buf, int len)
 }
 
 
-PBoolean PSSLChannel::Shutdown(ShutdownValue value)
+bool PSSLChannel::Shutdown(ShutdownValue value)
 {
   if (value != ShutdownReadAndWrite)
     return SetErrorValues(BadParameter, EINVAL);
@@ -2751,7 +2751,7 @@ PBoolean PSSLChannel::Shutdown(ShutdownValue value)
 }
 
 
-PBoolean PSSLChannel::Close()
+bool PSSLChannel::Close()
 {
   bool ok = Shutdown(ShutdownReadAndWrite);
   return PIndirectChannel::Close() && ok;
@@ -2786,7 +2786,7 @@ int PSSLChannel::BioClose()
 }
 
 
-PBoolean PSSLChannel::ConvertOSError(P_INT_PTR libcReturnValue, ErrorGroup group)
+bool PSSLChannel::ConvertOSError(P_INT_PTR libcReturnValue, ErrorGroup group)
 {
   if (m_ssl == NULL)
     return SetErrorValues(NotOpen, EBADF, group);
@@ -2795,7 +2795,7 @@ PBoolean PSSLChannel::ConvertOSError(P_INT_PTR libcReturnValue, ErrorGroup group
     return SetErrorValues(NoError, 0, group);
 
   Errors lastError = AccessDenied;
-  DWORD osError = SSL_get_error(m_ssl, (int)libcReturnValue);
+  uint32_t osError = SSL_get_error(m_ssl, (int)libcReturnValue);
   if (osError == SSL_ERROR_NONE)
     osError = ERR_peek_error();
   osError |= 0x80000000;
@@ -2826,19 +2826,19 @@ PString PSSLChannel::GetErrorText(ErrorGroup group) const
 }
 
 
-PBoolean PSSLChannel::Accept()
+bool PSSLChannel::Accept()
 {
   return IsOpen() && InternalAccept();
 }
 
 
-PBoolean PSSLChannel::Accept(PChannel & channel)
+bool PSSLChannel::Accept(PChannel & channel)
 {
   return Open(channel) && InternalAccept();
 }
 
 
-PBoolean PSSLChannel::Accept(PChannel * channel, PBoolean autoDelete)
+bool PSSLChannel::Accept(PChannel * channel, bool autoDelete)
 {
   return Open(channel, autoDelete) && InternalAccept();
 }
@@ -2850,19 +2850,19 @@ bool PSSLChannel::InternalAccept()
 }
 
 
-PBoolean PSSLChannel::Connect()
+bool PSSLChannel::Connect()
 {
   return IsOpen() && InternalConnect();
 }
 
 
-PBoolean PSSLChannel::Connect(PChannel & channel)
+bool PSSLChannel::Connect(PChannel & channel)
 {
   return Open(channel) && InternalConnect();
 }
 
 
-PBoolean PSSLChannel::Connect(PChannel * channel, PBoolean autoDelete)
+bool PSSLChannel::Connect(PChannel * channel, bool autoDelete)
 {
   return Open(channel, autoDelete) && InternalConnect();
 }
@@ -2874,13 +2874,13 @@ bool PSSLChannel::InternalConnect()
 }
 
 
-PBoolean PSSLChannel::AddClientCA(const PSSLCertificate & certificate)
+bool PSSLChannel::AddClientCA(const PSSLCertificate & certificate)
 {
   return PAssertNULL(m_ssl) != NULL && SSL_add_client_CA(m_ssl, certificate);
 }
 
 
-PBoolean PSSLChannel::AddClientCA(const PList<PSSLCertificate> & certificates)
+bool PSSLChannel::AddClientCA(const PList<PSSLCertificate> & certificates)
 {
   if (PAssertNULL(m_ssl) == NULL)
     return false;
@@ -2894,13 +2894,13 @@ PBoolean PSSLChannel::AddClientCA(const PList<PSSLCertificate> & certificates)
 }
 
 
-PBoolean PSSLChannel::UseCertificate(const PSSLCertificate & certificate)
+bool PSSLChannel::UseCertificate(const PSSLCertificate & certificate)
 {
   return PAssertNULL(m_ssl) != NULL && SSL_use_certificate(m_ssl, certificate);
 }
 
 
-PBoolean PSSLChannel::UsePrivateKey(const PSSLPrivateKey & key)
+bool PSSLChannel::UsePrivateKey(const PSSLPrivateKey & key)
 {
   return PAssertNULL(m_ssl) != NULL &&
          SSL_use_PrivateKey(m_ssl, key) > 0 &&
@@ -3062,7 +3062,7 @@ bool PSSLChannelDTLS::SetMTU(unsigned mtu)
 }
 
 
-PBoolean PSSLChannelDTLS::Read(void * buf, PINDEX len)
+bool PSSLChannelDTLS::Read(void * buf, PINDEX len)
 {
   /* Unlike PSSLChannel, data not associated with handshake, which will use
      the BioRead() function, just pass through to the real channel. */
@@ -3070,7 +3070,7 @@ PBoolean PSSLChannelDTLS::Read(void * buf, PINDEX len)
 }
 
 
-PBoolean PSSLChannelDTLS::Write(const void * buf, PINDEX len)
+bool PSSLChannelDTLS::Write(const void * buf, PINDEX len)
 {
   /* Unlike PSSLChannel, data not associated with handshake, which will use
      the BioWrite() function, just pass through to the real channel. */

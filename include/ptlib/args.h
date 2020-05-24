@@ -3,7 +3,7 @@
  *
  * Program Argument Parsing class
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -58,33 +58,33 @@ class PArgList : public PObject
     PArgList(
       const char * theArgPtr = NULL,        ///< A string constituting the arguments 
       const char * argumentSpecPtr = NULL,  ///< The specification C string for argument options. See description for details.
-      PBoolean optionsBeforeParams = true       ///< Parse options only before parameters 
+      bool optionsBeforeParams = true       ///< Parse options only before parameters 
     );
     /** Create an argument list. */
     PArgList(
       const PString & theArgStr,             ///< A string constituting the arguments 
       const char * argumentSpecPtr = NULL,   ///< The specification C string for argument options. See description for details.
-      PBoolean optionsBeforeParams = true        ///< Parse options only before parameters 
+      bool optionsBeforeParams = true        ///< Parse options only before parameters 
     );
     /** Create an argument list. */
     PArgList(
       const PString & theArgStr,             ///< A string constituting the arguments 
       const PString & argumentSpecStr,       ///< The specification string for argument options. See description for details.
-      PBoolean optionsBeforeParams = true        ///< Parse options only before parameters 
+      bool optionsBeforeParams = true        ///< Parse options only before parameters 
     );
     /** Create an argument list. */
     PArgList(
       int theArgc,                           ///< Count of argument strings in theArgv 
       char ** theArgv,                       ///< An array of strings constituting the arguments 
       const char * argumentSpecPtr = NULL,   ///< The specification C string for argument options. See description for details.
-      PBoolean optionsBeforeParams = true        ///< Parse options only before parameters 
+      bool optionsBeforeParams = true        ///< Parse options only before parameters 
     );
     /** Create an argument list. */
     PArgList(
       int theArgc,                           ///< Count of argument strings in theArgv 
       char ** theArgv,                       ///< An array of strings constituting the arguments 
       const PString & argumentSpecStr,       ///< The specification string for argument options. See description for details.
-      PBoolean optionsBeforeParams = true        ///< Parse options only before parameters 
+      bool optionsBeforeParams = true        ///< Parse options only before parameters 
     );
   //@}
 
@@ -179,12 +179,12 @@ class PArgList : public PObject
      */
     virtual bool Parse(
       const char * theArgumentSpec = NULL, ///< The specification string for argument options. See description for details.
-      PBoolean optionsBeforeParams = true  ///< Parse options only before parameters
+      bool optionsBeforeParams = true  ///< Parse options only before parameters
     );
     /** Parse the arguments. */
     virtual bool Parse(
       const PString & theArgumentStr,  ///< The specification string for argument options. See description for details.       
-      PBoolean optionsBeforeParams = true  ///< Parse options only before parameters
+      bool optionsBeforeParams = true  ///< Parse options only before parameters
     );
 
     /**Determine if already parsed at least once.
@@ -237,15 +237,15 @@ class PArgList : public PObject
 
        @return true if the option was present.
      */
-    PBoolean HasOption(
+    bool HasOption(
       char optionChar             ///< Character letter code for the option 
     ) const;
     /** Get if option present. */
-    PBoolean HasOption(
+    bool HasOption(
       const char * optionStr     ///< String letter code for the option 
     ) const;
     /** Get if option present. */
-    PBoolean HasOption(
+    bool HasOption(
       const PString & optionName ///<  String code for the option 
     ) const;
 

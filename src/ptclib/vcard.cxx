@@ -3,7 +3,7 @@
  *
  * Class to represent and parse a vCard as per RFC2426
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 2010 Vox Lucida Pty Ltd
  *

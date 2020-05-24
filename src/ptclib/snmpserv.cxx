@@ -3,7 +3,7 @@
  *
  * SNMP Server (agent) class
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-2002 Equivalence Pty. Ltd.
  * Copyright (c) 2007 ISVO(Asia) Pte. Ltd.
@@ -18,7 +18,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -38,7 +38,7 @@
 
 static const char defaultCommunity[] = "public";
 
-PSNMPServer::PSNMPServer(PIPSocket::Address binding, WORD localPort, PINDEX timeout, PINDEX rxSize, PINDEX txSize)
+PSNMPServer::PSNMPServer(PIPSocket::Address binding, uint16_t localPort, PINDEX timeout, PINDEX rxSize, PINDEX txSize)
  : P_DISABLE_MSVC_WARNINGS(4355, m_thread(*this, &PSNMPServer::Main, true, "SNMP Server"))
  , m_community(defaultCommunity)
  , m_version(SNMP_VERSION)
@@ -68,7 +68,7 @@ PSNMPServer::~PSNMPServer()
 	Close();
 }
 
-PBoolean PSNMPServer::HandleChannel()
+bool PSNMPServer::HandleChannel()
 {
 
   PBYTEArray readBuffer;
@@ -105,7 +105,7 @@ PBoolean PSNMPServer::HandleChannel()
 		readBuffer.SetSize(rxSize);
 
 		PIPSocket::Address remoteAddress;
-		WORD remotePort;
+		uint16_t remotePort;
 		m_baseSocket->GetLastReceiveAddress(remoteAddress, remotePort);
 
 		if (!Authorise(remoteAddress)) {
@@ -128,7 +128,7 @@ PBoolean PSNMPServer::HandleChannel()
 }
 
 
-PBoolean PSNMPServer::Authorise(const PIPSocket::Address & /*received*/)
+bool PSNMPServer::Authorise(const PIPSocket::Address & /*received*/)
 {
   return false;
 }
@@ -148,19 +148,19 @@ PSNMP::ErrorType PSNMPServer::SendGetResponse (PSNMPVarBindingList &)
 }
 
 
-PBoolean PSNMPServer::OnGetRequest (PINDEX , PSNMP::BindingList &, PSNMP::ErrorType &)
+bool PSNMPServer::OnGetRequest (PINDEX , PSNMP::BindingList &, PSNMP::ErrorType &)
 {
 	return false;
 }
 
 
-PBoolean PSNMPServer::OnGetNextRequest (PINDEX , PSNMP::BindingList &, PSNMP::ErrorType &)
+bool PSNMPServer::OnGetNextRequest (PINDEX , PSNMP::BindingList &, PSNMP::ErrorType &)
 {
 	return false;
 }
 
 
-PBoolean PSNMPServer::OnSetRequest (PINDEX , PSNMP::BindingList &,PSNMP::ErrorType &)
+bool PSNMPServer::OnSetRequest (PINDEX , PSNMP::BindingList &,PSNMP::ErrorType &)
 {
 	return false;
 }
@@ -201,9 +201,9 @@ static void EncodeOID(PDUType & pdu, const PINDEX & reqID,
    }
 }
 
-PBoolean PSNMPServer::MIB_LocalMatch(PSNMP_PDU & pdu)
+bool PSNMPServer::MIB_LocalMatch(PSNMP_PDU & pdu)
 {
-  PBoolean found = false;
+  bool found = false;
   PSNMP_VarBindList & vars = pdu.m_variable_bindings;
   PINDEX size = vars.GetSize();
  
@@ -220,17 +220,17 @@ PBoolean PSNMPServer::MIB_LocalMatch(PSNMP_PDU & pdu)
   return found;
 }
 
-PBoolean PSNMPServer::ConfirmCommunity(PASN_OctetString & /*community*/)
+bool PSNMPServer::ConfirmCommunity(PASN_OctetString & /*community*/)
 {
 	return false;
 }
 
-PBoolean PSNMPServer::ConfirmVersion(PASN_Integer vers)
+bool PSNMPServer::ConfirmVersion(PASN_Integer vers)
 {
   return m_version == vers ? true : false;
 }
 
-PBoolean PSNMPServer::ProcessPDU(const PBYTEArray & readBuffer, PBYTEArray & sendBuffer)
+bool PSNMPServer::ProcessPDU(const PBYTEArray & readBuffer, PBYTEArray & sendBuffer)
 {
 
   PSNMP_Message msg;
@@ -258,7 +258,7 @@ PBoolean PSNMPServer::ProcessPDU(const PBYTEArray & readBuffer, PBYTEArray & sen
   PSNMP_Message resp;
   PSNMP_PDUs sendpdu;
 
-  PBoolean retval = true;
+  bool retval = true;
   PSNMP::ErrorType errCode = PSNMP::NoError;
   switch (msg.m_pdu.GetTag()) {
     case PSNMP_PDUs::e_get_request:

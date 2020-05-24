@@ -8,13 +8,13 @@ class PAudioDelay : public PObject
 
   public:
     PAudioDelay();
-    PBoolean Delay(int time);
+    bool Delay(int time);
     void Restart();
     int  GetError();
 
   protected:
     PTime  previousTime;
-    PBoolean   firstTime;
+    bool   firstTime;
     int    error;
 };
 
@@ -35,7 +35,7 @@ class SoundHandleEntry : public PObject {
     unsigned sampleRate;
     unsigned bitsPerSample;
     unsigned fragmentValue;
-    PBoolean isInitialised;
+    bool isInitialised;
 };
 
 #define LOOPBACK_BUFFER_SIZE 5000
@@ -50,44 +50,44 @@ class PSoundChannelSHM : public PSoundChannel {
   static PStringArray GetDeviceNames(PSoundChannel::Directions);
   static PString GetDefaultDevice(PSoundChannel::Directions);
   bool Open(const Params & params);
-  PBoolean Setup();
-  PBoolean Close();
-  PBoolean Write(const void * buf, PINDEX len);
+  bool Setup();
+  bool Close();
+  bool Write(const void * buf, PINDEX len);
   int writeSample( void *aData, int aLen );
-  PBoolean Read(void * buf, PINDEX len);
-  PBoolean SetFormat(unsigned numChannels,
+  bool Read(void * buf, PINDEX len);
+  bool SetFormat(unsigned numChannels,
 	    unsigned sampleRate,
 	    unsigned bitsPerSample);
   unsigned GetChannels() const;
   unsigned GetSampleRate() const;
   unsigned GetSampleSize() const;
-  PBoolean SetBuffers(PINDEX size, PINDEX count);
-  PBoolean GetBuffers(PINDEX & size, PINDEX & count);
-  PBoolean PlaySound(const PSound & sound, PBoolean wait);
-  PBoolean PlayFile(const PFilePath & filename, PBoolean wait);
-  PBoolean HasPlayCompleted();
-  PBoolean WaitForPlayCompletion();
-  PBoolean RecordSound(PSound & sound);
-  PBoolean RecordFile(const PFilePath & filename);
-  PBoolean StartRecording();
-  PBoolean IsRecordBufferFull();
-  PBoolean AreAllRecordBuffersFull();
-  PBoolean WaitForRecordBufferFull();
-  PBoolean WaitForAllRecordBuffersFull();
-  PBoolean Abort();
-  PBoolean SetVolume (unsigned);
-  PBoolean GetVolume (unsigned &);
-  PBoolean IsOpen() const;
+  bool SetBuffers(PINDEX size, PINDEX count);
+  bool GetBuffers(PINDEX & size, PINDEX & count);
+  bool PlaySound(const PSound & sound, bool wait);
+  bool PlayFile(const PFilePath & filename, bool wait);
+  bool HasPlayCompleted();
+  bool WaitForPlayCompletion();
+  bool RecordSound(PSound & sound);
+  bool RecordFile(const PFilePath & filename);
+  bool StartRecording();
+  bool IsRecordBufferFull();
+  bool AreAllRecordBuffersFull();
+  bool WaitForRecordBufferFull();
+  bool WaitForAllRecordBuffersFull();
+  bool Abort();
+  bool SetVolume (unsigned);
+  bool GetVolume (unsigned &);
+  bool IsOpen() const;
 
  private:
 
   static void UpdateDictionary(PSoundChannel::Directions);
-  PBoolean Volume (PBoolean, unsigned, unsigned &);
+  bool Volume (bool, unsigned, unsigned &);
   PString device;
   unsigned mNumChannels;
   unsigned mSampleRate;
   unsigned mBitsPerSample;
-  PBoolean isInitialised;
+  bool isInitialised;
 
   void *os_handle;
   int card_nr;

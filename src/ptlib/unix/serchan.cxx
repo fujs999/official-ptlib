@@ -3,7 +3,7 @@
  *
  * Asynchronous serial I/O channel class implementation.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -110,7 +110,7 @@ void PSerialChannel::Construct()
 #endif // P_VXWORKS
 }
 
-PBoolean PSerialChannel::Close()
+bool PSerialChannel::Close()
 {
 #if defined(P_VXWORKS) || defined (__BEOS__)
   PAssertAlways(PUnimplementedFunction);
@@ -130,11 +130,11 @@ PBoolean PSerialChannel::Close()
 }
 
 
-PBoolean PSerialChannel::Open(const PString & port, 
-                                    DWORD speed,
-                                     BYTE data,
+bool PSerialChannel::Open(const PString & port, 
+                                    uint32_t speed,
+                                     uint8_t data,
                                    Parity parity,
-                                     BYTE stop,
+                                     uint8_t stop,
                               FlowControl inputFlow,
                               FlowControl outputFlow)
 {
@@ -233,7 +233,7 @@ PBoolean PSerialChannel::Open(const PString & port,
   return true;
 }
 
-PBoolean PSerialChannel::SetSpeed(DWORD newBaudRate)
+bool PSerialChannel::SetSpeed(uint32_t newBaudRate)
 {
   if (newBaudRate == baudRate)
     return true;
@@ -396,7 +396,7 @@ PBoolean PSerialChannel::SetSpeed(DWORD newBaudRate)
 }
 
 
-PBoolean PSerialChannel::SetDataBits(BYTE data)
+bool PSerialChannel::SetDataBits(uint8_t data)
 {
   if (data == dataBits)
     return true;
@@ -454,7 +454,7 @@ PBoolean PSerialChannel::SetDataBits(BYTE data)
 #endif // P_VXWORKS
 }
 
-PBoolean PSerialChannel::SetParity(Parity parity)
+bool PSerialChannel::SetParity(Parity parity)
 {
   if (parity == parityBits)
     return true;
@@ -505,7 +505,7 @@ PBoolean PSerialChannel::SetParity(Parity parity)
 #endif // P_VXWORKS
 }
 
-PBoolean PSerialChannel::SetStopBits(BYTE stop)
+bool PSerialChannel::SetStopBits(uint8_t stop)
 {
   if (stop == stopBits)
     return true;
@@ -546,17 +546,17 @@ PBoolean PSerialChannel::SetStopBits(BYTE stop)
 #endif // P_VXWORKS
 }
 
-DWORD PSerialChannel::GetSpeed() const
+uint32_t PSerialChannel::GetSpeed() const
 {
   return baudRate;
 }
 
-BYTE PSerialChannel::GetStopBits() const
+uint8_t PSerialChannel::GetStopBits() const
 {
   return stopBits;
 }
 
-BYTE PSerialChannel::GetDataBits() const
+uint8_t PSerialChannel::GetDataBits() const
 {
   return dataBits;
 }
@@ -566,7 +566,7 @@ PSerialChannel::Parity PSerialChannel::GetParity() const
   return parityBits;
 }
 
-PBoolean PSerialChannel::SetInputFlowControl(FlowControl)
+bool PSerialChannel::SetInputFlowControl(FlowControl)
 {
   return true;
 }
@@ -578,7 +578,7 @@ PSerialChannel::FlowControl PSerialChannel::GetInputFlowControl() const
 }
 
 
-PBoolean PSerialChannel::SetOutputFlowControl(FlowControl)
+bool PSerialChannel::SetOutputFlowControl(FlowControl)
 {
   return true;
 }
@@ -590,7 +590,7 @@ PSerialChannel::FlowControl PSerialChannel::GetOutputFlowControl() const
 }
 
 
-void PSerialChannel::SetDTR(PBoolean mode)
+void PSerialChannel::SetDTR(bool mode)
 {
 #if defined(P_VXWORKS) || defined (__BEOS__)
   PAssertAlways(PUnimplementedFunction);
@@ -616,7 +616,7 @@ void PSerialChannel::SetDTR(PBoolean mode)
 }
 
 
-void PSerialChannel::SetRTS(PBoolean mode)
+void PSerialChannel::SetRTS(bool mode)
 {
 #if defined(P_VXWORKS) || defined (__BEOS__)
   PAssertAlways(PUnimplementedFunction);
@@ -633,7 +633,7 @@ void PSerialChannel::SetRTS(PBoolean mode)
 }
 
 
-void PSerialChannel::SetBreak(PBoolean mode)
+void PSerialChannel::SetBreak(bool mode)
 {
 #if defined(P_VXWORKS) || defined (__BEOS__)
   PAssertAlways(PUnimplementedFunction);
@@ -648,7 +648,7 @@ void PSerialChannel::SetBreak(PBoolean mode)
 }
 
 
-PBoolean PSerialChannel::GetCTS()
+bool PSerialChannel::GetCTS()
 {
 #if defined(P_VXWORKS) || defined (__BEOS__)
   PAssertAlways(PUnimplementedFunction);
@@ -663,7 +663,7 @@ PBoolean PSerialChannel::GetCTS()
 }
 
 
-PBoolean PSerialChannel::GetDSR()
+bool PSerialChannel::GetDSR()
 {
 #if defined(P_VXWORKS) || defined (__BEOS__)
   PAssertAlways(PUnimplementedFunction);
@@ -679,7 +679,7 @@ PBoolean PSerialChannel::GetDSR()
 }
 
 
-PBoolean PSerialChannel::GetDCD()
+bool PSerialChannel::GetDCD()
 {
 #if defined(P_VXWORKS) || defined (__BEOS__)
   PAssertAlways(PUnimplementedFunction);
@@ -695,7 +695,7 @@ PBoolean PSerialChannel::GetDCD()
 }
 
 
-PBoolean PSerialChannel::GetRing()
+bool PSerialChannel::GetRing()
 {
 #if defined(P_VXWORKS) || defined (__BEOS__)
   PAssertAlways(PUnimplementedFunction);

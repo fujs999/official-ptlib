@@ -227,13 +227,13 @@ PDirectory PFilePath::GetDirectory() const
 }
 
 
-PBoolean PFilePath::IsValid(char c)
+bool PFilePath::IsValid(char c)
 {
   return c != '/';
 }
 
 
-PBoolean PFilePath::IsValid(const PString & str)
+bool PFilePath::IsValid(const PString & str)
 {
   return str.Find('/') == P_MAX_INDEX;
 }

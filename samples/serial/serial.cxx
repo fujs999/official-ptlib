@@ -25,7 +25,7 @@ public:
 
     void Main();
     
-    PBoolean Initialise(PConfigArgs & args);
+    bool Initialise(PConfigArgs & args);
 
     void HandleConsoleInput();
 
@@ -45,7 +45,7 @@ protected:
     PINDEX baud;
     
     PString parity;
-    PBoolean endNow;
+    bool endNow;
 };
 
 
@@ -186,7 +186,7 @@ void Serial::HandleSerialInput()
 #define MAXM 1000
   char buffer[MAXM];
   PString str;
-  PBoolean found = false;
+  bool found = false;
 
   while(serial.IsOpen()) {
     memset(buffer, 0, MAXM);
@@ -222,7 +222,7 @@ void Serial::HandleSerialInput()
   }
 }
 
-PBoolean Serial::Initialise(PConfigArgs & args)
+bool Serial::Initialise(PConfigArgs & args)
 {
   if (!args.HasOption("baud")) {
     baud = 4800;
@@ -355,7 +355,7 @@ void Serial::HandleConsoleInput()
     if (str.GetLength() < 1)
       continue;
 
-    PBoolean helped = false;
+    bool helped = false;
     if (str.GetLength() == 2) {
       char ch = str.ToLower()[0];
 

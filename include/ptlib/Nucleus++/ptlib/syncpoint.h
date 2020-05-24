@@ -3,7 +3,7 @@
  *
  * Thread synchronisation point (event) class.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *

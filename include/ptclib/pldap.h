@@ -3,7 +3,7 @@
  *
  * Lightweight Directory Access Protocol interface class.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-2003 Equivalence Pty. Ltd.
  *
@@ -17,7 +17,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
@@ -68,29 +68,29 @@ class PLDAPSession : public PObject
        not present then the port variable is used. If that is also zero then
        the default port of 369 is used.
       */
-    PBoolean Open(
+    bool Open(
       const PString & server,
-      WORD port = 0
+      uint16_t port = 0
     );
 
     /**Close the LDAP session
       */
-    PBoolean Close();
+    bool Close();
 
     /**Determine of session is open.
       */
-    PBoolean IsOpen() const { return m_ldapContext != NULL; }
+    bool IsOpen() const { return m_ldapContext != NULL; }
 
     /**Set LDAP option parameter (OpenLDAp specific values)
       */
-    PBoolean SetOption(
+    bool SetOption(
       int optcode,
       int value
     );
 
     /**Set LDAP option parameter (OpenLDAP specific values)
       */
-    PBoolean SetOption(
+    bool SetOption(
       int optcode,
       void * value
     );
@@ -109,11 +109,11 @@ class PLDAPSession : public PObject
 
     /**Start encrypted connection
       */
-    PBoolean StartTLS();
+    bool StartTLS();
 
     /**Bind to the remote LDAP server.
       */
-    PBoolean Bind(
+    bool Bind(
       const PString & who = PString::Empty(),
       const PString & passwd = PString::Empty(),
       AuthenticationMethod authMethod = AuthSimple
@@ -146,7 +146,7 @@ class PLDAPSession : public PObject
         );
 
       protected:
-        virtual PBoolean IsBinary() const = 0;
+        virtual bool IsBinary() const = 0;
         virtual void SetLDAPModVars(struct ldapmod & mod) = 0;
 
         PString   m_name;
@@ -177,7 +177,7 @@ class PLDAPSession : public PObject
           const PString & value
         );
       protected:
-        virtual PBoolean IsBinary() const;
+        virtual bool IsBinary() const;
         virtual void SetLDAPModVars(struct ldapmod & mod);
 
         PStringArray m_values;
@@ -208,7 +208,7 @@ class PLDAPSession : public PObject
           const PBYTEArray & value
         );
       protected:
-        virtual PBoolean IsBinary() const;
+        virtual bool IsBinary() const;
         virtual void SetLDAPModVars(struct ldapmod & mod);
 
         PArray<PBYTEArray> m_values;
@@ -218,14 +218,14 @@ class PLDAPSession : public PObject
 
     /**Add a new distringuished name to LDAP dirctory.
       */
-    PBoolean Add(
+    bool Add(
       const PString & dn,
       const PArray<ModAttrib> & attributes
     );
 
     /**Add a new distringuished name to LDAP dirctory.
       */
-    PBoolean Add(
+    bool Add(
       const PString & dn,
       const PStringToString & attributes
     );
@@ -233,7 +233,7 @@ class PLDAPSession : public PObject
     /**Add a new distringuished name to LDAP dirctory.
        The attributes list is a string array of the form attr=value
       */
-    PBoolean Add(
+    bool Add(
       const PString & dn,
       const PStringArray & attributes
     );
@@ -241,21 +241,21 @@ class PLDAPSession : public PObject
     /**Add a new distringuished name to LDAP dirctory.
        The attributes list is a string array of the form attr=value
       */
-    PBoolean Add(
+    bool Add(
       const PString & dn,
       const PLDAPStructBase & data
     );
 
     /**Modify an existing distringuished name to LDAP dirctory.
       */
-    PBoolean Modify(
+    bool Modify(
       const PString & dn,
       const PArray<ModAttrib> & attributes
     );
 
     /**Add a new distringuished name to LDAP dirctory.
       */
-    PBoolean Modify(
+    bool Modify(
       const PString & dn,
       const PStringToString & attributes
     );
@@ -263,7 +263,7 @@ class PLDAPSession : public PObject
     /**Add a new distringuished name to LDAP dirctory.
        The attributes list is a string array of the form attr=value
       */
-    PBoolean Modify(
+    bool Modify(
       const PString & dn,
       const PStringArray & attributes
     );
@@ -271,14 +271,14 @@ class PLDAPSession : public PObject
     /**Add a new distringuished name to LDAP dirctory.
        The attributes list is a string array of the form attr=value
       */
-    PBoolean Modify(
+    bool Modify(
       const PString & dn,
       const PLDAPStructBase & data
     );
 
     /**Delete the distinguished name from LDAP directory.
       */
-    PBoolean Delete(
+    bool Delete(
       const PString & dn
     );
 
@@ -295,7 +295,7 @@ class PLDAPSession : public PObject
         SearchContext();
         ~SearchContext();
 
-        PBoolean IsCompleted() const { return m_completed; }
+        bool IsCompleted() const { return m_completed; }
 
       private:
         int              m_msgid;
@@ -309,7 +309,7 @@ class PLDAPSession : public PObject
 
     /**Start search for specified information.
       */
-    PBoolean Search(
+    bool Search(
       SearchContext & context,
       const PString & filter,
       const PStringArray & attributes = PStringList(),
@@ -319,14 +319,14 @@ class PLDAPSession : public PObject
 
     /**Get the current search result entry.
       */
-    PBoolean GetSearchResult(
+    bool GetSearchResult(
       SearchContext & context,
       PStringToString & data
     );
 
     /**Get an attribute of the current search result entry.
       */
-    PBoolean GetSearchResult(
+    bool GetSearchResult(
       SearchContext & context,
       const PString & attribute,
       PString & data
@@ -334,7 +334,7 @@ class PLDAPSession : public PObject
 
     /**Get an attribute of the current search result entry.
       */
-    PBoolean GetSearchResult(
+    bool GetSearchResult(
       SearchContext & context,
       const PString & attribute,
       PStringArray & data
@@ -342,7 +342,7 @@ class PLDAPSession : public PObject
 
     /**Get an attribute of the current search result entry.
       */
-    PBoolean GetSearchResult(
+    bool GetSearchResult(
       SearchContext & context,
       const PString & attribute,
       PArray<PBYTEArray> & data
@@ -350,7 +350,7 @@ class PLDAPSession : public PObject
 
     /**Get all attributes of the current search result entry.
       */
-    PBoolean GetSearchResult(
+    bool GetSearchResult(
       SearchContext & context,
       PLDAPStructBase & data
     );
@@ -363,7 +363,7 @@ class PLDAPSession : public PObject
 
     /**Get the next search result.
       */
-    PBoolean GetNextSearchResult(
+    bool GetNextSearchResult(
       SearchContext & context
     );
 
@@ -438,7 +438,7 @@ class PLDAPAttributeBase : public PObject
     PLDAPAttributeBase(const char * name, void * pointer, PINDEX size);
 
     const char * GetName() const { return m_name; }
-    PBoolean IsBinary() const { return m_pointer != NULL; }
+    bool IsBinary() const { return m_pointer != NULL; }
 
     virtual void Copy(const PLDAPAttributeBase & other) = 0;
 
@@ -526,13 +526,13 @@ class PLDAPSchema : public PObject
 
 
     PStringList GetAttributeList();
-    PBoolean Exists(const PString & attribute);
+    bool Exists(const PString & attribute);
 
-    PBoolean SetAttribute(const PString & attribute, const PString & value);
-    PBoolean SetAttribute(const PString & attribute, const PBYTEArray & value);
+    bool SetAttribute(const PString & attribute, const PString & value);
+    bool SetAttribute(const PString & attribute, const PBYTEArray & value);
 
-    PBoolean GetAttribute(const PString & attribute, PString & value);
-    PBoolean GetAttribute(const PString & attribute, PBYTEArray & value);
+    bool GetAttribute(const PString & attribute, PString & value);
+    bool GetAttribute(const PString & attribute, PBYTEArray & value);
 
     AttributeType GetAttributeType(const PString & attribute);
 

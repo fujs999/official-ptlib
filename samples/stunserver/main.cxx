@@ -15,7 +15,7 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Portable Tools Library.
  *
  * The Initial Developer of the Original Code is Post Increment
  *
@@ -54,10 +54,10 @@ void StunServer::Main()
                    PTrace::Blocks | PTrace::Timestamp | PTrace::Thread | PTrace::FileAndLine);
 #endif
 
-  WORD port = PSTUNServer::DefaultPort;
+  uint16_t port = PSTUNServer::DefaultPort;
 
   if (args.GetCount() > 0)
-    port = (WORD)args[1].AsUnsigned();
+    port = (uint16_t)args[1].AsUnsigned();
 
   PSTUNServer server;
   if (!server.Open(port)) {
