@@ -1626,37 +1626,6 @@ void PSemaphore::Signal()
 }
 
 
-/////////////////////////////////////////////////////////////////////////////
-// PSyncPoint
-
-PSyncPoint::PSyncPoint()
-  : m_handle(::CreateEvent(NULL, FALSE, FALSE, NULL))
-{
-}
-
-PSyncPoint::PSyncPoint(const PSyncPoint &)
-  : m_handle(::CreateEvent(NULL, FALSE, FALSE, NULL))
-{
-}
-
-void PSyncPoint::Wait()
-{
-  m_handle.Wait(INFINITE);
-}
-
-
-bool PSyncPoint::Wait(const PTimeInterval & timeout)
-{
-  return m_handle.Wait(timeout.GetInterval());
-}
-
-
-void PSyncPoint::Signal()
-{
-  PAssertOS(::SetEvent(m_handle));
-}
-
-
 void PWin32Handle::Close()
 {
   if (IsValid()) {

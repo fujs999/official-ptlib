@@ -87,13 +87,10 @@ class PSyncPoint : public PSync
      */
     virtual void Signal();
 
-
-// Include platform dependent part of class
-#ifdef _WIN32
-#include "msos/ptlib/syncpoint.h"
-#else
-#include "unix/ptlib/syncpoint.h"
-#endif
+  protected:
+    std::mutex              m_mutex;
+    std::condition_variable m_cv;
+    bool                    m_signalled;
 };
 
 

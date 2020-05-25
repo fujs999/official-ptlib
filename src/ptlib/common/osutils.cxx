@@ -4027,6 +4027,52 @@ void PInstrumentedMutex::ReleasedLock(const PObject & mutex, uint64_t startHeldS
 #endif
 
 
+///////////////////////////////////////////////////////////////////////////////
+
+PSyncPoint::PSyncPoint()
+  : m_signalled(false)
+{
+}
+
+
+PSyncPoint::PSyncPoint(const PSyncPoint &)
+  : PSyncPoint()
+{
+}
+
+
+void PSyncPoint::Wait()
+{
+  PPROFILE_PRE_SYSTEM();
+  std::unique_lock<std::mutex> lock(m_mutex);
+  m_cv.wait(lock, [this] { return m_signalled; });
+  m_signalled = false;
+  PPROFILE_POST_SYSTEM();
+}
+
+
+bool PSyncPoint::Wait(const PTimeInterval & waitTime)
+{
+  PPROFILE_PRE_SYSTEM();
+  std::unique_lock<std::mutex> lock(m_mutex);
+  bool success = m_cv.wait_for(lock, waitTime.AsChronoNS(), [this] { return m_signalled; });
+  if (success)
+    m_signalled = false;
+  PPROFILE_POST_SYSTEM();
+  return success;
+}
+
+
+void PSyncPoint::Signal()
+{
+  {
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_signalled = true;
+  }
+  m_cv.notify_all();
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 
 void PSyncPointAck::Signal()
