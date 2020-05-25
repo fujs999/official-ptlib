@@ -1979,8 +1979,9 @@ PString PVXMLSession::EvaluateExpr(const PString & expr)
   if (m_scriptContext != NULL) {
     static PConstString const EvalVarName("PTLibVXMLExpressionResult");
     m_scriptContext->SetString(EvalVarName, "");
-    if (!m_scriptContext->Run(PSTRSTRM(EvalVarName<<'='<<expr)))
+    if (!m_scriptContext->Run(PSTRSTRM(EvalVarName<<'='<<expr))) {
       PTRACE(2, "Could not evaluate expression \"" << expr << "\" with script language " << m_scriptContext->GetLanguageName());
+    }
     return m_scriptContext->GetString(EvalVarName);
   }
 #endif
