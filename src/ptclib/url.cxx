@@ -611,7 +611,7 @@ bool PURL::LegacyParse(const char * cstr, const PURLLegacyScheme * schemeInfo)
   }
 
   if (schemeInfo->hasPath) {
-    if (str[start] == '/')
+    if (start < str.length() && str[start] == '/')
       ++start;
     SetPathStr(str(start, end));   // the hierarchy is what is left
   }
