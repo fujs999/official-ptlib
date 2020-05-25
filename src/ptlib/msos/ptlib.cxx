@@ -586,11 +586,12 @@ bool PFile::InternalOpen(OpenMode mode, OpenOptions opts, PFileInfo::Permissions
   else if (opts & (DenySharedRead|DenySharedWrite))
     sflags = _SH_DENYWR;
 
-  os_handle = _sopen(m_path, oflags, sflags, permissions.AsBits());
+  int fd;
+  if (_sopen_s(&fd, m_path, oflags, sflags, permissions.AsBits()) != 0)
+    return ConvertOSError(-1);
 
-  // As ConvertOSError tests for < 0 and some return values _sopen may be
-  // negative, only pass -1 through.
-  return ConvertOSError(os_handle == -1 ? -1 : 0);
+  os_handle = fd;
+  return ConvertOSError(0);
 }
 
 
