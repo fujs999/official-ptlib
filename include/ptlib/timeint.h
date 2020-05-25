@@ -34,6 +34,8 @@
 #pragma interface
 #endif
 
+#include <chrono>
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // Difference between two system times
@@ -484,6 +486,11 @@ class PTimeInterval : public PObject
     static int64_t const MinsToNano  = SecsToNano*60;
     static int64_t const HoursToNano = MinsToNano*60;
     static int64_t const DaysToNano  = HoursToNano*24;
+
+    std::chrono::nanoseconds AsChronoNS() const { return std::chrono::nanoseconds(InternalGet()); }
+    std::chrono::microseconds AsChronoUS() const { return std::chrono::microseconds(InternalGet()/MicroToNano); }
+    std::chrono::milliseconds AsChronoMS() const { return std::chrono::milliseconds(InternalGet()/MilliToNano); }
+    std::chrono::seconds AsChronoSec() const { return std::chrono::seconds(InternalGet()/SecsToNano); }
 
   protected:
     virtual int64_t InternalGet() const;

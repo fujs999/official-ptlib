@@ -2023,6 +2023,8 @@ public:
 
   __inline void clear() { std::stringstream::clear(); }
 
+  void PrintOn(ostream & strm) const { strm << str(); }
+
   // Backward compatibility
   PString MakeEmpty() { str(std::string()); return *this; }
   operator PString() const { return str(); }

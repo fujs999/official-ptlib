@@ -1094,21 +1094,22 @@ void LauncherThread::Main()
 
 void UserInterfaceThread::Main()
 {
-  PConsoleChannel console(PConsoleChannel::StandardInput);
-  cout << endl;
-  cout << "This program repeatedly create and destroys a PTimer" << endl;
-  cout << "Warnings are printed if the PTimer runs too quick" << endl;
-  cout<< "This program will end when the user enters \"q\"  " << endl;
-
   PStringStream help;
-  help << "Press : " << endl
-       << "         D      average interval between instances " << endl
-       << "         H or ? help"                                << endl
-       << "         R      report count of threads done"        << endl
-       << "         T      time elapsed"                        << endl
-       << "         X or Q exit "                               << endl;
- 
-  cout << endl << help;
+  cout << "Press : \n"
+          "         D      average interval between instances\n"
+          "         H or ? help\n"
+          "         R      report count of threads done\n"
+          "         T      time elapsed\n"
+          "         X or Q exit\n";
+
+  PConsoleChannel console(PConsoleChannel::StandardInput);
+
+  cout << "\n"
+          "This program repeatedly create and destroys a PTimer\n"
+          "Warnings are printed if the PTimer runs too quick\n"
+          "This program will end when the user enters \"q\"  \n"
+          "\n"
+       << help << endl;
 
   LauncherThread launch;
   launch.Resume();

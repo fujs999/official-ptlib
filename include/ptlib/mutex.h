@@ -34,8 +34,8 @@
 #pragma interface
 #endif
 
-#include <ptlib/atomic.h>
-#include <ptlib/semaphor.h>
+#include <ptlib/psync.h>
+#include <mutex>
 
 
 class PMutexExcessiveLockInfo
@@ -53,7 +53,6 @@ class PMutexExcessiveLockInfo
     );
     PMutexExcessiveLockInfo(const PMutexExcessiveLockInfo & other);
     virtual ~PMutexExcessiveLockInfo() { }
-    void Construct(unsigned timeout);
 
 #if PTRACING
     void Constructed(const PObject & mutex) const;
@@ -98,7 +97,7 @@ class PMutexExcessiveLockInfo
     <code>Signal()</code> function, releasing the second thread.
  */
 
-class PTimedMutex : public PSync, public PMutexExcessiveLockInfo
+class PTimedMutex : public PSync, public PMutexExcessiveLockInfo, public std::recursive_timed_mutex
 {
     PCLASSINFO(PTimedMutex, PSync)
   public:
@@ -170,20 +169,9 @@ class PTimedMutex : public PSync, public PMutexExcessiveLockInfo
     PUniqueThreadIdentifier m_lastUniqueId;
     unsigned                m_lockCount;
 
-    void Construct();
-    void PlatformConstruct();
-    bool PlatformWait(const PTimeInterval & timeout);
-    void PlatformSignal(const PDebugLocation * location);
     void InternalWait(const PDebugLocation * location);
     void InternalWaitComplete(uint64_t startWaitCycle, const PDebugLocation * location);
     bool InternalSignal(const PDebugLocation * location);
-
-// Include platform dependent part of class
-#ifdef _WIN32
-#include "msos/ptlib/mutex.h"
-#else
-#include "unix/ptlib/mutex.h"
-#endif
 };
 
 typedef PTimedMutex PMutex;
@@ -235,7 +223,7 @@ typedef PTimedMutex PMutex;
       void SetHeldMaxHistory(unsigned maxHistory) { m_timeHeldContext.SetMaxHistory(maxHistory); }
 
       virtual bool InstrumentedWait(const PTimeInterval & timeout, const PDebugLocation & location);
-      virtual void InstrumentedSignal(const PDebugLocation & location) { PlatformSignal(&location); }
+      virtual void InstrumentedSignal(const PDebugLocation & location) { InternalSignal(&location); }
 
     protected:
       virtual void AcquiredLock(uint64_t startWaitCycle, bool readOnly, const PDebugLocation & location);
@@ -267,7 +255,7 @@ typedef PTimedMutex PMutex;
     so it should only be used where a deadlock is clearly impossible, that is,
     there are never mopre than one mutex in the region being locked.
   */
-class PCriticalSection : public PSync
+class PCriticalSection : public PSync, public std::mutex
 {
   PCLASSINFO(PCriticalSection, PSync);
 
@@ -276,16 +264,12 @@ class PCriticalSection : public PSync
   //@{
     /**Create a new critical section object .
      */
-    PCriticalSection();
+    PCriticalSection() { }
 
     /**Allow copy constructor, but it actually does not copy the critical section,
        it creates a brand new one as they cannot be shared in that way.
      */
-    PCriticalSection(const PCriticalSection &);
-
-    /**Destroy the critical section object
-     */
-    ~PCriticalSection();
+    PCriticalSection(const PCriticalSection &) : PCriticalSection() { }
 
     /**Assignment operator is allowed but does nothing. Overwriting the old critical
        section information would be very bad.
@@ -297,10 +281,7 @@ class PCriticalSection : public PSync
   //@{
     /** Create a new PCriticalSection
       */
-    PObject * Clone() const
-    {
-      return new PCriticalSection();
-    }
+    PObject * Clone() const;
 
     /** Enter the critical section by waiting for exclusive access.
      */
@@ -324,14 +305,8 @@ class PCriticalSection : public PSync
     /** Try to enter the critical section for exlusive access. Does not wait.
         @return true if cirical section entered, leave/Signal must be called.
       */
-    bool Try();
+    bool Try() { return try_lock(); }
   //@}
-
-#if _WIN32
-    mutable CRITICAL_SECTION criticalSection;
-#elif defined(P_PTHREADS) || defined(VX_TASKS)
-    mutable pthread_mutex_t m_mutex;
-#endif
 };
 
 

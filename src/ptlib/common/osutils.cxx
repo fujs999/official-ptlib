@@ -3714,22 +3714,15 @@ unsigned PTimedMutex::ExcessiveLockWaitTime;
 
 
 PMutexExcessiveLockInfo::PMutexExcessiveLockInfo()
+  : PMutexExcessiveLockInfo(PDebugLocation(), 0)
 {
-  Construct(0);
 }
 
 PMutexExcessiveLockInfo::PMutexExcessiveLockInfo(const PDebugLocation & location, unsigned timeout)
   : m_location(location)
+  , m_excessiveLockActive(false)
+  , m_startHeldSamplePoint(0)
 {
-  Construct(timeout);
-}
-
-
-void PMutexExcessiveLockInfo::Construct(unsigned timeout)
-{
-  m_excessiveLockActive = false;
-  m_startHeldSamplePoint = 0;
-
   if (timeout > 0)
       m_excessiveLockTimeout = timeout;
   else {
@@ -3852,34 +3845,38 @@ unsigned PMutexExcessiveLockInfo::MinDeadlockTime(unsigned waitTime)
 ///////////////////////////////////////////////////////////////////////////////
 
 PTimedMutex::PTimedMutex()
-  : PMutexExcessiveLockInfo()
+  : PTimedMutex(PDebugLocation(), 0)
 {
-  Construct();
 }
 
 
 PTimedMutex::PTimedMutex(const PDebugLocation & location, unsigned timeout)
   : PMutexExcessiveLockInfo(location, timeout)
+  , m_lockerId(PNullThreadIdentifier)
+  , m_lastLockerId(PNullThreadIdentifier)
+  , m_lastUniqueId(0)
+  , m_lockCount(0)
 {
-  Construct();
+  PMUTEX_CONSTRUCTED();
 }
 
 
 PTimedMutex::PTimedMutex(const PTimedMutex & other)
-  : PMutexExcessiveLockInfo(other)
+  : PTimedMutex(other.m_location, other.m_excessiveLockTimeout)
 {
-  Construct();
 }
 
 
-void PTimedMutex::Construct()
+PTimedMutex::~PTimedMutex()
 {
-  m_lockerId = PNullThreadIdentifier;
-  m_lastLockerId = PNullThreadIdentifier;
-  m_lastUniqueId = 0;
-  m_lockCount = 0;
-  PlatformConstruct();
-  PMUTEX_CONSTRUCTED();
+  PMUTEX_DESTROYED();
+}
+
+
+void PTimedMutex::PrintOn(ostream &strm) const
+{
+  strm << "timed mutex " << this;
+  PMutexExcessiveLockInfo::PrintOn(strm);
 }
 
 
@@ -3898,7 +3895,7 @@ bool PTimedMutex::Wait(const PTimeInterval & timeout)
 
   uint64_t startWaitCycle = PProfiling::GetCycles();
 
-  if (!PlatformWait(timeout))
+  if (!try_lock_for(timeout.AsChronoNS()))
     return false;
 
   InternalWaitComplete(startWaitCycle, NULL);
@@ -3908,7 +3905,7 @@ bool PTimedMutex::Wait(const PTimeInterval & timeout)
 
 void PTimedMutex::Signal()
 {
-  PlatformSignal(NULL);
+  unlock();
 }
 
 
@@ -3916,7 +3913,7 @@ void PTimedMutex::InternalWait(const PDebugLocation * location)
 {
   uint64_t startWaitCycle = PProfiling::GetCycles();
 
-  if (!PlatformWait(m_excessiveLockTimeout)) {
+  if (!try_lock_for(std::chrono::milliseconds(m_excessiveLockTimeout))) {
     m_excessiveLockActive = true;
 
 #if PTRACING
@@ -3965,7 +3962,7 @@ void PTimedMutex::InternalWait(const PDebugLocation * location)
     PAssertAlways(PSTRSTRM("Possible deadlock in " << *this));
 #endif
 
-    PlatformWait(PMaxTimeInterval);
+    lock();
     ExcessiveLockPhantom(*this);
   }
 
@@ -4008,7 +4005,7 @@ bool PInstrumentedMutex::InstrumentedWait(const PTimeInterval & timeout, const P
     return true;
   }
 
-  if (!PlatformWait(timeout))
+  if (!try_lock_for(timeout.AsChronoNS()))
     return false;
 
   InternalWaitComplete(startWaitCycle, &location);
@@ -4560,6 +4557,18 @@ void PInstrumentedReadWriteMutex::ReleasedLock(const PObject & mutex, uint64_t s
 
 ///////////////////////////////////////////////////////////////////////////////
 
+PObject * PCriticalSection::Clone() const
+{
+  return new PCriticalSection();
+}
+
+
+void PCriticalSection::Wait()
+{
+  lock();
+}
+
+
 bool PCriticalSection::Wait(const PTimeInterval & timeout)
 {
   if (timeout == 0)
@@ -4574,6 +4583,12 @@ bool PCriticalSection::Wait(const PTimeInterval & timeout)
     PThread::Sleep(100);
   } while (timer.IsRunning());
   return false;
+}
+
+
+void PCriticalSection::Signal()
+{
+  unlock();
 }
 
 

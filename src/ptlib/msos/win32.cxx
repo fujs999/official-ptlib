@@ -1626,41 +1626,6 @@ void PSemaphore::Signal()
 }
 
 
-///////////////////////////////////////////////////////////////////////////////
-// PTimedMutex
-
-PTimedMutex::~PTimedMutex()
-{
-  PMUTEX_DESTROYED();
-}
-
-
-void PTimedMutex::PrintOn(ostream &strm) const
-{
-  strm << "timed mutex " << this << '[' << GetHandle() << ']';
-  PMutexExcessiveLockInfo::PrintOn(strm);
-}
-
-
-void PTimedMutex::PlatformConstruct()
-{
-  m_handle = ::CreateMutex(NULL, FALSE, NULL);
-}
-
-
-bool PTimedMutex::PlatformWait(const PTimeInterval & timeout)
-{
-  return m_handle.Wait(timeout.GetInterval());
-}
-
-
-void PTimedMutex::PlatformSignal(const PDebugLocation * location)
-{
-  InternalSignal(location);
-  PAssertOS(::ReleaseMutex(m_handle));
-}
-
-
 /////////////////////////////////////////////////////////////////////////////
 // PSyncPoint
 
