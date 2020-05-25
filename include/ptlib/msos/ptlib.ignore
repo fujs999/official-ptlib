@@ -114,6 +114,14 @@ EXPORTS
     _vsprintf_l
     _vsscanf_l
     _vswprintf_s_l
+    sprintf_s
+    sscanf_s
+	_sprintf_s
+	_sscanf_s
+    _vsprintf_s
+    _vsscanf_s
+    __vsprintf_s_l
+    __vsscanf_s_l
     __local_stdio_printf_options
     __local_stdio_scanf_options
 	PtrToLong

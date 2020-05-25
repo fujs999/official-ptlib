@@ -209,8 +209,8 @@ static void InternalAssertFunc(const PDebugLocation & location, const char * msg
     env = PConfig::GetEnv("PTLIB_ASSERT_ACTION");
   if (env.empty())
     env = PConfig::GetEnv("PWLIB_ASSERT_ACTION");
-  if (env.empty() && PProcess::Current().IsServiceProcess())
-    env = 'I';
+  if (env.empty())
+    env = PProcess::Current().IsServiceProcess() ? 'I' : ' ';
 
   PPlatformAssertFunc(location, str.c_str(), env[0]);
 

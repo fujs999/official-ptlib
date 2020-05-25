@@ -173,8 +173,8 @@
           m_SymGetLineFromAddr64 = NULL;
 
         // Get the directory the .exe file is in
-        char filename[_MAX_PATH];
-        if (GetModuleFileNameEx(m_hProcess, NULL, filename, sizeof(filename)) == 0) {
+        char exename[_MAX_PATH];
+        if (GetModuleFileNameEx(m_hProcess, NULL, exename, sizeof(exename)) == 0) {
           uint32_t err = ::GetLastError();
           strm << "\n    GetModuleFileNameEx failed, error=" << err;
           return false;
@@ -183,12 +183,12 @@
         ostringstream path;
 
         // Always look in same place as the .exe file for .pdb file
-        char * ptr = strrchr(filename, '\\');
+        char * ptr = strrchr(exename, '\\');
         if (ptr == NULL)
-          path << filename;
+          path << exename;
         else {
           *ptr = '\0';
-          path << filename;
+          path << exename;
           *ptr = '\\';
         }
 
@@ -212,14 +212,17 @@
         strm << "\n    Stack walk symbols initialised, path=\"" << path.str() << '"';
 
         // See if PDB file exists
-        ptr = strrchr(filename, '.');
-        if (ptr == NULL)
-          strcat_s(filename, sizeof(filename), ".pdb");
-        else
-          strcpy_s(ptr, sizeof(filename), ".pdb");
+        std::string pdbname = exename;
+        auto dot = pdbname.rfind('.');
+        if (dot == string::npos)
+          pdbname += ".pdb";
+        else {
+          pdbname.erase(dot, 4);
+          pdbname.insert(dot, ".pdb");
+        }
 
-        if (_access(filename, 4) != 0)
-          strm << "\n    Stack walk could not find symbols file \"" << filename << '"';
+        if (_access(pdbname.c_str(), 4) != 0)
+          strm << "\n    Stack walk could not find symbols file \"" << pdbname << '"';
 
         m_SymSetOptions(m_SymGetOptions()|SYMOPT_LOAD_LINES|SYMOPT_FAIL_CRITICAL_ERRORS|SYMOPT_NO_PROMPTS);
         return true;
