@@ -294,7 +294,7 @@ void XMPP::C2S::StreamHandler::OnOpen(XMPP::Stream& stream, INT extra)
       } else {
         str = str.Mid(v + 9);
         int maj, min;
-        if (sscanf(str, "%d.%d", &maj, &min) != 2) {
+        if (sscanf_s(str, "%d.%d", &maj, &min) != 2) {
           m_VersionMajor = 0;
           m_VersionMinor = 9;
         } else {

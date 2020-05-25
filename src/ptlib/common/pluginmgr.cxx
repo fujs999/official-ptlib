@@ -510,9 +510,9 @@ void PluginLoaderStartup::OnStartup()
 {
   PPluginManager & pluginMgr = PPluginManager::GetPluginManager();
   if (pluginMgr.GetDirectories().IsEmpty()) {
-    PString env = ::getenv(P_PTLIB_PLUGIN_DIR_ENV_VAR);
+    PString env = PConfig::GetEnv(P_PTLIB_PLUGIN_DIR_ENV_VAR);
     if (env.IsEmpty())
-      env = ::getenv(P_PWLIB_PLUGIN_DIR_ENV_VAR);
+      env = PConfig::GetEnv(P_PWLIB_PLUGIN_DIR_ENV_VAR);
     if (env.IsEmpty()) {
       env = P_DEFAULT_PLUGIN_DIR;
       PDirectory appdir = PProcess::Current().GetFile().GetDirectory();

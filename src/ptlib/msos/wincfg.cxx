@@ -718,7 +718,7 @@ bool PConfig::HasKey(const PString & section, const PString & key) const
   switch (source) {
     case Environment :
       PAssert(!key.IsEmpty(), PInvalidParameter);
-      return getenv(key) != NULL;
+      return GetEnv(key, "\n") != "\n";
 
     case Application : {
       PAssert(!section.IsEmpty(), PInvalidParameter);
@@ -750,11 +750,7 @@ PString PConfig::GetString(const PString & section,
   switch (source) {
     case Environment : {
       PAssert(!key.IsEmpty() && key.Find('=') == P_MAX_INDEX, PInvalidParameter);
-      char * env = getenv(key);
-      if (env != NULL)
-        str = env;
-      else
-        str = dflt;
+      str = GetEnv(key);
       break;
     }
 

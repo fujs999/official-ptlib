@@ -1284,7 +1284,7 @@ void PODBC::Field::OnValueChanged()
       else {
         switch (m_odbcType) {
           case SQL_DATETIME :
-            strcpy(m_extra->datetime, time.AsString("YYYY-MM-dd hh:mm:ss"));
+            strcpy_s(m_extra->datetime, sizeof(m_extra->datetime), time.AsString("YYYY-MM-dd hh:mm:ss"));
             m_extra->bindLenOrInd = sizeof(m_extra->datetime);
             break;
 

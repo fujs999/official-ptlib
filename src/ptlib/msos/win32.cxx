@@ -607,8 +607,12 @@ PString PChannel::GetErrorText(Errors lastError, int osError)
       return psprintf("High level error %u", lastError);
   }
 
-  if (osError > 0 && osError < _sys_nerr && _sys_errlist[osError][0] != '\0')
-    return _sys_errlist[osError];
+  if (osError > 0) {
+    char errStr[100];
+    strerror_s(errStr, sizeof(errStr), osError);
+    if (*errStr != '\0')
+      return errStr;
+  }
 
   if ((osError&PWIN32ErrorFlag) == 0)
     return psprintf("C runtime error %u", osError);
@@ -1341,15 +1345,16 @@ bool PProcess::SetUserName(const PString & username, bool)
 
 PDirectory PProcess::GetHomeDirectory() const
 {
-  const char * dir;
-  if ((dir = getenv("HOME")) != NULL)
+  auto dir = PConfig::GetEnv("HOME");
+  if (!dir.empty())
     return dir;
 
   TCHAR szPath[MAX_PATH];
   if (SHGetFolderPath(NULL, CSIDL_PROFILE, NULL, 0, szPath) == S_OK)
     return szPath;
 
-  if ((dir = getenv("USERPROFILE")) != NULL)
+  dir = PConfig::GetEnv("USERPROFILE");
+  if (!dir.empty())
     return dir;
 
   return ".";

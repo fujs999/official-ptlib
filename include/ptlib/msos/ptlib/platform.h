@@ -29,6 +29,7 @@
 #define PTLIB_PLATFORM_H
 
 #include <stdint.h>
+#include <cstdlib>
 
 
 #ifdef _MSC_VER
@@ -49,14 +50,6 @@
 
   #if P_64BIT
     #pragma warning(disable:4267)  // possible loss of data -- just too many to fix.
-  #endif
-
-  #if !defined(_CRT_SECURE_NO_DEPRECATE) && (_MSC_VER>=1400)
-    #define _CRT_SECURE_NO_DEPRECATE 1
-  #endif
-
-  #if !defined(_CRT_NONSTDC_NO_WARNINGS) && (_MSC_VER>=1400)
-    #define _CRT_NONSTDC_NO_WARNINGS 1
   #endif
 
 #endif // _MSC_VER

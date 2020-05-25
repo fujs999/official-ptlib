@@ -41,8 +41,7 @@ void PSerialChannel::Construct()
 {
   commsResource = INVALID_HANDLE_VALUE;
 
-  char str[50];
-  strcpy(str, "com1");
+  char str[50] = "com1";
   GetProfileString("ports", str, "9600,n,8,1,x", &str[5], sizeof(str)-6);
   str[4] = ':';
   memset(&deviceControlBlock, 0, sizeof(deviceControlBlock));

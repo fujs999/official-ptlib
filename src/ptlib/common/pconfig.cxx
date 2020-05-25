@@ -39,6 +39,19 @@
 
 const PString & PConfig::DefaultSectionName() { static PConstString const s("Options"); return s; }
 
+PString PConfig::GetEnv(const char* key, const char* dflt)
+{
+  size_t required;
+  getenv_s(&required, NULL, 0, key);
+  if (required == 0)
+    return dflt;
+
+  PString env;
+  getenv_s(&required, env.GetPointerAndSetLength(required), required+1, key);
+  return env;
+}
+
+
 PStringToString PConfig::GetAllKeyValues(const PString & section) const
 {
   PStringToString dict;

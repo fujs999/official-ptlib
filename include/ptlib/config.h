@@ -526,6 +526,8 @@ class PConfig : public PObject
 
     static const PString & DefaultSectionName();
 
+    static PString GetEnv(const char* key, const char* dflt = nullptr);
+
   protected:
     // Member variables
     /// The current section for variable values.

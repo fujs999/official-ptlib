@@ -2212,7 +2212,7 @@ PString & PString::vsprintf(const char * fmt, va_list arg)
   int requiredSpace;
   do {
     providedSpace += 1000;
-    requiredSpace = _vsnprintf(GetPointerAndSetLength(providedSpace+len), providedSpace, fmt, arg);
+    requiredSpace = vsprintf_s(GetPointerAndSetLength(providedSpace+len), providedSpace, fmt, arg);
   } while (requiredSpace == -1 || requiredSpace >= providedSpace);
   resize(len + requiredSpace);
 #endif // P_VXWORKS

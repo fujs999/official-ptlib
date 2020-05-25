@@ -128,7 +128,7 @@ PNotifyIconData::PNotifyIconData(HWND window, UINT flags, const char * tip)
   uID    = SYSTRAY_ICON_ID;
   uFlags = flags;
   if (tip != NULL) {
-    strncpy(szTip, tip, sizeof(szTip)-1);
+    strncpy_s(szTip, sizeof(szTip), tip, sizeof(szTip)-1);
     szTip[sizeof(szTip)-1] = '\0';
     uFlags |= NIF_TIP;
   }
@@ -213,7 +213,7 @@ class PSystemLogToEvent : public PSystemLogTarget
 
     char errbuf[25];
     if (level > PSystemLog::StdError && level < PSystemLog::Info && err != 0)
-      ::sprintf(errbuf, "Error code = %lu", err);
+      ::sprintf_s(errbuf, sizeof(errbuf), "Error code = %lu", err);
     else
       errbuf[0] = '\0';
 
@@ -775,8 +775,7 @@ LPARAM PServiceProcess::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPara
             fileDlgInfo.hInstance = hInstance;
             fileBuffer[0] = '\0';
             fileDlgInfo.lpstrFile = fileBuffer;
-            char customFilter[100];
-            strcpy(customFilter, "All Files");
+            char customFilter[100] = "All Files";
             memcpy(&customFilter[strlen(customFilter)+1], "*.*\0", 5);
             fileDlgInfo.lpstrCustomFilter = customFilter;
             fileDlgInfo.nMaxCustFilter = sizeof(customFilter);
@@ -952,7 +951,7 @@ void PServiceProcess::DebugOutput(const char * out)
       len = lf - out;
       char * line = (char *)alloca(len+3);
       memcpy(line, out, len);
-      strcpy(line+len, crlfString);
+      memcpy(line+len, crlfString, sizeof(crlfString));
       SendMessage(m_debugWindow, EM_REPLACESEL, false, (LPARAM)line);
       out = lf+1;
     }

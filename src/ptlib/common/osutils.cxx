@@ -291,26 +291,11 @@ PTHREAD_MUTEX_RECURSIVE_NP
 
   void InitialiseFromEnvironment()
   {
-    const char * levelEnv = getenv("PTLIB_TRACE_LEVEL");
-    if (levelEnv == NULL) {
-      levelEnv = getenv("PWLIB_TRACE_LEVEL");
-      if (levelEnv == NULL) {
-        levelEnv = getenv("PTLIB_TRACE_STARTUP"); // Backward compatibility test
-        if (levelEnv == NULL)
-          levelEnv = getenv("PWLIB_TRACE_STARTUP"); // Backward compatibility test
-      }
-    }
-
-    const char * fileEnv = getenv("PTLIB_TRACE_FILE");
-    if (fileEnv == NULL)
-      fileEnv = getenv("PWLIB_TRACE_FILE");
-
-    const char * optEnv = getenv("PWLIB_TRACE_OPTIONS");
-    if (optEnv == NULL)
-      optEnv = getenv("PTLIB_TRACE_OPTIONS");
-
-    const char * mutEnv = getenv("PTLIB_MUTEX_CTOR_DTOR_LOG");
-    if (mutEnv != NULL)
+    PString levelEnv = PConfig::GetEnv("PTLIB_TRACE_LEVEL");
+    PString fileEnv = PConfig::GetEnv("PTLIB_TRACE_FILE");
+    PString optEnv = PConfig::GetEnv("PWLIB_TRACE_OPTIONS");
+    PString mutEnv = PConfig::GetEnv("PTLIB_MUTEX_CTOR_DTOR_LOG");
+    if (!mutEnv.empty())
       PTimedMutex::CtorDtorLogLevel = atoi(mutEnv);
 
     if (levelEnv != NULL || fileEnv != NULL || optEnv != NULL)
@@ -1232,14 +1217,14 @@ PDirectory::PDirectory(const PDirectory & dir)
 
 PDirectory PDirectory::GetTemporary()
 {
-  const char * tmpdir = getenv("TMPDIR");
-  if (tmpdir == NULL) {
-    tmpdir = getenv("TMP");
-    if (tmpdir == NULL)
-      tmpdir = getenv("TEMP");
+  PString tmpdir = PConfig::GetEnv("TMPDIR");
+  if (tmpdir.empty()) {
+    tmpdir = PConfig::GetEnv("TMP");
+    if (tmpdir.empty())
+      tmpdir = PConfig::GetEnv("TEMP");
   }
 
-  if (tmpdir != NULL && *tmpdir != '\0')
+  if (!tmpdir.empty())
     return tmpdir;
 
 #ifdef _WIN32
@@ -3700,11 +3685,11 @@ void PSimpleThread::Main()
 
 static PTimedMutex::DeadlockStackWalkModes InitialiseDeadlockStackWalkMode()
 {
-  const char * env = getenv("PTLIB_DEADLOCK_STACK_WALK_MODE");
-  if (env != NULL)
+  auto env = PConfig::GetEnv("PTLIB_DEADLOCK_STACK_WALK_MODE");
+  if (!env.empty())
     return (PTimedMutex::DeadlockStackWalkModes)std::min((int)PTimedMutex::DeadlockStackWalkOnPhantomRelease, std::abs(atoi(env)));
 
-  if (getenv("PTLIB_DISABLE_DEADLOCK_STACK_WALK") != NULL)
+  if (!PConfig::GetEnv("PTLIB_DISABLE_DEADLOCK_STACK_WALK").empty())
     return PTimedMutex::DeadlockStackWalkDisabled;
 
   return PTimedMutex::DeadlockStackWalkEnabled;
@@ -3751,8 +3736,7 @@ void PMutexExcessiveLockInfo::Construct(unsigned timeout)
       m_excessiveLockTimeout = timeout;
   else {
     if (PTimedMutex::ExcessiveLockWaitTime == 0) {
-      const char * env = getenv("PTLIB_DEADLOCK_TIME");
-      int seconds = env != NULL ? atoi(env) : 0;
+      auto seconds = PConfig::GetEnv("PTLIB_DEADLOCK_TIME", "0").AsUnsigned();
       PTimedMutex::ExcessiveLockWaitTime = seconds > 0 ? seconds*1000 : 15000;
     }
     m_excessiveLockTimeout = PTimedMutex::ExcessiveLockWaitTime;

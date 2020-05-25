@@ -367,13 +367,14 @@ PVarType & PVarType::SetString(const char * value, bool dynamic)
   else if (dynamic) {
     size_t len = strlen(value)+1;
     if (m_type == VarDynamicString && m_.dynamic.size >= len)
-      strcpy(m_.dynamic.data, value);
+      strcpy_s(m_.dynamic.data, m_.dynamic.size, value);
     else if (m_type == VarFixedString)
-      strncpy(m_.dynamic.data, value, m_.dynamic.size-1);
+      strncpy_s(m_.dynamic.data, m_.dynamic.size, value, m_.dynamic.size-1);
     else {
       InternalDestroy();
       m_type = VarDynamicString;
-      strcpy(m_.dynamic.Alloc(strlen(value)+1), value);
+      size_t sz = strlen(value)+1;
+      strcpy_s(m_.dynamic.Alloc(sz), sz, value);
     }
   }
   else {

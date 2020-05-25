@@ -190,7 +190,7 @@ static PString PSSLError(unsigned long err = ERR_peek_error())
   char buf[200];
   ERR_error_string_n(err, buf, sizeof(buf));
   if (buf[0] == '\0')
-    sprintf(buf, "code=%lu", err);
+    sprintf_s(buf, sizeof(buf), "code=%lu", err);
   return buf;
 }
 

@@ -46,32 +46,6 @@
 #define PTraceModule() "PTLib"
 
 
-ostream & operator<<(ostream & s, int64_t v)
-{
-  char buffer[25];
-
-  if ((s.flags()&ios::hex) != 0)
-    return s << _ui64toa(v, buffer, 16);
-
-  if ((s.flags()&ios::oct) != 0)
-    return s << _ui64toa(v, buffer, 8);
-
-  if (v < 0) {
-    s << '-';
-    v = -v;
-  }
-
-  return s << _i64toa(v, buffer, 10);
-}
-
-
-ostream & operator<<(ostream & s, uint64_t v)
-{
-  char buffer[25];
-  return s << _ui64toa(v, buffer, (s.flags()&ios::oct) ? 8 : ((s.flags()&ios::hex) ? 16 : 10));
-}
-
-
 const PINDEX MaxDigits = (64+2)/3+1; // Maximum is 22 digit octal number, plus sign
 
 static void GetDigits(bool sign, istream & s, char * buffer)

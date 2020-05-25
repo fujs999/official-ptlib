@@ -1982,7 +1982,7 @@ protected:
       info.dwRate = fmt.nAvgBytesPerSec;
       info.dwSampleSize = fmt.nBlockAlign;
       info.dwQuality = (uint32_t)-1;
-      strcpy(info.szName, fmt.nChannels == 2 ? "Stereo Audio" : "Mixed Audio");
+      strcpy_s(info.szName, sizeof(info.szName), fmt.nChannels == 2 ? "Stereo Audio" : "Mixed Audio");
 
       if (IS_RESULT_ERROR(m_owner, AVIFileCreateStream(file, &m_stream, &info), "creating AVI audio stream"))
         return false;

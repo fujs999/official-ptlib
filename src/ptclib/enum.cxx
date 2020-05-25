@@ -298,11 +298,11 @@ bool PDNS::ENUMLookup(const PString & e164,
 {
   PWaitAndSignal m(GetENUMServerMutex());
   PStringArray domains;
-  char * env = ::getenv(PWLIB_ENUM_PATH);
-  if (env == NULL)
+  PString dir = PConfig::GetEnv("HOME");
+  if (dir.empty())
     domains += GetENUMServers();
   else
-    domains += PString(env).Tokenise(PATH_SEP);
+    domains += dir.Tokenise(PATH_SEP);
 
   return PDNS::ENUMLookup(e164, service, domains, dn);
 }
@@ -550,11 +550,11 @@ bool PDNS::RDSLookup(const PURL & url,
 {
   PWaitAndSignal m(GetRDSServerMutex());
   PStringArray domains;
-  char * env = ::getenv(PWLIB_RDS_PATH);
-  if (env == NULL)
+  PString dir = PConfig::GetEnv("HOME");
+  if (dir.empty())
     domains += GetRDSServers();
   else
-    domains += PString(env).Tokenise(PATH_SEP);
+    domains += PString(dir).Tokenise(PATH_SEP);
 
   return PDNS::RDSLookup(url, service, domains, dn);
 }

@@ -189,14 +189,14 @@ bool PRemoteConnection::Open(bool existing)
 
   if (remoteName[0] != '.') {
     PAssert(remoteName.GetLength() < (PINDEX)sizeof(params.szEntryName)-1, PInvalidParameter);
-    strcpy(params.szEntryName, remoteName);
+    strcpy_s(params.szEntryName, sizeof(params.szEntryName), remoteName);
   }
   else {
     PAssert(remoteName.GetLength() < (PINDEX)sizeof(params.szPhoneNumber), PInvalidParameter);
-    strcpy(params.szPhoneNumber, remoteName(1, P_MAX_INDEX));
+    strcpy_s(params.szPhoneNumber, sizeof(params.szPhoneNumber), remoteName(1, P_MAX_INDEX));
   }
-  strcpy(params.szUserName, userName);
-  strcpy(params.szPassword, password);
+  strcpy_s(params.szUserName, sizeof(params.szUserName), userName);
+  strcpy_s(params.szPassword, sizeof(params.szPassword), password);
 
   osError = Ras.Dial(NULL, NULL, &params, 0, NULL, &rasConnection);
   if (osError == 0)
@@ -474,13 +474,13 @@ PRemoteConnection::Status
 
   PINDEX barpos = config.device.Find('/');
   if (barpos == P_MAX_INDEX)
-    strncpy(entry->szDeviceName, config.device, sizeof(entry->szDeviceName)-1);
+    strncpy_s(entry->szDeviceName, sizeof(entry->szDeviceName), config.device, sizeof(entry->szDeviceName)-1);
   else {
-    strncpy(entry->szDeviceType, config.device.Left(barpos),  sizeof(entry->szDeviceType)-1);
-    strncpy(entry->szDeviceName, config.device.Mid(barpos+1), sizeof(entry->szDeviceName)-1);
+    strncpy_s(entry->szDeviceType, sizeof(entry->szDeviceType), config.device.Left(barpos),  sizeof(entry->szDeviceType)-1);
+    strncpy_s(entry->szDeviceName, sizeof(entry->szDeviceName), config.device.Mid(barpos+1), sizeof(entry->szDeviceName)-1);
   }
 
-  strncpy(entry->szLocalPhoneNumber, config.phoneNumber, sizeof(entry->szLocalPhoneNumber)-1);
+  strncpy_s(entry->szLocalPhoneNumber, sizeof(entry->szLocalPhoneNumber), config.phoneNumber, sizeof(entry->szLocalPhoneNumber)-1);
 
   PStringArray dots = config.ipAddress.Tokenise('.');
   if (dots.GetSize() != 4)
@@ -503,7 +503,7 @@ PRemoteConnection::Status
     entry->ipaddrDns.d = (uint8_t)dots[3].AsInteger();
   }
 
-  strncpy(entry->szScript, config.script, sizeof(entry->szScript-1));
+  strncpy_s(entry->szScript, sizeof(entry->szScript), config.script, sizeof(entry->szScript-1));
 
   entry->dwDialMode = config.dialAllSubEntries ? RASEDM_DialAll : RASEDM_DialAsNeeded;
 

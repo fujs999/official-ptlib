@@ -281,8 +281,8 @@ struct PJavaScript::Private : PObject
 #ifdef V8_BLOBS_DIR
       // Initialise some basics
       if (!MyInitializeExternalStartupData(exeDir)) {
-        const char * dir = getenv("V8_BLOBS_DIR");
-        if (dir == NULL || !MyInitializeExternalStartupData(dir)) {
+        auto dir = PConfig::GetEnv("V8_BLOBS_DIR");
+        if (dir.empty() || !MyInitializeExternalStartupData(dir)) {
           if (!MyInitializeExternalStartupData(V8_BLOBS_DIR)) {
             PTRACE(1, NULL, PTraceModule(), "v8::V8::InitializeExternalStartupData() failed, not loaded.");
             return;

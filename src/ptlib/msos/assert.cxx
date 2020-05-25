@@ -195,11 +195,12 @@
         /* Add in the environment variables as per default, but do not add in
            current directory (as default does), as if that is C:\, it searches
            the entire disk. Slooooow. */
-        const char * env;
-        if ((env = getenv("_NT_SYMBOL_PATH")) != NULL)
-          path << ';' << env;
-        if ((env = getenv("_NT_ALTERNATE_SYMBOL_PATH")) != NULL)
-          path << ';' << env;
+        auto dir = PConfig::GetEnv("_NT_SYMBOL_PATH");
+        if (!dir.empty())
+          path << ';' << dir;
+        dir = PConfig::GetEnv("_NT_ALTERNATE_SYMBOL_PATH");
+        if (!dir.empty())
+          path << ';' << dir;
 
         // Initialise the symbols with path for PDB files.
         if (!m_SymInitialize(m_hProcess, path.str().c_str(), TRUE)) {
@@ -213,9 +214,9 @@
         // See if PDB file exists
         ptr = strrchr(filename, '.');
         if (ptr == NULL)
-          strcat(filename, ".pdb");
+          strcat_s(filename, sizeof(filename), ".pdb");
         else
-          strcpy(ptr, ".pdb");
+          strcpy_s(ptr, sizeof(filename), ".pdb");
 
         if (_access(filename, 4) != 0)
           strm << "\n    Stack walk could not find symbols file \"" << filename << '"';

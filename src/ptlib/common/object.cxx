@@ -196,23 +196,23 @@ static void InternalAssertFunc(const PDebugLocation & location, const char * msg
     str = strm.str();
   }
 
-  const char * env;
+  PString env;
 #if P_EXCEPTIONS
   //Throw a runtime exception if the environment variable is set
-  env = ::getenv("PTLIB_ASSERT_EXCEPTION");
-  if (env == NULL)
-    env = ::getenv("PWLIB_ASSERT_EXCEPTION");
-  if (env != NULL)
-    env = "T";
+  env = PConfig::GetEnv("PTLIB_ASSERT_EXCEPTION");
+  if (env.empty())
+    env = PConfig::GetEnv("PWLIB_ASSERT_EXCEPTION");
+  if (!env.empty())
+    env = 'T';
   else
 #endif
-    env = ::getenv("PTLIB_ASSERT_ACTION");
-  if (env == NULL)
-    env = ::getenv("PWLIB_ASSERT_ACTION");
-  if (env == NULL)
-    env = PProcess::Current().IsServiceProcess() ? "i" : "";
+    env = PConfig::GetEnv("PTLIB_ASSERT_ACTION");
+  if (env.empty())
+    env = PConfig::GetEnv("PWLIB_ASSERT_ACTION");
+  if (env.empty() && PProcess::Current().IsServiceProcess())
+    env = 'I';
 
-  PPlatformAssertFunc(location, str.c_str(), *env);
+  PPlatformAssertFunc(location, str.c_str(), env[0]);
 
   s_RecursiveAssert = false;
 }
@@ -225,7 +225,7 @@ bool PAssertFunc(const PDebugLocation & location, PStandardAssertMessage msg)
     // a memory out situation as that would probably also fail!
     static const char fmt[] = "Out of memory at file %.100s, line %u, class %.30s";
     char msgbuf[sizeof(fmt)+100+10+30];
-    sprintf(msgbuf, fmt, location.m_file, location.m_line, location.m_extra);
+    sprintf_s(msgbuf, sizeof(msgbuf), fmt, location.m_file, location.m_line, location.m_extra);
     PPlatformAssertFunc(location, msgbuf, 'A');
     return false;
   }
@@ -250,7 +250,7 @@ bool PAssertFunc(const PDebugLocation & location, PStandardAssertMessage msg)
     InternalAssertFunc(location, textmsg[msg]);
   else {
     char msgbuf[20];
-    sprintf(msgbuf, "Assertion %i", msg);
+    sprintf_s(msgbuf, sizeof(msgbuf), "Assertion %i", msg);
     InternalAssertFunc(location, msgbuf);
   }
   return false;
@@ -467,8 +467,8 @@ PMemoryHeap::PMemoryHeap()
   , m_totalObjects(0)
   , m_leakDumpStream(NULL)
 {
-  const char * env = getenv("PTLIB_MEMORY_CHECK");
-  switch (atoi(env != NULL ? env : "1")) {
+  auto env = PConfig::GetEnv("PTLIB_MEMORY_CHECK", "1");
+  switch (env.AsUnsigned()) {
     case 0 :
       m_state = e_Disabled;
       break;
@@ -1726,7 +1726,7 @@ namespace PProfiling
   /////////////////////////////////////////////////////////////////////
 
   Database::Database()
-    : m_enabled(getenv("PTLIB_PROFILING_ENABLED") != NULL)
+    : m_enabled(PConfig(PConfig::Environment).GetBoolean("PTLIB_PROFILING_ENABLED"))
     , m_functions(NULL)
     , m_threads(NULL)
     , m_start(GetCycles())
@@ -1739,15 +1739,15 @@ namespace PProfiling
     if (static_cast<FunctionRawData *>(m_functions) == NULL)
       return;
 
-    const char * filename;
+    PString filename;
 
-    if ((filename = getenv("PTLIB_RAW_PROFILING_FILENAME")) != NULL) {
+    if (!(filename = PConfig::GetEnv("PTLIB_RAW_PROFILING_FILENAME")).empty()) {
       ofstream out(filename, ios::out | ios::trunc);
       if (out.is_open())
         Dump(out);
     }
 
-    if ((filename = getenv("PTLIB_PROFILING_FILENAME")) != NULL) {
+    if (!(filename = PConfig::GetEnv("PTLIB_PROFILING_FILENAME")).empty()) {
       ofstream out(filename, ios::out | ios::trunc);
       if (out.is_open())
         Analyse(out, strstr(filename, ".html") != NULL);
