@@ -3429,9 +3429,7 @@ void PThread::PrintOn(ostream & strm) const
 PString PThread::GetThreadName() const
 {
   PWaitAndSignal mutex(m_threadNameMutex);
-  PString reply = m_threadName;
-  reply.MakeUnique();
-  return reply; 
+  return m_threadName;
 }
 
 #if defined(_MSC_VER)

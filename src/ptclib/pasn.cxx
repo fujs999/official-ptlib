@@ -1177,7 +1177,7 @@ PString PASNIPAddress::GetTypeAsString() const
 
 PString PASNIPAddress::GetString() const
 {
-  PINDEX len = value.GetSize();
+  PINDEX len = value.length();
   if (len == 0) 
     return "(empty)";
 
@@ -1197,7 +1197,7 @@ PString PASNIPAddress::GetString() const
 PASNIPAddress::PASNIPAddress(const PString & str)
   : PASNString("")
 {
-  value.SetSize(4);
+  value.resize(4);
 
   PIPSocket::Address addr;
   if (!PIPSocket::GetHostAddress(str, addr))

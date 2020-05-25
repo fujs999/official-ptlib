@@ -106,7 +106,7 @@ void PSOAPMessage::GetMethod( PString & name, PString & nameSpace )
   PINDEX sepLocation = fullMethod.Find(':');
   if (sepLocation != P_MAX_INDEX) {
     PString methodID = fullMethod.Left(sepLocation);
-    name = fullMethod.Right(fullMethod.GetSize() - 2 - sepLocation);
+    name = fullMethod.Right(fullMethod.length() - 1 - sepLocation);
     nameSpace = pSOAPMethod->GetAttribute( "xmlns:" + methodID );
   }
 }

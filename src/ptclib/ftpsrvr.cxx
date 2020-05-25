@@ -335,7 +335,7 @@ bool PFTPServer::OnPORT(const PCaselessString & args)
   PStringArray tokens = args.Tokenise(",");
 
   long values[6];
-  PINDEX len = std::min(args.GetSize(), PARRAYSIZE(values));
+  PINDEX len = std::min((PINDEX)args.length(), PARRAYSIZE(values));
 
   PINDEX i;
   for (i = 0; i < len; i++) {

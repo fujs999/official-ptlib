@@ -267,7 +267,6 @@ PString PURL::TranslateString(const PString & str, TranslationType type)
 PString PURL::UntranslateString(const PString & str, TranslationType type)
 {
   PString xlat = str;
-  xlat.MakeUnique();
 
   PINDEX pos;
   if (type == PURL::QueryTranslation) {

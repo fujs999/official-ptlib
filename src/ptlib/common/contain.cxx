@@ -1111,13 +1111,6 @@ PString & PString::operator=(unsigned long long n)
 #endif
 
 
-PString & PString::MakeEmpty()
-{
-  clear();
-  return *this;
-}
-
-
 PObject * PString::Clone() const
 {
   return new PString(*this);
@@ -1635,8 +1628,6 @@ PString & PString::Replace(const PString & target, const PString & subs, bool al
     return *this;
 #endif
     
-  MakeUnique();
-
   PINDEX tlen = target.GetLength();
   PINDEX slen = subs.GetLength();
   do {
@@ -2069,7 +2060,7 @@ void PString::InternalFromWChar(const wchar_t * wstr, PINDEX len)
 
   int outLen = WideCharToMultiByte(CP_UTF8, 0, wstr, len, NULL, 0, NULL, NULL);
   if (PAssert(outLen > 0, PSTRSTRM("Could not convert wchar_t to UTF-8: errno=" << ::GetLastError())))
-    WideCharToMultiByte(CP_UTF8, 0, wstr, len, GetPointerAndSetLength(outLen), GetSize(), NULL, NULL);
+    WideCharToMultiByte(CP_UTF8, 0, wstr, len, GetPointerAndSetLength(outLen), capacity(), NULL, NULL);
 
 #else // _WIN32 || _POSIX_VERSION
 

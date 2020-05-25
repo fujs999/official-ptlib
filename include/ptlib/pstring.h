@@ -454,10 +454,6 @@ public:
     );
 #endif
 
-    /**Make the current string empty
-      */
-    virtual PString & MakeEmpty();
-
     /**Return an empty string.
       */
     static const PString & Empty();
@@ -1803,13 +1799,14 @@ public:
 
   /**@name Backward compatibility functions */
   //@{
-    PINDEX GetSize() const { return capacity(); }
-    bool SetSize(PINDEX newSize) { reserve(newSize); return true; }
-    bool SetMinSize(PINDEX newSize) { return GetSize() >= newSize || SetSize(newSize); }
+    P_DEPRECATED PINDEX GetSize() const { return capacity(); }
+    P_DEPRECATED bool SetSize(PINDEX newSize) { reserve(newSize); return true; }
+    P_DEPRECATED bool SetMinSize(PINDEX newSize) { if (capacity() >= (size_t)newSize) reserve(newSize); return true; }
     PINDEX GetLength() const { return length(); }
     bool IsEmpty() const { return empty(); }
-    bool MakeUnique() { return true; }
-    const char * GetPointer(PINDEX = 0) const { return c_str(); }
+    PString & MakeEmpty() { clear(); return *this; }
+    P_DEPRECATED bool MakeUnique() { return true; }
+    const char * GetPointer(PINDEX = 0) const { return data(); }
     char GetAt(PINDEX idx) const { return at(idx); }
     operator const unsigned char *() const { return (const unsigned char *)c_str(); }
     operator const char *() const { return c_str(); }

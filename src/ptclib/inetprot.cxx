@@ -265,10 +265,8 @@ bool PInternetProtocol::WriteLine(const PString & line)
 
 bool PInternetProtocol::ReadLine(PString & line, bool allowContinuation)
 {
-  if (!line.SetMinSize(1000))
-    return false;
+  line.reserve(1000);
 
-  PINDEX count = 0;
   bool gotEndOfLine = false;
 
   int c = ReadChar();
@@ -282,8 +280,8 @@ bool PInternetProtocol::ReadLine(PString & line, bool allowContinuation)
     switch (c) {
       case '\b' :
       case '\177' :
-        if (count > 0)
-          count--;
+        if (!line.empty())
+          line.erase(line.length()-1);
         c = ReadChar();
         break;
 
@@ -308,7 +306,7 @@ bool PInternetProtocol::ReadLine(PString & line, bool allowContinuation)
         // Then do line feed case
 
       case '\n' :
-        if (count == 0 || !allowContinuation || (c = ReadChar()) < 0)
+        if (line.empty() || !allowContinuation || (c = ReadChar()) < 0)
           gotEndOfLine = true;
         else if (c != ' ' && c != '\t') {
           UnRead(c);
@@ -317,19 +315,16 @@ bool PInternetProtocol::ReadLine(PString & line, bool allowContinuation)
         break;
 
       default :
-        if (count >= line.GetSize())
-          line.SetSize(count + 100);
-        line[count++] = (char)c;
+        line += (char)c;
+        if (line.length() >= line.capacity()-1)
+          line.reserve(line.capacity() + 100);
         c = ReadChar();
     }
   }
 
   SetReadTimeout(oldTimeout);
 
-  if (count > 0)
-    line.MakeMinimumSize(count);
-  else
-    line.MakeEmpty();
+  line.shrink_to_fit();
 
   return gotEndOfLine;
 }
@@ -978,7 +973,7 @@ bool PMultiPartList::Decode(const PString & entityBody, const PStringToString & 
 
   // split body into parts, assuming binary data
   const char * bodyPtr = (const char *)entityBody;
-  PINDEX bodyLen = entityBody.GetSize()-1;
+  PINDEX bodyLen = entityBody.length();
 
   // Find first boundary
   if (FindBoundary(boundary, bodyPtr, bodyLen) == P_MAX_INDEX) {

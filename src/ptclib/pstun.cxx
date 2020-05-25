@@ -1259,9 +1259,7 @@ bool PSTUNClient::InternalSetServer(const PString & server, const PIPSocketAddre
 PString PSTUNClient::GetServer() const
 {
   PWaitAndSignal m(m_mutex);
-  PString s = m_serverName;
-  s.MakeUnique();
-  return s;
+  return m_serverName;
 }
 
 

@@ -19,24 +19,6 @@
 void Test1()
 {
   {
-    PString pstring1("hello world");
-    PString pstring2(pstring1);
-
-    strcpy((char *)(const char *)pstring2, "overwrite");
-
-    cout << pstring1 << endl;
-    cout << pstring2 << endl;
-  }
-  {
-    PString pstring1("hello world");
-    PString pstring2(pstring1);
-
-    strcpy(pstring2.GetPointerAndSetLength(9), "overwrite");
-
-    cout << pstring1 << endl;
-    cout << pstring2 << endl;
-  }
-  {
     wchar_t widestr[] = L"Hellò world";
     PString pstring(widestr, sizeof(widestr)/2-1);
     cout << pstring << endl;
@@ -139,7 +121,7 @@ class StringHolder
       const char * ptr = C::ToConstCharStar(s);
       //const char * ptr = s.c_str();
       char buffer[20];
-      strncpy(buffer, ptr, 20);
+      strncpy_s(buffer, sizeof(buffer), ptr, 20);
 
       if (strcmp((const char *)buffer, SPECIALNAME)) {
         finishFlag = true;

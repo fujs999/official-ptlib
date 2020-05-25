@@ -793,7 +793,6 @@ PString PMonitoredSocketChannel::GetInterface()
     SetInterface(m_currentInterface);
 
   iface = m_currentInterface;
-  iface.MakeUnique();
 
   m_mutex.Signal();
 

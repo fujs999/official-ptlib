@@ -1088,7 +1088,7 @@ PASN_OctetString & PASN_OctetString::operator=(const char * str)
 
 PASN_OctetString & PASN_OctetString::operator=(const PString & str)
 {
-  SetValue((const uint8_t *)(const char *)str, str.GetSize()-1);
+  SetValue(reinterpret_cast<const uint8_t *>(str.data()), str.length());
   return *this;
 }
 
@@ -1327,17 +1327,17 @@ void PASN_ConstrainedString::SetConstraintBounds(ConstraintType type,
 
   PASN_ConstrainedObject::SetConstraintBounds(type, lower, upper);
   if (constraint != Unconstrained) {
-    if (value.GetSize() < (PINDEX)lowerLimit)
-      value.SetSize(lowerLimit);
-    else if ((unsigned)value.GetSize() > upperLimit)
-      value.SetSize(upperLimit);
+    if (value.size() < (size_t)lowerLimit)
+      value.resize(lowerLimit);
+    else if ((unsigned)value.size() > upperLimit)
+      value.resize(upperLimit);
   }
 }
 
 
 PINDEX PASN_ConstrainedString::GetDataLength() const
 {
-  return value.GetSize()-1;
+  return value.length();
 }
 
 

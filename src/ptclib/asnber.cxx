@@ -211,7 +211,7 @@ bool PASN_ConstrainedString::DecodeBER(PBER_Stream & strm, unsigned len)
 
 void PASN_ConstrainedString::EncodeBER(PBER_Stream & strm) const
 {
-  strm.BlockEncode(value, value.GetSize()-1);
+  strm.BlockEncode(reinterpret_cast<const uint8_t *>(value.data()), value.length());
 }
 
 ///////////////////////////////////////////////////////////////////////

@@ -508,8 +508,7 @@ bool PASN_ConstrainedString::DecodePER(PPER_Stream & strm)
     return false;
 
   if (len == 0) { // 10.9.3.3
-    value.SetSize(1);
-    value[0] = '\0';
+    value.clear();
     return true;
   }
 
@@ -550,7 +549,7 @@ void PASN_ConstrainedString::EncodePER(PPER_Stream & strm) const
 {
   // X.691 Section 26
 
-  PINDEX len = value.GetSize()-1;
+  PINDEX len = value.length();
   ConstrainedLengthEncode(strm, len);
 
   if (len == 0) // 10.9.3.3

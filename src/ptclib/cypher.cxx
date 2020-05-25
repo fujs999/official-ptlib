@@ -228,7 +228,7 @@ void PBase64::ProcessEncoding(const PBYTEArray & data)
 
 void PBase64::OutputBase64(const uint8_t * data)
 {
-  m_encodedString.SetMinSize(((m_encodedString.GetLength()+7)&~255) + 256);
+  m_encodedString.reserve(((m_encodedString.length()+7)&~255) + 256);
 
   m_encodedString += m_alphabet[data[0] >> 2];
   m_encodedString += m_alphabet[((data[0]&3)<<4) | (data[1]>>4)];
@@ -288,7 +288,7 @@ PString PBase64::GetEncodedString()
 
 PString PBase64::CompleteEncoding()
 {
-  m_encodedString.SetMinSize(m_encodedString.GetLength() + 5);
+  m_encodedString.reserve(m_encodedString.length() + 5);
 
   switch (m_saveCount) {
     case 1 :

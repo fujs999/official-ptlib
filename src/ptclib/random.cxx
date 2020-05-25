@@ -242,7 +242,7 @@ PString PRandom::String(PINDEX size)
   static PRandom rand;
 
   PString str;
-  str.SetSize(size + 1);
+  str.resize(size);
 
   for (PINDEX i = 0; i < size; ++i)
     str[i] = "0123456789abcdefghijklmnopqrstuvwxyz"[rand.Generate(0, 35)];

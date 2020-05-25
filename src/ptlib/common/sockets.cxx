@@ -447,11 +447,8 @@ bool PIPCacheData::HasAged() const
 bool PHostByName::GetHostName(const PString & name, PString & hostname)
 {
   PIPCacheData * host = GetHost(name);
-
-  if (host != NULL) {
+  if (host != NULL)
     hostname = host->GetHostName();
-    hostname.MakeUnique();
-  }
 
   mutex.Signal();
 
@@ -616,11 +613,8 @@ PIPCacheData * PHostByName::GetHost(const PString & name)
 bool PHostByAddr::GetHostName(const PIPSocket::Address & addr, PString & hostname)
 {
   PIPCacheData * host = GetHost(addr);
-
-  if (host != NULL) {
+  if (host != NULL)
     hostname = host->GetHostName();
-    hostname.MakeUnique();
-  }
 
   mutex.Signal();
   return host != NULL;
