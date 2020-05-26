@@ -32,6 +32,7 @@
 #endif
 
 
+#include <ptlib/timer.h>
 #include <ptlib/syncthrd.h>
 
 

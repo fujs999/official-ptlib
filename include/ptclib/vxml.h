@@ -38,6 +38,7 @@
 #include <ptlib/pipechan.h>
 #include <ptlib/sound.h>
 #include <ptlib/videoio.h>
+#include <ptlib/safecoll.h>
 #include <ptclib/delaychan.h>
 #include <ptclib/pwavfile.h>
 #include <ptclib/ptts.h>

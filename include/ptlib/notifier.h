@@ -27,113 +27,27 @@
 #ifndef PTLIB_NOTIFIER_H
 #define PTLIB_NOTIFIER_H
 
-#include <ptlib.h>
-#include <ptlib/smartptr.h>
+#include <functional>
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // General notification mechanism from one object to another
 
-/**
-   This is an abstract class for which a descendent is declared for every
-   function that may be called. The <code>PDECLARE_NOTIFIER</code> macro makes this
-   declaration.
-
-   The <code>PNotifier</code> and <code>PNotifierFunction</code> classes build a completely type
-   safe mechanism for calling arbitrary member functions on classes. The
-   "pointer to a member function" capability built into C++ makes the
-   assumption that the function name exists in an ancestor class. If you wish
-   to call a member function name that does <b>not</b> exist in any ancestor
-   class, very type unsafe casting of the member functions must be made. Some
-   compilers will even refuse to do it at all!
-
-   To overcome this problem, as this mechanism is highly desirable for callback
-   functions in the GUI part of the PTLib library, these classes and a macro
-   are used to create all the classes and declarations to use polymorphism as
-   the link between the caller, which has no knowledege of the function, and
-   the receiver object and member function.
-
-   This is most often used as the notification of actions being take by
-   interactors in the PTLib library.
- */
-template <typename ParamType>
-class PNotifierFunctionTemplate : public PSmartObject
+template <typename ParamType, class NotifierType = PObject, class TargetType = PObject>
+class PNotifierTemplate : public PObject, public std::function<void(NotifierType &, ParamType)>
 {
-  PCLASSINFO(PNotifierFunctionTemplate, PSmartObject);
+  PCLASSINFO(PNotifierTemplate, PObject);
 
   protected:
-    /// Create a notification function instance.
-    PNotifierFunctionTemplate(
-      void * target,    ///< Object instance on which the function will be called on.
-      void * = NULL
-    ) { m_target = PAssertNULL(target); }
-
+    TargetType * m_target;
   public:
-    /** Execute the call to the actual notification function on the object
-       instance contained in this object.
-     */
-    virtual void Call(
-      PObject & notifier,  ///< Object that is making the notification.
-      ParamType extra       ///< Extra information that may be passed to function.
-    ) const = 0;
+    typedef std::function<void(NotifierType &, ParamType)> Parent;
+    PNotifierTemplate() : m_target(nullptr) { }
+    PNotifierTemplate(nullptr_t *) : m_target(nullptr) { }
+    PNotifierTemplate(Parent fn, TargetType * target) : Parent(std::move(fn)), m_target(target) { }
 
-    virtual void * GetTarget() const { return this->m_target; }
-
-  protected:
-    // Member variables
-    /** Object instance to receive the notification function call. */
-    void * m_target;
-};
-
-typedef PNotifierFunctionTemplate<P_INT_PTR> PNotifierFunction;
-
-
-/**
-   The <code>PNotifier</code> and <code>PNotifierFunction</code> classes build a completely type
-   safe mechanism for calling arbitrary member functions on classes. The
-   "pointer to a member function" capability built into C++ makes the
-   assumption that the function name exists in an ancestor class. If you wish
-   to call a member function name that does {\b not} exist in any ancestor
-   class, very type unsafe casting of the member functions must be made. Some
-   compilers will even refuse to do it at all!
-
-   To overcome this problem, as this mechanism is highly desirable for callback
-   functions in the GUI part of the PTLib library, these classes and a macro
-   are used to create all the classes and declarations to use polymorphism as
-   the link between the caller, which has no knowledege of the function, and
-   the receiver object and member function.
-
-   This is most often used as the notification of actions being take by
-   interactors in the PTLib library.
- */
-template <typename ParamType>
-class PNotifierTemplate : public PSmartPtr<PNotifierFunctionTemplate<ParamType>>
-{
-  PCLASSINFO(PNotifierTemplate, PSmartPtr<PNotifierFunctionTemplate<ParamType>>);
-
-  public:
-    typedef PNotifierFunctionTemplate<ParamType> * FunctionPtr;
-
-    /** Create a new notification function smart pointer. */
-    PNotifierTemplate(
-      FunctionPtr func = nullptr   ///< Notifier function to call.
-    ) : PSmartPtr<PNotifierFunctionTemplate<ParamType>>(func) { }
-
-    /**Execute the call to the actual notification function on the object
-       instance contained in this object. This will make a polymorphic call to
-       the function declared by the <code>PDECLARE_NOTIFIER</code> macro which in
-       turn calls the required function in the destination object.
-     */
-    virtual void operator()(
-      PObject & notifier,  ///< Object that is making the notification.
-      ParamType extra       ///< Extra information that may be passed to function.
-    ) const {
-      get()->Call(notifier, extra);
-    }
-
-    void * GetTarget() const
-    {
-      return *this ? get()->GetTarget() : nullptr;
-    }
+    P_DEPRECATED bool IsNULL() const { return Parent::operator bool(); }
+    TargetType * GetTarget() const { return m_target; }
 };
 
 /** \class PNotifier
@@ -142,62 +56,21 @@ class PNotifierTemplate : public PSmartPtr<PNotifierFunctionTemplate<ParamType>>
 typedef PNotifierTemplate<P_INT_PTR> PNotifier;
 
 
-#define PDECLARE_NOTIFIER_COMMON1(notifierType, notifiee, func, ParamType, BaseClass) \
-  class func##_PNotifier : public BaseClass { \
-    public: \
-      func##_PNotifier(notifiee * target) : BaseClass(target, target) { } \
-      virtual void Call(PObject & note, ParamType extra) const \
-
-#define PDECLARE_NOTIFIER_COMMON2(notifierType, notifierArg, notifiee, func, ParamType, ParamArg, BaseClass) \
-        { notifiee * target = reinterpret_cast<notifiee *>(this->GetTarget()); \
-          if (target != NULL) \
-            target->func(reinterpret_cast<notifierType &>(note), extra); \
-        } \
-      static PNotifierTemplate<ParamType> Create(notifiee * obj) { return new func##_PNotifier(obj); } \
-      static PNotifierTemplate<ParamType> Create(notifiee & obj) { return new func##_PNotifier(&obj); } \
+#define PDECLARE_NOTIFIER_EXT(NotifierType, notifierArg, TargetType, func, ParamType, paramArg, FunctionType, ...) \
+  struct func##_PNotifier { \
+    static FunctionType Create(TargetType * target) { return FunctionType(std::bind(&TargetType::func##_PObject,  target, std::placeholders::_1, std::placeholders::_2),  target, ##__VA_ARGS__); } \
+    static FunctionType Create(TargetType & target) { return FunctionType(std::bind(&TargetType::func##_PObject, &target, std::placeholders::_1, std::placeholders::_2), &target, ##__VA_ARGS__); } \
   }; \
-  friend class func##_PNotifier; \
-  virtual void func(notifierType & notifierArg, ParamType ParamArg) \
-
-#define PDECLARE_NOTIFIER_COMMON(notifierType, notifierArg, notifiee, func, ParamType, ParamArg, BaseClass) \
-       PDECLARE_NOTIFIER_COMMON1(notifierType, notifiee, func, ParamType, BaseClass) \
-       PDECLARE_NOTIFIER_COMMON2(notifierType, notifierArg, notifiee, func, ParamType, ParamArg, BaseClass)
-
-
-/** Declare a notifier object class.
-  This macro declares the descendent class of <code>PNotifierFunction</code> that
-  will be used in instances of <code>PNotifier</code> created by the
-  <code>PCREATE_NOTIFIER</code> or <code>PCREATE_NOTIFIER2</code> macros.
-
-  The macro is expected to be used inside a class declaration. The class it
-  declares will therefore be a nested class within the class being declared.
-  The name of the new nested class is derived from the member function name
-  which should guarentee the class names are unique.
-
-  The \p notifier parameter is the class of the function that will be
-  calling the notification function. The \p notifiee parameter is the
-  class to which the called member function belongs. Finally the
-  \p func parameter is the name of the member function to be
-  declared.
-
-  This macro will also declare the member function itself. This will be:
-<pre><code>
-      void func(notifier & n, P_INT_PTR extra)     // for PNOTIFIER
-      void func(notifier & n, void * extra)  // for PNOTIFIER2
-</code></pre>
-
-  The implementation of the function is left for the user.
- */
-#define PDECLARE_NOTIFIER_EXT(notifierType, notifierArg, notifiee, func, ParamType, ParamArg) \
-     PDECLARE_NOTIFIER_COMMON(notifierType, notifierArg, notifiee, func, ParamType, ParamArg, PNotifierFunctionTemplate<ParamType>)
+  void func##_PObject(PObject & n, ParamType p) { func(dynamic_cast<NotifierType &>(n), p); } \
+  virtual void func(NotifierType & notifierArg, ParamType paramArg)
 
 /// Declare PNotifier derived class with P_INT_PTR parameter. Uses PDECLARE_NOTIFIER_EXT macro.
-#define PDECLARE_NOTIFIER2(notifierType,   notifiee, func, ParamType  ) \
-     PDECLARE_NOTIFIER_EXT(notifierType, , notifiee, func, ParamType, )
+#define PDECLARE_NOTIFIER2(NotifierType, TargetType, func, ParamType) \
+     PDECLARE_NOTIFIER_EXT(NotifierType, , TargetType, func, ParamType, , PNotifierTemplate<ParamType>)
 
 /// Declare PNotifier derived class with P_INT_PTR parameter. Uses PDECLARE_NOTIFIER_EXT macro.
-#define PDECLARE_NOTIFIER(notifierType, notifiee, func) \
-       PDECLARE_NOTIFIER2(notifierType, notifiee, func, P_INT_PTR)
+#define PDECLARE_NOTIFIER(NotifierType, TargetType, func) \
+       PDECLARE_NOTIFIER2(NotifierType, TargetType, func, P_INT_PTR)
 
 
 /** Create a PNotifier object instance.
@@ -208,10 +81,10 @@ typedef PNotifierTemplate<P_INT_PTR> PNotifier;
   If the instance to be called is the current instance, ie if \p obj is
   \p this then the <code>PCREATE_NOTIFIER</code> macro should be used.
  */
-#define PCREATE_NOTIFIER2_EXT(obj, notifiee, func, type) notifiee::func##_PNotifier::Create(obj)
+#define PCREATE_NOTIFIER2_EXT(obj, TargetType, func, type) TargetType::func##_PNotifier::Create(obj)
 
 /// Create PNotifier object instance with P_INT_PTR parameter. Uses PCREATE_NOTIFIER2_EXT macro.
-#define PCREATE_NOTIFIER_EXT( obj, notifiee, func) notifiee::func##_PNotifier::Create(obj)
+#define PCREATE_NOTIFIER_EXT( obj, TargetType, func) TargetType::func##_PNotifier::Create(obj)
 
 
 /** Create a PNotifier object instance.
