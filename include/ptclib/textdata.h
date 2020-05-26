@@ -30,6 +30,7 @@
 
 
 #include <ptlib/textfile.h>
+#include <ptlib/smartptr.h>
 #include <ptclib/vartype.h>
 
 

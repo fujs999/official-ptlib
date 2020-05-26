@@ -3547,7 +3547,7 @@ PChannel * PVXMLChannel::OpenMediaFile(const PFilePath & fn, bool recording)
 
 #if P_MEDIAFILE
   PMediaFile::Ptr mediaFile = PMediaFile::Create(fn);
-  if (!mediaFile.IsNULL()) {
+  if (mediaFile) {
     PSoundChannel * audio = new PMediaFile::SoundChannel(mediaFile);
     PSoundChannel::Params params;
     params.m_direction = recording ? PSoundChannel::Player : PSoundChannel::Recorder; // Counter intuitive

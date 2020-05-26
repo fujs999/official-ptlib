@@ -236,7 +236,7 @@ static int PasswordCallback(char *buf, int size, int rwflag, void *userdata)
     return 0;
 
   PSSLPasswordNotifier & notifier = *reinterpret_cast<PSSLPasswordNotifier *>(userdata);
-  if (!PAssert(!notifier.IsNULL(), PLogicError))
+  if (!PAssert(notifier, PLogicError))
     return 0;
 
   PString password;
@@ -423,7 +423,7 @@ bool PSSLPrivateKey::Load(const PFilePath & keyFile, PSSLFileTypes fileType, con
 
   pem_password_cb *cb;
   void *ud;
-  if (notifier.IsNULL()) {
+  if (!notifier) {
     cb = NULL;
     ud = NULL;
   }
@@ -2517,7 +2517,7 @@ void PSSLContext::SetPasswordNotifier(const PSSLPasswordNotifier & notifier)
     return;
 
   m_passwordNotifier = notifier;
-  if (notifier.IsNULL())
+  if (!notifier)
     SSL_CTX_set_default_passwd_cb(m_context, NULL);
   else {
     SSL_CTX_set_default_passwd_cb(m_context, PasswordCallback);
@@ -2937,7 +2937,7 @@ void PSSLChannel::SetVerifyMode(VerifyMode mode, const VerifyNotifier & notifier
 
 void PSSLChannel::OnVerify(VerifyInfo & info)
 {
-  if (!m_verifyNotifier.IsNULL())
+  if (m_verifyNotifier)
     m_verifyNotifier(*this, info);
 
   if (info.m_errorCode != 0)

@@ -385,7 +385,7 @@ bool PHTTPServer::OnWebSocket(PHTTPConnectionInfo & connectInfo)
     PString protocol = protocols[i];
     WebSocketNotifierMap::iterator notifier = m_webSocketNotifiers.find(protocol);
     if (notifier != m_webSocketNotifiers.end()) {
-      if (notifier->second.IsNULL()) {
+      if (!notifier->second) {
         supportedGlobally = protocol;
         break;
       }

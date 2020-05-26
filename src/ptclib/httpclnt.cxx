@@ -1320,7 +1320,7 @@ void PHTTPClientPool::Connection::Main()
     response.m_code = m_http.ExecuteCommand(request.m_command, request.m_url, request.m_headers, response.m_body, response.m_headers);
     if (response.m_code >= 200)
       m_http.ReadContentBody(response.m_headers, response.m_body);
-    if (!request.m_notifier.IsNULL())
+    if (request.m_notifier)
       request.m_notifier(m_owner, response);
   }
 }

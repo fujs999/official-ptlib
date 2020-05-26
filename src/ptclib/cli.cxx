@@ -896,7 +896,7 @@ void PCLI::OnSetBooleanCommand(Arguments & args, const InternalCommand & cmd)
 
   args.GetContext() << cmd.m_varName << " => " << (cmd.m_variable->AsBoolean() ? "ON" : "OFF") << endl;
 
-  if (!cmd.m_notifier.IsNULL())
+  if (cmd.m_notifier)
     cmd.m_notifier(args, cmd.m_variable->AsBoolean());
 }
 
@@ -922,7 +922,7 @@ void PCLI::OnSetIntegerCommand(Arguments & args, const InternalCommand & cmd)
   *cmd.m_variable = value;
   args.GetContext() << cmd.m_varName << " => " << value << endl;
 
-  if (!cmd.m_notifier.IsNULL())
+  if (cmd.m_notifier)
     cmd.m_notifier(args, cmd.m_variable->AsInteger());
 }
 
@@ -986,7 +986,7 @@ bool PCLI::InternalSetCommand(const char * commands, const InternalCommand & inf
   if (!PAssert(commands != NULL && *commands != '\0', PInvalidParameter))
     return false;
 
-  if (!PAssert(info.m_variable != NULL || !info.m_notifier.IsNULL(), PInvalidParameter))
+  if (!PAssert(info.m_variable != NULL || info.m_notifier, PInvalidParameter))
     return false;
 
   bool good = true;
@@ -1080,8 +1080,8 @@ void PCLI::ShowHelp(Context & context, const PArgList & partial)
 
         Commands_t::const_iterator duplicate;
         for (duplicate = m_commands.begin(); duplicate != cmd; ++duplicate) {
-          if (duplicate->m_notifier.IsNULL() ? (duplicate->m_variable == cmd->m_variable)
-                                             : (duplicate->m_notifier == cmd->m_notifier))
+          if (!duplicate->m_notifier ? (duplicate->m_variable == cmd->m_variable)
+                                     : (duplicate->m_notifier == cmd->m_notifier))
             break;
         }
 

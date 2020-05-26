@@ -1620,7 +1620,7 @@ void PTimer::Reset()
 // called only from the timer thread
 void PTimer::OnTimeout()
 {
-  if (m_callback.IsNULL())
+  if (!m_callback)
     return;
 
   PString oldName;

@@ -106,17 +106,17 @@ typedef PNotifierFunctionTemplate<P_INT_PTR> PNotifierFunction;
    interactors in the PTLib library.
  */
 template <typename ParamType>
-class PNotifierTemplate : public PSmartPointer
+class PNotifierTemplate : public PSmartPtr<PNotifierFunctionTemplate<ParamType>>
 {
-  PCLASSINFO(PNotifierTemplate, PSmartPointer);
+  PCLASSINFO(PNotifierTemplate, PSmartPtr<PNotifierFunctionTemplate<ParamType>>);
 
   public:
     typedef PNotifierFunctionTemplate<ParamType> * FunctionPtr;
 
     /** Create a new notification function smart pointer. */
     PNotifierTemplate(
-      FunctionPtr func = NULL   ///< Notifier function to call.
-    ) : PSmartPointer(func) { }
+      FunctionPtr func = nullptr   ///< Notifier function to call.
+    ) : PSmartPtr<PNotifierFunctionTemplate<ParamType>>(func) { }
 
     /**Execute the call to the actual notification function on the object
        instance contained in this object. This will make a polymorphic call to
@@ -127,15 +127,12 @@ class PNotifierTemplate : public PSmartPointer
       PObject & notifier,  ///< Object that is making the notification.
       ParamType extra       ///< Extra information that may be passed to function.
     ) const {
-      FunctionPtr ptr = dynamic_cast<FunctionPtr>(GetObject());
-      if (PAssertNULL(ptr) != NULL)
-        ptr->Call(notifier, extra);
+      get()->Call(notifier, extra);
     }
 
     void * GetTarget() const
     {
-      FunctionPtr ptr = dynamic_cast<FunctionPtr>(GetObject());
-      return ptr != NULL ? ptr->GetTarget() : NULL;
+      return *this ? get()->GetTarget() : nullptr;
     }
 };
 

@@ -77,9 +77,9 @@ bool PScriptLanguage::InternalSetFunction(const PString & name, const FunctionNo
 {
   FunctionMap::iterator it = m_functions.find(PString(name));
   if (it == m_functions.end())
-    return func.IsNULL();
+    return !func;
 
-  if (func.IsNULL())
+  if (!func)
     m_functions.erase(it);
   else
     it->second = func;

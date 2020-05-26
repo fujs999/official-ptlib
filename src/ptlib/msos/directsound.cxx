@@ -380,7 +380,7 @@ bool PSoundChannelDirectSound::Open(const Params & params)
   }
   OpenMixer(deviceInfo->m_WaveDeviceId);
 
-  if (m_notifier.GetObject() != NULL) { // notify that channel is starting
+  if (m_notifier) { // notify that channel is starting
     m_notifier(*this, SOUNDNOTIFY_UNDERRUN);
     m_notifier(*this, SOUNDNOTIFY_OVERRUN);
   }
@@ -793,7 +793,7 @@ bool PSoundChannelDirectSound::WaitForPlayBufferFree () // protected
   do {
     CheckBufferState notification = CheckPlayBuffer();
     // report errors
-    if (notification != SOUNDNOTIFY_AVAILABLE && m_notifier.GetObject() != NULL)
+    if (notification != SOUNDNOTIFY_AVAILABLE && m_notifier)
       m_notifier(*this, notification); // can close here!
 
     if (!m_playbackBuffer) { // closed
@@ -1098,7 +1098,7 @@ bool PSoundChannelDirectSound::IsRecordBufferFull () // public
 
   CheckBufferState notification = CheckCaptureBuffer();
   // report errors
-  if (notification != SOUNDNOTIFY_AVAILABLE && m_notifier.GetObject() != NULL)
+  if (notification != SOUNDNOTIFY_AVAILABLE && m_notifier)
     m_notifier(*this, notification); // can close here!
 
   return m_captureBuffer != NULL && (notification == SOUNDNOTIFY_AVAILABLE || notification == SOUNDNOTIFY_OVERRUN);

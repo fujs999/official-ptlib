@@ -197,9 +197,9 @@ bool PMediaFile::SoundChannel::Open(const Params & params)
 {
   m_activeDirection = params.m_direction;
 
-  if (m_mediaFile.IsNULL()) {
+  if (!m_mediaFile) {
     m_mediaFile = PMediaFile::Create(params.m_driver);
-    if (m_mediaFile.IsNULL()) {
+    if (!m_mediaFile) {
       PTRACE(2, "Could not create media file for " << params.m_driver);
       return false;
     }
@@ -253,7 +253,7 @@ bool PMediaFile::SoundChannel::Open(const Params & params)
 
 PString PMediaFile::SoundChannel::GetName() const
 {
-  return m_mediaFile.IsNULL() ? PString::Empty() : static_cast<PString>(m_mediaFile->GetFilePath());
+  return !m_mediaFile ? PString::Empty() : static_cast<PString>(m_mediaFile->GetFilePath());
 }
 
 
@@ -269,7 +269,7 @@ bool PMediaFile::SoundChannel::Close()
 
 bool PMediaFile::SoundChannel::IsOpen() const
 {
-  return !m_mediaFile.IsNULL() && m_mediaFile->IsOpen();
+  return m_mediaFile && m_mediaFile->IsOpen();
 }
 
 
@@ -356,9 +356,9 @@ bool PMediaFile::VideoInputDevice::Open(const PString & devName, bool)
     SetChannel(Channel_PlayAndRepeat);
   }
 
-  if (m_mediaFile.IsNULL())
+  if (!m_mediaFile)
     m_mediaFile = PMediaFile::Factory::CreateInstance(filePath.GetType());
-  if (m_mediaFile.IsNULL()) {
+  if (m_mediaFile) {
     PTRACE(1, "Cannot open file of type \"" << filePath.GetType() << "\" as video input device");
     return false;
   }
@@ -398,7 +398,7 @@ bool PMediaFile::VideoInputDevice::Open(const PString & devName, bool)
 
 bool PMediaFile::VideoInputDevice::IsOpen()
 {
-  return !m_mediaFile.IsNULL() && m_mediaFile->IsOpen();
+  return m_mediaFile && m_mediaFile->IsOpen();
 }
 
 

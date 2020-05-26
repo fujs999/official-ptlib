@@ -574,7 +574,7 @@ int PLua::InternalCallback(lua_State * state)
 int PLua::InternalCallback()
 {
   PLua::FunctionNotifier * func = reinterpret_cast<PLua::FunctionNotifier *>(lua_touserdata(m_lua, lua_upvalueindex(1)));
-  if (func == NULL || func->IsNULL())
+  if (func == NULL || !*func)
     return 0;
 
   PLua::Signature signature;

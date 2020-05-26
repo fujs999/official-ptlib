@@ -649,7 +649,7 @@ PString PSoundChannel::TestPlayer(const Params & params, const PNotifier & progr
   std::vector<int64_t> times(totalBuffers+1);
 
   PSoundChannel player;
-  if (!progress.IsNULL())
+  if (progress)
     progress(player, totalBuffers);
 
   if (!player.Open(params))
@@ -660,7 +660,7 @@ PString PSoundChannel::TestPlayer(const Params & params, const PNotifier & progr
 #endif
 
   for (unsigned i = 0; i < totalBuffers; ++i) {
-    if (!progress.IsNULL())
+    if (progress)
       progress(player, i);
 
     times[i] = PTimer::Tick().GetMilliSeconds();
@@ -698,7 +698,7 @@ PString PSoundChannel::TestRecorder(const Params & recorderParams,
   std::vector<int64_t> times(totalBuffers+1);
 
   PSoundChannel recorder;
-  if (!progress.IsNULL())
+  if (progress)
     progress(recorder, totalBuffers);
 
   if (!recorder.Open(recorderParams))
@@ -710,7 +710,7 @@ PString PSoundChannel::TestRecorder(const Params & recorderParams,
 
   PTRACE(1, &recorder, "Sound", "Started recording");
   for (unsigned i = 0; i < totalBuffers; ++i) {
-    if (!progress.IsNULL())
+    if (progress)
       progress(recorder, i);
 
     times[i] = PTimer::Tick().GetMilliSeconds();
@@ -722,7 +722,7 @@ PString PSoundChannel::TestRecorder(const Params & recorderParams,
   PTRACE(1, &recorder, "Sound", "Finished recording " << PTime() - then << " seconds");
 
   PSoundChannel player;
-  if (!progress.IsNULL())
+  if (progress)
     progress(player, totalBuffers);
 
   if (!player.Open(playerParams))
@@ -733,7 +733,7 @@ PString PSoundChannel::TestRecorder(const Params & recorderParams,
   then.SetCurrentTime();
 #endif
   for (unsigned i = 0; i < totalBuffers; ++i) {
-      if (!progress.IsNULL())
+      if (progress)
         progress(player, i);
 
     if (!player.Write(recording.GetPointer()+i*recorderParams.m_bufferSize, recorderParams.m_bufferSize))

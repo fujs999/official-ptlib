@@ -205,7 +205,7 @@ bool XMPP::C2S::StreamHandler::Discover(const PString& xmlns,
     PTRACE(1, "XMPP\tDisco: invalid stream state");
     return false;
   }
-  else if (responseHandler.IsNULL()) {
+  else if (!responseHandler) {
     PTRACE(1, "XMPP\tDisco: invalid response handler");
     return false;
   }

@@ -591,14 +591,14 @@ void PChannel::AsyncContext::OnIOComplete(PINDEX length, int errorNumber)
 
 void PChannel::OnReadComplete(AsyncContext & context)
 {
-  if (!context.m_notifier.IsNULL())
+  if (context.m_notifier)
     context.m_notifier(*this, context);
 }
 
 
 void PChannel::OnWriteComplete(AsyncContext & context)
 {
-  if (!context.m_notifier.IsNULL())
+  if (context.m_notifier)
     context.m_notifier(*this, context);
 }
 
