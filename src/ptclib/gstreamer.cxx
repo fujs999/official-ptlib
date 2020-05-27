@@ -862,7 +862,7 @@ static GstBusSyncReply MySyncHandler(GstBus * bus, GstMessage * message, gpointe
 
 bool PGstBus::SetNotifier(Notifier & notifier)
 {
-  if (!IsValid() || notifier.IsNULL())
+  if (!IsValid() || !notifier)
     return false;
 
 #if !GST_CHECK_VERSION(1,0,0)

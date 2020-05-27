@@ -1101,7 +1101,6 @@ if errorlevel 1 copy "%(FullPath)"+nul "%(RootDir)%(Directory)%(FileName)"</Comm
     <ClInclude Include="..\..\..\include\ptlib\videoio.h" />
     <ClInclude Include="..\..\..\include\ptlib\msos\ptlib\channel.h" />
     <ClInclude Include="..\..\..\include\ptlib\msos\ptlib\config.h" />
-    <ClInclude Include="..\..\..\include\ptlib\msos\ptlib\critsec.h" />
     <ClInclude Include="..\..\..\include\ptlib\msos\ptlib\debstrm.h" />
     <ClInclude Include="..\..\..\include\ptlib\msos\ptlib\dynalink.h" />
     <ClInclude Include="..\..\..\include\ptlib\msos\ptlib\epacket.h" />
@@ -1113,7 +1112,6 @@ if errorlevel 1 copy "%(FullPath)"+nul "%(RootDir)%(Directory)%(FileName)"</Comm
     <ClInclude Include="..\..\..\include\ptlib\msos\ptlib\ipsock.h" />
     <ClInclude Include="..\..\..\include\ptlib\msos\ptlib\ipxsock.h" />
     <ClInclude Include="..\..\..\include\ptlib\msos\ptlib\mail.h" />
-    <ClInclude Include="..\..\..\include\ptlib\msos\ptlib\mutex.h" />
     <ClInclude Include="..\..\..\include\ptlib\msos\ptlib\pdirect.h" />
     <ClInclude Include="..\..\..\include\ptlib\msos\ptlib\pipechan.h" />
     <ClInclude Include="..\..\..\include\ptlib\msos\ptlib\pprocess.h" />
@@ -1126,7 +1124,6 @@ if errorlevel 1 copy "%(FullPath)"+nul "%(RootDir)%(Directory)%(FileName)"</Comm
     <ClInclude Include="..\..\..\include\ptlib\msos\ptlib\directsound.h" />
     <ClInclude Include="..\..\..\include\ptlib\msos\ptlib\spxsock.h" />
     <ClInclude Include="..\..\..\include\ptlib\msos\ptlib\svcproc.h" />
-    <ClInclude Include="..\..\..\include\ptlib\msos\ptlib\syncpoint.h" />
     <ClInclude Include="..\..\..\include\ptlib\msos\ptlib\tcpsock.h" />
     <ClInclude Include="..\..\..\include\ptlib\msos\ptlib\textfile.h" />
     <ClInclude Include="..\..\..\include\ptlib\msos\ptlib\thread.h" />

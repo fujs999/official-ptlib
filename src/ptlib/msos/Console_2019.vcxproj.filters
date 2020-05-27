@@ -423,9 +423,6 @@
     <ClInclude Include="..\..\..\include\ptlib\atomic.h">
       <Filter>Header Files\Common</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\include\ptlib\msos\ptlib\critsec.h">
-      <Filter>Header Files\MSOS</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\include\ptclib\cypher.h">
       <Filter>Header Files\Components</Filter>
     </ClInclude>
@@ -545,9 +542,6 @@
     </ClInclude>
     <ClInclude Include="..\..\..\Include\PtLib\Pdirect.h">
       <Filter>Header Files\Common</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\include\ptlib\msos\ptlib\mutex.h">
-      <Filter>Header Files\MSOS</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\Include\PtLib\mutex.h">
       <Filter>Header Files\Common</Filter>
@@ -700,9 +694,6 @@
       <Filter>Header Files\MSOS</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\include\ptlib\msos\ptlib\svcproc.h">
-      <Filter>Header Files\MSOS</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\include\ptlib\msos\ptlib\syncpoint.h">
       <Filter>Header Files\MSOS</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\include\ptlib\msos\ptlib\textfile.h">
