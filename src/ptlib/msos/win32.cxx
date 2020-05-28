@@ -1428,35 +1428,13 @@ unsigned PThread::GetNumProcessors()
 }
 
 
-static bool s_IsGUIProcess = true;
-static atomic<bool> s_checkGUIProcess(false);
-
-static BOOL CALLBACK EnumWindowsProc(HWND hWnd, LPARAM thisProcess)
-{
-  char wndClassName[100];
-  GetClassName(hWnd, wndClassName, sizeof(wndClassName));
-  if (strcmp(wndClassName, "ConsoleWindowClass") != 0)
-    return TRUE;
-
-  DWORD wndProcess;
-  GetWindowThreadProcessId(hWnd, &wndProcess);
-  if (wndProcess != (uint32_t)thisProcess)
-    return TRUE;
-
-  s_IsGUIProcess = false;
-  return FALSE;
-}
-
 bool PProcess::IsGUIProcess() const
 {
-  if (!s_checkGUIProcess.exchange(true)) {
-    USEROBJECTFLAGS uof = { FALSE, FALSE, 0 };     
-    if (GetUserObjectInformation(GetProcessWindowStation(), UOI_FLAGS, &uof, sizeof(USEROBJECTFLAGS), NULL) && ((uof.dwFlags & WSF_VISIBLE) == 0))
-      s_IsGUIProcess = false;
-    else
-      EnumWindows(EnumWindowsProc, GetCurrentProcessId());
-  }
-  return s_IsGUIProcess;
+  USEROBJECTFLAGS uof = { FALSE, FALSE, 0 };     
+  if (GetUserObjectInformation(GetProcessWindowStation(), UOI_FLAGS, &uof, sizeof(USEROBJECTFLAGS), NULL) && ((uof.dwFlags & WSF_VISIBLE) == 0))
+    return false;
+
+  return GetConsoleWindow() == NULL;
 }
 
 

@@ -366,7 +366,6 @@ extern PAssertWalkStackModes PAssertWalkStackMode;
 extern unsigned PAssertCount;
 bool PAssertFunc(const PDebugLocation & location, PStandardAssertMessage msg);
 bool PAssertFunc(const PDebugLocation & location, const char * msg);
-bool PAssertException(const char * source, const std::exception * ex);
 
 
 /** This macro is used to assert that a condition must be true.

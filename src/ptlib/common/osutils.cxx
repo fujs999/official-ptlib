@@ -2397,15 +2397,6 @@ PString PConfigArgs::CharToString(char letter) const
 PProcess * PProcessInstance = NULL;
 
 
-P_PUSH_MSVC_WARNINGS(4702)
-static void AbortProcess(int exitCode)
-{
-  abort(); // Dump core
-  _exit(exitCode); // Fail safe if abort() didn't dump core and exit
-}
-P_POP_MSVC_WARNINGS()
-
-
 int PProcess::InternalMain(void *)
 {
   setlocale(LC_CTYPE, "UTF-8"); // A PString is documented as UTF-8, so all conversions go there
@@ -2416,21 +2407,7 @@ int PProcess::InternalMain(void *)
     return m_terminationValue;
 #endif
   
-#if P_EXCEPTIONS
-  try {
-    Main();
-  }
-  catch (const std::exception & e) {
-    PAssertAlways(PSTRSTRM("Exception (" << typeid(e).name() << " \"" << e.what() << "\") caught in process main, terminating"));
-    AbortProcess(136);
-  }
-  catch (...) {
-    PAssertAlways(PSTRSTRM("Exception caught in process main, terminating"));
-    AbortProcess(137);
-  }
-#else
   Main();
-#endif
 
   return m_terminationValue;
 }
@@ -2762,7 +2739,7 @@ PProcess & PProcess::Current()
 {
   if (PProcessInstance == NULL) {
     PAssertAlways("Catastrophic failure, PProcess::Current() = NULL!!");
-    AbortProcess(132);
+    std::abort();
   }
   return *PProcessInstance;
 }
@@ -2874,14 +2851,6 @@ static int SignalsToHandle[] = {
   0
 };
 
-#if __cplusplus >=201100L
-void HandleTerminate()
-{
-  PTRACE(2, "PTLib", "Received std::terminate()");
-  AbortProcess(133);
-  abort(); // Dump core
-}
-#endif
 
 void PProcess::AddRunTimeSignalHandlers(const int * signals)
 {
@@ -2897,10 +2866,6 @@ void PProcess::AddRunTimeSignalHandlers(const int * signals)
     if (previous == NULL)
       previous = PlatformSetRunTimeSignalHandler(signal);
   }
-
-#if __cplusplus >= 201100L
-  std::set_terminate(HandleTerminate);
-#endif
 }
 
 
@@ -3209,27 +3174,9 @@ void PThread::InternalThreadMain()
 
   PProcess & process = PProcess::Current();
 
-#if P_EXCEPTIONS
-  try {
-    process.OnThreadStart(*this);
-    Main();
-    process.OnThreadEnded(*this);
-  }
-  catch (const std::exception & e) {
-    std::ostringstream msg;
-    msg << "in thread " << *this;
-    PAssertException(msg.str().c_str(), &e);
-  }
-  catch (...) {
-    std::ostringstream msg;
-    msg << "in thread " << *this;
-    PAssertException(msg.str().c_str(), NULL);
-  }
-#else
   process.OnThreadStart(*this);
   Main();
   process.OnThreadEnded(*this);
-#endif
 
   InternalPostMain();
 }

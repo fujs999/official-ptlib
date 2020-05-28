@@ -853,27 +853,6 @@ bool PConsoleChannel::InternalSetConsoleMode(uint32_t bit, bool on)
 ///////////////////////////////////////////////////////////////////////////////
 // PProcess
 
-#ifdef _WIN32
-
-LONG WINAPI MyExceptionHandler(_EXCEPTION_POINTERS * info)
-{
-  ostringstream str;
-  str << "Unhandled exception: code=" << info->ExceptionRecord->ExceptionCode
-      << ", when=" << PTime().AsString(PTime::LoggingFormat PTRACE_PARAM(, PTrace::GetTimeZone()));
-  
-  PAssertAlways(str.str().c_str());
-  ExitProcess(1);
-}
-
-#else // _WIN32
-
-bool PProcess::IsGUIProcess() const
-{
-  return false;
-}
-
-#endif // _WIN32
-
 static void StaticSignalHandler(int signal)
 {
   PProcess::Current().AsynchronousRunTimeSignal(signal, 0);
@@ -910,18 +889,8 @@ void PProcess::PlatformConstruct()
   m_waitOnExitConsoleWindow = true;
   PSetErrorStream(&cerr);
 
-#if !defined(_WIN32) && defined(_MSC_VER) && defined(_WINDOWS)
-  _wsetscreenbuf(1, _WINBUFINF);
-  _wsizeinfo ws;
-  ws._version = _QWINVER;
-  ws._type = _WINSIZEMAX;
-  _wsetsize(1, &ws);
-#else
-  extern LONG WINAPI PExceptionHandler(PEXCEPTION_POINTERS info);
-  SetUnhandledExceptionFilter(PExceptionHandler);
   PTRACE_PARAM(HRESULT result =) WerAddExcludedApplication(m_executableFile.AsWide(), false);
   PTRACE_IF(1, result != S_OK, "PTLib", "Error excluding application from WER crash dialogs: err=" << result);
-#endif
 }
 
 

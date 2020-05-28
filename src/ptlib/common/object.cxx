@@ -142,13 +142,13 @@ PFactoryBase & PFactoryBase::InternalGetFactory(const std::string & className, P
 
 static PCriticalSection & GetAssertMutex() { static PCriticalSection cs; return cs; }
 extern void PPlatformAssertFunc(const PDebugLocation & location, const char * msg, char defaultAction);
-extern void PPlatformWalkStack(ostream & strm, PThreadIdentifier id, PUniqueThreadIdentifier uid, unsigned framesToSkip, bool noSymbols, bool exception);
+extern void PPlatformWalkStack(ostream & strm, PThreadIdentifier id, PUniqueThreadIdentifier uid, unsigned framesToSkip, bool noSymbols);
 
 #if PTRACING
   void PTrace::WalkStack(ostream & strm, PThreadIdentifier id, PUniqueThreadIdentifier uid, bool noSymbols)
   {
     PWaitAndSignal lock(GetAssertMutex());
-    PPlatformWalkStack(strm, id, uid, 1, noSymbols, false); // 1 means skip reporting PTrace::WalkStack
+    PPlatformWalkStack(strm, id, uid, 1, noSymbols); // 1 means skip reporting PTrace::WalkStack
   }
 #endif // PTRACING
 
@@ -156,10 +156,8 @@ extern void PPlatformWalkStack(ostream & strm, PThreadIdentifier id, PUniqueThre
 PAssertWalkStackModes PAssertWalkStackMode = PAssertWalkStackSymbols;
 unsigned PAssertCount;
 
-static PDebugLocation const s_ExceptionLocation("try/catch");
-
-
-static void InternalAssertFunc(const PDebugLocation & location, const char * msg)
+// frameToSkip = 2 means skip reporting InternalAssertFunc & PAssertFunc
+static void InternalAssertFunc(const PDebugLocation & location, const char * msg, unsigned frameToSkip = 2)
 {
 #if defined(_WIN32)
   uint32_t errorCode = GetLastError();
@@ -189,24 +187,12 @@ static void InternalAssertFunc(const PDebugLocation & location, const char * msg
     if (PAssertWalkStackMode == PAssertWalkStackDisabled)
       strm << ", stack walk disabled";
     else
-      PPlatformWalkStack(strm, PNullThreadIdentifier, 0, 2, // 2 means skip reporting InternalAssertFunc & PAssertFunc
-                         PAssertWalkStackMode == PAssertWalkStackNoSymbols,
-                         &location == &s_ExceptionLocation); 
+      PPlatformWalkStack(strm, PNullThreadIdentifier, 0, frameToSkip, PAssertWalkStackMode == PAssertWalkStackNoSymbols); 
     strm << std::ends;
     str = strm.str();
   }
 
-  PString env;
-#if P_EXCEPTIONS
-  //Throw a runtime exception if the environment variable is set
-  env = PConfig::GetEnv("PTLIB_ASSERT_EXCEPTION");
-  if (env.empty())
-    env = PConfig::GetEnv("PWLIB_ASSERT_EXCEPTION");
-  if (!env.empty())
-    env = 'T';
-  else
-#endif
-    env = PConfig::GetEnv("PTLIB_ASSERT_ACTION");
+  PString env = PConfig::GetEnv("PTLIB_ASSERT_ACTION");
   if (env.empty())
     env = PConfig::GetEnv("PWLIB_ASSERT_ACTION");
   if (env.empty())
@@ -265,16 +251,28 @@ bool PAssertFunc(const PDebugLocation & location, const char * msg)
 }
 
 
-bool PAssertException(const char * source, const std::exception * ex)
+static void AssertOnTerminate()
 {
-  std::ostringstream msg;
-  msg << "Exception ";
-  if (ex != NULL)
-    msg << '(' << typeid(*ex).name() << " \"" << ex->what() << "\") ";
-  msg << "caught in " << source;
-  InternalAssertFunc(s_ExceptionLocation, msg.str().c_str());
-  return false;
+  std::exception_ptr eptr = std::current_exception();
+  if (!eptr) {
+    PTRACE(2, "std::terminate() called");
+    std::abort();
+  }
+
+  static PDebugLocation const location("Exception");
+  try {
+    std::rethrow_exception(eptr);
+  }
+  catch (const std::exception& e) {
+    InternalAssertFunc(location, PSTRSTRM("Exception " << typeid(e).name() << " \"" << e.what() << '"'), 5);
+  }
+  catch (...) {
+    InternalAssertFunc(location, "Unknown exception", 5);
+  }
 }
+
+static auto s_old_terminate_handler = std::set_terminate(AssertOnTerminate);
+
 
 #endif // P_USE_ASSERTS
 

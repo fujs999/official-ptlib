@@ -322,17 +322,14 @@
     #endif // P_PTHREADS
 
     static PWalkStackInfo s_otherThreadStack;
-    static PThreadLocalStorage<StackAddresses> s_exceptionStack;
 
 
-    void PPlatformWalkStack(ostream & strm, PThreadIdentifier id, PUniqueThreadIdentifier uid, unsigned framesToSkip, bool noSymbols, bool exception)
+    void PPlatformWalkStack(ostream & strm, PThreadIdentifier id, PUniqueThreadIdentifier uid, unsigned framesToSkip, bool noSymbols)
     {
       if (!PProcess::IsInitialised())
         return;
 
-      if (exception)
-        InternalWalkStack(strm, 1, *s_exceptionStack, noSymbols);
-      else if (id != PNullThreadIdentifier && id != PThread::GetCurrentThreadId())
+      if (id != PNullThreadIdentifier && id != PThread::GetCurrentThreadId())
         s_otherThreadStack.WalkOther(strm, id, uid, noSymbols);
       else {
         DEBUG_CERR("PPlatformWalkStack: id=0x" << hex << id << dec);
@@ -352,29 +349,9 @@
         s_otherThreadStack.OthersWalk();
     }
 
-    extern "C" {
-      #ifdef P_MACOSX
-        typedef void (* const ThrowFn)(void *, std::type_info *, void (*)(void *)) __attribute__ ((noreturn));
-        void __cxa_throw(void * ex, std::type_info * tinfo, void (*dest)(void *))
-      #else
-        typedef void (* const ThrowFn)(void *, void *, void (*)(void *)) __attribute__ ((noreturn));
-        void __cxa_throw(void * ex, void * tinfo, void (*dest)(void *))
-      #endif
-      {
-        if (PAssertWalkStackMode != PAssertWalkStackDisabled) {
-          StackAddresses & addresses = *s_exceptionStack;
-          addresses.resize(InternalMaxStackWalk);
-          addresses.resize(backtrace(addresses.data(), addresses.size()));
-        }
-
-        static ThrowFn rethrow = reinterpret_cast<ThrowFn>(dlsym(RTLD_NEXT, "__cxa_throw"));
-        rethrow(ex,tinfo,dest);
-      }
-    }
-
 #else // P_HAS_BACKTRACE && PTRACING
 
-  void PPlatformWalkStack(ostream & strm, PThreadIdentifier id, PUniqueThreadIdentifier uid, unsigned skip, bool noSymbols, bool exception)
+  void PPlatformWalkStack(ostream & strm, PThreadIdentifier id, PUniqueThreadIdentifier uid, unsigned skip, bool noSymbols)
   {
   }
 
@@ -441,9 +418,6 @@
 #else
 
   static const char ActionMessage[] = "<A>bort, <C>ore dump, "
-  #if P_EXCEPTIONS
-                                      "<T>hrow exception, "
-  #endif
   #ifdef _DEBUG
                                       "<D>ebug, "
   #endif
@@ -458,14 +432,6 @@
         abort();
         return true;
 
-  #if P_EXCEPTIONS
-      case 't' :
-      case 'T' :
-        PError << "\nThrowing exception.\n";
-        throw std::runtime_error(msg);
-        return true;
-  #endif
-        
   #ifdef _DEBUG
       case 'd' :
       case 'D' :
