@@ -1117,16 +1117,12 @@ void PMultiPartInfo::PrintOn(ostream & strm) const
         strm << m_textBody[i];
     }
   }
-  else {
-#ifdef P_HAS_WCHAR
-    if (m_charset == "UTF-16" || m_charset == "UCS-2") {
-      PWCharArray wide = m_textBody.AsWide();
-      strm.write((const char *)wide.GetPointer(), (wide.GetSize()-1)*sizeof(wchar_t));
-    }
-    else
-#endif
-      strm.write((const char *)(const uint8_t *)m_binaryBody, m_binaryBody.GetSize());
+  else if (m_charset == "UTF-16" || m_charset == "UCS-2") {
+    PWCharArray wide = m_textBody.AsWide();
+    strm.write((const char *)wide.GetPointer(), (wide.GetSize()-1)*sizeof(wchar_t));
   }
+  else
+    strm.write((const char *)(const uint8_t *)m_binaryBody, m_binaryBody.GetSize());
 }
 
 

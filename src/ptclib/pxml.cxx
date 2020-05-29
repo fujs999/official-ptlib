@@ -1059,13 +1059,13 @@ bool PXML_HTTP::StartAutoReloadURL(const PURL & url,
 }
 
 
-void PXML_HTTP::AutoReloadTimeout(PTimer &, P_INT_PTR)
+void PXML_HTTP::AutoReloadTimeout(PTimer &, intptr_t)
 {
   PThread::Create(PCREATE_NOTIFIER(AutoReloadThread), "XmlReload");
 }
 
 
-void PXML_HTTP::AutoReloadThread(PThread &, P_INT_PTR)
+void PXML_HTTP::AutoReloadThread(PThread &, intptr_t)
 {
   PWaitAndSignal m(m_autoLoadMutex);
   OnAutoLoad(AutoLoadURL());

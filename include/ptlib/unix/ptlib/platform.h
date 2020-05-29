@@ -30,6 +30,9 @@
 #ifndef PTLIB_PLATFORM_H
 #define PTLIB_PLATFORM_H
 
+#define __STDC_WANT_LIB_EXT1__ 1
+
+
 #ifdef HAVE_SYS_TYPES_H
   #include <sys/types.h>
 #endif
@@ -125,6 +128,12 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 #if defined(P_LINUX)
+
+#define strcpy_s(dp,ds,sp) strcpy(dp,sp)
+#define strncpy_s(dp,ds,sp,sl) strncpy(dp,sp,sl)
+#define vsprintf_s vsnprintf
+#define sprintf_s snprintf
+#define sscanf_s sscanf
 
 #define HAS_IFREQ
 
@@ -516,5 +525,7 @@ typedef pid_t PUniqueThreadIdentifier;
 #endif
 
 enum { PGAIErrorFlag = 0x40000000 };
+
+
 
 // End of file

@@ -983,7 +983,7 @@ bool PVideoInputDevice_VideoForWindows::InitialiseCapture()
 }
 
 
-void PVideoInputDevice_VideoForWindows::HandleCapture(PThread &, P_INT_PTR)
+void PVideoInputDevice_VideoForWindows::HandleCapture(PThread &, intptr_t)
 {
   bool initSucceeded = InitialiseCapture();
 
@@ -1203,7 +1203,7 @@ PCREATE_VIDOUTPUT_PLUGIN_EX(Window,
     return "Microsoft Windows Video Output";
   }
 
-  virtual bool ValidateDeviceName(const PString & deviceName, P_INT_PTR /*userData*/) const
+  virtual bool ValidateDeviceName(const PString & deviceName, intptr_t /*userData*/) const
   {
     return deviceName.NumCompare(P_MSWIN_VIDEO_PREFIX) == PObject::EqualTo;
   }
@@ -1830,7 +1830,7 @@ void PVideoOutputDevice_Window::CreateDisplayWindow()
 }
 
 
-void PVideoOutputDevice_Window::HandleDisplay(PThread &, P_INT_PTR)
+void PVideoOutputDevice_Window::HandleDisplay(PThread &, intptr_t)
 {
   CreateDisplayWindow();
 

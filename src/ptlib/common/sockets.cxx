@@ -979,7 +979,7 @@ PChannel::Errors PSocket::Select(SelectList & read,
 }
 
 
-bool PSocket::ConvertOSError(P_INT_PTR libcReturnValue, ErrorGroup group)
+bool PSocket::ConvertOSError(intptr_t libcReturnValue, ErrorGroup group)
 {
   if (PChannel::ConvertOSError(libcReturnValue, group))
     return true;
@@ -2299,7 +2299,7 @@ PObject * PTCPSocket::Clone() const
 // By default IPv4 only adresses
 bool PTCPSocket::OpenSocket()
 {
-  return ConvertOSError(os_handle = (P_INT_PTR)os_socket(AF_INET, SOCK_STREAM, 0));
+  return ConvertOSError(os_handle = (intptr_t)os_socket(AF_INET, SOCK_STREAM, 0));
 }
 
 

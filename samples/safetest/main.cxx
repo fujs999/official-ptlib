@@ -263,7 +263,7 @@ DelayThread::~DelayThread()
   PTRACE(5, "Destructor for a delay thread");
 }
 
-void DelayThread::DelayThreadMain(PThread &thisThread, INT)  
+void DelayThread::DelayThreadMain(PThread &thisThread, intptr_t)  
 {
   id = thisThread.GetThreadName();
   PTRACE(3, "DelayThread starting " << id);
@@ -294,7 +294,7 @@ void DelayThread::Release()
     }
 }
 
-void DelayThread::OnReleaseThreadMain(PThread &, INT)
+void DelayThread::OnReleaseThreadMain(PThread &, intptr_t)
 {
   safeTest.OnReleased(*this);
   threadRunning = false;

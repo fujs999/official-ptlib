@@ -294,7 +294,7 @@ int PServiceProcess::InitialiseService()
     pid_t pid;
 
     {
-      ifstream pidfile((const char *)pidfilename);
+      std::ifstream pidfile((const char *)pidfilename);
       if (!pidfile.is_open()) {
         if (args.HasOption('s'))
           cout << "Process has not been started." << endl;
@@ -464,7 +464,7 @@ int PServiceProcess::InitialiseService()
 
   // Run as a daemon, ie fork
   if (!pidfilename.IsEmpty()) {
-    ifstream pidfile((const char *)pidfilename);
+    std::ifstream pidfile((const char *)pidfilename);
     if (pidfile.is_open()) {
       pid_t pid;
       pidfile >> pid;
@@ -491,7 +491,7 @@ int PServiceProcess::InitialiseService()
       cout << "Daemon started with pid " << pid << endl;
       if (!pidfilename.IsEmpty()) {
         // Write out the child pid to magic file in /var/run (at least for linux)
-        ofstream pidfile((const char *)pidfilename);
+        std::ofstream pidfile((const char *)pidfilename);
         if (pidfile.is_open())
           pidfile << pid;
         else

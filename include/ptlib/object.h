@@ -2054,64 +2054,12 @@ class PSafeSingleton : public PSingleton<Type, atomic<unsigned>, Creator>
 ///////////////////////////////////////////////////////////////////////////////
 // Memory pool allocators
 
-#if P_GNU_ALLOCATOR
+#define PDECLARE_POOL_ALLOCATOR(cls) \
+  virtual ~cls() { } \
+  __inline static const char * Class() { return typeid(cls).name(); } \
+  PNEW_AND_DELETE_FUNCTIONS(0)
 
-  #include <ext/mt_allocator.h>
-
-  /* Need this tempalte class specialisation of standard class to do the
-     de-allocation of the pool memory. As per:
-     http://gcc.gnu.org/viewcvs/trunk/libstdc++-v3/testsuite/ext/mt_allocator/deallocate_local-6.cc?view=markup
-   */
-  template <bool _Thread>
-  struct PMemoryPool : public __gnu_cxx::__pool<_Thread>
-    {
-    PMemoryPool()
-      : __gnu_cxx::__pool<_Thread>()
-    {
-    }
-
-    PMemoryPool(const __gnu_cxx::__pool_base::_Tune& t) 
-      : __gnu_cxx::__pool<_Thread>(t)
-    {
-    }
-  };
-
-  #if P_GNU_ALLOCATOR==1
-    /*Do this template class specialisation so each type has it's own separate
-      memory block for the pool. */
-    template <class Type>
-    struct PCommonPool : public __gnu_cxx::__common_pool_policy<PMemoryPool, true>
-    {
-    };
-
-    template <class Type>
-    struct PFixedPoolAllocator : public PSingleton<__gnu_cxx::__mt_alloc<Type, PCommonPool<Type> > >
-    {
-    };
-  #else
-    #include <ext/bitmap_allocator.h>
-    template <class Type>
-    struct PFixedPoolAllocator : public PSingleton<__gnu_cxx::bitmap_allocator<Type> >
-    {
-    };
-  #endif
-
-  #define PDECLARE_POOL_ALLOCATOR(cls) \
-    void * cls::operator new(size_t)                           { return PFixedPoolAllocator<cls>()->allocate(1);               } \
-    void * cls::operator new(size_t, const char *, int)        { return PFixedPoolAllocator<cls>()->allocate(1);               } \
-    void   cls::operator delete(void * ptr)                    {        PFixedPoolAllocator<cls>()->deallocate((cls *)ptr, 1); } \
-    void   cls::operator delete(void * ptr, const char *, int) {        PFixedPoolAllocator<cls>()->deallocate((cls *)ptr, 1); }
-
-#else
-
-  #define PDECLARE_POOL_ALLOCATOR(cls) \
-    virtual ~cls() { } \
-    __inline static const char * Class() { return typeid(cls).name(); } \
-    PNEW_AND_DELETE_FUNCTIONS(0)
-
-  #define PDEFINE_POOL_ALLOCATOR(cls)
-
-#endif
+#define PDEFINE_POOL_ALLOCATOR(cls)
 
 
 #define PCLASSINFO_ALIGNED(cls, par, align) \
@@ -2607,7 +2555,7 @@ typedef PIntSameOrder<long double> PFloat80b;
 #endif
 #endif
 
-typedef intptr_t P_INT_PTR;
+typedef intptr_t intptr_t;
 
 #if defined(_MSC_VER)
 #define P_ALIGN_FIELD(fieldType,fieldName,alignment) fieldType __declspec(align(alignment)) fieldName
@@ -2615,7 +2563,7 @@ typedef intptr_t P_INT_PTR;
 #define P_ALIGN_FIELD(fieldType,fieldName,alignment) fieldType fieldName __attribute__ ((aligned(alignment)))
 #endif
 
-typedef intptr_t P_INT_PTR;
+typedef intptr_t intptr_t;
 
 ///////////////////////////////////////////////////////////////////////////////
 // Miscellaneous

@@ -148,19 +148,15 @@ PChannel::PChannel()
 PChannel::~PChannel()
 {
   PChannelStreamBuffer * buf = dynamic_cast<PChannelStreamBuffer *>(rdbuf());
-#if P_HAS_SET_RDBUF
   set_rdbuf(NULL);
-#elif !defined(_MSC_VER)
-  init(NULL);
-#endif
   delete buf;
 }
 
 PObject::Comparison PChannel::Compare(const PObject & obj) const
 {
   PAssert(PIsDescendant(&obj, PChannel), PInvalidCast);
-  P_INT_PTR h1 = GetHandle();
-  P_INT_PTR h2 = ((const PChannel&)obj).GetHandle();
+  intptr_t h1 = GetHandle();
+  intptr_t h2 = ((const PChannel&)obj).GetHandle();
   if (h1 < h2)
     return LessThan;
   if (h1 > h2)
@@ -666,7 +662,7 @@ PString PIndirectChannel::GetName() const
 }
 
 
-P_INT_PTR PIndirectChannel::GetHandle() const
+intptr_t PIndirectChannel::GetHandle() const
 {
   PReadWaitAndSignal mutex(channelPointerMutex);
 

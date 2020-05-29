@@ -37,7 +37,7 @@
 
   protected:
     bool PXSetIOBlock(PXBlockType type, const PTimeInterval & timeout);
-    P_INT_PTR GetOSHandleAsInt() const { return os_handle; }
+    intptr_t GetOSHandleAsInt() const { return os_handle; }
     int  PXClose();
 
     PDECLARE_MUTEX(  px_threadMutex);

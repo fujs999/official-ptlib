@@ -481,7 +481,7 @@ class PSocket : public PChannel
   //@}
 
   protected:
-    virtual bool ConvertOSError(P_INT_PTR libcReturnValue, ErrorGroup group = LastGeneralError);
+    virtual bool ConvertOSError(intptr_t libcReturnValue, ErrorGroup group = LastGeneralError);
 
     /*This function calls os_socket() with the correct parameters for the
        socket protocol type.

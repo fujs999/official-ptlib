@@ -3264,7 +3264,7 @@ void PVXMLGrammar::Start()
 }
 
 
-void PVXMLGrammar::OnTimeout(PTimer &, P_INT_PTR)
+void PVXMLGrammar::OnTimeout(PTimer &, intptr_t)
 {
   PTRACE(3, "Timeout for grammar " << *this );
   m_mutex.Wait();

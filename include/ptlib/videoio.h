@@ -1344,7 +1344,7 @@ PCREATE_PLUGIN_DEVICE(PVideoInputDevice);
 
 #define PCREATE_VIDINPUT_PLUGIN_EX(name, extra) \
     PCREATE_PLUGIN(name, PVideoInputDevice, PVideoInputDevice_##name, PPlugin_PVideoInputDevice, \
-      virtual PStringArray GetDeviceNames(P_INT_PTR /*userData*/) const { return PVideoInputDevice_##name::GetInputDeviceNames(); } \
+      virtual PStringArray GetDeviceNames(intptr_t /*userData*/) const { return PVideoInputDevice_##name::GetInputDeviceNames(); } \
       virtual bool GetDeviceCapabilities(const PString & deviceName, void * caps) const { return PVideoInputDevice_##name::GetInputDeviceCapabilities(deviceName, (PVideoInputDevice::Capabilities *)caps); } \
       extra)
 
@@ -1403,7 +1403,7 @@ PCREATE_PLUGIN_DEVICE(PVideoOutputDevice);
 
 #define PCREATE_VIDOUTPUT_PLUGIN_EX(name, extra) \
     PCREATE_PLUGIN(name, PVideoOutputDevice, PVideoOutputDevice_##name, PPlugin_PVideoOutputDevice, \
-      virtual PStringArray GetDeviceNames(P_INT_PTR /*userData*/) const { return PVideoOutputDevice_##name::GetOutputDeviceNames(); } \
+      virtual PStringArray GetDeviceNames(intptr_t /*userData*/) const { return PVideoOutputDevice_##name::GetOutputDeviceNames(); } \
     extra)
 
 #define PCREATE_VIDOUTPUT_PLUGIN(name) PCREATE_VIDOUTPUT_PLUGIN_EX(name,)

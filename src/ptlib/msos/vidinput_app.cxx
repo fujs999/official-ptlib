@@ -80,7 +80,7 @@ PCREATE_VIDINPUT_PLUGIN_EX(Application,
     return "Application Window Video Grabber";
   }
 
-  virtual bool ValidateDeviceName(const PString & deviceName, P_INT_PTR /*userData*/) const
+  virtual bool ValidateDeviceName(const PString & deviceName, intptr_t /*userData*/) const
   {
     return FindTopWindow(deviceName) != NULL;
   }

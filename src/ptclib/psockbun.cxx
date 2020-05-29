@@ -348,7 +348,7 @@ bool PInterfaceMonitor::IsMatchingInterface(const PString & iface, const PIPSock
   PIPSocket::Address addr;
   PString name;
   if (!SplitInterfaceDescription(iface, addr, name))
-    return FALSE;
+    return false;
   
   return InterfaceMatches(addr, name, entry);
 }

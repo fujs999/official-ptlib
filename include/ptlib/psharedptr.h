@@ -45,8 +45,8 @@ class PSharedPtr : public PObject, public std::shared_ptr<T>
     typedef T element_type;
 
     PSharedPtr(element_type * p = nullptr) : std::shared_ptr<T>(p) { }
-    element_type * Get() const { return get(); }
-    void Reset() const { reset(); }
+    P_DEPRECATED element_type * Get() const { return this->get(); }
+    P_DEPRECATED void Reset() const { this->reset(); }
 };
 
 

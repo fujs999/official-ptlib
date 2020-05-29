@@ -2786,7 +2786,7 @@ int PSSLChannel::BioClose()
 }
 
 
-bool PSSLChannel::ConvertOSError(P_INT_PTR libcReturnValue, ErrorGroup group)
+bool PSSLChannel::ConvertOSError(intptr_t libcReturnValue, ErrorGroup group)
 {
   if (m_ssl == NULL)
     return SetErrorValues(NotOpen, EBADF, group);

@@ -744,7 +744,7 @@ bool PSoundChannelWin32::Open(const PString & device,
 }
 
 
-bool PSoundChannelWin32::OpenDevice(P_INT_PTR id)
+bool PSoundChannelWin32::OpenDevice(intptr_t id)
 {
   Close();
 

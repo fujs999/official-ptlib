@@ -192,7 +192,7 @@ void PConfig::Cached::SetDirty()
 }
 
 
-void PConfig::Cached::FlushTimeout(PTimer&, INT)
+void PConfig::Cached::FlushTimeout(PTimer&, intptr_t)
 {
   Flush();
 }

@@ -76,7 +76,7 @@ PCREATE_SOUND_PLUGIN_EX(Tones, PSoundChannel_Tones,
     return "Tone Generator Sound Input Channel";
   }
 
-  virtual bool ValidateDeviceName(const PString & deviceName, P_INT_PTR userData) const
+  virtual bool ValidateDeviceName(const PString & deviceName, intptr_t userData) const
   {
     if (TonePrefix != deviceName.Left(TonePrefix.GetLength()))
       return false;

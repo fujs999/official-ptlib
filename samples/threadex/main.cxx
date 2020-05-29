@@ -242,7 +242,7 @@ void * ExternalThreadMain(void *)
 
 ///////////////////////////////////////////////////////////////////////////
 
-void LauncherThread::AutoCreatedMain(PThread &, INT param)
+void LauncherThread::AutoCreatedMain(PThread &, intptr_t param)
 {
   PThread::Sleep(param);
 

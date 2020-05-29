@@ -254,7 +254,7 @@ void AsyncTest::SenderMain(int index)
 }
 
 
-void AsyncTest::Receiver(PThread &, P_INT_PTR index)
+void AsyncTest::Receiver(PThread &, intptr_t index)
 {
   PTRACE(4, "Async\tStarted receiver thread " << index);
 

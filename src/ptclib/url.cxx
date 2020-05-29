@@ -634,20 +634,20 @@ PFilePath PURL::AsFilePath() const
   if (m_path.IsEmpty() || m_scheme != FILE_SCHEME || (!m_hostname.IsEmpty() && m_hostname != "localhost"))
     return PString::Empty();
 
-  PStringStream str;
+  PStringStream strm;
 
   if (m_path[0].GetLength() == 2 && m_path[0][1] == '|')
-    str << m_path[0][0] << ':' << PDIR_SEPARATOR; // Special case for Windows paths with drive letter
+    strm << m_path[0][0] << ':' << PDIR_SEPARATOR; // Special case for Windows paths with drive letter
   else {
     if (!m_relativePath)
-      str << PDIR_SEPARATOR;
-    str << m_path[0];
+      strm << PDIR_SEPARATOR;
+    strm << m_path[0];
   }
 
   for (PINDEX i = 1; i < m_path.GetSize(); i++)
-    str << PDIR_SEPARATOR << m_path[i];
+    strm << PDIR_SEPARATOR << m_path[i];
 
-  return str;
+  return PFilePath(strm.str());
 }
 
 

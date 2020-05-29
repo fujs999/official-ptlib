@@ -128,7 +128,7 @@ BEGIN_EVENT_TABLE(P_WXWINDOWS_DEVICE_CLASS, wxFrame)
 END_EVENT_TABLE()
 
 PCREATE_VIDOUTPUT_PLUGIN_EX(wxWindows,
-  virtual bool ValidateDeviceName(const PString & deviceName, P_INT_PTR /*userData*/) const
+  virtual bool ValidateDeviceName(const PString & deviceName, intptr_t /*userData*/) const
   {
     return deviceName.NumCompare(GetServiceName()) == PObject::EqualTo;
   }

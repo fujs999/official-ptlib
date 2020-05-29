@@ -108,7 +108,7 @@ int main( int argc, char* args[] )
    }
 
    if (signal(SIGINT, crtlc_handler) == SIG_ERR)
-      printf("ERROR installing signal 'INT' handling");
+      printf("ERROR installing signal 'SIGINT' handling");
 
    int sampleRate = 0;
    int audioChannels = 0;

@@ -440,7 +440,7 @@ void PSafeCollection::SetAutoDeleteObjects()
 
 
 #if P_TIMERS
-void PSafeCollection::DeleteObjectsTimeout(PTimer &, P_INT_PTR)
+void PSafeCollection::DeleteObjectsTimeout(PTimer &, intptr_t)
 {
   DeleteObjectsToBeRemoved();
 }

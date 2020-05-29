@@ -136,7 +136,7 @@ void Xmlrpcsrvr::Main()
   Suspend();
 }
 
-void Xmlrpcsrvr::FunctionNotifier(PXMLRPCServerParms & args, INT)
+void Xmlrpcsrvr::FunctionNotifier(PXMLRPCServerParms & args, intptr_t)
 {
   PTRACE(1, "XMLRPC function called");
 

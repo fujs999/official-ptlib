@@ -169,7 +169,7 @@ class PChannel : public PObject, public std::iostream
        @return
        standard OS descriptor integer.
      */
-    virtual P_INT_PTR GetHandle() const;
+    virtual intptr_t GetHandle() const;
 
     /** Re-open the device using the stdio library. This closes the PChannel
 
@@ -690,7 +690,7 @@ class PChannel : public PObject, public std::iostream
        @return true if there was no error.
      */
     virtual bool ConvertOSError(
-      P_INT_PTR libcReturnValue,                ///< Return value from standard library
+      intptr_t libcReturnValue,                ///< Return value from standard library
       ErrorGroup group = LastGeneralError ///< Error group to set
     );
 
@@ -732,7 +732,7 @@ class PChannel : public PObject, public std::iostream
     PTimeInterval readTimeout;  ///< Timeout for read operations.
     PTimeInterval writeTimeout; ///< Timeout for write operations.
  
-    atomic<P_INT_PTR> os_handle; ///< The operating system file handle return by standard open() function.
+    atomic<intptr_t> os_handle; ///< The operating system file handle return by standard open() function.
 
     struct Status
     {

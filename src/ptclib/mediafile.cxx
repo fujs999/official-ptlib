@@ -2594,7 +2594,7 @@ PCREATE_VIDINPUT_PLUGIN_EX(MediaFile,
     return "Media File Video Input";
   }
 
-  virtual bool ValidateDeviceName(const PString & deviceName, P_INT_PTR /*userData*/) const
+  virtual bool ValidateDeviceName(const PString & deviceName, intptr_t /*userData*/) const
   {
     return PVideoInputDevice_MediaFile::GetInputDeviceNames().GetValuesIndex("*"+PFilePath(deviceName).GetType()) != P_MAX_INDEX;
   }
@@ -2611,7 +2611,7 @@ PCREATE_VIDOUTPUT_PLUGIN_EX(MediaFile,
     return "Media File Video Output";
   }
 
-  virtual bool ValidateDeviceName(const PString & deviceName, P_INT_PTR /*userData*/) const
+  virtual bool ValidateDeviceName(const PString & deviceName, intptr_t /*userData*/) const
   {
     PMediaFile::Factory::KeyList_T keyList = PMediaFile::Factory::GetKeyList();
     return std::find(keyList.begin(), keyList.end(), PFilePath(deviceName).GetType()) != keyList.end() &&

@@ -366,11 +366,11 @@ bool PSocksSocket::Accept(PSocket & socket)
 }
 
 
-P_INT_PTR PSocksSocket::TransferHandle(PSocksSocket & destination)
+intptr_t PSocksSocket::TransferHandle(PSocksSocket & destination)
 {
   // This "transfers" the socket from one onstance to another.
 
-  P_INT_PTR the_handle = os_handle;
+  intptr_t the_handle = os_handle;
   destination.SetReadTimeout(readTimeout);
   destination.SetWriteTimeout(writeTimeout);
 

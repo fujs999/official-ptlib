@@ -128,13 +128,6 @@ typedef   signed long long int int64_t;
 typedef unsigned long long int uint64_t;	// 64 bit
 #endif
 
-// Integer type that is same size as a pointer type.
-#ifdef P_64BIT
-typedef long INT;
-#else
-typedef int  INT;
-#endif
-
 // MSVC problem requires a PINDEX to be #defined (specifically) to an int
 // (specifically)
 #ifdef __NUCLEUS_MNT__

@@ -40,6 +40,7 @@
 
   #define DEBUG_CERR(arg) // std::cerr << arg << std::endl
 
+  #include <chrono>
   #include <execinfo.h>
   #include <dlfcn.h>
   #if P_HAS_DEMANGLE
@@ -192,13 +193,13 @@
       struct PWalkStackInfo
       {
         enum { OtherThreadSkip = 6 };
-        pthread_mutex_t   m_mainMutex;
+        std::timed_mutex m_mainMutex;
         PThreadIdentifier m_threadId;
         PUniqueThreadIdentifier m_uniqueId;
         StackAddresses    m_addresses;
         int               m_addressCount;
-        pthread_mutex_t   m_condMutex;
-        pthread_cond_t    m_condVar;
+        std::mutex        m_condMutex;
+        std::condition_variable m_condVar;
         PTime             m_signalSentTime;
 
         PWalkStackInfo()
@@ -207,9 +208,6 @@
           , m_addressCount(-1)
           , m_signalSentTime(0)
         {
-          pthread_mutex_init(&m_mainMutex, NULL);
-          pthread_mutex_init(&m_condMutex, NULL);
-          pthread_cond_init(&m_condVar, NULL);
         }
 
         void WalkOther(ostream & strm, PThreadIdentifier tid, PUniqueThreadIdentifier uid, bool noSymbols)
@@ -221,29 +219,9 @@
             return;
           }
 
-          // Needs to all be done within X seconds
-          struct timespec absTime;
-          clock_gettime(CLOCK_REALTIME, &absTime);
-          absTime.tv_sec += 2;
+          auto when = std::chrono::steady_clock::now() + std::chrono::seconds(2);
 
-          #if P_PTHREADS_XPG6
-            bool failed = pthread_mutex_timedlock(&m_mainMutex, &absTime) != 0;
-          #else // P_PTHREADS_XPG6
-            bool failed;
-            for (;;) {
-              failed = pthread_mutex_trylock(&m_mainMutex) != 0;
-              if (!failed)
-                break;
-
-              struct timespec now;
-              clock_gettime(CLOCK_REALTIME, &now);
-              if (now.tv_sec > absTime.tv_sec && now.tv_nsec > absTime.tv_nsec)
-                break;
-
-              usleep(10000);
-            }
-          #endif // P_PTHREADS_XPG6
-          if (failed) {
+          if (!m_mainMutex.try_lock_until(when)) {
             strm << "\n\tStack trace system is too busy to WalkOther";
             DEBUG_CERR("WalkOther: mutex timeout");
             return;
@@ -256,30 +234,25 @@
           m_signalSentTime.SetCurrentTime();
           if (!PThread::PX_kill(tid, uid, PProcess::WalkStackSignal)) {
             strm << "\n\tThread " << PThread::GetIdentifiersAsString(tid, uid) << " is no longer running";
-            pthread_mutex_unlock(&m_mainMutex);
+            m_mainMutex.unlock();
             return;
           }
 
-          int err = 0;
-
-          pthread_mutex_lock(&m_condMutex);
-          while (m_addressCount < 0) {
-            if ((err = pthread_cond_timedwait(&m_condVar, &m_condMutex, &absTime)) != 0)
-              break;
+          try {
+            std::unique_lock<std::mutex> lock(m_condMutex);
+            if (!m_condVar.wait_until(lock, when, [this]() { return m_addressCount >= 0; }))
+              strm << "\n\tNo response getting stack trace for " << PThread::GetIdentifiersAsString(tid, uid);
+            else
+              InternalWalkStack(strm, OtherThreadSkip, m_addresses, noSymbols);
           }
-          pthread_mutex_unlock(&m_condMutex);
-
-          if (err == ETIMEDOUT)
-            strm << "\n\tNo response getting stack trace for " << PThread::GetIdentifiersAsString(tid, uid);
-          else if (err != 0)
-            strm << "\n\tError " << err << " getting stack trace for " << PThread::GetIdentifiersAsString(tid, uid);
-          else
-            InternalWalkStack(strm, OtherThreadSkip, m_addresses, noSymbols);
+          catch (...) {
+            strm << "\n\tError getting stack trace for " << PThread::GetIdentifiersAsString(tid, uid);
+          }
 
           m_threadId = PNullThreadIdentifier;
           m_uniqueId = 0;
 
-          pthread_mutex_unlock(&m_mainMutex);
+          m_mainMutex.unlock();
           DEBUG_CERR("WalkOther: done");
         }
 
@@ -307,10 +280,10 @@
           int addressCount = backtrace(m_addresses.data(), m_addresses.size());
           m_addresses.resize(addressCount < 0 ? 0 : addressCount);
 
-          pthread_mutex_lock(&m_condMutex);
+          m_condMutex.lock();
           m_addressCount = m_addresses.size();
-          pthread_cond_signal(&m_condVar);
-          pthread_mutex_unlock(&m_condMutex);
+          m_condVar.notify_one();
+          m_condMutex.unlock();
         }
       };
     #else // P_PTHREADS

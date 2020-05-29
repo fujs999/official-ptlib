@@ -306,7 +306,7 @@ PINLINE void PChannel::SetWriteTimeout(const PTimeInterval & time)
 PINLINE PTimeInterval PChannel::GetWriteTimeout() const
   { return writeTimeout; }
 
-PINLINE P_INT_PTR PChannel::GetHandle() const
+PINLINE intptr_t PChannel::GetHandle() const
   { return os_handle; }
 
 PINLINE void PChannel::AbortCommandString()

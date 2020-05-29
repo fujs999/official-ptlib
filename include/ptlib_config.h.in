@@ -113,12 +113,6 @@
   #undef HAVE_LONG_DOUBLE
 #endif
 
-#undef P_HAS_WCHAR
-#if P_HAS_WCHAR
-  #undef P_HAS_WOSTREAM
-#endif
-#undef P_HAS_SET_RDBUF
-
 #undef PBYTE_ORDER
 #ifndef PBYTE_ORDER
   #if defined(__BIG_ENDIAN__)
@@ -179,8 +173,6 @@
 
   #define P_PTHREADS 1
   #define P_HAS_SEMAPHORES 1
-  #define P_ATOMICITY_BUILTIN 1
-  #define P_HAS_RECURSIVE_MUTEX 1
   #define P_HAS_POLL 1
   #define P_HAS_RECVMSG 1
   #define P_HAS_RECVMSG_MSG_ERRQUEUE 1
@@ -227,10 +219,6 @@
   #undef P_PTHREADS
   #undef P_NO_PTHREAD_KILL
   #undef P_HAS_SEMAPHORES
-  #undef P_ATOMICITY_BUILTIN
-  #undef P_ATOMICITY_HEADER
-  #undef P_ATOMICITY_NAMESPACE
-  #undef P_HAS_RECURSIVE_MUTEX
   #undef P_HAS_POLL
   #undef P_HAS_RECVMSG
   #undef P_HAS_RECVMSG_MSG_ERRQUEUE
@@ -239,10 +227,8 @@
   #undef P_HAS_NETLINK
   #undef P_SETPGRP_NOPARM
 
-  #undef P_GNU_ALLOCATOR
   #undef P_HAS_MALLOC_INFO
   #undef P_HAS_NAMED_SEMAPHORES
-  #undef P_PTHREADS_XPG6      
   #undef P_HAS_SEMAPHORES_XPG6
   #undef P_HAS_AIO
   #undef P_HAS_POSIX_READDIR_R
@@ -281,9 +267,7 @@
 #undef P_SHM_VIDEO
 #undef P_HAS_RDTSC
 
-#if P_HAS_WCHAR
-  #undef P_HAS_ICONV
-#endif
+#undef P_HAS_ICONV
 
 
 /////////////////////////////////////////////////

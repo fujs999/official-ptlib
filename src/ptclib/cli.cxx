@@ -538,7 +538,7 @@ void PCLI::Context::Broadcast(const PString & message)
   WriteChar('\n');
 }
 
-void PCLI::Context::ThreadMain(PThread &, P_INT_PTR)
+void PCLI::Context::ThreadMain(PThread &, intptr_t)
 {
   PTRACE(4, "Context thread started");
   Run();
@@ -1255,7 +1255,7 @@ bool PCLISocket::Listen(uint16_t port)
 }
 
 
-void PCLISocket::ThreadMain(PThread &, P_INT_PTR)
+void PCLISocket::ThreadMain(PThread &, intptr_t)
 {
   PTRACE(4, "Server thread started on port " << GetPort());
 

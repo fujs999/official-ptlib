@@ -36,24 +36,24 @@
 template <typename ParamType, class NotifierType = PObject, class TargetType = PObject>
 class PNotifierTemplate : public PObject, public std::function<void(NotifierType &, ParamType)>
 {
-  PCLASSINFO(PNotifierTemplate, PObject);
-
+    PCLASSINFO(PNotifierTemplate, PObject);
   protected:
     TargetType * m_target;
   public:
-    typedef std::function<void(NotifierType &, ParamType)> Parent;
+    typedef std::function<void(NotifierType &, ParamType)> Function;
+
     PNotifierTemplate() : m_target(nullptr) { }
     PNotifierTemplate(nullptr_t *) : m_target(nullptr) { }
-    PNotifierTemplate(Parent fn, TargetType * target) : Parent(std::move(fn)), m_target(target) { }
+    PNotifierTemplate(Function fn, TargetType * target) : Function(std::move(fn)), m_target(target) { }
 
-    P_DEPRECATED bool IsNULL() const { return Parent::operator bool(); }
+    P_DEPRECATED bool IsNULL() const { return Function::operator bool(); }
     TargetType * GetTarget() const { return m_target; }
 };
 
 /** \class PNotifier
-    Class specialisation for PNotifierTemplate<P_INT_PTR>
+    Class specialisation for PNotifierTemplate<intptr_t>
   */
-typedef PNotifierTemplate<P_INT_PTR> PNotifier;
+typedef PNotifierTemplate<intptr_t> PNotifier;
 
 
 #define PDECLARE_NOTIFIER_EXT(NotifierType, notifierArg, TargetType, func, ParamType, paramArg, FunctionType, ...) \
@@ -64,13 +64,13 @@ typedef PNotifierTemplate<P_INT_PTR> PNotifier;
   void func##_PObject(PObject & n, ParamType p) { func(dynamic_cast<NotifierType &>(n), p); } \
   virtual void func(NotifierType & notifierArg, ParamType paramArg)
 
-/// Declare PNotifier derived class with P_INT_PTR parameter. Uses PDECLARE_NOTIFIER_EXT macro.
+/// Declare PNotifier derived class with intptr_t parameter. Uses PDECLARE_NOTIFIER_EXT macro.
 #define PDECLARE_NOTIFIER2(NotifierType, TargetType, func, ParamType) \
      PDECLARE_NOTIFIER_EXT(NotifierType, , TargetType, func, ParamType, , PNotifierTemplate<ParamType>)
 
-/// Declare PNotifier derived class with P_INT_PTR parameter. Uses PDECLARE_NOTIFIER_EXT macro.
+/// Declare PNotifier derived class with intptr_t parameter. Uses PDECLARE_NOTIFIER_EXT macro.
 #define PDECLARE_NOTIFIER(NotifierType, TargetType, func) \
-       PDECLARE_NOTIFIER2(NotifierType, TargetType, func, P_INT_PTR)
+       PDECLARE_NOTIFIER2(NotifierType, TargetType, func, intptr_t)
 
 
 /** Create a PNotifier object instance.
@@ -83,7 +83,7 @@ typedef PNotifierTemplate<P_INT_PTR> PNotifier;
  */
 #define PCREATE_NOTIFIER2_EXT(obj, TargetType, func, type) TargetType::func##_PNotifier::Create(obj)
 
-/// Create PNotifier object instance with P_INT_PTR parameter. Uses PCREATE_NOTIFIER2_EXT macro.
+/// Create PNotifier object instance with intptr_t parameter. Uses PCREATE_NOTIFIER2_EXT macro.
 #define PCREATE_NOTIFIER_EXT( obj, TargetType, func) TargetType::func##_PNotifier::Create(obj)
 
 
@@ -97,7 +97,7 @@ typedef PNotifierTemplate<P_INT_PTR> PNotifier;
  */
 #define PCREATE_NOTIFIER2(func, type) P_DISABLE_MSVC_WARNINGS(4355, func##_PNotifier::Create(this))
 
-/// Create PNotifier object instance with P_INT_PTR parameter. Uses PCREATE_NOTIFIER2 macro.
+/// Create PNotifier object instance with intptr_t parameter. Uses PCREATE_NOTIFIER2 macro.
 #define PCREATE_NOTIFIER(func) P_DISABLE_MSVC_WARNINGS(4355, func##_PNotifier::Create(this))
 
 

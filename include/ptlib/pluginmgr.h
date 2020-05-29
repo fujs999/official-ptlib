@@ -78,27 +78,27 @@ class PPluginManager : public PObject
       PPluginManager * pluginMgr,
       const PString & serviceName,
       const PString & serviceType,
-      P_INT_PTR userData = 0
+      intptr_t userData = 0
     ) { return dynamic_cast<T *>((pluginMgr != NULL ? pluginMgr : &GetPluginManager())->CreatePlugin(serviceName, serviceType, userData)); }
 
     PObject * CreatePlugin(
       const PString & serviceName,
       const PString & serviceType,
-      P_INT_PTR userData = 0
+      intptr_t userData = 0
     ) const;
 
     static PStringArray GetPluginDeviceNames(
       PPluginManager * pluginMgr,
       const PString & serviceName,
       const PString & serviceType,
-      P_INT_PTR userData = 0,
+      intptr_t userData = 0,
       const char * const * prioritisedDrivers = NULL
     ) { return (pluginMgr != NULL ? pluginMgr : &GetPluginManager())->GetPluginDeviceNames(serviceName, serviceType, userData, prioritisedDrivers); }
 
     PStringArray GetPluginDeviceNames(
       const PString & serviceName,
       const PString & serviceType,
-      P_INT_PTR userData = 0,
+      intptr_t userData = 0,
       const char * const * prioritisedDrivers = NULL
     ) const;
 
@@ -125,7 +125,7 @@ class PPluginManager : public PObject
        To use define:
          PDECLARE_NOTIFIER(PDynaLink, YourClass, YourFunction);
        and
-         void YourClass::YourFunction(PDynaLink & dll, INT code)
+         void YourClass::YourFunction(PDynaLink & dll, intptr_t code)
          {
            // code == 0 means loading
            // code == 1 means unloading
@@ -179,7 +179,7 @@ class PPluginModuleManager : public PObject
 
     PPluginModuleManager(const char * signatureFunctionName, PPluginManager * pluginMgr = NULL);
 
-    virtual void OnLoadPlugin(PDynaLink & /*dll*/, P_INT_PTR /*code*/)
+    virtual void OnLoadPlugin(PDynaLink & /*dll*/, intptr_t /*code*/)
     { }
 
     virtual PluginListType GetPluginList() const

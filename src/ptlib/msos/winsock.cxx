@@ -213,13 +213,13 @@ PSocket::~PSocket()
 
 HANDLE PSocket::GetAsyncReadHandle() const
 {
-  return IsOpen() ? (HANDLE)(P_INT_PTR)os_handle : INVALID_HANDLE_VALUE;
+  return IsOpen() ? (HANDLE)(intptr_t)os_handle : INVALID_HANDLE_VALUE;
 }
 
 
 HANDLE PSocket::GetAsyncWriteHandle() const
 {
-  return IsOpen() ? (HANDLE)(P_INT_PTR)os_handle : INVALID_HANDLE_VALUE;
+  return IsOpen() ? (HANDLE)(intptr_t)os_handle : INVALID_HANDLE_VALUE;
 }
 
 
@@ -538,7 +538,7 @@ PChannel::Errors PSocket::Select(SelectList & read,
   if (retval > 0) {
     sock = read.begin();
     while (sock != read.end()) {
-      P_INT_PTR h = sock->GetHandle();
+      intptr_t h = sock->GetHandle();
       if (h < 0)
         return Interrupted;
       if (readfds.IsPresent(h))
@@ -548,7 +548,7 @@ PChannel::Errors PSocket::Select(SelectList & read,
     }
     sock = write.begin();
     while ( sock != write.end()) {
-      P_INT_PTR h = sock->GetHandle();
+      intptr_t h = sock->GetHandle();
       if (h < 0)
         return Interrupted;
       if (writefds.IsPresent(h))
@@ -558,7 +558,7 @@ PChannel::Errors PSocket::Select(SelectList & read,
     }
     sock = except.begin();
     while ( sock != except.end()) {
-      P_INT_PTR h = sock->GetHandle();
+      intptr_t h = sock->GetHandle();
       if (h < 0)
         return Interrupted;
       if (exceptfds.IsPresent(h))

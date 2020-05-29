@@ -47,7 +47,7 @@ PCREATE_SOUND_PLUGIN_EX(WAVFile, PSoundChannel_WAVFile,
     return "Microsoft WAV File Sound Channel";
   }
 
-  virtual bool ValidateDeviceName(const PString & deviceName, P_INT_PTR userData) const
+  virtual bool ValidateDeviceName(const PString & deviceName, intptr_t userData) const
   {
     PFilePath pathname = deviceName;
     if (pathname.GetTitle().IsEmpty())

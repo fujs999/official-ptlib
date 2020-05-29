@@ -630,7 +630,7 @@ PString PChannel::GetErrorText(Errors lastError, int osError)
 }
 
 
-bool PChannel::ConvertOSError(P_INT_PTR libcReturnValue, ErrorGroup group)
+bool PChannel::ConvertOSError(intptr_t libcReturnValue, ErrorGroup group)
 {
   int osError = GetErrorNumber(group);
 

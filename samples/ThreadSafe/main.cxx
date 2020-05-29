@@ -137,7 +137,7 @@ void ThreadSafe::Test1(PArgList & args)
     cout << setw(4) << (i + 1) << '=' << duration;
     if (i%5 == 4)
       cout << '\n';
-    PThread::Create(PCREATE_NOTIFIER(Test1Thread), (INT)duration.GetMilliSeconds());
+    PThread::Create(PCREATE_NOTIFIER(Test1Thread), (intptr_t)duration.GetMilliSeconds());
   }
   cout << endl;
 
@@ -202,7 +202,7 @@ void ThreadSafe::Test1OutputEnd()
 
 
 
-void ThreadSafe::Test1Thread(PThread &, INT duration)
+void ThreadSafe::Test1Thread(PThread &, intptr_t duration)
 {
   PRandom random;
   PSafePtr<TestObject> ptr;
@@ -325,7 +325,7 @@ void ThreadSafe::Test2(PArgList &)
 }
 
 
-void ThreadSafe::Test2Thread1(PThread &, INT)
+void ThreadSafe::Test2Thread1(PThread &, intptr_t)
 {
   cout << "Thread 1 before read only lock" << endl;
   PSafePtr<TestObject> ptr = sparse.FindWithLock(0, PSafeReadOnly);
@@ -342,7 +342,7 @@ void ThreadSafe::Test2Thread1(PThread &, INT)
 }
 
 
-void ThreadSafe::Test2Thread2(PThread &, INT)
+void ThreadSafe::Test2Thread2(PThread &, intptr_t)
 {
   Sleep(1000);
 
@@ -368,7 +368,7 @@ void ThreadSafe::Test3(PArgList &)
 }
 
 
-void ThreadSafe::Test3Thread1(PThread &, INT)
+void ThreadSafe::Test3Thread1(PThread &, intptr_t)
 {
   {
     cout << "Thread 1 before read only lock" << endl;
@@ -388,7 +388,7 @@ void ThreadSafe::Test3Thread1(PThread &, INT)
 }
 
 
-void ThreadSafe::Test3Thread2(PThread &, INT)
+void ThreadSafe::Test3Thread2(PThread &, intptr_t)
 {
   Sleep(1000);
 

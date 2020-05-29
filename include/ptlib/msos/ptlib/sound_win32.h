@@ -193,7 +193,7 @@ class PSoundChannelWin32: public PSoundChannel
     PDECLARE_MUTEX(  bufferMutex);
 
   private:
-    bool OpenDevice(P_INT_PTR id);
+    bool OpenDevice(intptr_t id);
     bool GetDeviceID(const PString & device, Directions dir, unsigned& id);
     int WaitEvent(ErrorGroup group);
 };

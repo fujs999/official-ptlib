@@ -55,7 +55,7 @@ PCREATE_VIDINPUT_PLUGIN_EX(VideoFile,
     return "Raw YUV File Video Input";
   }
 
-  virtual bool ValidateDeviceName(const PString & deviceName, P_INT_PTR /*userData*/) const
+  virtual bool ValidateDeviceName(const PString & deviceName, intptr_t /*userData*/) const
   {
     PVideoFileFactory::KeyList_T keyList = PVideoFileFactory::GetKeyList();
     return std::find(keyList.begin(), keyList.end(), PFilePath(deviceName).GetType()) != keyList.end();
@@ -197,7 +197,7 @@ PCREATE_VIDOUTPUT_PLUGIN_EX(VideoFile,
     return "Raw YUV File Video Output";
   }
 
-  virtual bool ValidateDeviceName(const PString & deviceName, P_INT_PTR /*userData*/) const
+  virtual bool ValidateDeviceName(const PString & deviceName, intptr_t /*userData*/) const
   {
     return (deviceName.Right(4) *= ".yuv") && (!PFile::Exists(deviceName) || PFile::Access(deviceName, PFile::WriteOnly));
   }

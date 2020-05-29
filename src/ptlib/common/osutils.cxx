@@ -95,7 +95,7 @@ class PSimpleThread : public PThread
   public:
     PSimpleThread(
       const PNotifier & notifier,
-      INT parameter,
+      intptr_t parameter,
       AutoDeleteFlag deletion,
       Priority priorityLevel,
       const PString & threadName,
@@ -111,7 +111,7 @@ class PSimpleThread : public PThread
 
   protected:
     PNotifier callback;
-    INT parameter;
+    intptr_t parameter;
 };
 
 
@@ -201,39 +201,8 @@ public:
   PString          m_rolloverPattern;
   unsigned         m_lastRotate;
   atomic<PINDEX>   m_maxLength;
+  std::recursive_mutex m_mutex;
 
-
-#if defined(_WIN32)
-  CRITICAL_SECTION mutex;
-  void InitMutex() { InitializeCriticalSection(&mutex); }
-  void Lock()      { EnterCriticalSection(&mutex); }
-  void Unlock()    { LeaveCriticalSection(&mutex); }
-#elif defined(P_PTHREADS) && P_HAS_RECURSIVE_MUTEX
-  pthread_mutex_t mutex;
-  void InitMutex() {
-    // NOTE this should actually guard against various errors
-    // returned.
-    pthread_mutexattr_t attr;
-    pthread_mutexattr_init(&attr);
-    pthread_mutexattr_settype(&attr,
-#if P_HAS_RECURSIVE_MUTEX == 2
-PTHREAD_MUTEX_RECURSIVE
-#else
-PTHREAD_MUTEX_RECURSIVE_NP
-#endif
-    );
-    pthread_mutex_init(&mutex, &attr);
-    pthread_mutexattr_destroy(&attr);
-  }
-  void Lock()      { pthread_mutex_lock(&mutex); }
-  void Unlock()    { pthread_mutex_unlock(&mutex); }
-#else
-  PMutex * mutex;
-  void InitMutex() { mutex = new PMutex; }
-  void Lock()      { mutex->Wait(); }
-  void Unlock()    { mutex->Signal(); }
-#endif
-  
   struct Context : PObject
   {
     Context(unsigned level, const char * fileName, int lineNum, const PObject * instance, const char * module)
@@ -286,7 +255,6 @@ PTHREAD_MUTEX_RECURSIVE_NP
     , m_lastRotate(0)
     , m_maxLength(10000)
   {
-    InitMutex();
   }
 
   void InitialiseFromEnvironment()
@@ -324,13 +292,13 @@ PTHREAD_MUTEX_RECURSIVE_NP
       newStream = &cerr;
 #endif
 
-    Lock();
+    m_mutex.lock();
 
     if (m_stream != &cerr && m_stream != &cout)
       delete m_stream;
     m_stream = newStream;
 
-    Unlock();
+    m_mutex.unlock();
   }
 
   bool AdjustOptions(unsigned addedOptions, unsigned removedOptions)
@@ -857,7 +825,7 @@ ostream & PTraceInfo::InternalBegin(unsigned level, const char * fileName, int l
   Context * context = new Context(level, fileName, lineNum, instance, module);
   contexts->Push(context);
 
-  Lock();
+  m_mutex.lock();
 
   if (!m_filename.IsEmpty() && HasOption(RotateLogMask)) {
     unsigned rotateVal = GetRotateVal(m_options);
@@ -867,7 +835,7 @@ ostream & PTraceInfo::InternalBegin(unsigned level, const char * fileName, int l
     }
   }
 
-  Unlock();
+  m_mutex.unlock();
 
   return context->m_stream;
 }
@@ -1012,9 +980,9 @@ ostream & PTraceInfo::InternalEnd(ostream & paramStream)
   if (HasOption(SystemLogStream))
     PSystemLog::OutputToTarget(PSystemLog::LevelFromInt(context->m_level), output.str().c_str());
   else {
-    Lock();
+    m_mutex.lock();
     *m_stream << output << endl;
-    Unlock();
+    m_mutex.unlock();
   }
 
   delete context;
@@ -3468,7 +3436,7 @@ void PThread::SetAutoDelete(AutoDeleteFlag deletion)
 
 
 PThread * PThread::Create(const PNotifier & notifier,
-                          INT parameter,
+                          intptr_t parameter,
                           AutoDeleteFlag deletion,
                           Priority priorityLevel,
                           const PString & threadName,
@@ -3607,7 +3575,7 @@ void * PThread::LocalStorageBase::GetStorage() const
 /////////////////////////////////////////////////////////////////////////////
 
 PSimpleThread::PSimpleThread(const PNotifier & notifier,
-                             INT param,
+                             intptr_t param,
                              AutoDeleteFlag deletion,
                              Priority priorityLevel,
                              const PString & threadName,
@@ -4696,7 +4664,7 @@ PFilePath::PFilePath(const char * prefix, const char * dir, const char * suffix)
     path = base;
   }
 
-  PAssertAlways("Could not generate a unique temporary file name, using base " + path);
+  PAssertAlways(PSTRSTRM("Could not generate a unique temporary file name, using base " << path));
 }
 
 

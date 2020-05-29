@@ -66,7 +66,7 @@ class SoundHandleEntry : public PObject {
     bool isInitialised;
 };
 
-PDICTIONARY(SoundHandleDict, PString, SoundHandleEntry);
+typedef PDictionary<PString, SoundHandleEntry> SoundHandleDict;
 
 #define LOOPBACK_BUFFER_SIZE 5000
 #define BYTESINBUF ((startptr<endptr)?(endptr-startptr):(LOOPBACK_BUFFER_SIZE+endptr-startptr))

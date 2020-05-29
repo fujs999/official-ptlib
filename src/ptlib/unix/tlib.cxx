@@ -721,7 +721,7 @@ bool PProcess::GetSystemTimes(Times & times)
 
 void PProcess::GetMemoryUsage(MemoryUsage & usage)
 {
-  ifstream proc("/proc/self/statm");
+  std::ifstream proc("/proc/self/statm");
   size_t virtPages, resPages;
   proc >> virtPages >> resPages;
   if (proc.good()) {

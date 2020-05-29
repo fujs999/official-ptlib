@@ -1420,7 +1420,7 @@ namespace PProfiling
   static uint64_t InitFrequency()
   {
 #if defined(P_LINUX)
-    ifstream cpuinfo("/proc/cpuinfo", ios::in);
+    std::ifstream cpuinfo("/proc/cpuinfo", ios::in);
     while (cpuinfo.good()) {
       char line[100];
       cpuinfo.getline(line, sizeof(line));

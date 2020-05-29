@@ -506,12 +506,13 @@ bool PIpAccessControlList::Remove(PIPSocket::Address addr, PIPSocket::Address ma
 
 bool PIpAccessControlList::InternalRemoveEntry(PIpAccessControlEntry & entry)
 {
-  auto it = std::find(begin(), end(), entry);
-  if (it == end())
-    return false;
-
-  erase(it);
-  return true;
+  for (auto it = begin(); it != end(); ++it) {
+    if (*it == entry) {
+      erase(it);
+      return true;
+    }
+  }
+  return false;
 }
 
 

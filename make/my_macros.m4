@@ -334,7 +334,7 @@ AC_DEFUN([INTERNAL_OUTPUT_SUMMARY],[
       AS_ECHO("$1"),
       AS_VAR_SET_IF([$2],
          AS_ECHO("$1 : ${$2}"),
-         AS_ECHO("$1 : no")
+         AS_ECHO("$1 : not set")
       )
    )
 ])
@@ -364,7 +364,7 @@ AC_DEFUN([MY_OUTPUT_SUMMARY],[
    INTERNAL_OUTPUT_SUMMARY([                         CPPFLAGS], [CPPFLAGS])
    INTERNAL_OUTPUT_SUMMARY([                           CFLAGS], [CFLAGS])
    INTERNAL_OUTPUT_SUMMARY([                         CXXFLAGS], [CXXFLAGS])
-   INTERNAL_OUTPUT_SUMMARY([                          LDFLAGS], [CXXFLAGS])
+   INTERNAL_OUTPUT_SUMMARY([                          LDFLAGS], [LDFLAGS])
    INTERNAL_OUTPUT_SUMMARY([                             LIBS], [LIBS])
    AS_ECHO("")
    AS_ECHO("========================================================================")
@@ -473,10 +473,9 @@ AC_SUBST(DEBUGINFOEXT, "debug")
 AC_SUBST(ARFLAGS, "rc")
 
 
-dnl Check for latest and greatest
-AC_ARG_ENABLE(cpp11, AS_HELP_STRING([--enable-cpp11],[Enable C++11 build]),AC_SUBST(CPLUSPLUS_STD,"-std=c++11"))
-AC_ARG_ENABLE(cpp14, AS_HELP_STRING([--enable-cpp14],[Enable C++14 build]),AC_SUBST(CPLUSPLUS_STD,"-std=c++14"))
-AC_ARG_ENABLE(cpp17, AS_HELP_STRING([--enable-cpp17],[Enable C++17 build]),AC_SUBST(CPLUSPLUS_STD,"-std=c++17"))
+dnl C++17 is defaullt, but check for latest and greatest
+AC_SUBST(CPLUSPLUS_STD,"-std=c++17")
+AC_ARG_ENABLE(cpp20, AS_HELP_STRING([--enable-cpp20],[Enable C++20 build]),AC_SUBST(CPLUSPLUS_STD,"-std=c++20"))
 
 
 case "$target_os" in

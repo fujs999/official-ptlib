@@ -47,9 +47,9 @@ template <class T> class PSmartPtr : public PObject, public std::shared_ptr<T>
 public:
   /// Constructor
   PSmartPtr(T * ptr = nullptr) : std::shared_ptr<T>(ptr) { }
-  virtual Comparison Compare(const PObject & obj) const { return Compare2(get(), dynamic_cast<const PSmartPtr &>(obj).get()); }
+  virtual Comparison Compare(const PObject & obj) const { return Compare2(this->get(), dynamic_cast<const PSmartPtr &>(obj).get()); }
   P_DEPRECATED bool IsNULL() const { return !*this; }
-  P_DEPRECATED T * GetObject() const { return get(); }
+  P_DEPRECATED T * GetObject() const { return this->get(); }
 };
 
 

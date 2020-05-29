@@ -51,10 +51,10 @@ protected:
   virtual void OnQuit(wxCommandEvent& event);
 
   // pwlib events
-  virtual void OnSessionEstablished(XMPP::C2S::StreamHandler&, INT);
-  virtual void OnSessionReleased(XMPP::C2S::StreamHandler&, INT);
-  virtual void OnMessage(XMPP::Message&, INT);
-  virtual void OnRosterChanged(XMPP::Roster&, INT);
+  virtual void OnSessionEstablished(XMPP::C2S::StreamHandler&, intptr_t);
+  virtual void OnSessionReleased(XMPP::C2S::StreamHandler&, intptr_t);
+  virtual void OnMessage(XMPP::Message&, intptr_t);
+  virtual void OnRosterChanged(XMPP::Roster&, intptr_t);
 
 private:
   XMPP::Roster * m_Roster;

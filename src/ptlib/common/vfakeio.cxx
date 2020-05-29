@@ -1462,7 +1462,7 @@ class PVideoInputDevice_FakeVideo : public PVideoInputDevice
 };
 
 PCREATE_VIDINPUT_PLUGIN_EX(FakeVideo,
-  virtual bool ValidateDeviceName(const PString & devName, P_INT_PTR /*userData*/) const
+  virtual bool ValidateDeviceName(const PString & devName, intptr_t /*userData*/) const
   {
     for (PINDEX chan = 0; chan < PARRAYSIZE(FakeDeviceNames) - 1; ++chan) {
       if (devName.Left(devName.Find('=')) *= FakeDeviceNames[chan])

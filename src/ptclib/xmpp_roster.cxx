@@ -300,19 +300,19 @@ void XMPP::Roster::Refresh(bool sendPresence)
 }
 
 
-void XMPP::Roster::OnSessionEstablished(XMPP::C2S::StreamHandler&, P_INT_PTR)
+void XMPP::Roster::OnSessionEstablished(XMPP::C2S::StreamHandler&, intptr_t)
 {
   Refresh(true);
 }
 
 
-void XMPP::Roster::OnSessionReleased(XMPP::C2S::StreamHandler&, P_INT_PTR)
+void XMPP::Roster::OnSessionReleased(XMPP::C2S::StreamHandler&, intptr_t)
 {
   Detach();
 }
 
 
-void XMPP::Roster::OnPresence(XMPP::Presence& msg, P_INT_PTR)
+void XMPP::Roster::OnPresence(XMPP::Presence& msg, intptr_t)
 {
   Item * item = FindItem(msg.GetFrom());
 
@@ -324,7 +324,7 @@ void XMPP::Roster::OnPresence(XMPP::Presence& msg, P_INT_PTR)
 }
 
 
-void XMPP::Roster::OnIQ(XMPP::IQ& iq, P_INT_PTR)
+void XMPP::Roster::OnIQ(XMPP::IQ& iq, intptr_t)
 {
   PXMLElement * query = iq.GetElement(XMPP::IQQueryTag());
 

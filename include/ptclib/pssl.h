@@ -899,7 +899,7 @@ class PSSLChannel : public PIndirectChannel
     virtual bool Close();
     virtual bool Shutdown(ShutdownValue);
     virtual PString GetErrorText(ErrorGroup group = NumErrorGroups) const;
-    virtual bool ConvertOSError(P_INT_PTR libcReturnValue, ErrorGroup group = LastGeneralError);
+    virtual bool ConvertOSError(intptr_t libcReturnValue, ErrorGroup group = LastGeneralError);
 
     // New functions
     /**Accept a new inbound connection (server).

@@ -61,7 +61,7 @@ PCREATE_VIDOUTPUT_PLUGIN_EX(SDL,
     return "Simple DirectMedia Layer Video Output";
   }
 
-  virtual bool ValidateDeviceName(const PString & deviceName, P_INT_PTR /*userData*/) const
+  virtual bool ValidateDeviceName(const PString & deviceName, intptr_t /*userData*/) const
   {
     return deviceName.NumCompare(GetServiceName()) == PObject::EqualTo;
   }

@@ -90,7 +90,7 @@ class PIndirectChannel : public PChannel
        @return
        integer value of the handle.
      */
-    virtual P_INT_PTR GetHandle() const;
+    virtual intptr_t GetHandle() const;
 
     /**Close the channel. This will detach itself from the read and write
        channels and delete both of them if they are auto delete.

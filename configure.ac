@@ -322,93 +322,6 @@ fi
 
 AC_LANG_POP(C)
 
-AC_MSG_CHECKING(if compiler uses RTTI by default)
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-   [
-      class A
-      {
-        public:
-          virtual void fred() { }
-      };
-      class B : public A
-      {
-        public:
-          virtual void fred() { }
-      };
-   ],
-   [
-      B t;
-      A * p = dynamic_cast<A *>(&t);
-   ])],
-   [
-      AC_MSG_RESULT(yes)
-   ],
-   [
-      AC_MSG_RESULT(no)
-      CPPFLAGS="$CPPFLAGS -frtti"
-   ]
-)
-
-
-dnl ########################################################################
-dnl this reduces the size of all executables and libraries
-
-dnl MSWIN_DISPLAY exceptions,C++ Exceptions
-dnl MSWIN_DEFINE  exceptions,P_EXCEPTIONS=1
-
-PTLIB_SIMPLE_OPTION([exceptions], [EXCEPTIONS], [enable C++ exceptions])
-
-if test "x${HAS_EXCEPTIONS}" = "x1" ; then
-   CXXFLAGS="-fexceptions $CXXFLAGS"
-else
-   CXXFLAGS="-fno-exceptions $CXXFLAGS"
-fi
-
-
-dnl ########################################################################
-dnl Memory allocator optimisations
-
-AC_MSG_CHECKING(C++ memory allocator)
-
-AC_ARG_WITH(
-   [allocator],
-   AS_HELP_STRING([--with-allocator=std,mt,bitmap],[Set the allocator type]),
-   [],
-   [withval="std"]
-)
-
-if test "$withval" = "std"; then
-   AC_MSG_RESULT(std)
-elif test "$withval" = "mt"; then
-   AC_TRY_COMPILE(
-      [#include <ext/mt_allocator.h>],
-      [typedef __gnu_cxx::__mt_alloc<char> TestAllocator;],
-      [
-         AC_DEFINE(P_GNU_ALLOCATOR, 1)
-         AC_MSG_RESULT([mt])
-      ],
-      [AC_MSG_RESULT([std (mt unavailable)])]
-  )
-elif test "$withval" = "bitmap"; then
-   AC_TRY_COMPILE(
-      [
-         #include <ext/mt_allocator.h>
-         #include <ext/bitmap_allocator.h>
-      ],
-      [
-         typedef __gnu_cxx::__mt_alloc<char> VariableAllocator;
-         typedef __gnu_cxx::bitmap_allocator<char> FixedAllocator;
-      ],
-      [
-         AC_DEFINE(P_GNU_ALLOCATOR, 2)
-         AC_MSG_RESULT(bitmap)
-      ],
-      [AC_ERROR([bitmap_allocator not available])]
-  )
-else
-  AC_ERROR([Unknown allocator type $withval])
-fi
-
 
 dnl ########################################################################
 dnl Do we have malloc_info
@@ -811,75 +724,6 @@ MY_COMPILE_IFELSE(
    
 
 dnl ########################################################################
-dnl see if using GNU glibc++, because then we have atomic integer operations
-
-dnl MSWIN_DISPLAY    atomic,Has std::atomic
-dnl MSWIN_DEFINE     atomic,P_STD_ATOMIC
-
-MY_COMPILE_IFELSE(
-   [if has std::atomic],
-   [$CPLUSPLUS_STD],
-   [#include <atomic>],
-   [
-      std::atomic<unsigned> val;
-      val.exchange(1);
-   ],
-   [
-      AC_DEFINE(P_STD_ATOMIC, 1)
-   ],
-   [
-   MY_LINK_IFELSE(
-      [if has builtin atomic],
-      [],
-      [],
-      [],
-      [
-         int val;
-         __sync_fetch_and_add(&val, 1);
-      ],
-      [
-         AC_DEFINE(P_ATOMICITY_BUILTIN,1)
-      ],
-      MY_COMPILE_IFELSE(
-         [if has bits/atomicity.h],
-         [],
-         [#include <bits/atomicity.h>],
-         [_Atomic_word val],
-         [P_ATOMICITY_HEADER="<bits/atomicity.h>"],
-         MY_COMPILE_IFELSE(
-            [if has ext/atomicity.h],
-            [],
-            [#include <ext/atomicity.h>],
-            [_Atomic_word val],
-            [P_ATOMICITY_HEADER="<ext/atomicity.h>"],
-            [AC_MSG_RESULT([no (SIMULATING!)])]
-         )
-      )
-   )
-
-   if test -n "$P_ATOMICITY_HEADER" ; then
-      AC_MSG_RESULT(yes $P_ATOMICITY_HEADER)
-      AC_DEFINE_UNQUOTED(P_ATOMICITY_HEADER, $P_ATOMICITY_HEADER)
-
-      AC_MSG_CHECKING(if atomic __exchange_and_add is in __gnu_cxx namespace)
-      AC_TRY_COMPILE(
-         [#include P_ATOMICITY_HEADER],
-         [
-            _Atomic_word val;
-            __gnu_cxx::__exchange_and_add(&val, 1);
-         ],
-         [
-            AC_MSG_RESULT(yes)
-            AC_DEFINE_UNQUOTED(P_ATOMICITY_NAMESPACE, __gnu_cxx::)
-         ],
-         [AC_MSG_RESULT(no)]
-      )
-   fi
-   ]
-)
-
-
-dnl ########################################################################
 dnl check for pthreads library
 
 AX_PTHREAD([], [AC_MSG_ERROR(Must have pthreads!)])
@@ -950,42 +794,6 @@ MY_COMPILE_IFELSE(
    ]
 )
    
-
-dnl ########################################################################
-dnl check for XPG6 compliant pthreads (timed spinlocks)
-
-MY_COMPILE_IFELSE(
-   [if has pthread_mutex_timedlock],
-   [],
-   [#include <pthread.h>],
-   [pthread_mutex_timedlock(NULL, NULL)],
-   [AC_DEFINE(P_PTHREADS_XPG6, 1, "XPG6 compliant pthreads found")]
-)
-
-
-dnl ########################################################################
-dnl check for recursive mutexes
-MY_COMPILE_IFELSE(
-   [if has NP recursive mutexes],
-   [],
-   [#include <pthread.h>],
-   [
-      pthread_mutexattr_t attr;
-      pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE_NP);
-   ],
-   [AC_DEFINE(P_HAS_RECURSIVE_MUTEX, 1)],
-   [MY_COMPILE_IFELSE(
-      [if has recursive mutexes],
-      [],
-      [#include <pthread.h>],
-      [
-         pthread_mutexattr_t attr;
-         pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
-      ],
-      [AC_DEFINE(P_HAS_RECURSIVE_MUTEX, 2)]
-   )]
-)
-
 
 dnl ########################################################################
 dnl check for gethostbyaddr_r
@@ -1105,48 +913,6 @@ dnl ########################################################################
 dnl check for async I/O
 
 AC_CHECK_HEADERS(aio.h, [AC_DEFINE(P_HAS_AIO, 1)])
-
-
-dnl ########################################################################
-dnl check for wchar and friends
-
-dnl MSWIN_DISPLAY wchar,wchar Support
-dnl MSWIN_DEFINE  wchar,P_HAS_WCHAR
-
-dnl MSWIN_DISPLAY wstream,wchar stream Support
-dnl MSWIN_DEFINE  wstream,P_HAS_WOSTREAM
-
-AC_CHECK_HEADERS(
-   wchar.h,
-   [
-      AC_DEFINE(P_HAS_WCHAR, 1)
-      AC_DEFINE(P_HAS_WOSTREAM, 1)
-   ]
-)
-
-
-dnl ########################################################################
-dnl check for iostream::set_rdbuf
-
-dnl MSWIN_DISPLAY    set_rdbuf,iostream has set_rdbuf
-dnl MSWIN_DEFINE     set_rdbuf,P_HAS_SET_RDBUF
-dnl MSWIN_IF_FEATURE set_rdbuf,!android
-
-MY_COMPILE_IFELSE(
-   [if has iostream::set_rdbuf],
-   [],
-   [#include <iostream>],
-   [
-      struct MyStream : public std::iostream {
-        MyStream()
-          : std::iostream(NULL)
-        {
-          set_rdbuf(NULL);
-        }
-      };
-   ],
-   [AC_DEFINE(P_HAS_SET_RDBUF, 1, "set_rdbuf found")]
-)
 
 
 dnl ########################################################################

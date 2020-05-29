@@ -138,7 +138,7 @@ void XMPPFrame::OnQuit(wxCommandEvent& event)
 }
 
 
-void XMPPFrame::OnSessionEstablished(XMPP::C2S::StreamHandler& client, INT)
+void XMPPFrame::OnSessionEstablished(XMPP::C2S::StreamHandler& client, intptr_t)
 {
   SetStatusText(wxT("Connected"), 0);
 
@@ -146,14 +146,14 @@ void XMPPFrame::OnSessionEstablished(XMPP::C2S::StreamHandler& client, INT)
 }
 
 
-void XMPPFrame::OnSessionReleased(XMPP::C2S::StreamHandler& client, INT)
+void XMPPFrame::OnSessionReleased(XMPP::C2S::StreamHandler& client, intptr_t)
 {
   SetStatusText(wxT("Disconnected"), 0);
   m_Roster->Detach();
 }
 
 
-void XMPPFrame::OnMessage(XMPP::Message& msg, INT)
+void XMPPFrame::OnMessage(XMPP::Message& msg, intptr_t)
 {
   // If it's valid and it's not in-band data
   if (msg.GetElement("data") == NULL) {
@@ -162,7 +162,7 @@ void XMPPFrame::OnMessage(XMPP::Message& msg, INT)
   }
 }
 
-void XMPPFrame::OnRosterChanged(XMPP::Roster&, INT)
+void XMPPFrame::OnRosterChanged(XMPP::Roster&, intptr_t)
 {
   // rebuild the tree
   m_RosterTree->DeleteAllItems();

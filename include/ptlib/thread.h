@@ -463,7 +463,7 @@ class PThread : public PObject
       */
     static PThread * Create(
       const PNotifier & notifier,     ///< Function to execute in thread.
-      INT parameter = 0,              ///< Parameter value to pass to notifier.
+      intptr_t parameter = 0,         ///< Parameter value to pass to notifier.
       AutoDeleteFlag deletion = AutoDeleteThread,
         ///< Automatically delete PThread instance on termination of thread.
       Priority priorityLevel = NormalPriority,  ///< Initial priority of thread.

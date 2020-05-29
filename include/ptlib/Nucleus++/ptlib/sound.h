@@ -39,27 +39,6 @@
 #include <fstream>
 
 ///////////////////////////////////////////////////////////////////////////////
-// declare type for sound handle dictionary
-
-class PSoundHandleEntry : public PObject {
-  PCLASSINFO(PSoundHandleEntry, PObject)
-
-  public:
-    PSoundHandleEntry();
-
-    int handle;
-    int direction;
-
-    unsigned numChannels;
-    unsigned sampleRate;
-    unsigned bitsPerSample;
-    unsigned fragmentValue;
-    bool isInitialised;
-};
-
-PDICTIONARY(PSoundHandleDict, PString, PSoundHandleEntry);
-
-///////////////////////////////////////////////////////////////////////////////
 // PSound
 
 #include "../../sound.h"

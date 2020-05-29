@@ -35,6 +35,7 @@
 #endif
 
 #include <ptlib/semaphor.h>
+#include <condition_variable>
 
 
 /** This class defines a thread synchronisation object.

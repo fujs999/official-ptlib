@@ -52,8 +52,8 @@ class PPluginServiceDescriptor
     virtual const char * GetServiceType() const = 0;
     virtual const char * GetServiceName() const = 0;
     virtual const char * GetFriendlyName() const { return GetServiceName(); }
-    virtual bool  ValidateServiceName(const PString & name, P_INT_PTR userData) const;
-    virtual PObject * CreateInstance(P_INT_PTR userData) const = 0;
+    virtual bool  ValidateServiceName(const PString & name, intptr_t userData) const;
+    virtual PObject * CreateInstance(intptr_t userData) const = 0;
 
   protected:
     unsigned m_version;
@@ -66,10 +66,10 @@ typedef PFactory<PPluginServiceDescriptor> PPluginFactory;
 class PPluginDeviceDescriptor : public PPluginServiceDescriptor
 {
   public:
-    virtual bool         ValidateServiceName(const PString & name, P_INT_PTR userData) const;
+    virtual bool         ValidateServiceName(const PString & name, intptr_t userData) const;
 
-    virtual PStringArray GetDeviceNames(P_INT_PTR userData) const;
-    virtual bool         ValidateDeviceName(const PString & deviceName, P_INT_PTR userData) const;
+    virtual PStringArray GetDeviceNames(intptr_t userData) const;
+    virtual bool         ValidateDeviceName(const PString & deviceName, intptr_t userData) const;
     virtual bool         GetDeviceCapabilities(const PString & deviceName, void * capabilities) const;
 };
 
@@ -100,7 +100,7 @@ typedef PPluginDeviceDescriptor PDevicePluginServiceDescriptor;   // Backward co
           public: \
             static  const char * ServiceName() { return #serviceName; } \
             virtual const char * GetServiceName() const { return ServiceName(); } \
-            virtual PObject * CreateInstance(P_INT_PTR) const { return new InstanceClass; } \
+            virtual PObject * CreateInstance(intptr_t) const { return new InstanceClass; } \
             extra \
         }; \
         PFACTORY_CREATE(PPluginFactory, PPlugin_##serviceType##_##serviceName, #serviceType #serviceName, true)

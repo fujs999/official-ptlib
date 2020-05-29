@@ -41,7 +41,6 @@
 #define PATH_SEP   ":"
 #endif
 
-static const char * PWLIB_ENUM_PATH = "PWLIB_ENUM_PATH";
 
 ///////////////////////////////////////////////////////////////////////
 
@@ -421,8 +420,6 @@ bool PDNS::ENUMLookup(
 }
 
 ////////////////////////////////////////////////////////////////////////
-
-static const char * PWLIB_RDS_PATH = "PWLIB_RDS_PATH";
 
 static PStringArray & GetRDSServers()
 {

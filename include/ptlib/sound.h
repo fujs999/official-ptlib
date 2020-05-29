@@ -815,7 +815,7 @@ PCREATE_PLUGIN_DEVICE(PSoundChannel);
 
 #define PCREATE_SOUND_PLUGIN_EX(name, InstanceClass, extra) \
    PCREATE_PLUGIN(name, PSoundChannel, InstanceClass, PPlugin_PSoundChannel, \
-      virtual PStringArray GetDeviceNames(P_INT_PTR userData) const { return InstanceClass::GetDeviceNames((PSoundChannel::Directions)userData); } \
+      virtual PStringArray GetDeviceNames(intptr_t userData) const { return InstanceClass::GetDeviceNames((PSoundChannel::Directions)userData); } \
       extra)
 
 #define PCREATE_SOUND_PLUGIN(name, InstanceClass) PCREATE_SOUND_PLUGIN_EX(name, InstanceClass, )

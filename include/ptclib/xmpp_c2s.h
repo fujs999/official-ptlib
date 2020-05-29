@@ -147,8 +147,8 @@ namespace XMPP
       );
 
     protected:
-      virtual void    OnOpen(Stream& stream, INT);
-      virtual void    OnClose(Stream& stream, INT);
+      virtual void    OnOpen(Stream& stream, intptr_t);
+      virtual void    OnClose(Stream& stream, intptr_t);
       virtual void    StartRegistration();
       virtual void    StartAuthNegotiation();
 

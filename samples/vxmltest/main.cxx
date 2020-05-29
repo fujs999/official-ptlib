@@ -91,7 +91,7 @@ void VxmlTest::Main()
 }
 
 
-void VxmlTest::SimulateInput(PCLI::Arguments & args, P_INT_PTR)
+void VxmlTest::SimulateInput(PCLI::Arguments & args, intptr_t)
 {
   if (args.GetCount() < 1) {
     args.WriteUsage();
@@ -113,7 +113,7 @@ void VxmlTest::SimulateInput(PCLI::Arguments & args, P_INT_PTR)
 }
 
 
-void VxmlTest::SetVar(PCLI::Arguments & args, P_INT_PTR)
+void VxmlTest::SetVar(PCLI::Arguments & args, intptr_t)
 {
   if (args.GetCount() < 2) {
     args.WriteUsage();
@@ -135,7 +135,7 @@ void VxmlTest::SetVar(PCLI::Arguments & args, P_INT_PTR)
 }
 
 
-void VxmlTest::GetVar(PCLI::Arguments & args, P_INT_PTR)
+void VxmlTest::GetVar(PCLI::Arguments & args, intptr_t)
 {
   if (args.GetCount() < 1) {
     args.WriteUsage();

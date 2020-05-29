@@ -68,25 +68,25 @@ class PluginLoaderStartup : public PProcessStartup
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-bool PPluginServiceDescriptor::ValidateServiceName(const PString & name, P_INT_PTR) const
+bool PPluginServiceDescriptor::ValidateServiceName(const PString & name, intptr_t) const
 {
   return GetServiceName() == name;
 }
 
 
-bool PPluginDeviceDescriptor::ValidateServiceName(const PString & name, P_INT_PTR userData) const
+bool PPluginDeviceDescriptor::ValidateServiceName(const PString & name, intptr_t userData) const
 {
   return ValidateDeviceName(name, userData);
 }
 
 
-PStringArray PPluginDeviceDescriptor::GetDeviceNames(P_INT_PTR) const
+PStringArray PPluginDeviceDescriptor::GetDeviceNames(intptr_t) const
 {
   return GetServiceName();
 }
 
 
-bool PPluginDeviceDescriptor::ValidateDeviceName(const PString & name, P_INT_PTR userData) const
+bool PPluginDeviceDescriptor::ValidateDeviceName(const PString & name, intptr_t userData) const
 {
   PStringArray devices = GetDeviceNames(userData);
   if (name.GetLength() == 2 && name[0] == '#' && isdigit(name[1]) && (PINDEX)(name[1]-'0') < devices.GetSize())
@@ -284,7 +284,7 @@ const PPluginServiceDescriptor * PPluginManager::GetServiceDescriptor(const PStr
 
 PObject * PPluginManager::CreatePlugin(const PString & serviceName,
                                        const PString & serviceType,
-                                       P_INT_PTR userData) const
+                                       intptr_t userData) const
 {
   PWaitAndSignal mutex(m_servicesMutex);
 
@@ -307,7 +307,7 @@ PObject * PPluginManager::CreatePlugin(const PString & serviceName,
 
 PStringArray PPluginManager::GetPluginDeviceNames(const PString & serviceName,
                                                   const PString & serviceType,
-                                                  P_INT_PTR userData,
+                                                  intptr_t userData,
                                                   const char * const * prioritisedDrivers) const
 {
   PWaitAndSignal mutex(m_servicesMutex);
@@ -481,7 +481,7 @@ PPluginModuleManager::PPluginModuleManager(const char * _signatureFunctionName, 
     pluginMgr = &PPluginManager::GetPluginManager();
 }
 
-void PPluginModuleManager::OnLoadModule(PDynaLink & dll, P_INT_PTR code)
+void PPluginModuleManager::OnLoadModule(PDynaLink & dll, intptr_t code)
 {
   PDynaLink::Function dummyFunction;
   if (!dll.GetFunction(signatureFunctionName, dummyFunction))

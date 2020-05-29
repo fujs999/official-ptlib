@@ -211,11 +211,11 @@ class PTimerTest : public PProcess
 #ifdef DOC_PLUS_PLUS
   /**A pwlib callback function which is activated when the first timer
    * fires */
-    void OnFirstTimerExpired(PTimer &, INT);
+    void OnFirstTimerExpired(PTimer &, intptr_t);
 
   /**A pwlib callback function which is activated when the second timer 
      fires.. */
-    void OnSecondTimerExpired(PTimer &, INT);
+    void OnSecondTimerExpired(PTimer &, intptr_t);
 #else
     PDECLARE_NOTIFIER(PTimer, PTimerTest, OnFirstTimerExpired);
 
@@ -228,7 +228,7 @@ class PTimerTest : public PProcess
        which point, the monitor thread will fire, and say, nothing is
        happening. This thread sets the value of an atomic integer every time
        it runs, to indicate activity.*/
-    virtual void RestartFirstTimerMain(PThread &, INT);
+    virtual void RestartFirstTimerMain(PThread &, intptr_t);
 #else
     PDECLARE_NOTIFIER(PThread, PTimerTest, RestartFirstTimerMain);
 #endif
@@ -239,7 +239,7 @@ class PTimerTest : public PProcess
        which point, the monitor thread will fire, and say, nothing is
        happening. This thread sets the value of an atomic integer every time
        it runs, to indicate activity.*/
-    virtual void RestartSecondTimerMain(PThread &, INT);
+    virtual void RestartSecondTimerMain(PThread &, intptr_t);
 #else
     PDECLARE_NOTIFIER(PThread, PTimerTest, RestartSecondTimerMain);
 #endif
@@ -250,7 +250,7 @@ class PTimerTest : public PProcess
        which point, the monitor thread will fire, and say, nothing is
        happening. This thread sets the value of an atomic integer every time
        it runs, to indicate activity.*/
-    virtual void RestartThirdTimerMain(PThread &, INT);
+    virtual void RestartThirdTimerMain(PThread &, intptr_t);
 #else
     PDECLARE_NOTIFIER(PThread, PTimerTest, RestartThirdTimerMain);
 #endif

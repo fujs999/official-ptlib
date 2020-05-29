@@ -41,13 +41,20 @@ const PString & PConfig::DefaultSectionName() { static PConstString const s("Opt
 
 PString PConfig::GetEnv(const char* key, const char* dflt)
 {
-  size_t required;
-  getenv_s(&required, NULL, 0, key);
-  if (required == 0)
-    return dflt;
+  #if defined(P_LINUX)
+    const char * env = getenv(key);
+    if (!env)
+      return dflt;
+  #else
+    size_t required;
+    getenv_s(&required, NULL, 0, key);
+    if (required == 0)
+      return dflt;
 
-  PString env;
-  getenv_s(&required, env.GetPointerAndSetLength(required), required+1, key);
+    PString env;
+    getenv_s(&required, env.GetPointerAndSetLength(required), required+1, key);
+  #endif
+
   return env;
 }
 

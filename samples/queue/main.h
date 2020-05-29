@@ -50,7 +50,7 @@ class QueueProcess : public PProcess
     /**Generate a Block of data, (an array of bytes) and push them onto the
        PQueueChannel class, at some user specified rate. The rate of writing
        the data can be different to the rate of reading the data */
-    virtual void GenerateBlockData(PThread &, INT);
+    virtual void GenerateBlockData(PThread &, intptr_t);
 #else
     PDECLARE_NOTIFIER(PThread, QueueProcess, GenerateBlockData);
 #endif
@@ -59,7 +59,7 @@ class QueueProcess : public PProcess
     /**Read in a block of data (an array of bytes) from the PQueueChannel
        class at some user specified rate.  The rate of reading the data can be
        different to the rate of writing the data */
-    virtual void ConsumeBlockData(PThread &, INT);
+    virtual void ConsumeBlockData(PThread &, intptr_t);
 #else
     PDECLARE_NOTIFIER(PThread, QueueProcess, ConsumeBlockData);
 #endif

@@ -588,17 +588,17 @@ void PTimerTest::RunRestartTest()
   }
 }
 
-void PTimerTest::OnFirstTimerExpired(PTimer &, P_INT_PTR)
+void PTimerTest::OnFirstTimerExpired(PTimer &, intptr_t)
 {
   cerr << "The first timer has expired unexpectedly." << endl;
 }
 
-void PTimerTest::OnSecondTimerExpired(PTimer &, P_INT_PTR)
+void PTimerTest::OnSecondTimerExpired(PTimer &, intptr_t)
 {
   cerr << "The second timer has expired unexpectedly." << endl;
 }
 
-void PTimerTest::RestartFirstTimerMain(PThread &, P_INT_PTR)
+void PTimerTest::RestartFirstTimerMain(PThread &, intptr_t)
 {
   for (;;) {
     firstTimer.Reset();
@@ -607,7 +607,7 @@ void PTimerTest::RestartFirstTimerMain(PThread &, P_INT_PTR)
   }
 }
 
-void PTimerTest::RestartSecondTimerMain(PThread &, P_INT_PTR)
+void PTimerTest::RestartSecondTimerMain(PThread &, intptr_t)
 {
   for (;;) {
     secondTimer.Reset();
@@ -617,7 +617,7 @@ void PTimerTest::RestartSecondTimerMain(PThread &, P_INT_PTR)
 }
 
 
-void PTimerTest::RestartThirdTimerMain(PThread &, P_INT_PTR)
+void PTimerTest::RestartThirdTimerMain(PThread &, intptr_t)
 {
   static int tmp = 0;
   for (;;) {

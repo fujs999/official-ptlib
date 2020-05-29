@@ -148,7 +148,7 @@ void QueueProcess::Main()
 }
 
 
-void QueueProcess::GenerateBlockData(PThread &, INT )
+void QueueProcess::GenerateBlockData(PThread &, intptr_t)
 {
     PAdaptiveDelay delay;
     uint8_t buffer[writeSize];
@@ -167,7 +167,7 @@ void QueueProcess::GenerateBlockData(PThread &, INT )
 }
 
 
-void QueueProcess::ConsumeBlockData(PThread &, INT)
+void QueueProcess::ConsumeBlockData(PThread &, intptr_t)
 {
     PAdaptiveDelay delay;
     uint8_t buffer[readSize];

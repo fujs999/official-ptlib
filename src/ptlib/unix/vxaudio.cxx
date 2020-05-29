@@ -21,7 +21,7 @@ class SoundHandleEntry : public PObject {
     bool isInitialised;
 };
 
-PDICTIONARY(SoundHandleDict, PString, SoundHandleEntry);
+typedef PDictionary<PString, SoundHandleEntry> SoundHandleDict;
 
 PMutex           PSoundChannel::dictMutex;
 

@@ -174,7 +174,7 @@ public:
 
 #ifdef DOC_PLUS_PLUS
   /**This method is where the delay is done */
-    virtual void DelayThreadMain(PThread &, INT);
+    virtual void DelayThreadMain(PThread &, intptr_t);
 #else
     PDECLARE_NOTIFIER(PThread, DelayThread, DelayThreadMain);
 #endif
@@ -183,7 +183,7 @@ public:
   /**This contains the 1 notifier that is used when closing down this
      instance of DelayThread class. It is called by a custom thread,
      which initiates the deletion of this Delaythread instance */
-    virtual void OnReleaseThreadMain(PThread &, INT);
+    virtual void OnReleaseThreadMain(PThread &, intptr_t);
 #else
     PDECLARE_NOTIFIER(PThread, DelayThread, OnReleaseThreadMain);
 #endif
