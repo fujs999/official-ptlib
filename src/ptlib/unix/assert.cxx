@@ -167,8 +167,8 @@
             char separator = *offset;
             *offset++ = '\0';
 
-    	      int status = -1;
-	          char * demangled = abi::__cxa_demangle(mangled, NULL, NULL, &status);
+    	    int status = -1;
+	    char * demangled = abi::__cxa_demangle(mangled, NULL, NULL, &status);
             if (status == 0) {
               *mangled = '\0';
               strm << symbols[i] << demangled << separator << offset << ' ' << lines[i];
@@ -177,6 +177,7 @@
             }
             if (demangled != NULL)
               runtime_free(demangled);
+            *--offset = separator;
           }
         }
       #endif // P_HAS_DEMANGLE
