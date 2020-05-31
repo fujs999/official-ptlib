@@ -746,7 +746,7 @@ class PChannel : public PObject, public std::iostream
         , m_lastErrorNumber(0)
       { }
     };
-    PThreadLocalStorage<Status> m_status[NumErrorGroups+1];
+    static thread_local Status sm_status[NumErrorGroups+1];
 
   private:
     // New functions for class

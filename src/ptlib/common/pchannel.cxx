@@ -134,6 +134,8 @@ PChannelStreamBuffer::pos_type PChannelStreamBuffer::seekpos(pos_type pos, ios::
 }
 
 
+thread_local PChannel::Status PChannel::sm_status[NumErrorGroups+1];
+
 PChannel::PChannel()
   : P_DISABLE_MSVC_WARNINGS(4355, std::iostream(new PChannelStreamBuffer(this)))
   , readTimeout(PMaxTimeInterval)
@@ -197,13 +199,13 @@ bool PChannel::IsOpen() const
 
 PINDEX PChannel::GetLastReadCount() const
 { 
-  return m_status[LastReadError]->m_lastCount; 
+  return sm_status[LastReadError].m_lastCount; 
 }
 
 
 PINDEX PChannel::SetLastReadCount(PINDEX count)
 {
-  return m_status[LastReadError]->m_lastCount = count;
+  return sm_status[LastReadError].m_lastCount = count;
 }
 
 
@@ -264,13 +266,13 @@ PString PChannel::ReadString(PINDEX len)
 
 PINDEX PChannel::GetLastWriteCount() const
 { 
-  return m_status[LastWriteError]->m_lastCount; 
+  return sm_status[LastWriteError].m_lastCount; 
 }
 
 
 PINDEX PChannel::SetLastWriteCount(PINDEX count)
 {
-  return m_status[LastWriteError]->m_lastCount = count;
+  return sm_status[LastWriteError].m_lastCount = count;
 }
 
 
@@ -531,26 +533,28 @@ bool PChannel::CloseBaseWriteChannel()
 
 PChannel::Errors PChannel::GetErrorCode(ErrorGroup group) const
 {
-  return m_status[group]->m_lastErrorCode;
+  return sm_status[group].m_lastErrorCode;
 }
 
 
 int PChannel::GetErrorNumber(ErrorGroup group) const
 {
-  return m_status[group]->m_lastErrorNumber;
+  return sm_status[group].m_lastErrorNumber;
 }
 
 
 PString PChannel::GetErrorText(ErrorGroup group) const
 {
-  return GetErrorText(m_status[group]->m_lastErrorCode, m_status[group]->m_lastErrorNumber);
+  auto & status = sm_status[group];
+  return GetErrorText(status.m_lastErrorCode, status.m_lastErrorNumber);
 }
 
 
 bool PChannel::SetErrorValues(Errors errorCode, int errorNum, ErrorGroup group)
 {
-  m_status[NumErrorGroups]->m_lastErrorCode = m_status[group]->m_lastErrorCode = errorCode;
-  m_status[NumErrorGroups]->m_lastErrorNumber = m_status[group]->m_lastErrorNumber = errorNum;
+  auto & status = sm_status[group];
+  status.m_lastErrorCode = status.m_lastErrorCode = errorCode;
+  status.m_lastErrorNumber = status.m_lastErrorNumber = errorNum;
   return errorCode == NoError;
 }
 

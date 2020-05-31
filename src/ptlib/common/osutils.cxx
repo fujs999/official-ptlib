@@ -29,6 +29,7 @@
 
 #include <ptlib.h>
 #include <vector>
+#include <stack>
 #include <map>
 #include <fstream>
 #include <algorithm>
@@ -115,46 +116,6 @@ class PSimpleThread : public PThread
 };
 
 
-#define RELEASE_THREAD_LOCAL_STORAGE 1
-#if RELEASE_THREAD_LOCAL_STORAGE
-static class PThreadLocalStorageData : private std::set<PThread::LocalStorageBase*>
-{
-  PCriticalSection m_mutex;
-
-public:
-  ~PThreadLocalStorageData()
-  {
-    m_mutex.Wait();
-    for (iterator it = begin(); it != end(); ++it)
-      (*it)->DestroyStorage();
-    m_mutex.Signal();
-  }
-
-  void Construct(PThread::LocalStorageBase * data)
-  {
-    m_mutex.Wait();
-    insert(data);
-    m_mutex.Signal();
-  }
-
-  void Destroy(PThread::LocalStorageBase * data)
-  {
-    m_mutex.Wait();
-    erase(data);
-    m_mutex.Signal();
-  }
-
-  void Destroy(PThread & thread)
-  {
-    m_mutex.Wait();
-    for (iterator it = begin(); it != end(); ++it)
-      (*it)->ThreadDestroyed(thread);
-    m_mutex.Signal();
-  }
-} * s_ThreadLocalStorageData;
-#endif // RELEASE_THREAD_LOCAL_STORAGE
-
-
 #define new PNEW
 
 
@@ -236,15 +197,14 @@ public:
     PTime         m_dateTime;
     PTimeInterval m_tick;
     unsigned      m_blockIndentLevel;
-    PStringStream m_stream;
+    ostringstream m_stream;
   };
-  typedef PStack<Context> ContextStack;
-  PThreadLocalStorage<ContextStack> m_threadStorage;
+  static thread_local std::stack<Context> sm_threadContext;
 
   PTraceInfo()
     : m_currentLevel(0)
     , m_thresholdLevel(0)
-    , m_options(Blocks | Timestamp | Thread | FileAndLine | HasFilePermissions | (PFileInfo::DefaultPerms << FilePermissionShift))
+    , m_options(Blocks | DateAndTime | Thread | FileAndLine | HasFilePermissions | (PFileInfo::DefaultPerms << FilePermissionShift))
 #ifdef __NUCLEUS_PLUS__
     , m_stream(NULL)
 #else
@@ -423,7 +383,8 @@ public:
     }
 
     if (outputFirstLog) {
-      ostream & log = *GetStream();
+      sm_threadContext.emplace(1, nullptr, 0, nullptr, PTraceModule());
+      ostream & log = sm_threadContext.top().m_stream;
 
       if (PProcess::IsInitialised()) {
         PProcess & process = PProcess::Current();
@@ -459,15 +420,17 @@ public:
         PFilePath fn(m_filename);
         log << " to \"" << fn.GetDirectory() << fn.GetTitle() << m_rolloverPattern << fn.GetType();
       }
-      log << '"';
+      log << '"' << flush;
       InternalEnd(log);
     }
   }
 
   void InternalInitialise(unsigned level, const char * filename, const char * rolloverPattern, unsigned options);
   std::ostream & InternalBegin(unsigned level, const char * fileName, int lineNum, const PObject * instance, const char * module);
-  std::ostream & InternalEnd(std::ostream & stream);
+  void InternalEnd(ostream & paramStream);
 };
+
+thread_local std::stack<PTraceInfo::Context> PTraceInfo::sm_threadContext;
 
 
 void PTrace::SetStream(ostream * s)
@@ -818,12 +781,7 @@ ostream & PTraceInfo::InternalBegin(unsigned level, const char * fileName, int l
   if (!PProcess::IsInitialised())
     return *GetStream();
 
-  ContextStack * contexts = m_threadStorage.Get();
-  if (contexts == NULL)
-    return *GetStream();
-
-  Context * context = new Context(level, fileName, lineNum, instance, module);
-  contexts->Push(context);
+  sm_threadContext.emplace(level, fileName, lineNum, instance, module);
 
   m_mutex.lock();
 
@@ -837,29 +795,30 @@ ostream & PTraceInfo::InternalBegin(unsigned level, const char * fileName, int l
 
   m_mutex.unlock();
 
-  return context->m_stream;
+  return sm_threadContext.top().m_stream;
 }
 
 
 ostream & PTrace::End(ostream & paramStream)
 {
-  return PTraceInfo::Instance().InternalEnd(paramStream);
+  paramStream.flush();
+  PTraceInfo::Instance().InternalEnd(paramStream);
+  return paramStream;
 }
 
 
-ostream & PTraceInfo::InternalEnd(ostream & paramStream)
+void PTraceInfo::InternalEnd(ostream & paramStream)
 {
-  if (!PProcess::IsInitialised())
-    return paramStream;
+  if (!PProcess::IsInitialised() || sm_threadContext.empty())
+    return;
 
-  Context * context = PTraceInfo::Instance().m_threadStorage.Get()->Pop();
-  if (context == NULL || &context->m_stream != &paramStream)
-    return paramStream;
+  if (&sm_threadContext.top().m_stream != &paramStream) {
+    sm_threadContext.pop();
+    return;
+  }
 
-  paramStream << std::ends << flush;
-
-
-  PStringStream output;
+  auto & context = sm_threadContext.top();
+  std::stringstream output;
 
   bool outputJSON = HasOption(OutputJSON);
   if (outputJSON)
@@ -868,22 +827,22 @@ ostream & PTraceInfo::InternalEnd(ostream & paramStream)
   if (outputJSON || HasOption(DateAndTime)) {
     // Use "@timestamp" for compatibility with ELK systems
     if (outputJSON)
-      output << "\"@timestamp\":\"" << context->m_dateTime.AsString(PTime::LongISO8601) << "\",";
+      output << "\"@timestamp\":\"" << context.m_dateTime.AsString(PTime::LongISO8601) << "\",";
     else if (!HasOption(SystemLogStream))
-      output << context->m_dateTime.AsString(PTime::LoggingFormat, HasOption(GMTTime) ? PTime::GMT : PTime::Local) << '\t';
+      output << context.m_dateTime.AsString(PTime::LoggingFormat, HasOption(GMTTime) ? PTime::GMT : PTime::Local) << '\t';
   }
 
   if (HasOption(Timestamp)) {
     if (outputJSON)
-      output << "\"TimeSinceStart\":" << scientific << (context->m_tick-m_startTick) << ',';
+      output << "\"TimeSinceStart\":" << scientific << (context.m_tick-m_startTick) << ',';
     else
-      output << setprecision(3) << setw(10) << (context->m_tick-m_startTick) << '\t';
+      output << setprecision(3) << setw(10) << (context.m_tick-m_startTick) << '\t';
   }
 
   if (HasOption(TraceLevel)) {
     if (outputJSON)
       output << "\"LogLevel\":";
-    output << context->m_level << (outputJSON ? ',' : '\t');
+    output << context.m_level << (outputJSON ? ',' : '\t');
   }
 
   if (HasOption(Thread)) {
@@ -893,27 +852,27 @@ ostream & PTraceInfo::InternalEnd(ostream & paramStream)
     static const PINDEX ThreadNameWidth = 23;
 #endif
     if (outputJSON)
-      output << "\"ThreadName\":" << context->m_threadName.ToLiteral() << ',';
+      output << "\"ThreadName\":" << context.m_threadName.ToLiteral() << ',';
     else
-      output << setw(ThreadNameWidth) << context->m_threadName.Ellipsis(ThreadNameWidth, ThreadNameWidth/2-2) << '\t';
+      output << setw(ThreadNameWidth) << context.m_threadName.Ellipsis(ThreadNameWidth, ThreadNameWidth/2-2) << '\t';
   }
 
   if (HasOption(ThreadAddress)) {
     if (outputJSON)
-      output << "\"ThreadAddress\":" << context->m_threadAddress << ',';
+      output << "\"ThreadAddress\":" << context.m_threadAddress << ',';
     else
-      output << context->m_threadAddress << '\t';
+      output << context.m_threadAddress << '\t';
   }
 
-  if (HasOption(FileAndLine) && !context->m_fileName.IsEmpty()) {
+  if (HasOption(FileAndLine) && !context.m_fileName.IsEmpty()) {
     if (outputJSON)
-      output << "\"FilePath\":" << context->m_fileName.ToLiteral() << ","
-                "\"FileLine\":" << context->m_lineNum << ',';
+      output << "\"FilePath\":" << context.m_fileName.ToLiteral() << ","
+                "\"FileLine\":" << context.m_lineNum << ',';
     else {
       static unsigned const FileWidth = 16;
-      output << setw(FileWidth) << context->m_fileName.GetFileName().Left(FileWidth);
-      if (context->m_lineNum > 0)
-        output << '(' << context->m_lineNum << ')';
+      output << setw(FileWidth) << context.m_fileName.GetFileName().Left(FileWidth);
+      if (context.m_lineNum > 0)
+        output << '(' << context.m_lineNum << ')';
       else
         output << "       ";
       output << '\t';
@@ -922,16 +881,16 @@ ostream & PTraceInfo::InternalEnd(ostream & paramStream)
 
   if (HasOption(ObjectInstance)) {
     if (outputJSON)
-      output << "\"ObjectClass\":" << context->m_objectClass.ToLiteral() << ","
-                "\"ObjectAddress\":" << context->m_objectAddress << ',';
+      output << "\"ObjectClass\":" << context.m_objectClass.ToLiteral() << ","
+                "\"ObjectAddress\":" << context.m_objectAddress << ',';
     else {
       static unsigned const ObjWidth = 31;
-      if (context->m_objectAddress == NULL)
+      if (context.m_objectAddress == NULL)
         output << setw(ObjWidth/2) << '-' << setw(ObjWidth/2+1) << ' ';
       else {
-        PString addr(PSTRSTRM(hex << (uintptr_t)context->m_objectAddress));
+        PString addr(PSTRSTRM(hex << (uintptr_t)context.m_objectAddress));
         unsigned width = ObjWidth - addr.GetLength() - 1;
-        output << setw(width) << context->m_objectClass.Ellipsis(width) << ':' << addr;
+        output << setw(width) << context.m_objectClass.Ellipsis(width) << ':' << addr;
       }
       output << '\t';
     }
@@ -939,29 +898,29 @@ ostream & PTraceInfo::InternalEnd(ostream & paramStream)
 
   if (HasOption(ContextIdentifier)) {
     if (outputJSON)
-      output << "\"ContextIdentifier\":" << context->m_contextIdentifier << ',';
+      output << "\"ContextIdentifier\":" << context.m_contextIdentifier << ',';
     else {
-      if (context->m_contextIdentifier != 0)
-        output << setfill('0') << setw(13) << context->m_contextIdentifier << setfill(' ');
+      if (context.m_contextIdentifier != 0)
+        output << setfill('0') << setw(13) << context.m_contextIdentifier << setfill(' ');
       else
         output << "- - - - - - -";
       output << '\t';
     }
   }
 
-  PString message = context->m_stream;
-  if (context->m_module.IsEmpty()) {
+  PString message = context.m_stream.str();
+  if (context.m_module.IsEmpty()) {
     PINDEX tab = message.Find('\t');
     if (tab != P_MAX_INDEX && tab < 16) {
-      context->m_module = message.Left(tab);
+      context.m_module = message.Left(tab);
       message.Delete(0, tab+1);
     }
   }
 
   if (outputJSON)
-    output << "\"Module\":" << context->m_module.ToLiteral() << ',';
+    output << "\"Module\":" << context.m_module.ToLiteral() << ',';
   else
-    output << left << setw(8) << context->m_module << right << '\t';
+    output << left << setw(8) << context.m_module << right << '\t';
 
   if (HasOption(SingleLine)) {
     message.Replace("\\", "\\\\", true);
@@ -978,16 +937,14 @@ ostream & PTraceInfo::InternalEnd(ostream & paramStream)
     output << message;
 
   if (HasOption(SystemLogStream))
-    PSystemLog::OutputToTarget(PSystemLog::LevelFromInt(context->m_level), output.str().c_str());
+    PSystemLog::OutputToTarget(PSystemLog::LevelFromInt(context.m_level), output.str().c_str());
   else {
     m_mutex.lock();
-    *m_stream << output << endl;
+    *m_stream << output.str() << endl;
     m_mutex.unlock();
   }
 
-  delete context;
-
-  return paramStream;
+  sm_threadContext.pop();
 }
 
 
@@ -999,9 +956,8 @@ PTrace::Block::Block(const char * fileName, int lineNum, const char * traceName)
   if (PTraceInfo::Instance().HasOption(Blocks)) {
     unsigned indent = 20;
 
-    PTraceInfo::ContextStack * contexts = PTraceInfo::Instance().m_threadStorage.Get();
-    if (contexts != NULL)
-      indent = (contexts->Top().m_blockIndentLevel += 2);
+    if (!PTraceInfo::Instance().sm_threadContext.empty())
+      indent = (PTraceInfo::Instance().sm_threadContext.top().m_blockIndentLevel += 2);
 
     ostream & s = PTrace::Begin(1, file, line);
     s << "B-Entry\t";
@@ -1025,9 +981,8 @@ PTrace::Block::~Block()
   if (PTraceInfo::Instance().HasOption(Blocks)) {
     unsigned indent = 20;
 
-    PTraceInfo::ContextStack * contexts = PTraceInfo::Instance().m_threadStorage.Get();
-    if (contexts != NULL) {
-      PTraceInfo::Context & context = contexts->Top();
+    if (!PTraceInfo::Instance().sm_threadContext.empty()) {
+      PTraceInfo::Context & context = PTraceInfo::Instance().sm_threadContext.top();
       indent = context.m_blockIndentLevel;
       context.m_blockIndentLevel -= 2;
     }
@@ -2438,10 +2393,6 @@ PProcess::PProcess(const char * manuf, const char * name,
   PAssert(PProcessInstance == NULL, "Only one instance of PProcess allowed");
   PProcessInstance = this;
 
-#if RELEASE_THREAD_LOCAL_STORAGE
-  s_ThreadLocalStorageData = new PThreadLocalStorageData;
-#endif
-
 #if PTRACING
   PTraceInfo::Instance().InitialiseFromEnvironment();
 #endif
@@ -2669,11 +2620,6 @@ PProcess::~PProcess()
   PlatformDestruct();
 
   PFactoryBase::GetFactories().DestroySingletons();
-#if RELEASE_THREAD_LOCAL_STORAGE
-  PThreadLocalStorageData * tls = s_ThreadLocalStorageData;
-  s_ThreadLocalStorageData = NULL;
-  delete tls;
-#endif
   PIPSocket::ClearNameCache();
 
 #if PTRACING
@@ -3516,59 +3462,10 @@ PThread::~PThread()
 
   PTRACE(5, "Destroying thread " << this << ' ' << m_threadName << ", id=" << m_threadId);
 
-#if RELEASE_THREAD_LOCAL_STORAGE
-  if (s_ThreadLocalStorageData) s_ThreadLocalStorageData->Destroy(*this);
-#endif
-
   InternalDestroy();
 
   if (m_type != e_IsProcess)
     PProcess::Current().InternalThreadEnded(this);
-}
-
-
-PThread::LocalStorageBase::LocalStorageBase()
-{
-#if RELEASE_THREAD_LOCAL_STORAGE
-  if (s_ThreadLocalStorageData) s_ThreadLocalStorageData->Construct(this);
-#endif
-}
-
-
-void PThread::LocalStorageBase::DestroyStorage()
-{
-#if RELEASE_THREAD_LOCAL_STORAGE
-  if (s_ThreadLocalStorageData) s_ThreadLocalStorageData->Destroy(this);
-#endif
-
-  m_mutex.Wait();
-  for (DataMap::iterator it = m_data.begin(); it != m_data.end(); ++it)
-    Deallocate(it->second);
-  m_data.clear();
-  m_mutex.Signal();
-}
-
-
-void PThread::LocalStorageBase::ThreadDestroyed(PThread & thread)
-{
-  m_mutex.Wait();
-  DataMap::iterator it = m_data.find(thread.GetUniqueIdentifier());
-  if (it != m_data.end()) {
-    Deallocate(it->second);
-    m_data.erase(it);
-  }
-  m_mutex.Signal();
-}
-
-
-void * PThread::LocalStorageBase::GetStorage() const
-{
-  PUniqueThreadIdentifier uinqueId = PThread::GetCurrentUniqueIdentifier();
-  PWaitAndSignal lock(m_mutex);
-  DataMap::iterator it = m_data.find(uinqueId);
-  if (it == m_data.end())
-    it = m_data.emplace(uinqueId, Allocate()).first;
-  return it->second;
 }
 
 
