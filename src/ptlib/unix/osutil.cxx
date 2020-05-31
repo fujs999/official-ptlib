@@ -1154,20 +1154,6 @@ bool PConsoleChannel::GetTerminalSize(unsigned & rows, unsigned & columns)
 //  PTime
 //
 
-void PTime::SetCurrentTime()
-{
-#ifdef P_VXWORKS
-  struct timespec ts;
-  clock_gettime(0,&ts);
-  m_microSecondsSinceEpoch.store(ts.tv_sec*Micro + ts.tv_nsec/1000);
-#else
-  struct timeval tv;
-  gettimeofday(&tv, NULL);
-  m_microSecondsSinceEpoch.store(tv.tv_sec*Micro + tv.tv_usec);
-#endif // P_VXWORKS
-}
-
-
 bool PTime::GetTimeAMPM()
 {
 #if defined(P_USE_LANGINFO)

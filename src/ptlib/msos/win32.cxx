@@ -63,41 +63,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 // PTime
 
-void PTime::SetCurrentTime()
-{
-  FILETIME timestamp;
-
-  GetSystemTimeAsFileTime(&timestamp);
-  SetFromFileTime(timestamp);
-}
-
-
-PTime::PTime(const FILETIME & timestamp)
-{
-  SetFromFileTime(timestamp);
-}
-
-
-// Magic constant to convert epoch from 1601 to 1970
-static const ULONGLONG Win332FileTimeDelta = ((int64_t)369*365+(369/4)-3)*24*60*60U*1000000;
-
-void PTime::SetFromFileTime(const FILETIME & timestamp)
-{
-  ULARGE_INTEGER i;
-  i.HighPart = timestamp.dwHighDateTime;
-  i.LowPart = timestamp.dwLowDateTime;
-
-  m_microSecondsSinceEpoch.store(i.QuadPart/10 - Win332FileTimeDelta);
-}
-
-void PTime::SetToFileTime(FILETIME & timestamp) const
-{
-    ULARGE_INTEGER i;
-    i.QuadPart = (m_microSecondsSinceEpoch.load()+Win332FileTimeDelta)*10;
-    timestamp.dwHighDateTime = i.HighPart;
-    timestamp.dwLowDateTime = i.LowPart;
-}
-
 #ifdef UNICODE
 static void PWIN32GetLocaleInfo(LCID Locale,LCTYPE LCType,LPSTR lpLCData,int cchData)
 {
@@ -491,17 +456,27 @@ bool PFile::Touch(const PFilePath & name, const PTime & accessTime, const PTime 
   FILETIME now;
   GetSystemTimeAsFileTime(&now);
 
+  // Magic constant to convert epoch from 1601 to 1970
+  static const ULONGLONG Win332FileTimeDelta = ((int64_t)369*365+(369/4)-3)*24*60*60U*1000000;
+
+  ULARGE_INTEGER uli;
   FILETIME acc;
-  if (accessTime.IsValid())
-    accessTime.SetToFileTime(acc);
-  else
+  if (!accessTime.IsValid())
     acc = now;
+  else {
+    uli.QuadPart = (accessTime.GetTimestamp()+Win332FileTimeDelta)*10;
+    acc.dwHighDateTime = uli.HighPart;
+    acc.dwLowDateTime = uli.LowPart;
+  }
 
   FILETIME mod;
-  if (modTime.IsValid())
-    modTime.SetToFileTime(mod);
-  else
+  if (!modTime.IsValid())
     mod = now;
+  else {
+    uli.QuadPart = (modTime.GetTimestamp()+Win332FileTimeDelta)*10;
+    acc.dwHighDateTime = uli.HighPart;
+    acc.dwLowDateTime = uli.LowPart;
+  }
 
   return ::SetFileTime(hFile, NULL, &acc, &mod);
 }

@@ -193,6 +193,9 @@ PINLINE PTime & PTime::operator=(const PTime & other)
 PINLINE PObject * PTime::Clone() const
   { return PNEW PTime(*this); }
 
+PINLINE void PTime::SetCurrentTime()
+  { m_microSecondsSinceEpoch.store(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count()); }
+
 PINLINE bool PTime::IsValid() const
   { return m_microSecondsSinceEpoch.load() > 46800000000LL; }
 
