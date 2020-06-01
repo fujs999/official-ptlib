@@ -552,9 +552,10 @@ PString PChannel::GetErrorText(ErrorGroup group) const
 
 bool PChannel::SetErrorValues(Errors errorCode, int errorNum, ErrorGroup group)
 {
-  auto & status = sm_status[group];
-  status.m_lastErrorCode = status.m_lastErrorCode = errorCode;
-  status.m_lastErrorNumber = status.m_lastErrorNumber = errorNum;
+  auto & gstatus = sm_status[group];
+  auto & lstatus = sm_status[NumErrorGroups];
+  lstatus.m_lastErrorCode = gstatus.m_lastErrorCode = errorCode;
+  lstatus.m_lastErrorNumber = gstatus.m_lastErrorNumber = errorNum;
   return errorCode == NoError;
 }
 
