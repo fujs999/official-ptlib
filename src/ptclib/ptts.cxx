@@ -571,7 +571,7 @@ PBoolean PTextToSpeech_Festival::Close()
   }
 
   PStringStream cmdLine;
-  cmdLine << "text2wave -scale " << std::fixed << m_volume/100.0 << " -F " << m_sampleRate;
+  cmdLine << "text2wave -scale " << std::fixed << m_volume/100.0 << " -f " << m_sampleRate;
 
   PTRACE(4, "Creating \"" << m_filePath << "\" from \"" << m_text << "\" using \"" << cmdLine << '"');
   PPipeChannel cmd(cmdLine, PPipeChannel::ReadWrite, true, true);
