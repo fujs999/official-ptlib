@@ -32,6 +32,7 @@
 
 #include <ostream>
 #include <limits>
+#include <locale>
 #include <math.h>
 
 #ifdef __NUCLEUS_PLUS__
@@ -1950,7 +1951,7 @@ PString PString::LeftTrim() const
     return PString::Empty();
 
   const char * lpos = theArray;
-  while (isspace(*lpos & 0xff))
+  while (std::isspace(*lpos, std::locale("C")))
     lpos++;
   return PString(lpos);
 }
@@ -1962,10 +1963,10 @@ PString PString::RightTrim() const
     return PString::Empty();
 
   char * rpos = theArray+GetLength()-1;
-  if (!isspace(*rpos & 0xff))
+  if (!std::isspace(*rpos, std::locale("C")))
     return *this;
 
-  while (isspace(*rpos & 0xff)) {
+  while (std::isspace(*rpos, std::locale("C"))) {
     if (rpos == theArray)
       return Empty();
     rpos--;
@@ -1983,20 +1984,20 @@ PString PString::Trim() const
     return PString::Empty();
 
   const char * lpos = theArray;
-  while (isspace(*lpos & 0xff))
+  while (std::isspace(*lpos, std::locale("C")))
     lpos++;
   if (*lpos == '\0')
     return Empty();
 
   const char * rpos = theArray+GetLength()-1;
-  if (!isspace(*rpos & 0xff)) {
+  if (!std::isspace(*rpos, std::locale("C"))) {
     if (lpos == theArray)
       return *this;
     else
       return PString(lpos);
   }
 
-  while (isspace(*rpos & 0xff))
+  while (std::isspace(*rpos, std::locale("C")))
     rpos--;
   return PString(lpos, rpos - lpos + 1);
 }
