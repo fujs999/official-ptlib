@@ -558,7 +558,8 @@ PBoolean PTextToSpeech_Festival::Close()
     return false;
   }
 
-  if (m_text.IsEmpty()) {
+  PString text = m_text.Trim();
+  if (text.IsEmpty()) {
     PTRACE(1, "Nothing spoken");
     return false;
   }
@@ -575,7 +576,7 @@ PBoolean PTextToSpeech_Festival::Close()
   PTRACE(4, "Creating \"" << m_filePath << "\" from \"" << m_text << "\" using \"" << cmdLine << '"');
   PPipeChannel cmd(cmdLine, PPipeChannel::ReadWrite, true, true);
 
-  cmd << m_text << '\n';
+  cmd << text << '\n';
   if (!cmd.Execute()) { // Flushes stream and sends EOF
     PTRACE(1, "Festival Generation failed: code=" << cmd.WaitForTermination());
     wav.Remove();
