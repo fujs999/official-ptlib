@@ -156,7 +156,7 @@ PBoolean PChannel::Read(void * buf, PINDEX len)
       int result = ::read(os_handle, buf, len);
     );
     if (result >= 0)
-      return ConvertOSError(SetLastReadCount(result), LastReadError);
+      return ConvertOSError(SetLastReadCount(result), LastReadError) && result > 0;
 
     switch (errno) {
       case EINTR :
