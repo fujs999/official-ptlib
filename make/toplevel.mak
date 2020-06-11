@@ -279,7 +279,7 @@ ifeq ($(HAS_DNS_RESOLVER),1)
 endif
 
 ifeq ($(HAS_TTS),1)
-  SOURCES += $(COMPONENT_SRC_DIR)/ptts.cxx 
+  SOURCES += $(PLATFORM_SRC_DIR)/ptts.cxx 
 endif
 
 ifeq ($(HAS_ASN),1)
