@@ -55,7 +55,7 @@
     <ClCompile Include="..\..\ptclib\pssl.cxx">
       <Filter>Source Files\Components</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\ptclib\ptts.cxx">
+    <ClCompile Include="..\..\ptlib\msos\ptts.cxx">
       <Filter>Source Files\Components</Filter>
     </ClCompile>
     <ClCompile Include="..\..\ptclib\pxml.cxx">
