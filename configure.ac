@@ -1978,6 +1978,34 @@ CXXFLAGS="$oldCXXFLAGS"
 
 
 dnl ########################################################################
+dnl Text to Speech
+
+PTLIB_SIMPLE_OPTION([tts], [TTS], [Text-To-Speech server support])
+
+dnl MSWIN_DISPLAY    sapi,Speech API
+dnl MSWIN_CHECK_FILE sapi,sphelper.h,P_SAPI=1
+dnl MSWIN_CHECK_FILE sapi,include\sphelper.h,P_SAPI=1
+dnl MSWIN_CHECK_FILE sapi,include\um\sphelper.h,P_SAPI=1
+dnl MSWIN_DEFINE     sapi,P_TTS
+dnl MSWIN_CHECK_DIR  sapi,%ProgramFiles%\Windows Kits\8.*
+dnl MSWIN_CHECK_DIR  sapi,%ProgramW6432%\Windows Kits\8.*
+
+MY_LINK_IFELSE(
+   [for Festival support],
+   [-I/usr/include/speech_tools -fopenmp],
+   [-lFestival -lestools -lestbase -leststring],
+   [#include <festival/festival.h>],
+   [festival_initialize(1, 21000)],
+   [
+      CPPFLAGS+=" -I/usr/include/speech_tools"
+      CXXFLAGS+=" -fopenmp"
+      LIBS+="-lFestival -lestools -lestbase -leststring"
+      PTLIB_SUBST(FESTIVAL, 1)
+   ]
+)
+
+
+dnl ########################################################################
 dnl check for enabling config file support
 dnl MSWIN_DISPLAY    configfile,Config file protocol support
 dnl MSWIN_DEFINE     configfile,P_CONFIG_FILE
@@ -2102,18 +2130,6 @@ dnl MSWIN_IF_FEATURE jabber,expat
 dnl MSWIN_IF_FEATURE jabber,expat32
 
 PTLIB_SIMPLE_OPTION([jabber], [JABBER], [Jabber support], [HAS_EXPAT])
-
-dnl ########################################################################
-dnl Speech
-dnl MSWIN_DISPLAY    sapi,Speech API
-dnl MSWIN_CHECK_FILE sapi,sphelper.h,P_SAPI=1
-dnl MSWIN_CHECK_FILE sapi,include\sphelper.h,P_SAPI=1
-dnl MSWIN_CHECK_FILE sapi,include\um\sphelper.h,P_SAPI=1
-dnl MSWIN_DEFINE     sapi,P_TTS
-dnl MSWIN_CHECK_DIR  sapi,%ProgramFiles%\Windows Kits\8.*
-dnl MSWIN_CHECK_DIR  sapi,%ProgramW6432%\Windows Kits\8.*
-
-PTLIB_SIMPLE_OPTION([tts], [TTS], [Text-To-Speech server support])
 
 dnl ########################################################################
 dnl VXML 
@@ -3000,6 +3016,7 @@ MY_OUTPUT_SUMMARY(
    [                             ODBC], PTLIB_ODBC,
    [                              Lua], PTLIB_LUA,
    [                  Javascript (V8)], PTLIB_V8,
+   [                     Festival TTS], PTLIB_FESTIVAL,
    [                           Curses], PTLIB_CURSES,
    [                        GStreamer], PTLIB_GSTREAMER,
    [], [],
