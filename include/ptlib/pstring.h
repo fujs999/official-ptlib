@@ -40,6 +40,7 @@
 
 #include <string>
 #include <vector>
+#include <regex>
 #include <ptlib/array.h>
 
 
@@ -3109,10 +3110,26 @@ class PStringOptions : public PStringToString
    form that is more efficient during the matching. This compiled form
    exists for the lifetime of the PRegularExpression instance.
  */
-class PRegularExpression : public PObject
+class PRegularExpression : public PObject, public std::regex
 {
     PCLASSINFO(PRegularExpression, PObject);
   public:
+    using match_flag = std::regex_constants::match_flag_type;
+    static constexpr match_flag match_default     = std::regex_constants::match_default;
+    static constexpr match_flag match_not_bol     = std::regex_constants::match_not_bol;
+    static constexpr match_flag match_not_eol     = std::regex_constants::match_not_eol;
+    static constexpr match_flag match_not_bow     = std::regex_constants::match_not_bow;
+    static constexpr match_flag match_not_eow     = std::regex_constants::match_not_eow;
+    static constexpr match_flag match_any         = std::regex_constants::match_any;
+    static constexpr match_flag match_not_null    = std::regex_constants::match_not_null;
+    static constexpr match_flag match_continuous  = std::regex_constants::match_continuous;
+    static constexpr match_flag match_prev_avail  = std::regex_constants::match_prev_avail;
+    static constexpr match_flag format_default    = std::regex_constants::format_default;
+    static constexpr match_flag format_sed        = std::regex_constants::format_sed;
+    static constexpr match_flag format_no_copy    = std::regex_constants::format_no_copy;
+    static constexpr match_flag format_first_only = std::regex_constants::format_first_only;
+
+
   /**@name Constructors & destructors */
   //@{
     /// Flags for compiler options.
@@ -3154,29 +3171,40 @@ class PRegularExpression : public PObject
     );
 
     /** Create and compile a new regular expression pattern.
-     */
+    */
     PRegularExpression(
       const char * cpattern,              ///< Pattern to compile
       CompileOptions options = IgnoreCase ///< Pattern match options
     );
 
+    /** Create and compile a new regular expression pattern.
+    */
+    PRegularExpression(
+      const PString & pattern,  ///< Pattern to compile
+      flag_type flags           ///< Pattern match options
+    );
+
+    /** Create and compile a new regular expression pattern.
+    */
+    PRegularExpression(
+      const char * cpattern,  ///< Pattern to compile
+      flag_type flags         ///< Pattern match options
+    );
     /**
-      * Copy a regular expression
-      */
+    * Copy a regular expression
+    */
     PRegularExpression(
       const PRegularExpression &
     );
 
     /**
-      * Assign a regular expression
-      */
+    * Assign a regular expression
+    */
     PRegularExpression & operator =(
       const PRegularExpression &
-    );
+      );
 
-    /// Release storage for the compiled regular expression.
-    ~PRegularExpression();
-  //@}
+    //@}
 
 
   /**@name Overrides from class PObject */
@@ -3239,7 +3267,14 @@ class PRegularExpression : public PObject
        @return
        Error code.
      */
-    ErrorCodes GetErrorCode() const { return m_lastError; }
+    ErrorCodes GetErrorCode() const { m_lastErrorCode; }
+
+    /**Get the error type for the last Compile() operation.
+
+       @return
+       Error type.
+     */
+    std::regex_constants::error_type GetErrorType() const { return m_lastErrorType; }
 
     /**Get the text description for the error of the last Compile() or
        Execute() operation.
@@ -3260,7 +3295,7 @@ class PRegularExpression : public PObject
       const PString & pattern,            ///< Pattern to compile
       CompileOptions options = IgnoreCase ///< Pattern match options
     );
-    /**Compiler pattern.
+    /**Compile pattern.
        The pattern is compiled into an internal format to speed subsequent
        execution of the pattern match algorithm.
 
@@ -3270,6 +3305,23 @@ class PRegularExpression : public PObject
     bool Compile(
       const char * cpattern,              ///< Pattern to compile
       CompileOptions options = IgnoreCase ///< Pattern match options
+    );
+
+    /** Compiler pattern. */
+    bool Compile(
+      const PString & pattern,  ///< Pattern to compile
+      flag_type flags           ///< Pattern match options
+    );
+    /**Compile pattern.
+       The pattern is compiled into an internal format to speed subsequent
+       execution of the pattern match algorithm.
+
+       @return
+       true if successfully compiled.
+     */
+    bool Compile(
+      const char * cpattern,  ///< Pattern to compile
+      flag_type flags         ///< Pattern match options
     );
 
 
@@ -3301,6 +3353,19 @@ class PRegularExpression : public PObject
     ) const;
     /** Execute regular expression */
     bool Execute(
+      const char * cstr,            ///< Source string to search
+      PINDEX & start,               ///< First match location
+      match_flag flags ///< Pattern match options
+    ) const;
+    /** Execute regular expression */
+    bool Execute(
+      const char * cstr,            ///< Source string to search
+      PINDEX & start,               ///< First match location
+      PINDEX & len,                 ///< Length of match
+      match_flag flags ///< Pattern match options
+    ) const;
+    /** Execute regular expression */
+    bool Execute(
       const PString & str,          ///< Source string to search
       PIntArray & starts,           ///< Array of match locations
       ExecOptions options = Normal  ///< Pattern match options
@@ -3316,7 +3381,12 @@ class PRegularExpression : public PObject
     bool Execute(
       const char * cstr,            ///< Source string to search
       PIntArray & starts,           ///< Array of match locations
-      ExecOptions options = Normal  ///< Pattern match options
+      ExecOptions options           ///< Pattern match options
+    ) const;
+    bool Execute(
+      const char * cstr,            ///< Source string to search
+      PIntArray & starts,           ///< Array of match locations
+      match_flag flags = match_default ///< Pattern match options
     ) const;
     /**Execute regular expression.
        Execute the pattern match algorithm using the previously compiled
@@ -3338,7 +3408,13 @@ class PRegularExpression : public PObject
       const char * cstr,            ///< Source string to search
       PIntArray & starts,           ///< Array of match locations
       PIntArray & ends,             ///< Array of match ends
-      ExecOptions options = Normal  ///< Pattern match options
+      ExecOptions options           ///< Pattern match options
+    ) const;
+    bool Execute(
+      const char * cstr,            ///< Source string to search
+      PIntArray & starts,           ///< Array of match locations
+      PIntArray & ends,             ///< Array of match ends
+      match_flag flags = match_default  ///< Pattern match options
     ) const;
     /**Execute regular expression.
        Execute the pattern match algorithm using the previously compiled
@@ -3357,11 +3433,16 @@ class PRegularExpression : public PObject
        @return true if successfully compiled.
      */
     bool Execute(
+      const char * cstr,                ///< Source string to search
+      PStringArray & substring,         ///< Array of matched substrings
+      match_flag flags = match_default  ///< Pattern match options
+    ) const;
+    bool Execute(
       const char * cstr,            ///< Source string to search
       PStringArray & substring,     ///< Array of matched substrings
-      ExecOptions options = Normal  ///< Pattern match options
+      ExecOptions options           ///< Pattern match options
     ) const;
-  //@}
+    //@}
 
   /**@name Miscellaneous functions */
   //@{
@@ -3377,13 +3458,12 @@ class PRegularExpression : public PObject
   //@}
 
   protected:
-    bool InternalCompile(bool assertOnFail);
-    void InternalClean();
+    static flag_type MapFlags(CompileOptions opts);
+    static match_flag MapFlags(ExecOptions opts);
 
-    PString            m_pattern;
-    CompileOptions     m_compileOptions;
-    void             * m_compiledRegex;
-    mutable ErrorCodes m_lastError;
+    PString m_pattern;
+    mutable ErrorCodes m_lastErrorCode;
+    std::regex_constants::error_type m_lastErrorType;
 };
 
 

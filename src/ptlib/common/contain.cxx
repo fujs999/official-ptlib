@@ -38,12 +38,6 @@
 extern "C" int vsprintf(char *, const char *, va_list);
 #endif
 
-#if P_REGEX
-  #include <regex.h>
-#else
-  #include "regex/regex.h"
-#endif
-
 #if P_HAS_ICONV
   #include <iconv.h>
 #endif // P_HAS_ICONV
@@ -2896,65 +2890,31 @@ void PStringOptions::SetReal(const PCaselessString & key, double value, int deci
 ///////////////////////////////////////////////////////////////////////////////
 
 PRegularExpression::PRegularExpression()
-  : m_compileOptions(IgnoreCase)
-  , m_compiledRegex(NULL)
-  , m_lastError(NotCompiled)
+  : m_lastErrorCode(NotCompiled)
+  , m_lastErrorType(std::regex_constants::error_parse)
 {
 }
 
 
 PRegularExpression::PRegularExpression(const PString & pattern, CompileOptions options)
-  : m_pattern(pattern)
-  , m_compileOptions(options)
-  , m_compiledRegex(NULL)
+  : PRegularExpression(pattern.c_str(), options)
 {
-  InternalCompile(true);
 }
 
 
 PRegularExpression::PRegularExpression(const char * pattern, CompileOptions options)
   : m_pattern(pattern)
-  , m_compileOptions(options)
-  , m_compiledRegex(NULL)
 {
-  InternalCompile(true);
+  PAssert(Compile(pattern, options), PSTRSTRM("Regular expression " << m_pattern.ToLiteral() << " failed to compile: " << GetErrorText()));
 }
 
 
 PRegularExpression::PRegularExpression(const PRegularExpression & from)
-  : m_pattern(from.m_pattern)
-  , m_compileOptions(from.m_compileOptions)
-  , m_compiledRegex(NULL)
+  : std::regex(from)
+  , m_pattern(from.m_pattern)
+  , m_lastErrorCode(from.m_lastErrorCode)
+  , m_lastErrorType(from.m_lastErrorType)
 {
-  InternalCompile(true);
-}
-
-
-PRegularExpression & PRegularExpression::operator=(const PRegularExpression & from)
-{
-  if (&from != this) {
-    m_pattern = from.m_pattern;
-    m_compileOptions = from.m_compileOptions;
-    InternalCompile(true);
-  }
-
-  return *this;
-}
-
-
-PRegularExpression::~PRegularExpression()
-{
-  InternalClean();
-}
-
-
-void PRegularExpression::InternalClean()
-{
-  if (m_compiledRegex != NULL) {
-    regfree((regex_t*)m_compiledRegex);
-    free(m_compiledRegex);
-    m_compiledRegex = NULL;
-  }
 }
 
 
@@ -2964,48 +2924,143 @@ void PRegularExpression::PrintOn(ostream &strm) const
 }
 
 
+std::regex::flag_type PRegularExpression::MapFlags(CompileOptions opts)
+{
+  flag_type flags = basic;
+  if (opts&Extended)
+    flags |= extended;
+  if (opts&IgnoreCase)
+    flags |= icase;
+  return flags;
+}
+
+
+PRegularExpression::match_flag PRegularExpression::MapFlags(ExecOptions opts)
+{
+  match_flag flags = std::regex_constants::match_default;
+  if (opts&NotBeginningOfLine)
+    flags |= std::regex_constants::match_not_bol;
+  if (opts&NotEndofLine)
+    flags |= std::regex_constants::match_not_eol;
+  return flags;
+}
+
+
 PString PRegularExpression::GetErrorText() const
 {
-  char str[256];
-  regerror(m_lastError, (regex_t*)m_compiledRegex, str, sizeof(str));
-  return str;
+  switch (m_lastErrorCode) {
+    case std::regex_constants::error_collate:
+      return "the expression contains an invalid collating element name";
+    case std::regex_constants::error_ctype:
+      return "the expression contains an invalid character class name";
+    case std::regex_constants::error_escape:
+      return "the expression contains an invalid escaped character or a trailing escape";
+    case std::regex_constants::error_backref:
+      return "the expression contains an invalid back reference";
+    case std::regex_constants::error_brack:
+      return "the expression contains mismatched square brackets ('[' and ']')";
+    case std::regex_constants::error_paren:
+      return "the expression contains mismatched parentheses ('(' and ')')";
+    case std::regex_constants::error_brace:
+      return "the expression contains mismatched curly braces ('{' and '}')";
+    case std::regex_constants::error_badbrace:
+      return "the expression contains an invalid range in a {} expression";
+    case std::regex_constants::error_range:
+      return "the expression contains an invalid character range (e.g. [b-a])";
+    case std::regex_constants::error_space:
+      return "there was not enough memory to convert the expression into a finite state machine";
+    case std::regex_constants::error_badrepeat:
+      return "one of *?+{ was not preceded by a valid regular expression";
+    case std::regex_constants::error_complexity:
+      return "the complexity of an attempted match exceeded a predefined level";
+    case std::regex_constants::error_stack:
+      return "there was not enough memory to perform a match";
+    case std::regex_constants::error_parse:
+      return "could not parse the expression";
+    case std::regex_constants::error_syntax:
+      return "sytax error in expression";
+    default :
+      return "unknown error";
+  }
 }
 
 
 bool PRegularExpression::Compile(const PString & pattern, CompileOptions options)
 {
-  m_pattern = pattern;
-  m_compileOptions = options;
-  return InternalCompile(false);
+  return Compile(pattern, MapFlags(options));
 }
 
 
 bool PRegularExpression::Compile(const char * pattern, CompileOptions options)
 {
-  m_pattern = pattern;
-  m_compileOptions = options;
-  return InternalCompile(false);
+  return Compile(pattern, MapFlags(options));
 }
 
 
-bool PRegularExpression::InternalCompile(bool assertOnFail)
+bool PRegularExpression::Compile(const PString & pattern, flag_type flags)
 {
-  InternalClean();
+  return Compile(pattern.c_str(), flags);
+}
 
+
+bool PRegularExpression::Compile(const char * pattern, flag_type flags)
+{
+  m_pattern = pattern;
   if (m_pattern.IsEmpty()) {
-    m_lastError = assertOnFail ? NotCompiled : BadPattern;
+    m_lastErrorCode = NotCompiled;
     return false;
   }
 
-  m_compiledRegex = malloc(sizeof(regex_t));
-  m_lastError = (ErrorCodes)regcomp((regex_t*)m_compiledRegex, m_pattern, m_compileOptions);
-  if (m_lastError == NoError)
+  try {
+    assign(pattern, flags);
+    m_lastErrorCode = NoError;
     return true;
+  }
+  catch (const std::regex_error& e) {
+    m_lastErrorType = e.code();
+  }
 
-  InternalClean();
-
-  if (assertOnFail)
-    PAssertAlways(PSTRSTRM("Regular expression " << m_pattern.ToLiteral() << " failed to compile: " << GetErrorText()));
+  switch (m_lastErrorType) {
+    case std::regex_constants::error_collate:
+      m_lastErrorCode = CollateError;
+      break;
+    case std::regex_constants::error_ctype:
+      m_lastErrorCode = BadClassType;
+      break;
+    case std::regex_constants::error_escape:
+      m_lastErrorCode = BadEscape;
+      break;
+    case std::regex_constants::error_backref:
+      m_lastErrorCode = BadSubReg;
+      break;
+    case std::regex_constants::error_brack:
+      m_lastErrorCode = UnmatchedBracket;
+      break;
+    case std::regex_constants::error_paren:
+      m_lastErrorCode = UnmatchedParen;
+      break;
+    case std::regex_constants::error_brace:
+      m_lastErrorCode = UnmatchedBrace;
+      break;
+    case std::regex_constants::error_badbrace:
+      m_lastErrorCode = BadBR;
+      break;
+    case std::regex_constants::error_range:
+      m_lastErrorCode = RangeError;
+      break;
+    case std::regex_constants::error_stack:
+    case std::regex_constants::error_space:
+      m_lastErrorCode = OutOfMemory;
+      break;
+    case std::regex_constants::error_badrepeat:
+      m_lastErrorCode = BadRepitition;
+      break;
+    case std::regex_constants::error_complexity:
+      m_lastErrorCode = TooBig;
+      break;
+    default :
+      m_lastErrorCode = BadPattern;
+  }
 
   return false;
 }
@@ -3033,20 +3088,31 @@ bool PRegularExpression::Execute(const char * cstr, PINDEX & start, ExecOptions 
 
 bool PRegularExpression::Execute(const char * cstr, PINDEX & start, PINDEX & len, ExecOptions options) const
 {
-  if (m_compiledRegex == NULL)
-    m_lastError = NotCompiled;
+  return Execute(cstr, start, len, MapFlags(options));
+}
 
-  if (m_lastError != NoError && m_lastError != NoMatch)
+
+bool PRegularExpression::Execute(const char * cstr, PINDEX & start, match_flag flags) const
+{
+  PINDEX dummy;
+  return Execute(cstr, start, dummy, flags);
+}
+
+
+bool PRegularExpression::Execute(const char * cstr, PINDEX & start, PINDEX & len, match_flag flags) const
+{
+  if (m_lastErrorCode != NoError && m_lastErrorCode != NoMatch)
     return false;
 
-  regmatch_t match;
-
-  m_lastError = (ErrorCodes)regexec((regex_t*)m_compiledRegex, cstr, 1, &match, options);
-  if (m_lastError != NoError)
+  std::match_results<const char *> match;
+  if (!std::regex_search(cstr, match, *this, flags)) {
+    m_lastErrorCode = NoMatch;
     return false;
+  }
 
-  start = match.rm_so;
-  len = match.rm_eo - start;
+  m_lastErrorCode = NoError;
+  start = match[0].first - cstr;
+  len = match[0].second - match[0].first + 1;
   return true;
 }
 
@@ -3079,58 +3145,70 @@ bool PRegularExpression::Execute(const char * cstr,
                                  PIntArray & ends,
                                  ExecOptions options) const
 {
-  if (m_compiledRegex == NULL) {
-    m_lastError = NotCompiled;
+  return Execute(cstr, starts, ends, MapFlags(options));
+}
+
+
+bool PRegularExpression::Execute(const char * cstr, PIntArray & starts, match_flag flags) const
+{
+  PIntArray dummy;
+  return Execute(cstr, starts, dummy, flags);
+}
+
+
+bool PRegularExpression::Execute(const char * cstr,
+                                 PIntArray & starts,
+                                 PIntArray & ends,
+                                 match_flag flags) const
+{
+  if (m_lastErrorCode != NoError && m_lastErrorCode != NoMatch)
+    return false;
+
+  std::match_results<const char *> matches;
+  if (!std::regex_search(cstr, matches, *this, flags)) {
+    m_lastErrorCode = NoMatch;
     return false;
   }
 
-  PINDEX count = starts.GetSize();
-  if (count == 0) {
-    starts.SetSize(1);
-    count = 1;
-  }
-  ends.SetSize(count);
+  m_lastErrorCode = NoError;
 
-  regmatch_t * matches = new regmatch_t[count];
+  starts.SetSize(matches.size());
+  ends.SetSize(matches.size());
 
-  m_lastError = (ErrorCodes)::regexec((regex_t*)m_compiledRegex, cstr, count, matches, options);
-  if (m_lastError == NoError) {
-    for (PINDEX i = 0; i < count; i++) {
-      starts[i] = matches[i].rm_so;
-      ends[i] = matches[i].rm_eo;
-    }
+  for (PINDEX i = 0; i < starts.GetSize(); i++) {
+    starts[i] = (int)(matches[i].first - cstr);
+    ends[i] = (int)(matches[i].second - cstr);
   }
 
-  delete [] matches;
-
-  return m_lastError == NoError;
+  return true;
 }
 
 
 bool PRegularExpression::Execute(const char * cstr, PStringArray & substring, ExecOptions options) const
 {
-  if (m_compiledRegex == NULL) {
-    m_lastError = NotCompiled;
+  return Execute(cstr, substring, MapFlags(options));
+}
+
+
+bool PRegularExpression::Execute(const char * cstr, PStringArray & substring, match_flag flags) const
+{
+  if (m_lastErrorCode != NoError && m_lastErrorCode != NoMatch)
+    return false;
+
+  std::match_results<const char *> matches;
+  if (!std::regex_search(cstr, matches, *this, flags)) {
+    m_lastErrorCode = NoMatch;
     return false;
   }
 
-  PINDEX count = substring.GetSize();
-  if (count == 0) {
-    substring.SetSize(1);
-    count = 1;
-  }
+  m_lastErrorCode = NoError;
 
-  regmatch_t * matches = new regmatch_t[count];
+  substring.SetSize(matches.size());
 
-  m_lastError = (ErrorCodes)::regexec((regex_t*)m_compiledRegex, cstr, count, matches, options);
-  if (m_lastError == NoError) {
-    for (PINDEX i = 0; i < count; i++)
-      substring[i] = PString(cstr+matches[i].rm_so, matches[i].rm_eo-matches[i].rm_so);
-  }
+  for (PINDEX i = 0; i < substring.GetSize(); i++)
+    substring[i] = std::string(matches[i].first, matches[i].second);
 
-  delete [] matches;
-
-  return m_lastError == NoError;
+  return true;
 }
 
 

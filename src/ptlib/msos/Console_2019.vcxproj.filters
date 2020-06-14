@@ -16,18 +16,6 @@
     <ClCompile Include="..\..\ptclib\delaychan.cxx">
       <Filter>Source Files\Components</Filter>
     </ClCompile>
-    <ClCompile Include="..\common\regex\regerror.c">
-      <Filter>Regex</Filter>
-    </ClCompile>
-    <ClCompile Include="..\common\regex\regexec.c">
-      <Filter>Regex</Filter>
-    </ClCompile>
-    <ClCompile Include="..\common\regex\regfree.c">
-      <Filter>Regex</Filter>
-    </ClCompile>
-    <ClCompile Include="..\common\regex\regcomp.c">
-      <Filter>Regex</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\ptclib\guid.cxx">
       <Filter>Source Files\Components</Filter>
     </ClCompile>
@@ -1005,9 +993,6 @@
     </Filter>
     <Filter Include="Inlines">
       <UniqueIdentifier>{d9c7b1dc-1707-44ea-b308-43fcf56a8fd1}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Regex">
-      <UniqueIdentifier>{21a7a2c3-23d7-48fc-b815-55cf0b0c5493}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source Files\MSOS">
       <UniqueIdentifier>{c5714f6b-b3e2-4f28-837e-107815cc7ca3}</UniqueIdentifier>

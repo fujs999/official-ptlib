@@ -63,28 +63,21 @@ void Test2()
 
 ////////////////////////////////////////////////
 //
-// test #3 - PBYTEArray test
+// test #3 - regex test
 //
 
 void Test3()
 {
-  {
-    PBYTEArray buffer1(1024);
-    PBYTEArray buffer2(buffer1);
+  PRegularExpression regex;
 
-    cout << "base address of PBYTEArray 1 = " << (void *)(buffer1.GetPointer()) << endl;
-    cout << "base address of PBYTEArray 2 = " << (void *)(buffer1.GetPointer()) << endl;
-  }
+  if (!regex.Compile("ab(cd)e(fg)", PRegularExpression::extended))
+    cout << "Error " << regex.GetErrorText() << endl;
 
-  {
-    PString str1("hello");
-    PString str2(str1);
-
-    str2 = "world";
-
-    cout << "base address of PString 1 = " << (void *)(str1.GetPointer()) << endl;
-    cout << "base address of PString 2 = " << (void *)(str2.GetPointer()) << endl;
-  }
+  PStringArray substrings;
+  if (regex.Execute("abcdefgh", substrings))
+    cout << "Matched " << substrings[0].ToLiteral() << ' ' << substrings[1].ToLiteral() << ' ' << substrings[2].ToLiteral() << endl;
+  else
+    cout << "No match" << endl;
 }
 
 
