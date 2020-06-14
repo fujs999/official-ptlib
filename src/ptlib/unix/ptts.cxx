@@ -51,23 +51,23 @@ class PTextToSpeech_Festival : public PTextToSpeech
 
     // overrides
     PStringArray GetVoiceList();
-    PBoolean SetVoice(const PString & voice);
+    bool SetVoice(const PString & voice);
 
-    PBoolean SetSampleRate(unsigned rate);
+    bool SetSampleRate(unsigned rate);
     unsigned GetSampleRate();
 
-    PBoolean SetChannels(unsigned channels);
+    bool SetChannels(unsigned channels);
     unsigned GetChannels();
 
-    PBoolean SetVolume(unsigned volume);
+    bool SetVolume(unsigned volume);
     unsigned GetVolume();
 
-    PBoolean OpenFile(const PFilePath & fn);
-    PBoolean OpenChannel(PChannel * channel);
-    PBoolean IsOpen()    { return !m_filePath.empty(); }
+    bool OpenFile(const PFilePath & fn);
+    bool OpenChannel(PChannel * channel);
+    bool IsOpen()    { return !m_filePath.empty(); }
 
-    PBoolean Close();
-    PBoolean Speak(const PString & str, TextType hint);
+    bool Close();
+    bool Speak(const PString & str, TextType hint);
 
   protected:
     PDECLARE_MUTEX(m_mutex);
@@ -99,13 +99,13 @@ PTextToSpeech_Festival::~PTextToSpeech_Festival()
 }
 
 
-PBoolean PTextToSpeech_Festival::OpenChannel(PChannel *)
+bool PTextToSpeech_Festival::OpenChannel(PChannel *)
 {
   return false;
 }
 
 
-PBoolean PTextToSpeech_Festival::OpenFile(const PFilePath & fn)
+bool PTextToSpeech_Festival::OpenFile(const PFilePath & fn)
 {
   PWaitAndSignal mutex(m_mutex);
 
@@ -118,7 +118,7 @@ PBoolean PTextToSpeech_Festival::OpenFile(const PFilePath & fn)
 }
 
 
-PBoolean PTextToSpeech_Festival::Close()
+bool PTextToSpeech_Festival::Close()
 {
   PWaitAndSignal mutex(m_mutex);
 
@@ -142,7 +142,7 @@ PBoolean PTextToSpeech_Festival::Close()
 }
 
 
-PBoolean PTextToSpeech_Festival::Speak(const PString & str, TextType hint)
+bool PTextToSpeech_Festival::Speak(const PString & str, TextType hint)
 {
   PWaitAndSignal mutex(m_mutex);
   if (festival_text_to_wave(str.c_str(), m_wave) != 0)
@@ -161,13 +161,13 @@ PStringArray PTextToSpeech_Festival::GetVoiceList()
 }
 
 
-PBoolean PTextToSpeech_Festival::SetVoice(const PString & v)
+bool PTextToSpeech_Festival::SetVoice(const PString & v)
 {
   return v == "default";
 }
 
 
-PBoolean PTextToSpeech_Festival::SetSampleRate(unsigned v)
+bool PTextToSpeech_Festival::SetSampleRate(unsigned v)
 {
   m_sampleRate = v;
   return true;
@@ -180,7 +180,7 @@ unsigned PTextToSpeech_Festival::GetSampleRate()
 }
 
 
-PBoolean PTextToSpeech_Festival::SetChannels(unsigned v)
+bool PTextToSpeech_Festival::SetChannels(unsigned v)
 {
   if ((unsigned)m_wave.num_channels() != v) {
     m_wave = EST_Wave(0, v, m_sampleRate);
@@ -196,7 +196,7 @@ unsigned PTextToSpeech_Festival::GetChannels()
 }
 
 
-PBoolean PTextToSpeech_Festival::SetVolume(unsigned v)
+bool PTextToSpeech_Festival::SetVolume(unsigned v)
 {
   m_volume = v;
   return true;

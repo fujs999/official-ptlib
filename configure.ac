@@ -979,31 +979,6 @@ fi
 
 
 dnl ########################################################################
-dnl check for regex library
-dnl mingw does not provide regcomp, so search for it in regex library
-
-AC_ARG_ENABLE(
-   internalregex,
-   AS_HELP_STRING([--enable-internalregex],[Force internal regex library]),
-   internalregex=$enableval
-)
-if test "$internalregex" = "yes" ; then
-   AC_MSG_NOTICE(Forcing use of internal regex library)
-else
-   AC_SEARCH_LIBS(
-      regcomp,
-      regex,
-      [
-         AC_SUBST(HAS_REGEX, 1)
-         AC_DEFINE(P_REGEX, 1, "Regex library found")
-      ]
-   )
-fi
-
-PTLIB_SUBST(REGEX)
-
-
-dnl ########################################################################
 dnl check for dynamic library code (dlopen and friends)
 
 dnl MSWIN_DISPLAY dll,DLL Support

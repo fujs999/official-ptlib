@@ -1795,7 +1795,7 @@ PString PString::Trim() const
   if (*lpos == '\0')
     return Empty();
 
-  const char * rpos = theArray+GetLength()-1;
+  const char * rpos = c_str()+GetLength()-1;
   if (!std::isspace(*rpos, std::locale("C"))) {
     if (lpos == c_str())
       return *this;
@@ -2892,7 +2892,7 @@ void PStringOptions::SetReal(const PCaselessString & key, double value, int deci
 
 PRegularExpression::PRegularExpression()
   : m_lastErrorCode(NotCompiled)
-  , m_lastErrorType(std::regex_constants::error_parse)
+  , m_lastErrorType(std::regex_constants::error_stack)
 {
 }
 
@@ -2976,10 +2976,6 @@ PString PRegularExpression::GetErrorText() const
       return "the complexity of an attempted match exceeded a predefined level";
     case std::regex_constants::error_stack:
       return "there was not enough memory to perform a match";
-    case std::regex_constants::error_parse:
-      return "could not parse the expression";
-    case std::regex_constants::error_syntax:
-      return "sytax error in expression";
     default :
       return "unknown error";
   }

@@ -837,8 +837,6 @@ PTLIB_PCAP
 HAS_PCAP
 PTLIB_DNS_RESOLVER
 HAS_DNS_RESOLVER
-PTLIB_REGEX
-HAS_REGEX
 PTLIB_BACKTRACE
 HAS_BACKTRACE
 PTLIB_IPV6
@@ -964,7 +962,6 @@ enable_ipv6
 enable_backtrace
 enable_tracing
 enable_trace_instance
-enable_internalregex
 enable_resolver
 enable_pcap
 enable_imagemagick
@@ -1746,7 +1743,6 @@ Optional Features:
   --disable-tracing       Remove PTRACE and all trace logging
   --disable-trace-instance
                           Disable object instance in trace logging
-  --enable-internalregex  Force internal regex library
   --disable-resolver      disable DNS resolver support
   --disable-pcap          disable PCAP support
   --disable-imagemagick   disable ImageMagick v6 support
@@ -10594,107 +10590,6 @@ $as_echo "$as_me: PTRACE and all trace logging included" >&6;}
       CPPFLAGS="$CPPFLAGS -DPTRACING=2"
    fi
 fi
-
-
-
-# Check whether --enable-internalregex was given.
-if test "${enable_internalregex+set}" = set; then :
-  enableval=$enable_internalregex; internalregex=$enableval
-
-fi
-
-if test "$internalregex" = "yes" ; then
-   { $as_echo "$as_me:${as_lineno-$LINENO}: Forcing use of internal regex library" >&5
-$as_echo "$as_me: Forcing use of internal regex library" >&6;}
-else
-   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing regcomp" >&5
-$as_echo_n "checking for library containing regcomp... " >&6; }
-if ${ac_cv_search_regcomp+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_func_search_save_LIBS=$LIBS
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char regcomp ();
-int
-main ()
-{
-return regcomp ();
-  ;
-  return 0;
-}
-_ACEOF
-for ac_lib in '' regex; do
-  if test -z "$ac_lib"; then
-    ac_res="none required"
-  else
-    ac_res=-l$ac_lib
-    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
-  fi
-  if ac_fn_cxx_try_link "$LINENO"; then :
-  ac_cv_search_regcomp=$ac_res
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext
-  if ${ac_cv_search_regcomp+:} false; then :
-  break
-fi
-done
-if ${ac_cv_search_regcomp+:} false; then :
-
-else
-  ac_cv_search_regcomp=no
-fi
-rm conftest.$ac_ext
-LIBS=$ac_func_search_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_regcomp" >&5
-$as_echo "$ac_cv_search_regcomp" >&6; }
-ac_res=$ac_cv_search_regcomp
-if test "$ac_res" != no; then :
-  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
-
-         HAS_REGEX=1
-
-
-$as_echo "#define P_REGEX 1" >>confdefs.h
-
-
-
-fi
-
-fi
-
-
-
-
-   if test "x$HAS_REGEX" = "xyes" ; then
-      HAS_REGEX=1
-   fi
-
-   if test "x$HAS_REGEX" = "x0" || test "x$HAS_REGEX" = "xno" ; then
-      HAS_REGEX=
-   fi
-
-
-
-   if test "x$HAS_REGEX" = "x1" ; then
-      PTLIB_REGEX=yes
-      $as_echo "#define P_REGEX 1" >>confdefs.h
-
-   else
-      PTLIB_REGEX=no
-   fi
-
-
-
 
 
 
@@ -22427,7 +22322,7 @@ fi
    if ${PTLIB_FESTIVAL+:} false; then :
   $as_echo "                     Festival TTS : ${PTLIB_FESTIVAL}"
 else
-  $as_echo "                     Festival TTS : no"
+  $as_echo "                     Festival TTS : not set"
 
 fi
 

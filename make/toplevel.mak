@@ -492,10 +492,6 @@ SOURCES	+= \
 	$(COMMON_SRC_DIR)/contain.cxx \
 	$(COMMON_SRC_DIR)/object.cxx   # must be last module
 
-ifneq ($(HAS_REGEX),1)
-  OBJS = $(OBJDIR)/regcomp.o $(OBJDIR)/regexec.o $(OBJDIR)/regerror.o $(OBJDIR)/regfree.o
-endif
-
 
 ###############################################################################
 
@@ -507,19 +503,6 @@ include $(PTLIB_TOP_LEVEL_DIR)/make/post.mak
 ###############################################################################
 
 $(COMMON_SRC_DIR)/osutils.cxx: $(REVISION_FILE)
-
-$(OBJDIR)/regcomp.o: $(COMMON_SRC_DIR)/regex/regcomp.c
-	$(Q_CC)$(CC) $(CPPFLAGS) -DPOSIX_MISTAKE -I$(COMMON_SRC_DIR)/regex $(CFLAGS) -o $@ -c $<
-
-$(OBJDIR)/regexec.o: $(COMMON_SRC_DIR)/regex/regexec.c
-	$(Q_CC)$(CC) $(CPPFLAGS) -DPOSIX_MISTAKE -I$(COMMON_SRC_DIR)/regex $(CFLAGS) -o $@ -c $<
-
-$(OBJDIR)/regerror.o: $(COMMON_SRC_DIR)/regex/regerror.c
-	$(Q_CC)$(CC) $(CPPFLAGS) -DPOSIX_MISTAKE -I$(COMMON_SRC_DIR)/regex $(CFLAGS) -o $@ -c $<
-
-$(OBJDIR)/regfree.o: $(COMMON_SRC_DIR)/regex/regfree.c
-	$(Q_CC)$(CC) $(CPPFLAGS) -DPOSIX_MISTAKE -I$(COMMON_SRC_DIR)/regex $(CFLAGS) -o $@ -c $<
-
 
 $(OBJDIR)/getdate.o: $(GETDATE_SOURCE)
 	$(Q_CC)$(CC) $(CPPFLAGS) -Wno-write-strings $(CFLAGS) -c $< -o $@

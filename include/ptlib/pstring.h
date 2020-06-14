@@ -3267,7 +3267,7 @@ class PRegularExpression : public PObject, public std::regex
        @return
        Error code.
      */
-    ErrorCodes GetErrorCode() const { m_lastErrorCode; }
+    ErrorCodes GetErrorCode() const { return m_lastErrorCode; }
 
     /**Get the error type for the last Compile() operation.
 
