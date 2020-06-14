@@ -243,6 +243,17 @@ bool PPipeChannel::PlatformOpen(const PString & subProgram,
     argv = withProgram.ToCharArray();
   }
 
+#if PTRACING
+  static const unsigned Level = 4;
+  if (PTrace::CanTrace(Level)) {
+    ostream & log = PTRACE_BEGIN(Level);
+    log << "PPipeChannel: prog=" << subProgram.ToLiteral();
+    for (int i = 0; argv[i] != NULL; ++i)
+      log << " arg[" << i << "]=\"" << argv[i] << '"';
+    log << PTrace::End;
+  }
+#endif
+
   // run the program, does not return
   if (environment == NULL) {
     if (searchPath)

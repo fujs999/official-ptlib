@@ -81,7 +81,7 @@ class PTextToSpeech : public PObject
   PFACTORY_LOAD(PTextToSpeech_SAPI);
 #endif
 
-#if P_PIPECHAN
+#if P_FESTIVAL
   PFACTORY_LOAD(PTextToSpeech_Festival);
 #endif
 

@@ -677,20 +677,7 @@
     </ClCompile>
     <ClCompile Include="..\..\ptclib\pstun.cxx" />
     <ClCompile Include="..\..\ptclib\pstunsrvr.cxx" />
-    <ClCompile Include="..\..\ptclib\ptts.cxx">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-      </PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">
-      </PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">
-      </PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </PrecompiledHeader>
-    </ClCompile>
+    <ClCompile Include="..\..\ptlib\msos\ptts.cxx" />
     <ClCompile Include="..\..\ptclib\pvfiledev.cxx" />
     <ClCompile Include="..\..\ptclib\pvidfile.cxx">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProgramW6432)\ImageMagick-7.0.5-Q16\include</AdditionalIncludeDirectories>

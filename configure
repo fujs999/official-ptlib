@@ -736,8 +736,6 @@ PTLIB_VXML_VIDEO
 HAS_VXML_VIDEO
 PTLIB_VXML
 HAS_VXML
-PTLIB_TTS
-HAS_TTS
 PTLIB_JABBER
 HAS_JABBER
 PTLIB_VCARD
@@ -772,6 +770,10 @@ PTLIB_URL
 HAS_URL
 PTLIB_CONFIG_FILE
 HAS_CONFIG_FILE
+PTLIB_FESTIVAL
+HAS_FESTIVAL
+PTLIB_TTS
+HAS_TTS
 PTLIB_V8
 HAS_V8
 V8_USABLE
@@ -978,6 +980,7 @@ with_expat_dir
 enable_lua
 enable_v8
 with_v8_dir
+enable_tts
 enable_configfile
 enable_url
 enable_http
@@ -995,7 +998,6 @@ enable_timers
 enable_networking
 enable_vcard
 enable_jabber
-enable_tts
 enable_vxml
 enable_vxmlvideo
 enable_xmlrpc
@@ -1757,6 +1759,7 @@ Optional Features:
   --disable-expat         disable expat XML support
   --disable-lua           disable Lua script support
   --disable-v8            disable V8 Javascript script support
+  --disable-tts           disable Text-To-Speech server support
   --disable-configfile    disable config file support
   --disable-url           disable URL support
   --disable-http          disable HTTP support
@@ -1774,7 +1777,6 @@ Optional Features:
   --disable-networking    disable Network support
   --disable-vcard         disable VCard support
   --disable-jabber        disable Jabber support
-  --disable-tts           disable Text-To-Speech server support
   --disable-vxml          disable VXML support
   --disable-vxmlvideo     disable VXML (video) support
   --disable-xmlrpc        disable XMLRPC support
@@ -14141,6 +14143,148 @@ CXXFLAGS="$oldCXXFLAGS"
 
 
 
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking Text-To-Speech server support" >&5
+$as_echo_n "checking Text-To-Speech server support... " >&6; }
+
+   # Check whether --enable-tts was given.
+if test "${enable_tts+set}" = set; then :
+  enableval=$enable_tts; if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
+$as_echo "disabled by user" >&6; }
+fi
+else
+
+         enableval=${DEFAULT_TTS:-yes}
+         if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
+$as_echo "disabled by default" >&6; }
+fi
+
+
+fi
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+   if test "x$enableval" = xyes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+fi
+
+   if test "x$enableval" = "xyes"; then :
+
+   HAS_TTS=1
+
+   if test "x$HAS_TTS" = "xyes" ; then
+      HAS_TTS=1
+   fi
+
+   if test "x$HAS_TTS" = "x0" || test "x$HAS_TTS" = "xno" ; then
+      HAS_TTS=
+   fi
+
+
+
+   if test "x$HAS_TTS" = "x1" ; then
+      PTLIB_TTS=yes
+      $as_echo "#define P_TTS 1" >>confdefs.h
+
+   else
+      PTLIB_TTS=no
+   fi
+
+
+
+else
+  HAS_TTS=
+fi
+
+
+   enable_tts="$enableval"
+
+
+
+
+
+   MY_LINK_IFELSE_CPPFLAGS="$CPPFLAGS"
+   MY_LINK_IFELSE_LIBS="$LIBS"
+   CPPFLAGS="$CPPFLAGS -I/usr/include/speech_tools -fopenmp"
+   LIBS="-lFestival -lestools -lestbase -leststring $LIBS"
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Festival support" >&5
+$as_echo_n "checking for Festival support... " >&6; }
+   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <festival/festival.h>
+int
+main ()
+{
+festival_initialize(1, 21000)
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"; then :
+  usable=yes
+else
+  usable=no
+
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
+$as_echo "$usable" >&6; }
+   CPPFLAGS="$MY_LINK_IFELSE_CPPFLAGS"
+   LIBS="$MY_LINK_IFELSE_LIBS"
+
+   if test "x$usable" = "xyes"; then :
+
+      CPPFLAGS+=" -I/usr/include/speech_tools"
+      CXXFLAGS+=" -fopenmp"
+      LIBS+="-lFestival -lestools -lestbase -leststring"
+
+   HAS_FESTIVAL=1
+
+   if test "x$HAS_FESTIVAL" = "xyes" ; then
+      HAS_FESTIVAL=1
+   fi
+
+   if test "x$HAS_FESTIVAL" = "x0" || test "x$HAS_FESTIVAL" = "xno" ; then
+      HAS_FESTIVAL=
+   fi
+
+
+
+   if test "x$HAS_FESTIVAL" = "x1" ; then
+      PTLIB_FESTIVAL=yes
+      $as_echo "#define P_FESTIVAL 1" >>confdefs.h
+
+   else
+      PTLIB_FESTIVAL=no
+   fi
+
+
+
+
+
+fi
+
+
+
+
+
+
+
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking config file support" >&5
 $as_echo_n "checking config file support... " >&6; }
 
@@ -15501,81 +15645,6 @@ fi
 
 
    enable_jabber="$enableval"
-
-
-
-
-
-
-   { $as_echo "$as_me:${as_lineno-$LINENO}: checking Text-To-Speech server support" >&5
-$as_echo_n "checking Text-To-Speech server support... " >&6; }
-
-   # Check whether --enable-tts was given.
-if test "${enable_tts+set}" = set; then :
-  enableval=$enable_tts; if test "x$enableval" = xno; then :
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
-$as_echo "disabled by user" >&6; }
-fi
-else
-
-         enableval=${DEFAULT_TTS:-yes}
-         if test "x$enableval" = xno; then :
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
-$as_echo "disabled by default" >&6; }
-fi
-
-
-fi
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-   if test "x$enableval" = xyes; then :
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-fi
-
-   if test "x$enableval" = "xyes"; then :
-
-   HAS_TTS=1
-
-   if test "x$HAS_TTS" = "xyes" ; then
-      HAS_TTS=1
-   fi
-
-   if test "x$HAS_TTS" = "x0" || test "x$HAS_TTS" = "xno" ; then
-      HAS_TTS=
-   fi
-
-
-
-   if test "x$HAS_TTS" = "x1" ; then
-      PTLIB_TTS=yes
-      $as_echo "#define P_TTS 1" >>confdefs.h
-
-   else
-      PTLIB_TTS=no
-   fi
-
-
-
-else
-  HAS_TTS=
-fi
-
-
-   enable_tts="$enableval"
 
 
 
@@ -22351,6 +22420,14 @@ fi
   $as_echo "                  Javascript (V8) : ${PTLIB_V8}"
 else
   $as_echo "                  Javascript (V8) : not set"
+
+fi
+
+
+   if ${PTLIB_FESTIVAL+:} false; then :
+  $as_echo "                     Festival TTS : ${PTLIB_FESTIVAL}"
+else
+  $as_echo "                     Festival TTS : no"
 
 fi
 

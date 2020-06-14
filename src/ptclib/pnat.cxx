@@ -721,6 +721,8 @@ PString PNatMethod_AWS::GetServer() const
 
 bool PNatMethod_AWS::SetServer(const PString &)
 {
+  // Force re-evaluation in case of explicitly setting server
+  m_externalAddress = PIPSocket::GetInvalidAddress();
   InternalUpdate(false);
   return m_externalAddress.IsValid();
 }
@@ -735,7 +737,9 @@ bool PNatMethod_AWS::InternalGetServerAddress(PIPSocketAddressAndPort & external
 
 void PNatMethod_AWS::InternalUpdate(bool)
 {
-  m_externalAddress = PIPSocket::GetInvalidAddress();
+  // This never changes, so once we have eternal IP, always use it.
+  if (m_externalAddress.IsValid())
+    return;
 
   if (!m_active)
     return;

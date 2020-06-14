@@ -2260,7 +2260,7 @@ bool PVXMLSession::PlayText(const PString & textToPlay,
   if (!IsOpen() || textToPlay.IsEmpty() || m_bargingIn)
     return false;
 
-  PTRACE(5, "Converting \"" << textToPlay << "\" to speech");
+  PTRACE(4, "Converting " << textToPlay.ToLiteral() << " to speech");
 
   PString prefix(PString::Printf, "tts%i", type);
   bool useCache = GetVar("caching") != "safe";

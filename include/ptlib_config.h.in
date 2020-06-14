@@ -784,10 +784,11 @@
 
 /////////////////////////////////////////////////
 //
-// SAPI speech API (Windows only)
+// Text To Speech - SAPI for Windows, Festival for Unix
 //
 
 #undef P_SAPI
+#undef P_FESTIVAL
 
 
 /////////////////////////////////////////////////
