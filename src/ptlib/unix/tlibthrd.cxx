@@ -71,7 +71,8 @@ int PX_NewHandle(const char *, int);
 #define PAssertWithRetry(func, arg, ...) \
   { \
     unsigned threadOpRetry = 0; \
-    while (PAssertThreadOp(func(arg, ##__VA_ARGS__), threadOpRetry, #func, reinterpret_cast<const void *>(arg), __FILE__, __LINE__)); \
+    while (PAssertThreadOp(func(arg, ##__VA_ARGS__), threadOpRetry, #func, \
+              reinterpret_cast<const void *>(arg), PDebugLocation(__FILE__, __LINE__, __FUNCTION__))); \
   }
 
 
@@ -79,13 +80,13 @@ static bool PAssertThreadOp(int retval,
                             unsigned & retry,
                             const char * funcname,
                             const void * arg1,
-                            const char * file,
-                            unsigned line)
+                            const PDebugLocation & location)
 {
   if (retval == 0) {
 #if PTRACING
     if (PTrace::CanTrace(2) && retry > 0)
-      PTrace::Begin(2, file, line, NULL, "PTLib") << funcname << '(' << arg1 << ") required " << retry << " retries!" << PTrace::End;
+      PTrace::Begin(2, location.m_file, location.m_line, NULL, "PTLib")
+          << funcname << '(' << arg1 << ") required " << retry << " retries!" << PTrace::End;
 #endif
     return false;
   }
@@ -105,9 +106,9 @@ static bool PAssertThreadOp(int retval,
   std::ostringstream msg;
   msg << "Function " << funcname << '(' << arg1 << ") failed, errno=" << err << ' ' << strerror(err);
 #if P_USE_ASSERTS
-  PAssertFunc(PDebugLocation(file, line), msg.str().c_str());
+  PAssertFunc(location, msg.str().c_str());
 #else
-  PTrace::Begin(0, file, line, NULL, "PTLib") << msg.str() << PTrace::End;
+  PTrace::Begin(0, location.m_file, location.m_line, NULL, "PTLib") << msg.str() << PTrace::End;
 #endif
 #endif
   return false;
@@ -1395,7 +1396,10 @@ void PTimedMutex::PlatformSignal(const PDebugLocation * location)
 
 #endif
 
-  PAssertWithRetry(pthread_mutex_unlock, &m_mutex);
+  unsigned threadOpRetry = 0;
+  while (PAssertThreadOp(pthread_mutex_unlock(&m_mutex), threadOpRetry, "pthread_mutex_unlock",
+          reinterpret_cast<const void *>(&m_mutex), m_location))
+    /* wait */;
 }
 
 
