@@ -442,7 +442,7 @@ void PCLI::Context::OnCompletedLine()
   if (line.IsEmpty())
     return;
 
-  PTRACE(4, "Processing command line \"" << line << '"');
+  PTRACE(4, "Processing command line " << line.ToLiteral());
 
   if (CheckInternalCommand(line, m_cli.GetCommentCommand(), true))
     return;
@@ -937,7 +937,7 @@ void PCLI::Broadcast(const PString & message) const
 {
   for (ContextList_t::const_iterator iter = m_contextList.begin(); iter != m_contextList.end(); ++iter)
     (*iter)->Broadcast(message);
-  PTRACE(4, "Broadcast to " << m_contextList.size() << " contexts: \"" << message << '"');
+  PTRACE(4, "Broadcast to " << m_contextList.size() << " contexts: " << message.ToLiteral());
 }
 
 
