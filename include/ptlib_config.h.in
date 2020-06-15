@@ -267,8 +267,6 @@
 #undef P_SHM_VIDEO
 #undef P_HAS_RDTSC
 
-#undef P_HAS_ICONV
-
 
 /////////////////////////////////////////////////
 //

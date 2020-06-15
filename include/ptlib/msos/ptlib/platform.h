@@ -28,6 +28,13 @@
 #ifndef PTLIB_PLATFORM_H
 #define PTLIB_PLATFORM_H
 
+ /* Bizarely the powers that be deprecated the C++11 conversion functions
+ without any indication of a replacement, not even in the proposed
+ C++20 standard. Perhaps another case of "if it isn't perfect, we don't
+ want it", that is common in standards bodies. */
+#define _SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING 1
+
+
 #include <stdint.h>
 #include <cstdlib>
 
