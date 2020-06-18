@@ -891,11 +891,11 @@ class PWebSocket : public PIndirectChannel
       int64_t  masking
     );
 
-    bool WriteMasked(
-      const uint32_t * data,
-      PINDEX len,
-      uint32_t mask
-    );
+    bool InternalRead(void * buf, PINDEX len);
+    bool ReadMasked(void * buf, PINDEX len);
+
+    bool InternalWrite(OpCodes  opCode, bool fragmenting, const void * data, PINDEX len);
+    bool WriteMasked(const uint32_t * data, PINDEX len, uint32_t mask);
 
     bool     m_client;
     bool     m_fragmentingWrite;
