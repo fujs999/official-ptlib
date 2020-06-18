@@ -1206,67 +1206,108 @@ PBoolean PWebSocket::Read(void * buf, PINDEX len)
   if (m_recursiveRead)
     return PIndirectChannel::Read(buf, len);
 
-  bool ok = false;
   m_recursiveRead = true;
+  bool ok = InternalRead(buf, len);
+  m_recursiveRead = false;
 
-  while (m_remainingPayload == 0) {
-    OpCodes  opCode;
+  if (!ok)
+    SetLastReadCount(0);
+
+  return ok;
+}
+
+
+bool PWebSocket::InternalRead(void * buf, PINDEX len)
+{
+  if (m_remainingPayload > 0)
+    return ReadMasked(buf, len);
+
+  for (;;) {
+    OpCodes opCode;
     if (!ReadHeader(opCode, m_fragmentedRead, m_remainingPayload, m_currentMask))
-      goto badRead;
+      return false;
 
+    PBYTEArray payload;
     switch (opCode) {
+      case Continuation :
+      case TextFrame :
+      case BinaryFrame :
+        return ReadMasked(buf, len);
+
       case Ping :
-        m_writeMutex.Wait();
-        WriteHeader(Pong, false, 0, -1);
-        m_writeMutex.Signal();
+        // RFC6455/5.5.2 echo ping payload
+        if (!ReadMasked(payload.GetPointer(m_remainingPayload), m_remainingPayload))
+          return false;
+        if (!InternalWrite(Pong, false, payload, payload.GetSize()))
+          return false;
+        break;
+
+      case Pong :
+        // Odd, as we don't currently support sending pings, ignore it.
+        if (!ReadMasked(payload.GetPointer(m_remainingPayload), m_remainingPayload))
+          return false;
         break;
 
       case ConnectionClose :
-        SetLastReadCount(0);
+        // RFC6455/5.5.1 get reason codes, if present
+        if (!ReadMasked(payload.GetPointer(m_remainingPayload), m_remainingPayload))
+          return false;
+        PTRACE(3, "WebSocket closed:\n" << PHexDump(payload, false));
+        InternalWrite(ConnectionClose, false, payload, payload.GetSize());
+        CloseBaseReadChannel();
         return false;
 
       default:
-        break;
+        // Not sure what to do in this case, we are probably out of sync, so just drop the TCP.
+        PTRACE(2, "WebSocket received unknown op-code: " << opCode);
+        CloseBaseReadChannel();
+        return false;
     }
   }
+}
 
+
+bool PWebSocket::ReadMasked(void * buf, PINDEX len)
+{
+  // Don't read any more than what's remaining in payload
   if (len > (PINDEX)m_remainingPayload)
     len = (PINDEX)m_remainingPayload;
 
   if (!ReadBlock(buf, len))
-    goto badRead;
+    return false;
 
-  if (m_currentMask >= 0) {
-    BYTE * ptr = (BYTE *)buf;
-    PINDEX count = GetLastReadCount();
-    while (count >= 4) {
-      *(uint32_t *)ptr ^= m_currentMask;
-      count -= 4;
-      ptr += 4;
-    }
-    switch (count) {
-      case 1 :
-        *(BYTE *)ptr ^= m_currentMask;
-        m_currentMask = uint32_t(m_currentMask << 24) | (m_currentMask >> 8);
-        break;
-      case 2:
-        *(uint16_t *)ptr ^= m_currentMask;
-        m_currentMask = uint32_t(m_currentMask << 16) | (m_currentMask >> 16);
-        break;
-      case 3:
-        *(uint16_t *)ptr ^= m_currentMask;
-        *(BYTE *)(ptr+2) ^= m_currentMask>>16;
-        m_currentMask = uint32_t(m_currentMask << 8) | (m_currentMask >> 24);
-        break;
-    }
+  // Only get here if exactly len bytes were read to buf
+  m_remainingPayload -= len;
+
+  if (m_currentMask < 0)
+    return true;
+
+  BYTE * ptr = (BYTE *)buf;
+  while (len >= 4) {
+    *(uint32_t *)ptr ^= m_currentMask;
+    len -= 4;
+    ptr += 4;
   }
 
-  m_remainingPayload -= GetLastReadCount();
-  ok = true;
+  switch (len) {
+    case 1:
+      *(BYTE *)ptr ^= m_currentMask;
+      m_currentMask = uint32_t(m_currentMask << 24) | (m_currentMask >> 8);
+      break;
 
-badRead:
-  m_recursiveRead = false;
-  return ok;
+    case 2:
+      *(uint16_t *)ptr ^= m_currentMask;
+      m_currentMask = uint32_t(m_currentMask << 16) | (m_currentMask >> 16);
+      break;
+
+    case 3:
+      *(uint16_t *)ptr ^= m_currentMask;
+      *(BYTE *)(ptr+2) ^= m_currentMask>>16;
+      m_currentMask = uint32_t(m_currentMask << 8) | (m_currentMask >> 24);
+      break;
+  }
+
+  return true;
 }
 
 
@@ -1311,14 +1352,20 @@ PBoolean PWebSocket::Write(const void * buf, PINDEX len)
   if (CheckNotOpen())
     return false;
 
+  return InternalWrite(m_binaryWrite ? BinaryFrame : TextFrame, m_fragmentingWrite, buf, len);
+}
+
+
+bool PWebSocket::InternalWrite(OpCodes opCode, bool fragmenting, const void * buf, PINDEX len)
+{
   // Make sure WriteHeader and WriteMasked/Write of body are atomic
   PWaitAndSignal lock(m_writeMutex);
 
   if (!m_client)
-    return WriteHeader(m_binaryWrite ? BinaryFrame : TextFrame, m_fragmentingWrite, len, -1) && PIndirectChannel::Write(buf, len);
+    return WriteHeader(opCode, fragmenting, len, -1) && PIndirectChannel::Write(buf, len);
 
   uint32_t mask = PRandom::Number();
-  if (!WriteHeader(m_binaryWrite ? BinaryFrame : TextFrame, m_fragmentingWrite, len, mask))
+  if (!WriteHeader(opCode, fragmenting, len, mask))
     return false;
 
   const uint32_t * ptr = (const uint32_t *)buf;
