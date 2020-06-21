@@ -547,19 +547,19 @@ bool PFile::InternalOpen(OpenMode mode, OpenOptions opts, PFileInfo::Permissions
   int oflags = IsTextFile() ? _O_TEXT : _O_BINARY;
   switch (mode) {
     case ReadOnly :
-      oflags |= O_RDONLY;
+      oflags |= _O_RDONLY;
       if (opts == ModeDefault)
         opts = MustExist;
       break;
 
     case WriteOnly :
-      oflags |= O_WRONLY;
+      oflags |= _O_WRONLY;
       if (opts == ModeDefault)
         opts = Create|Truncate;
       break;
 
     case ReadWrite :
-      oflags |= O_RDWR;
+      oflags |= _O_RDWR;
       if (opts == ModeDefault)
         opts = Create;
       break;
@@ -586,8 +586,14 @@ bool PFile::InternalOpen(OpenMode mode, OpenOptions opts, PFileInfo::Permissions
   else if (opts & (DenySharedRead|DenySharedWrite))
     sflags = _SH_DENYWR;
 
+  int pmode = 0;
+  if (permissions & (PFileInfo::WorldRead | PFileInfo::GroupRead | PFileInfo::UserRead))
+    pmode |= _S_IREAD;
+  if (permissions & (PFileInfo::WorldWrite | PFileInfo::GroupWrite | PFileInfo::UserWrite))
+    pmode |= _S_IWRITE;
+
   int fd;
-  if (_sopen_s(&fd, m_path, oflags, sflags, permissions.AsBits()) != 0)
+  if (_sopen_s(&fd, m_path, oflags, sflags, pmode) != 0)
     return ConvertOSError(-1);
 
   os_handle = fd;

@@ -331,12 +331,11 @@ static int HexDigit(char c)
 }
 
 
-static int GetNextChar(const PString & command,
-                                    PINDEX & pos, PTimeInterval * time = NULL)
+static int GetNextChar(const PString & command, PINDEX & pos, PTimeInterval * time = NULL)
 {
   int temp;
 
-  if (command[pos] == '\0')
+  if (pos >= command.length())
     return NextCharEndOfString;
 
   if (command[pos] != '\\')

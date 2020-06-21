@@ -724,7 +724,7 @@ bool PMIMEInfo::ParseComplex(const PString & fieldValue, PStringToString & info)
       if (field[tagSep] == ',') {
         while (isspace(field[tagSep]) || field[tagSep] == ',')
           tagSep++;
-        if (field[tagSep] == '\0')
+        if (tagSep == field.length())
           break;
       }
 
