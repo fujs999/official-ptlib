@@ -233,10 +233,10 @@ void MergeSym::Main()
               prefix = line.Find("EXPORTS") == P_MAX_INDEX;
             else {
               PINDEX start = 0;
-              while (isspace(line[start]))
+              while (start < line.length() && isspace(line[start]))
                 start++;
               PINDEX end = start;
-              while (line[end] != '\0' && !isspace(line[end]))
+              while (end < line.length() && !isspace(line[end]))
                 end++;
               PString symName = line(start, end-1);
               if (symName.Find('*') != P_MAX_INDEX)
@@ -277,11 +277,11 @@ void MergeSym::Main()
       }
       else {
         PINDEX start = 0;
-        while (isspace(line[start]))
+        while (start < line.length() && isspace(line[start]))
           start++;
-        if (line[start] != ';') {
+        if (start < line.length() && line[start] != ';') {
           PINDEX end = start;
-          while (line[end] != '\0' && !isspace(line[end]))
+          while (end < line.length() && !isspace(line[end]))
             end++;
           PINDEX ordpos = line.Find('@', end);
           if (ordpos != P_MAX_INDEX) {
