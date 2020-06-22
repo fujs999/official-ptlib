@@ -2458,7 +2458,7 @@ PBoolean PHTTPDirectory::LoadHeaders(PHTTPRequest & request)
     else
       reply << "Unknown";
     reply << PHTML::TableData(PHTML::AlignRight)
-          << PString(::PString::ScaleSI, it->size) << 'B'
+          << PString(::PString::ScaleSI, it->size, 4) << 'B'
           << PHTML::TableData()
           << it->modified.AsString("hh:mm:ss dd-MMM-yyyy")
           << PHTML::TableData(PHTML::AlignCentre)
