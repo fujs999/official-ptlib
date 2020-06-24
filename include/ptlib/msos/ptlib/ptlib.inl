@@ -63,7 +63,7 @@ PINLINE bool PDirectory::IsSeparator(char c)
   { return c == ':' || c == '/' || c == '\\'; }
 
 PINLINE bool PDirectory::Remove(const PString & p)
-  { return _rmdir(p) == 0; }
+  { return _wrmdir(p.AsWide()) == 0; }
 
 
 PINLINE bool PDirectory::Restart(PFileInfo::FileTypes scanMask)
@@ -75,7 +75,7 @@ PINLINE bool PDirectory::Restart(PFileInfo::FileTypes scanMask)
 // PFile
 
 PINLINE bool PFile::Exists(const PFilePath & name)
-  { return _access(name, 0) == 0; }
+  { return _waccess_s(name.AsWide(), 0) == 0; }
 
 PINLINE bool PFile::Remove(const PFilePath & name, bool force)
   { return PFile::Remove((const PString &)name, force); }

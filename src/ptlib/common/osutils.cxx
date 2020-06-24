@@ -1257,7 +1257,7 @@ bool PDirectory::Create(const PString & p, int perm, bool recurse)
   PDirectory dir = p;
   
 #if defined(WIN32)
-  if (_mkdir(dir) == 0)
+  if (_wmkdir(dir.AsWide()) == 0)
 #elif defined(P_VXWORKS)
   if (mkdir(dir) == 0)
 #else    
