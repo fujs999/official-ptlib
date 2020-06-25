@@ -353,14 +353,14 @@
     }
 
     extern "C" {
-      #ifdef P_MACOSX
-        typedef void (* const ThrowFn)(void *, std::type_info *, void (*)(void *)) __attribute__ ((noreturn));
-        void __cxa_throw(void * ex, std::type_info * tinfo, void (*dest)(void *))
-      #else
-        typedef void (* const ThrowFn)(void *, void *, void (*)(void *)) __attribute__ ((noreturn));
-        void __cxa_throw(void * ex, void * tinfo, void (*dest)(void *))
-      #endif
-      {
+       #ifdef __clang__
+         typedef void (* const ThrowFn)(void * ex, std::type_info * tinfo, void (* dest)(void *)) __attribute__((noreturn));
+                 void    __cxa_throw   (void * ex, std::type_info * tinfo, void (* dest)(void *))
+       #else
+         typedef void (* const ThrowFn)(void * ex, void * tinfo, void (* dest)(void *)) __attribute__ ((noreturn));
+                 void    __cxa_throw   (void * ex, void * tinfo, void (* dest)(void *))
+       #endif
+       {
         if (PAssertWalkStackMode != PAssertWalkStackDisabled) {
           StackAddresses & addresses = *s_exceptionStack;
           addresses.resize(InternalMaxStackWalk);
