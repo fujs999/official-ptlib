@@ -277,10 +277,7 @@ bool PDirectory::GetInfo(PFileInfo & info) const
 
 bool PDirectory::Exists(const PString & path)
 {
-  if (_access(path, 0) != 0)
-    return false;
-
-  // Could be a file, so actually need to try and open it
+  // Open a copy, in case *this is already open
   PDirectory dir(path);
   return dir.Open(PFileInfo::AllFiles);
 }
@@ -349,19 +346,20 @@ bool PFile::Access(const PFilePath & name, OpenMode mode)
       accmode = R_OK|W_OK;
   }
 
-  return _access(name, accmode) == 0;
+  return _waccess_s(name.AsWide(), accmode) == 0;
 }
 
 
 PBoolean PFile::Remove(const PString & name, PBoolean force)
 {
-  if (remove(name) == 0)
+  PWideString wname(name);
+  if (_wremove(wname) == 0)
     return true;
   if (!force || errno != EACCES)
     return false;
-  if (_chmod(name, _S_IWRITE) != 0)
+  if (_wchmod(wname, _S_IWRITE) != 0)
     return false;
-  return remove(name) == 0;
+  return _wremove(wname) == 0;
 }
 
 
@@ -386,7 +384,7 @@ static void TwiddleBits(PFileInfo::Permissions newPermissions,
 }
 
 
-static PFileInfo::Permissions FileSecurityPermissions(const PFilePath & filename, PFileInfo::Permissions newPermissions)
+static PFileInfo::Permissions FileSecurityPermissions(const PWideString & filename, PFileInfo::Permissions newPermissions)
 {
   // All of the following is to support cygwin style permissions
 
@@ -394,7 +392,7 @@ static PFileInfo::Permissions FileSecurityPermissions(const PFilePath & filename
   SECURITY_DESCRIPTOR * descriptor = (SECURITY_DESCRIPTOR *)storage.GetPointer();
   DWORD lengthNeeded = 0;
 
-  if (!GetFileSecurity(filename,
+  if (!GetFileSecurityW(filename,
                        DACL_SECURITY_INFORMATION,
                        descriptor,
                        storage.GetSize(),
@@ -403,7 +401,7 @@ static PFileInfo::Permissions FileSecurityPermissions(const PFilePath & filename
       return PFileInfo::NoPermissions;
 
     descriptor = (SECURITY_DESCRIPTOR *)storage.GetPointer(lengthNeeded);
-    if (!GetFileSecurity(filename,
+    if (!GetFileSecurityW(filename,
                          DACL_SECURITY_INFORMATION,
                          descriptor,
                          storage.GetSize(),
@@ -479,7 +477,7 @@ static PFileInfo::Permissions FileSecurityPermissions(const PFilePath & filename
     return PFileInfo::NoPermissions;
 
   if (newPermissions != -1)
-    SetFileSecurity(filename, DACL_SECURITY_INFORMATION, descriptor);
+    SetFileSecurityW(filename, DACL_SECURITY_INFORMATION, descriptor);
 
   return oldPermissions;
 }
@@ -487,19 +485,18 @@ static PFileInfo::Permissions FileSecurityPermissions(const PFilePath & filename
 #endif
 
 
-bool PFile::GetInfo(const PFilePath & name, PFileInfo & info)
+bool PFile::GetInfo(const PFilePath & path, PFileInfo & info)
 {
-  if (name.IsEmpty())
+  if (path.IsEmpty())
     return false;
 
-  PString fn = name;
-  PINDEX pos = fn.GetLength()-1;
-  while (PDirectory::IsSeparator(fn[pos]))
+  PINDEX pos = path.GetLength()-1;
+  while (PDirectory::IsSeparator(path[pos]))
     pos--;
-  fn.Delete(pos+1, P_MAX_INDEX);
+  PWideString name = path(0, pos);
 
-  struct stat s;
-  if (stat(fn, &s) != 0)
+  struct _stat s;
+  if (_wstat(name, &s) != 0)
     return false;
 
   info.created =  (s.st_ctime < 0) ? 0 : s.st_ctime;
@@ -535,7 +532,7 @@ bool PFile::GetInfo(const PFilePath & name, PFileInfo & info)
   }
 
 #if defined(_WIN32)
-  info.hidden = (GetFileAttributes(name) & FILE_ATTRIBUTE_HIDDEN) != 0;
+  info.hidden = (GetFileAttributesW(name) & FILE_ATTRIBUTE_HIDDEN) != 0;
 #else
   unsigned int attr;
   _dos_getfileattr(name, &attr);
@@ -552,7 +549,7 @@ bool PFile::SetPermissions(const PFilePath & name, PFileInfo::Permissions permis
   FileSecurityPermissions(name, permissions);
 #endif
 
-  return _chmod(name, permissions&(_S_IWRITE|_S_IREAD)) == 0;
+  return _wchmod(name.AsWide(), permissions&(_S_IWRITE|_S_IREAD)) == 0;
 }
 
 
@@ -612,7 +609,7 @@ bool PFile::InternalOpen(OpenMode mode, OpenOptions opts, PFileInfo::Permissions
   else if (opts & (DenySharedRead|DenySharedWrite))
     sflags = _SH_DENYWR;
 
-  os_handle = _sopen(m_path, oflags, sflags, permissions.AsBits());
+  os_handle = _wsopen(m_path.AsWide(), oflags, sflags, permissions.AsBits());
 
   // As ConvertOSError tests for < 0 and some return values _sopen may be
   // negative, only pass -1 through.
