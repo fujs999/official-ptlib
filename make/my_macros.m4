@@ -684,11 +684,11 @@ AC_SUBST(DEBUG_CFLAGS, "$DEBUG_FLAG $DEBUG_CFLAGS")
 
 AC_SUBST(OPT_CPPFLAGS, "-DNDEBUG $OPT_CPPFLAGS")
 MY_COMPILE_IFELSE(
-   [optimised build (-O3)],
-   [-O3],
+   [optimised build (-O2)],
+   [-O2],
    [],
    [],
-   [OPT_CFLAGS="-O3 $OPT_CFLAGS"],
+   [OPT_CFLAGS="-O2 $OPT_CFLAGS"],
    [OPT_CFLAGS="-O $OPT_CFLAGS"]
 )
 AC_SUBST(OPT_CFLAGS)
