@@ -430,7 +430,7 @@ public:
   virtual void AsJSON(PJSON::Base & field) const { TYPE::AsJSON(dynamic_cast<PJSON::Object &>(field)); }
 };
 
-template <typename TYPE, typename WRAP = PJSONMember<TYPE>> class PJSONMemberArray : public PJSONWrapMember, public std::vector<TYPE>
+template <typename TYPE, typename WRAP = PJSONMember<TYPE> > class PJSONMemberArray : public PJSONWrapMember, public std::vector<TYPE>
 {
 public:
   PJSONMemberArray(const char * name) : PJSONWrapMember(name) { }
@@ -462,11 +462,11 @@ public:
   }
 };
 
-template <typename TYPE> class PJSONMemberArrayRecord : public PJSONMemberArray<TYPE, PJSONMemberRecord<TYPE>>
+template <typename TYPE> class PJSONMemberArrayRecord : public PJSONMemberArray<TYPE, PJSONMemberRecord<TYPE> >
 {
 public:
-  PJSONMemberArrayRecord(const char * name) : PJSONMemberArray<TYPE, PJSONMemberRecord<TYPE>>(name) { }
-  PJSONMemberArrayRecord(const char * name, const TYPE & init) : PJSONMemberArray<TYPE, PJSONMemberRecord<TYPE>>(name, init) { }
+  PJSONMemberArrayRecord(const char * name) : PJSONMemberArray<TYPE, PJSONMemberRecord<TYPE> >(name) { }
+  PJSONMemberArrayRecord(const char * name, const TYPE & init) : PJSONMemberArray<TYPE, PJSONMemberRecord<TYPE> >(name, init) { }
   PJSONMemberArrayRecord & operator=(const TYPE & other) { this->resize(1); this->front() = other; return *this; }
 };
 
