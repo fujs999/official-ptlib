@@ -11,11 +11,9 @@ ARG GROUPID=1000
 RUN groupadd -g ${USERID} rpmbuild && useradd -u ${USERID} -g ${GROUPID} rpmbuild
 WORKDIR /home/rpmbuild
 
-# Install devtoolset-7
-# (with workaround for https://bugs.centos.org/view.php?id=16423)
+# Install devtoolset-9
 RUN yum install -y centos-release-scl-rh && \
-    sed -i 's|centos/7/|centos/7.6.1810/|' /etc/yum.repos.d/CentOS-SCLo-*.repo && \
-    yum install -y --setopt=tsflags=nodocs devtoolset-7-gcc devtoolset-7-gcc-c++ devtoolset-7-gcc-gfortran devtoolset-7-gdb && \
+    yum install -y --setopt=tsflags=nodocs devtoolset-9-gcc devtoolset-9-gcc-c++ devtoolset-9-gcc-gfortran devtoolset-9-gdb && \
     yum clean all
 
 # Install dependencies referenced by the spec file, but cache the installed RPMs so they can be fingerprinted later

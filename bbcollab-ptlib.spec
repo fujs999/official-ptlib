@@ -28,7 +28,7 @@ Source0:        zsdk-ptlib.src.tgz
 # Optional build dependencies not needed for the MCU are commented-out
 BuildRequires:  %__sed
 
-BuildRequires:  devtoolset-7-gcc-c++
+BuildRequires:  devtoolset-9-gcc-c++
 BuildRequires:  openssl-devel
 BuildRequires:  ImageMagick-devel
 
@@ -83,7 +83,7 @@ developing applications that use %{name}.
 
 
 %build
-source /opt/rh/devtoolset-7/enable
+source /opt/rh/devtoolset-9/enable
 %configure --enable-exceptions \
         --with-profiling=manual \
         --disable-pthread_kill \
@@ -102,7 +102,7 @@ make %{?_smp_mflags} REVISION_FILE= PTLIB_FILE_VERSION=%{version} all
 
 %install
 rm -rf $RPM_BUILD_ROOT
-source /opt/rh/devtoolset-7/enable
+source /opt/rh/devtoolset-9/enable
 make install DESTDIR=$RPM_BUILD_ROOT PTLIB_FILE_VERSION=%{version}
 find $RPM_BUILD_ROOT -name '*.la' -exec rm -f {} ';'
 
