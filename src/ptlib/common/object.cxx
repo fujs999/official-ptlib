@@ -225,7 +225,7 @@ bool PAssertFunc(const PDebugLocation & location, PStandardAssertMessage msg)
     // a memory out situation as that would probably also fail!
     static const char fmt[] = "Out of memory at file %.100s, line %u, class %.30s";
     char msgbuf[sizeof(fmt)+100+10+30];
-    sprintf(msgbuf, fmt, location.m_file, location.m_line, location.m_extra);
+    snprintf(msgbuf, sizeof(msgbuf), fmt, location.m_file, location.m_line, location.m_extra);
     PPlatformAssertFunc(location, msgbuf, 'A');
     return false;
   }
@@ -249,8 +249,8 @@ bool PAssertFunc(const PDebugLocation & location, PStandardAssertMessage msg)
   if (msg < PMaxStandardAssertMessage)
     InternalAssertFunc(location, textmsg[msg]);
   else {
-    char msgbuf[20];
-    sprintf(msgbuf, "Assertion %i", msg);
+    char msgbuf[21];
+    snprintf(msgbuf, sizeof(msgbuf), "Assertion %i", msg);
     InternalAssertFunc(location, msgbuf);
   }
   return false;
