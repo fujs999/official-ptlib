@@ -284,7 +284,7 @@ class PSafeObject : public PObject
        Note this returns the value outside of any mutexes, so it could change
        at any moment. Care must be exercised in its use.
       */
-    unsigned GetSafeReferenceCount() const { return m_safeReferenceCount; }
+    unsigned GetSafeReferenceCount() const { PWaitAndSignal lock(m_safetyMutex); return m_safeReferenceCount; }
   //@}
 
   private:
