@@ -1491,16 +1491,32 @@ PString PString::Mid(PINDEX start, PINDEX len) const
     return operator()(start, start+len-1);
 }
 
-PString PString::Ellipsis(PINDEX maxLength, PINDEX fromEnd) const
+PString PString::Ellipsis(PINDEX maxLength, PINDEX fromEnd, bool ansi) const
 {
   if (GetLength() <= maxLength)
     return *this;
 
-  maxLength -= 3;
+  if (ansi) {
+    maxLength -= 3;
+    if (fromEnd > maxLength)
+      fromEnd = maxLength;
+
+    return Left(maxLength-fromEnd) + "..." + Right(fromEnd);
+  }
+
+  PWCharArray wide = AsWide();
+  PINDEX wideLength = wide.GetSize()-1;
+  if (wideLength <= maxLength)
+    return *this;
+
+  --maxLength;
   if (fromEnd > maxLength)
     fromEnd = maxLength;
 
-  return Left(maxLength-fromEnd) + "..." + Right(fromEnd);
+  PString left(wide.GetPointer(), maxLength - fromEnd);
+  static PConstString const ellipsis("\xE2\x80\xA6");
+  PString right(wide.GetPointer()+wideLength-fromEnd, fromEnd);
+  return left + ellipsis + right;
 }
 
 
