@@ -59,6 +59,13 @@ void Test1()
     cout << caseless.ToLiteral() << " == \"Hello\" " << boolalpha << (caseless == "Hello") << endl;
     cout << caseless.ToLiteral() << " == \"Hello\" " << boolalpha << (caseless.NumCompare("Hello") == PObject::EqualTo) << endl;
   }
+
+  {
+    wchar_t widestr[] = L"Hellò world";
+    PString pstring(widestr, sizeof(widestr)/2-1);
+    cout << pstring.Ellipsis(6) << endl;
+    cout << pstring.Ellipsis(9, 4) << endl;
+  }
 }
 
 

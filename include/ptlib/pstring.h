@@ -1472,7 +1472,8 @@ class PString : public PCharArray
       */
     PString Ellipsis(
       PINDEX maxLength,   ///< Maxmimum length of resulting string
-      PINDEX fromEnd = 0  ///< Number of characters at end of string adter "..."
+      PINDEX fromEnd = 0, ///< Number of characters at end of string after "..."
+      bool ansi = false   ///< String is treated as ANSI, rather than UTF-8
     ) const;
 
     /**Create a string consisting of all characters from the source string
@@ -1824,7 +1825,9 @@ class PString : public PCharArray
        @return
        string converted to a C language literal form.
      */
-    PString ToLiteral() const;
+    PString ToLiteral(
+      bool ascii = false   ///< If true also escapes characters greater than 127
+    ) const;
 
     /** Parse a C literal string format as for PString::ToLiteral().
         The \p offset is the initial position is \p str and will be updated
