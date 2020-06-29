@@ -2367,29 +2367,31 @@ PBYTEArray PString::ToPascal() const
 }
 
 
-PString PString::ToLiteral() const
+PString PString::ToLiteral(bool ascii) const
 {
-  PString str('"');
+  PStringStream strm;
+  strm << '"';
   for (char * p = theArray; *p != '\0'; p++) {
     if (*p == '"')
-      str += "\\\"";
+      strm << "\\\"";
     else if (*p == '\\')
-      str += "\\\\";
-    else if (isprint(*p & 0xff))
-      str += *p;
+      strm << "\\\\";
+    else if (isprint(*p) || (!ascii && (*p & 0x80) != 0))
+      strm << *p;
     else {
       PINDEX i;
       for (i = 0; i < PARRAYSIZE(PStringEscapeValue); i++) {
         if (*p == PStringEscapeValue[i]) {
-          str += PString('\\') + (char)PStringEscapeCode[i];
+          strm << '\\' << (char)PStringEscapeCode[i];
           break;
         }
       }
       if (i >= PARRAYSIZE(PStringEscapeValue))
-        str.sprintf("\\%03o", *p & 0xff);
+        strm << '\\' << oct << setfill('0') << setw(3) << (*p & 0xff);
     }
   }
-  return str + '"';
+  strm << '"';
+  return strm;
 }
 
 

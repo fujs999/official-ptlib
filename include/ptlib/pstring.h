@@ -1825,7 +1825,9 @@ class PString : public PCharArray
        @return
        string converted to a C language literal form.
      */
-    PString ToLiteral() const;
+    PString ToLiteral(
+      bool ascii = false   ///< If true also escapes characters greater than 127
+    ) const;
 
     /** Parse a C literal string format as for PString::ToLiteral().
         The \p offset is the initial position is \p str and will be updated
