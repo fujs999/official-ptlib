@@ -939,6 +939,7 @@ void PProcess::PlatformConstruct()
   ws._type = _WINSIZEMAX;
   _wsetsize(1, &ws);
 #else
+  SetConsoleOutputCP(CP_UTF8);
   extern LONG WINAPI PExceptionHandler(PEXCEPTION_POINTERS info);
   SetUnhandledExceptionFilter(PExceptionHandler);
   PTRACE_PARAM(HRESULT result =) WerAddExcludedApplication(m_executableFile.AsWide(), false);
