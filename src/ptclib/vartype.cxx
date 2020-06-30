@@ -132,7 +132,7 @@ bool PVarType::SetType(BasicType type, PINDEX option)
       break;
 
     default :
-      memset(&m_, 0, sizeof(m_));
+      m_ = { };
   }
 
   return true;
