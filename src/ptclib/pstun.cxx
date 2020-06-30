@@ -627,10 +627,10 @@ PSTUNAttribute * PSTUNMessage::AddAttribute(const PSTUNAttribute & attribute)
   // theArray pointer may be invalidated by next statement
   SetMinSize(sizeof(PSTUNMessageHeader) + newLength);
 
-  PSTUNAttribute * newAttr = (PSTUNAttribute *)(theArray + sizeof(PSTUNMessageHeader) + oldLength);
+  void * newAttr = theArray + sizeof(PSTUNMessageHeader) + oldLength;
   memcpy(newAttr, &attribute, length);
 
-  return newAttr;
+  return (PSTUNAttribute *)newAttr;
 }
 
 PSTUNAttribute * PSTUNMessage::SetAttribute(const PSTUNAttribute & attribute)
