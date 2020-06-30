@@ -339,13 +339,19 @@ PTHREAD_MUTEX_RECURSIVE_NP
       newStream = &cerr;
 #endif
 
+    // Delete the old stream outside the lock to avoid potential deadlock caused by
+    // stream flush; the PSystemLog mutex should be locked before the PTraceInfo one
+    ostream * oldStream = nullptr;
+
     Lock();
 
     if (m_stream != &cerr && m_stream != &cout)
-      delete m_stream;
+      oldStream = m_stream;
     m_stream = newStream;
 
     Unlock();
+
+    delete oldStream;
   }
 
   bool AdjustOptions(unsigned addedOptions, unsigned removedOptions)
