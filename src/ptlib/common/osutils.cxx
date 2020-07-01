@@ -2613,15 +2613,16 @@ void PProcess::HouseKeeping()
 
     if (cleanExternalThreads.HasExpired()) {
       cleanExternalThreads = CleanExternalThreadsTime;
-      if (!m_externalThreads.IsEmpty()) {
-        m_threadMutex.Wait();
-        for (ThreadList::iterator it = m_externalThreads.begin(); it != m_externalThreads.end();) {
-          if (it->IsTerminated())
-            m_externalThreads.erase(it++);
-          else
-            ++it;
+      // Delete old threads as this vector pops off the stack, outside of the mutex lock
+      std::vector<PSharedPtr<PExternalThread>> oldThreads;
+      PWaitAndSignal mutex(m_threadMutex);
+      for (ThreadList::iterator it = m_externalThreads.begin(); it != m_externalThreads.end();) {
+        if ((*it)->IsTerminated()) {
+          oldThreads.push_back(*it);
+          it = m_externalThreads.erase(it);
         }
-        m_threadMutex.Signal();
+        else
+          ++it;
       }
     }
 
@@ -2672,42 +2673,53 @@ PProcess::~PProcess()
 
   Sleep(100);  // Give threads time to die a natural death
 
-  m_threadMutex.Wait();
+  ThreadList externalThreads;
+  unsigned remainingThreads = 0;
+  unsigned terminatedThreads = 0;
+  std::vector<PThread*> threadsToTerminate;
+  {
+    PWaitAndSignal mutex(m_threadMutex);
 
-  // OK, if there are any other threads left, we get really insistent...
-  PTRACE(4, "Cleaning up " << m_activeThreads.size()-1 << " remaining threads.");
-  for (ThreadMap::iterator it = m_activeThreads.begin(); it != m_activeThreads.end(); ++it) {
-    PThread & thread = *it->second;
-    switch (thread.m_type) {
-      case e_IsAutoDelete:
-      case e_IsManualDelete:
-        if (thread.IsTerminated()) {
-          PTRACE(5, "Already terminated thread " << thread);
-        }
-        else {
-          PTRACE(3, "Terminating thread " << thread);
-          thread.Terminate();  // With extreme prejudice
-        }
-        break;
-      case e_IsExternal :
-        PTRACE(5, "Remaining external thread " << thread);
-        break;
-      default :
-        break;
+    // OK, if there are any other threads left, we get really insistent...
+    remainingThreads = m_activeThreads.size() - 1;
+    for (ThreadMap::iterator it = m_activeThreads.begin(); it != m_activeThreads.end(); ++it) {
+      PThread & thread = *it->second;
+      switch (thread.m_type) {
+        case e_IsAutoDelete:
+        case e_IsManualDelete:
+          if (thread.IsTerminated())
+            ++terminatedThreads;
+          else 
+            threadsToTerminate.push_back(it->second);
+          break;
+        default :
+          break;
+      }
     }
+    m_activeThreads.clear();
+    
+    // Would rather use std::move, but that's part of C++11
+    externalThreads = m_externalThreads;
+    m_externalThreads.clear();
   }
-  m_activeThreads.clear();
 
+  PTRACE(4, "Cleaning up " << remainingThreads << " remaining threads: "
+         << terminatedThreads << " already terminated, "
+         << threadsToTerminate.size() << " to terminate.");
+
+  for (PThread *thread : threadsToTerminate) {
+    PTRACE(3, "Terminating thread " << thread);
+    thread->Terminate();  // With extreme prejudice
+  }
+  
   PTRACE(4, "Terminated all threads, destroying "
          << m_autoDeleteThreads.size() << " remaining auto-delete threads, and "
-         << m_externalThreads.size() << " remaining external threads.");
+         << externalThreads.size() << " remaining external threads.");
   PThread * thread;
   while (m_autoDeleteThreads.Dequeue(thread, 0))
     delete thread;
 
-  m_externalThreads.RemoveAll();
-
-  m_threadMutex.Signal();
+  externalThreads.clear();
 
   OnThreadEnded(*this);
 
@@ -3230,17 +3242,22 @@ PThread * PThread::Current()
 
   PProcess & process = PProcess::Current();
 
-  PWaitAndSignal mutex(process.m_threadMutex);
-  PProcess::ThreadMap::iterator it = process.m_activeThreads.find(GetCurrentThreadId());
-  if (it != process.m_activeThreads.end() && !it->second->IsTerminated())
-    return it->second;
+  {
+    PWaitAndSignal mutex(process.m_threadMutex);
+    PProcess::ThreadMap::iterator it = process.m_activeThreads.find(GetCurrentThreadId());
+    if (it != process.m_activeThreads.end() && !it->second->IsTerminated())
+      return it->second;
+  }
 
   if (process.m_shuttingDown)
     return NULL;
 
-  PThread * thread = new PExternalThread;
-  process.m_externalThreads.Append(thread);
-  return thread;
+  // Construct PExternalThread outside of the mutex to avoid deadlock potential
+  PSharedPtr<PExternalThread> thread(new PExternalThread());
+
+  PWaitAndSignal mutex(process.m_threadMutex);
+  process.m_externalThreads.push_back(thread);
+  return thread.Get();
 }
 
 
