@@ -681,15 +681,18 @@ class PProcess : public PThread
 
     PTime m_programStartTime;           // time at which process was intantiated, i.e. started
 
-    bool   m_shuttingDown;
-    PCriticalSection m_threadMutex;
+    std::atomic<bool> m_shuttingDown;
+
+    // Do not write trace logs while holding m_threadMutex, as most trace logs lock
+    // the target log mutex before obtaining this in PThread::Current().
+    PCriticalSection m_threadMutex; 
 
     typedef std::map<PThreadIdentifier, PThread *> ThreadMap;
     ThreadMap m_activeThreads;
     void InternalThreadStarted(PThread * thread);
     void InternalThreadEnded(PThread * thread);
     
-    typedef PList<PThread> ThreadList;
+    typedef std::list<std::unique_ptr<PThread>> ThreadList;
     ThreadList m_externalThreads;
     PSyncQueue<PThread*> m_autoDeleteThreads;
 
