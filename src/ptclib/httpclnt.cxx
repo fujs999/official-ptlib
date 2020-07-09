@@ -459,13 +459,15 @@ bool PHTTPClient::ReadResponse(PMIMEInfo & replyMIME)
 
       PString body;
       if (m_lastResponseCode >= 300) {
-#if PTRACING
+        #if PTRACING
         if (PTrace::CanTrace(4) && replyMIME.GetVar(ContentLengthTag(), numeric_limits<int64_t>::max()) <= (int64_t)MaxTraceContentSize)
           ReadContentBody(replyMIME, body);
         else
-#endif
+          #endif
           ReadContentBody(replyMIME); // Waste body
       }
+      else if (m_lastResponseCode == NoContent && !replyMIME.Contains(ContentLengthTag))
+        replyMIME.SetInteger(ContentLengthTag, 0);
 
 #if PTRACING
       if (PTrace::CanTrace(3)) {
