@@ -86,6 +86,8 @@ extern "C" {\
       virtual void Main(); \
   };
 
+class PExternalThread;
+
 ///////////////////////////////////////////////////////////////////////////////
 // PProcess
 
@@ -692,7 +694,7 @@ class PProcess : public PThread
     void InternalThreadStarted(PThread * thread);
     void InternalThreadEnded(PThread * thread);
     
-    typedef std::list<std::unique_ptr<PThread>> ThreadList;
+    typedef std::list<PSharedPtr<PExternalThread>> ThreadList;
     ThreadList m_externalThreads;
     PSyncQueue<PThread*> m_autoDeleteThreads;
 

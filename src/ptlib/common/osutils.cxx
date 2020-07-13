@@ -2647,11 +2647,11 @@ void PProcess::HouseKeeping()
     if (cleanExternalThreads.HasExpired()) {
       cleanExternalThreads = CleanExternalThreadsTime;
       // Delete old threads as this vector pops off the stack, outside of the mutex lock
-      std::vector<std::unique_ptr<PThread>> oldThreads;
+      std::vector<PSharedPtr<PExternalThread>> oldThreads;
       PWaitAndSignal mutex(m_threadMutex);
       for (ThreadList::iterator it = m_externalThreads.begin(); it != m_externalThreads.end();) {
         if ((*it)->IsTerminated()) {
-          oldThreads.push_back(move(*it));
+          oldThreads.push_back(*it);
           it = m_externalThreads.erase(it);
         }
         else
@@ -2730,7 +2730,10 @@ PProcess::~PProcess()
       }
     }
     m_activeThreads.clear();
-    externalThreads = move(m_externalThreads);
+    
+    // Would rather use std::move, but that's part of C++11
+    externalThreads = m_externalThreads;
+    m_externalThreads.clear();
   }
 
   PTRACE(4, "Cleaning up " << remainingThreads << " remaining threads: "
@@ -3285,12 +3288,11 @@ PThread * PThread::Current()
     return NULL;
 
   // Construct PExternalThread outside of the mutex to avoid deadlock potential
-  auto uniqThread = make_unique<PExternalThread>();
-  PThread * thread = uniqThread.get();
+  PSharedPtr<PExternalThread> thread(new PExternalThread());
 
   PWaitAndSignal mutex(process.m_threadMutex);
-  process.m_externalThreads.push_back(move(uniqThread));
-  return thread;
+  process.m_externalThreads.push_back(thread);
+  return thread.Get();
 }
 
 
