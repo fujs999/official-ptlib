@@ -1252,7 +1252,7 @@ bool PWebSocket::InternalRead(void * buf, PINDEX len)
         // RFC6455/5.5.1 get reason codes, if present
         if (!ReadMasked(payload.GetPointer(m_remainingPayload), m_remainingPayload))
           return false;
-        PTRACE(3, "WebSocket closed:\n" << PHexDump(payload, false));
+        PTRACE(3, "WebSocket close command received\n" << PHexDump(payload, false));
         InternalWrite(ConnectionClose, false, payload, payload.GetSize());
         CloseBaseReadChannel();
         return false;
