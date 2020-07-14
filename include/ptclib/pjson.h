@@ -279,6 +279,7 @@ protected:
 public:
   PJSONRecord();
   PJSONRecord(const PJSONRecord &);
+  virtual ~PJSONRecord() { }
 
   virtual void ReadFrom(istream & strm);
   virtual void PrintOn(ostream & strm) const;
