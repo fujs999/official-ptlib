@@ -364,7 +364,7 @@ AC_DEFUN([MY_OUTPUT_SUMMARY],[
    INTERNAL_OUTPUT_SUMMARY([                         CPPFLAGS], [CPPFLAGS])
    INTERNAL_OUTPUT_SUMMARY([                           CFLAGS], [CFLAGS])
    INTERNAL_OUTPUT_SUMMARY([                         CXXFLAGS], [CXXFLAGS])
-   INTERNAL_OUTPUT_SUMMARY([                          LDFLAGS], [CXXFLAGS])
+   INTERNAL_OUTPUT_SUMMARY([                          LDFLAGS], [LDFLAGS])
    INTERNAL_OUTPUT_SUMMARY([                             LIBS], [LIBS])
    AS_ECHO("")
    AS_ECHO("========================================================================")
@@ -761,6 +761,19 @@ MY_COMPILE_IFELSE(
    [],
    [CPPFLAGS="-Wall $CPPFLAGS"]
 )
+
+
+ OLD_LDFLAGS="$LDFLAGS"
+ LDFLAGS="-rdynamic $LDFLAGS"
+ AC_MSG_CHECKING([Dynamic linker (-rdynamic)])
+ AC_LINK_IFELSE(
+    [AC_LANG_PROGRAM([],[])],
+    [AC_MSG_RESULT(yes)],
+    [
+       LDFLAGS="$OLD_LDFLAGS"
+       AC_MSG_RESULT(no)
+    ]
+ )
 
 
 dnl Check for profiling
