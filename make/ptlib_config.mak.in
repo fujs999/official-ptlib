@@ -73,7 +73,7 @@ GIT     := @GIT@
 
 CPPFLAGS          := @CPPFLAGS@ $(CPPFLAGS)
 CXXFLAGS          := @CXXFLAGS@ $(CXXFLAGS)
-CFLAGS            := @CFLAGS@ $(CFGLAGS)
+CFLAGS            := @CFLAGS@ $(CFLAGS)
 LDFLAGS           := @LDFLAGS@ $(LDFLAGS)
 LIBS              := @LIBS@ $(LIBS)
 SHARED_CPPFLAGS   := @SHARED_CPPFLAGS@
