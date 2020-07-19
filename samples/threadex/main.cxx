@@ -376,11 +376,9 @@ void UserInterfaceThread::Main()
 #ifdef _WIN32
         unsigned threadId;
         _beginthreadex(NULL, 10000, ExternalThreadMain, NULL, 0, &threadId);
-#elif P_PTHREADS
+#else
         pthread_t threadId;
         pthread_create(&threadId, NULL, ExternalThreadMain, NULL);
-#else
-        cout << "\nCreate external thread unsupported" << endl;
 #endif
       }
       break;

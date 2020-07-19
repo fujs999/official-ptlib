@@ -715,74 +715,138 @@ void PWin32Overlapped::Reset()
 ///////////////////////////////////////////////////////////////////////////////
 // Threads
 
-UINT __stdcall PThread::MainFunction(void * threadPtr)
+PThread::PThread(Type type, PString threadName, Priority priority, std::function<void()> mainFunction)
+  : m_type(type)
+  , m_mainFunction(std::move(mainFunction))
+  , m_priority(priority)
+  , m_threadName(std::move(threadName))
+  , m_nativeHandle(nullptr)
+  , m_uniqueId(0)
+  #if defined(P_WIN_COM)
+  , m_comInitialised(false)
+  #endif
 {
-  reinterpret_cast<PThread *>(PAssertNULL(threadPtr))->InternalThreadMain();
-  return 0;
+  switch (type) {
+    case Type::IsProcess :
+      sm_currentThread = this;
+      m_threadHandle = GetCurrentThread();
+      break;
+
+    case Type::IsExternal:
+      sm_currentThread = this;
+      m_threadHandle.Duplicate(GetCurrentThread());
+      PProcess::Current().InternalThreadStarted(this);
+      break;
+
+    case Type::IsAutoDelete:
+      // If need to be deleted automatically, make sure thread that does it runs.
+      PProcess::Current().SignalTimerChange();
+      break;
+
+    default:
+      break;
+  }
 }
 
 
-void PThread::InternalPreMain()
+void PThread::PlatformDestroy()
 {
-  SetThreadName(GetThreadName());
+  if (m_type == Type::IsProcess)
+    m_threadHandle.Detach();
+  else
+    m_threadHandle.Close();
+
+  #if defined(P_WIN_COM)
+  if (m_comInitialised)
+    ::CoUninitialize();
+  #endif
 }
 
 
-void PThread::InternalPostMain()
+void PThread::PlatformPreMain()
 {
+  m_threadHandle.Duplicate(::GetCurrentThread());
+}
+
+
+void PThread::PlatformPostMain()
+{
+  m_nativeHandle = nullptr;
   PProcess::Current().InternalThreadEnded(this);
 }
 
 
-void PThread::Win32AttachThreadInput()
+void PThread::PlatformSetThreadName(const char* name)
 {
-  PProcess & process = PProcess::Current();
-  ::AttachThreadInput(m_threadId, ((PThread&)process).m_threadId, true);
-  ::AttachThreadInput(((PThread&)process).m_threadId, m_threadId, true);
-}
+  struct THREADNAME_INFO
+  {
+    uint32_t dwType;      // must be 0x1000
+    LPCSTR szName;     // pointer to name (in user addr space)
+    uint32_t dwThreadID;  // thread ID (-1=caller thread, but seems to set more than one thread's name)
+    uint32_t dwFlags;     // reserved for future use, must be zero
+  } threadInfo = { 0x1000, name, GetUniqueIdentifier(), 0 };
 
-
-PThread::PThread(bool isProcess)
-  : m_type(isProcess ? e_IsProcess : e_IsExternal)
-  , m_originalStackSize(0)
-  , m_threadId(GetCurrentThreadId())
-  , m_uniqueId(m_threadId)
-#if defined(P_WIN_COM)
-  , m_comInitialised(false)
-#endif
-{
-  if (isProcess) {
-    m_threadHandle = GetCurrentThread();
-    return;
+  __try {
+    RaiseException(0x406D1388, 0, sizeof(threadInfo) / sizeof(uint32_t), (const ULONG_PTR*)&threadInfo);
+    // if not running under debugger exception comes back
   }
-
-  m_threadHandle.Duplicate(GetCurrentThread());
-
-  PProcess::Current().InternalThreadStarted(this);
+  __except (EXCEPTION_CONTINUE_EXECUTION) {
+    // just keep on truckin'
+  }
 }
 
 
-PThread::PThread(PINDEX stackSize,
-                 AutoDeleteFlag deletion,
-                 Priority priorityLevel,
-                 const PString & name)
-  : m_type(deletion == AutoDeleteThread ? e_IsAutoDelete : e_IsManualDelete)
-  , m_originalStackSize(std::max(stackSize, (PINDEX)65535))
-  , m_threadName(name)
-#if defined(P_WIN_COM)
-  , m_comInitialised(false)
-#endif
+void PThread::Terminate()
 {
-  PAssert(m_originalStackSize > 0, PInvalidParameter);
+  if (PAssert(m_type != Type::IsProcess, "Cannot terminate the process!") &&
+      m_threadHandle.IsValid() &&
+      !m_threadHandle.Wait(0)) {
+    PTRACE(2, "PTLib\tTerminating thread " << *this);
+    TerminateThread(m_threadHandle, 1);
+  }
+}
 
-  m_threadHandle = (HANDLE)_beginthreadex(NULL, m_originalStackSize, MainFunction, this, CREATE_SUSPENDED, &m_threadId);
-  m_uniqueId = m_threadId;
 
-  PAssertOS(m_threadHandle.IsValid());
+void PThread::PrintOn(ostream& strm) const
+{
+  strm << "obj=" << this << " name=\"" << GetThreadName() << "\", ";
+}
 
-  SetPriority(priorityLevel);
 
-  PProcess::Current().InternalThreadStarted(this);
+void PThread::SetPriority(Priority priorityLevel)
+{
+  m_priority.store(priorityLevel);
+
+  static int const priorities[NumPriority] = {
+    THREAD_PRIORITY_LOWEST,
+    THREAD_PRIORITY_BELOW_NORMAL,
+    THREAD_PRIORITY_NORMAL,
+    THREAD_PRIORITY_ABOVE_NORMAL,
+    THREAD_PRIORITY_HIGHEST
+  };
+  if (PAssert(!IsTerminated(), "Operation on terminated thread"))
+    SetThreadPriority(m_threadHandle, priorities[priorityLevel]);
+}
+
+
+PThread::Priority PThread::GetPriority() const
+{
+  PAssert(!IsTerminated(), "Operation on terminated thread");
+
+  switch (GetThreadPriority(m_threadHandle)) {
+    case THREAD_PRIORITY_LOWEST:
+      return LowestPriority;
+    case THREAD_PRIORITY_BELOW_NORMAL:
+      return LowPriority;
+    case THREAD_PRIORITY_NORMAL:
+      return NormalPriority;
+    case THREAD_PRIORITY_ABOVE_NORMAL:
+      return HighPriority;
+    case THREAD_PRIORITY_HIGHEST:
+      return HighestPriority;
+  }
+  PAssertAlways(POperatingSystemError);
+  return LowestPriority;
 }
 
 
@@ -931,154 +995,15 @@ bool PThread::GetTimes(Times & times)
 {
   // Do not use any PTLib functions in here as they could to a PTRACE, and this deadlock
   times.m_name = GetThreadName();
-  times.m_uniqueId = times.m_threadId = m_threadId;
+  times.m_threadId = GetThreadId();
+  times.m_uniqueId = GetUniqueIdentifier();
 
   PWindowsTimes wt;
-  if (!wt.FromThread(GetHandle()))
+  if (!wt.FromThread(m_threadHandle))
     return false;
 
   wt.ToTimes(times);
   return true;
-}
-
-
-void PThread::InternalDestroy()
-{
-  if (m_type == e_IsProcess)
-    m_threadHandle.Detach();
-  else
-    m_threadHandle.Close();
-
-#if defined(P_WIN_COM)
-  if (m_comInitialised)
-    ::CoUninitialize();
-#endif
-}
-
-
-void PThread::Restart()
-{
-  if (!PAssert(m_originalStackSize != 0, "Cannot restart process/external thread") ||
-      !PAssert(IsTerminated(), "Cannot restart running thread"))
-    return;
-
-  InternalDestroy();
-
-  m_threadHandle = (HANDLE)_beginthreadex(NULL, m_originalStackSize, MainFunction, this, 0, &m_threadId);
-  m_uniqueId = m_threadId;
-  PAssertOS(m_threadHandle.IsValid());
-}
-
-
-void PThread::Terminate()
-{
-  if (PAssert(m_type != e_IsProcess, "Cannot terminate the process!") &&
-       m_threadHandle.IsValid() &&
-      !m_threadHandle.Wait(0)) {
-    PTRACE(2, "PTLib\tTerminating thread " << *this);
-    TerminateThread(m_threadHandle, 1);
-  }
-}
-
-
-bool PThread::IsTerminated() const
-{
-  return m_threadHandle.Wait(0);
-}
-
-
-void PThread::WaitForTermination() const
-{
-  WaitForTermination(PMaxTimeInterval);
-}
-
-
-bool PThread::WaitForTermination(const PTimeInterval & maxWait) const
-{
-  if (!m_threadHandle.IsValid())
-    return true;
-
-  if (GetThreadId() == GetCurrentThreadId()) {
-    PTRACE(3, "PTLib\tWaitForTermination short circuited");
-    return true;
-  }
-
-  return m_threadHandle.Wait(maxWait.GetInterval());
-}
-
-
-void PThread::Suspend(bool susp)
-{
-  PAssert(!IsTerminated(), "Operation on terminated thread");
-  if (susp)
-    SuspendThread(m_threadHandle);
-  else
-    Resume();
-}
-
-
-void PThread::Resume()
-{
-  PAssert(!IsTerminated(), "Operation on terminated thread");
-  ResumeThread(m_threadHandle);
-}
-
-
-bool PThread::IsSuspended() const
-{
-  if (GetThreadId() == GetCurrentThreadId())
-    return false;
-
-  SuspendThread(m_threadHandle);
-  return ResumeThread(m_threadHandle) > 1;
-}
-
-
-void PThread::SetPriority(Priority priorityLevel)
-{
-  PAssert(!IsTerminated(), "Operation on terminated thread");
-
-  static int const priorities[NumPriority] = {
-    THREAD_PRIORITY_LOWEST,
-    THREAD_PRIORITY_BELOW_NORMAL,
-    THREAD_PRIORITY_NORMAL,
-    THREAD_PRIORITY_ABOVE_NORMAL,
-    THREAD_PRIORITY_HIGHEST
-  };
-  SetThreadPriority(m_threadHandle, priorities[priorityLevel]);
-}
-
-
-PThread::Priority PThread::GetPriority() const
-{
-  PAssert(!IsTerminated(), "Operation on terminated thread");
-
-  switch (GetThreadPriority(m_threadHandle)) {
-    case THREAD_PRIORITY_LOWEST :
-      return LowestPriority;
-    case THREAD_PRIORITY_BELOW_NORMAL :
-      return LowPriority;
-    case THREAD_PRIORITY_NORMAL :
-      return NormalPriority;
-    case THREAD_PRIORITY_ABOVE_NORMAL :
-      return HighPriority;
-    case THREAD_PRIORITY_HIGHEST :
-      return HighestPriority;
-  }
-  PAssertAlways(POperatingSystemError);
-  return LowestPriority;
-}
-
-
-void PThread::Sleep(const PTimeInterval & delay)
-{
-  ::SleepEx(delay.GetInterval(), TRUE);
-}
-
-
-void PThread::Yield()
-{
-  ::Sleep(0);
 }
 
 

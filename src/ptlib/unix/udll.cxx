@@ -36,14 +36,9 @@
 #include <dlfcn.h>
 
 
-#ifdef P_PTHREADS
 static pthread_mutex_t g_DLLMutex = PTHREAD_MUTEX_INITIALIZER;
 #define LOCK_DLFCN() pthread_mutex_lock(&g_DLLMutex)
 #define UNLOCK_DLFCN() pthread_mutex_unlock(&g_DLLMutex)
-#else
-#define LOCK_DLFCN()
-#define UNLOCK_DLFCN()
-#endif
 
 
 PDynaLink::PDynaLink()

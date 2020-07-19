@@ -105,16 +105,24 @@ class PThread : public PObject
        then the <code>PThread</code> is assumed to be allocated with the new operator and
        may be freed using the delete operator as soon as the thread is
        terminated or executes to completion (usually the latter).
-
-       The stack size argument is highly platform specific and should alamost
-       always be zero for the default.
      */
     PThread(
-      PINDEX stack,  ///< Stack size on some platforms, 0 == default
-      AutoDeleteFlag deletion = AutoDeleteThread,
-        ///< Automatically delete PThread instance on termination of thread.
-      Priority priorityLevel = NormalPriority,  ///< Initial priority of thread.
-      const PString & threadName = PString::Empty() ///< The name of the thread (for Debug/Trace)
+      AutoDeleteFlag deletion = AutoDeleteThread,   ///< Automatically delete PThread instance on termination of thread.
+      Priority priorityLevel = NormalPriority,      ///< Initial priority of thread.
+      PString threadName = PString::Empty()         ///< The name of the thread (for Debug/Trace)
+    );
+    PThread(
+      std::function<void()> mainFunction,           ///< Function to execute
+      PString threadName = PString::Empty(),        ///< The name of the thread (for Debug/Trace)
+      bool startImmediate = true,                   ///< Start execution immediatelty
+      AutoDeleteFlag deletion = NoAutoDeleteThread, ///< Automatically delete PThread instance on termination of thread.
+      Priority priorityLevel = NormalPriority       ///< Initial priority of thread.
+    );
+    P_DEPRECATED PThread(
+      PINDEX,  ///< Stack size, no longer used
+      AutoDeleteFlag deletion = AutoDeleteThread,  ///< Automatically delete PThread instance on termination of thread.
+      Priority priorityLevel = NormalPriority,     ///< Initial priority of thread.
+      PString threadName = PString::Empty()        ///< The name of the thread (for Debug/Trace)
     );
 
     /** Destroy the thread, this simply calls the <code>Terminate()</code> function
@@ -140,12 +148,13 @@ class PThread : public PObject
 
   /**@name Control functions */
   //@{
-    /** Restart a terminated thread using the same stack priority etc that
-       was current when the thread terminated.
-       
-       If the thread is still running then this function is ignored.
+    /** Start a thread.
+        If the thread had run to completion, it is restarted.
+        If the thread is running then this function is ignored.
      */
-    virtual void Restart();
+    virtual bool Start();
+    P_DEPRECATED void Restart() { Start(); }
+    P_DEPRECATED void Resume() { Start(); }
 
     /** Terminate the thread. It is highly recommended that this is not used
        except in abnormal abort situations as not all clean up of resources
@@ -200,52 +209,6 @@ class PThread : public PObject
       PMutex * mutex = NULL,                 ///< Optional mutex to protect setting of thread variable
       bool lock = true                       ///< Mutex should be locked.
     );
-
-    /** Suspend or resume the thread.
-    
-       If <code>susp</code> is <code>true</code> this increments an internal count of
-       suspensions that must be matched by an equal number of calls to
-       <code>Resume()</code> or <code>Suspend(false)</code> before the
-       thread actually executes again.
-
-       If <code>susp</code> is <code>false</code> then this decrements the internal count of
-       suspensions. If the count is <= 0 then the thread will run. Note that
-       the thread will not be suspended until an equal number of
-       <code>Suspend(true)</code> calls are made.
-     */
-    virtual void Suspend(
-      bool susp = true    ///< Flag to suspend or resume a thread.
-    );
-
-    /** Resume thread execution, this is identical to
-       <code>Suspend(false)</code>.
-
-      The Resume() method may be called from within the constructor of a
-      PThread descendant.  However, the <code>Resume()</code> should be in the
-      constructor of the most descendant class. So, if you have a
-      class B (which is descended of PThread), and a class C (which is
-      descended of B), placing the call to <code>Resume()</code> in the constructor of B is
-      unwise.
-
-      If you do place a call to <code>Resume()</code> in the constructor, it
-      should be at the end of the constructor, after all the other
-      initialisation in the constructor.
-
-      The reason the call to <code>Resume()</code> should be at the end of the
-      construction process is simple - you want the thread to start
-      when all the variables in the class have been correctly
-      initialised.
-     */
-    virtual void Resume();
-
-    /** Determine if the thread is currently suspended. This checks the
-       suspension count and if greater than zero returns <code>true</code> for a suspended
-       thread.
-
-       @return
-       <code>true</code> if thread is suspended.
-     */
-    virtual bool IsSuspended() const;
 
     /// Suspend the current thread for the specified amount of time.
     static void Sleep(
@@ -336,7 +299,7 @@ class PThread : public PObject
     );
 
     PPROFILE_EXCLUDE(
-    /** This returns a unique number for the currentthread.
+    /** This returns a unique number for the current thread.
       */
       static PUniqueThreadIdentifier GetCurrentUniqueIdentifier()
     );
@@ -436,7 +399,7 @@ class PThread : public PObject
        Note that the correct way for a thread to terminate is to return from
        this function.
      */
-    virtual void Main() = 0;
+    virtual void Main() { }
 
     /** Get the currently running thread object instance. It is possible, even
        likely, that the smae code may be executed in the context of differenct
@@ -447,7 +410,7 @@ class PThread : public PObject
        @return
        pointer to current thread.
      */
-    static PThread * Current();
+    static PThread* Current();
 
     /** Yield to another thread without blocking.
         This duplicates the implicit thread yield that may occur on some
@@ -467,8 +430,7 @@ class PThread : public PObject
       AutoDeleteFlag deletion = AutoDeleteThread,
         ///< Automatically delete PThread instance on termination of thread.
       Priority priorityLevel = NormalPriority,  ///< Initial priority of thread.
-      const PString & threadName = PString::Empty(), ///< The name of the thread (for Debug/Trace)
-      PINDEX stackSize = 0            ///< Stack size on some platforms, 0 == default
+      const PString & threadName = PString::Empty() ///< The name of the thread (for Debug/Trace)
     );
     static PThread * Create(
       const PNotifier & notifier,     ///< Function to execute in thread.
@@ -476,39 +438,42 @@ class PThread : public PObject
     ) { return Create(notifier, 0, NoAutoDeleteThread, NormalPriority, threadName); }
   //@}
   
-    bool IsAutoDelete() const { return m_type == e_IsAutoDelete; }
+    bool IsAutoDelete() const { return m_type == Type::IsAutoDelete; }
 
   private:
-    PThread(bool isProcess);
-    // Create a new thread instance as part of a <code>PProcess</code> class.
-
     void InternalThreadMain();
-    void InternalPreMain();
-    void InternalPostMain();
-    void InternalDestroy();
+    void PlatformPreMain();
+    void PlatformPostMain();
+    void PlatformDestroy();
+    void PlatformSetThreadName(const char * name);
+    #if P_USE_THREAD_CANCEL
+    static void PlatformCleanup(void *);
+    #endif
 
     friend class PProcess;
     friend class PExternalThread;
     // So a PProcess can get at PThread() constructor but nothing else.
 
-    PThread(const PThread &) : PObject () { }
-    // Empty constructor to prevent copying of thread instances.
-
-    PThread & operator=(const PThread &) { return *this; }
-    // Empty assignment operator to prevent copying of thread instances.
+    PThread(const PThread&) = delete;
+    PThread& operator=(const PThread&) = delete;
 
   protected:
-    enum Type { e_IsAutoDelete, e_IsManualDelete, e_IsProcess, e_IsExternal } m_type;
+    enum class Type { IsAutoDelete, IsManualDelete, IsProcess, IsExternal } m_type;
+    PThread(Type type, PString name, Priority priorityLevel = NormalPriority, std::function<void()> mainFunction = {});
 
-    PINDEX m_originalStackSize;
+    std::function<void()> m_mainFunction;
+    std::atomic<Priority> m_priority;
+    PString               m_threadName; // Give the thread a name for debugging purposes.
+    PCriticalSection      m_threadNameMutex;
 
-    PString m_threadName; // Give the thread a name for debugging purposes.
-    PCriticalSection m_threadNameMutex;
+    mutable std::timed_mutex m_running;
+    std::atomic<void*>       m_nativeHandle;
+    PThreadIdentifier        m_threadId;
+    PUniqueThreadIdentifier  m_uniqueId;
 
-    PThreadIdentifier       m_threadId;
-    PUniqueThreadIdentifier m_uniqueId;
+    static thread_local PThread* sm_currentThread;
 
-// Include platform dependent part of class
+    // Include platform dependent part of class
 #ifdef _WIN32
 #include "msos/ptlib/thread.h"
 #else
@@ -539,10 +504,10 @@ class PThreadMain : public PThread
   public:
     typedef void (*FnType)(); 
     PThreadMain(FnType function, bool autoDel = false)
-      : PThread(10000, autoDel ? PThread::AutoDeleteThread : PThread::NoAutoDeleteThread)
+      : PThread(autoDel ? PThread::AutoDeleteThread : PThread::NoAutoDeleteThread)
       , m_function(function)
     {
-      PThread::Resume();
+      Start();
     }
 
     ~PThreadMain()
@@ -583,10 +548,10 @@ class PThreadFunctor : public PThread
       const char * name = NULL,
       PThread::Priority priority = PThread::NormalPriority
     )
-      : PThread(10000, autoDel ? PThread::AutoDeleteThread : PThread::NoAutoDeleteThread, priority, name)
+      : PThread(autoDel ? PThread::AutoDeleteThread : PThread::NoAutoDeleteThread, priority, name)
       , m_funct(funct)
     {
-      PThread::Resume();
+      this->Start();
     }
 
     ~PThreadFunctor()
@@ -629,11 +594,11 @@ class PThread1Arg : public PThread
       bool autoDel = false,
       const char * name = NULL,
       PThread::Priority priority = PThread::NormalPriority
-    ) : PThread(10000, autoDel ? PThread::AutoDeleteThread : PThread::NoAutoDeleteThread, priority, name)
+    ) : PThread(autoDel ? PThread::AutoDeleteThread : PThread::NoAutoDeleteThread, priority, name)
       , m_function(function)
       , m_arg1(arg1)
     {
-      PThread::Resume();
+      this->Start();
     }
 
     ~PThread1Arg()
@@ -677,12 +642,12 @@ class PThread2Arg : public PThread
       bool autoDel = false,
       const char * name = NULL,
       PThread::Priority priority = PThread::NormalPriority
-    ) : PThread(10000, autoDel ? PThread::AutoDeleteThread : PThread::NoAutoDeleteThread, priority, name)
+    ) : PThread(autoDel ? PThread::AutoDeleteThread : PThread::NoAutoDeleteThread, priority, name)
       , m_function(function)
       , m_arg1(arg1)
       , m_arg2(arg2)
     {
-      PThread::Resume();
+      this->Start();
     }
     
     ~PThread2Arg()
@@ -727,13 +692,13 @@ class PThread3Arg : public PThread
       bool autoDel = false,
       const char * name = NULL,
       PThread::Priority priority = PThread::NormalPriority
-    ) : PThread(10000, autoDel ? PThread::AutoDeleteThread : PThread::NoAutoDeleteThread, priority, name)
+    ) : PThread(autoDel ? PThread::AutoDeleteThread : PThread::NoAutoDeleteThread, priority, name)
       , m_function(function)
       , m_arg1(arg1)
       , m_arg2(arg2)
       , m_arg3(arg3)
     {
-      PThread::Resume();
+      this->Start();
     }
     
     ~PThread3Arg()
@@ -782,14 +747,11 @@ class PThreadObj : public PThread
       bool autoDel = false,
       const char * name = NULL,
       PThread::Priority priority = PThread::NormalPriority
-    ) : PThread(10000,
-                autoDel ? PThread::AutoDeleteThread : PThread::NoAutoDeleteThread,
-                priority,
-                name)
+    ) : PThread(autoDel ? PThread::AutoDeleteThread : PThread::NoAutoDeleteThread, priority, name)
       , m_object(obj)
       , m_function(function)
     {
-      PThread::Resume();
+      this->Start();
     }
 
     ~PThreadObj()
@@ -838,15 +800,12 @@ class PThreadObj1Arg : public PThread
       bool autoDel = false,
       const char * name = NULL,
       PThread::Priority priority = PThread::NormalPriority
-    ) : PThread(10000,
-                autoDel ? PThread::AutoDeleteThread : PThread::NoAutoDeleteThread,
-                priority,
-                name)
+    ) : PThread(autoDel ? PThread::AutoDeleteThread : PThread::NoAutoDeleteThread, priority, name)
       , m_object(obj)
       , m_function(function)
       , m_arg1(arg1)
     {
-      PThread::Resume();
+      this->Start();
     }
 
     ~PThreadObj1Arg()
@@ -880,16 +839,13 @@ class PThreadObj2Arg : public PThread
       bool autoDel = false,
       const char * name = NULL,
       PThread::Priority priority = PThread::NormalPriority
-    ) : PThread(10000,
-                autoDel ? PThread::AutoDeleteThread : PThread::NoAutoDeleteThread,
-                priority,
-                name)
+    ) : PThread(autoDel ? PThread::AutoDeleteThread : PThread::NoAutoDeleteThread, priority, name)
       , m_object(obj)
       , m_function(function)
       , m_arg1(arg1)
       , m_arg2(arg2)
     {
-      PThread::Resume();
+      this->Start();
     }
 
     ~PThreadObj2Arg()

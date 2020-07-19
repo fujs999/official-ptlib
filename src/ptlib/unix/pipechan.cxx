@@ -417,7 +417,6 @@ int PPipeChannel::WaitForTermination(const PTimeInterval & timeout)
   if (m_childPID < 0)
     return m_returnCode;
 
-#if defined(P_PTHREADS)
   PAssert(timeout == 0 || timeout == PMaxTimeInterval, PUnimplementedFunction);
   int result, status;
   while ((result = waitpid(m_childPID, &status, timeout == 0 ? WNOHANG : 0)) != m_childPID) {
@@ -443,11 +442,6 @@ int PPipeChannel::WaitForTermination(const PTimeInterval & timeout)
     PTRACE(3, "Child was stopped with unknown status" << status);
     m_returnCode = 256;
   }
-
-#else
-  if (ConvertOSError(kill(m_childPID, 0)))
-    m_returnCode = PThread::Current()->PXBlockOnChildTerminate(m_childPID, timeout);
-#endif
 
   return m_returnCode;
 }

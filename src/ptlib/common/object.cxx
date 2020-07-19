@@ -445,15 +445,11 @@ PMemoryHeap::PMemoryHeap()
   static PDebugStream debug;
   m_leakDumpStream = &debug;
 #else
-#if defined(P_PTHREADS)
 #ifdef PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP
   pthread_mutex_t recursiveMutex = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
   m_mutex = recursiveMutex;
 #else
  pthread_mutex_init(&m_mutex, NULL);
-#endif
-#elif defined(P_VXWORKS)
-  m_mutex = semMCreate(SEM_Q_FIFO);
 #endif
   m_leakDumpStream = &cerr;
 #endif
@@ -473,10 +469,8 @@ PMemoryHeap::~PMemoryHeap()
 #if defined(_WIN32)
   DeleteCriticalSection(&m_mutex);
   PProcess::Current().WaitOnExitConsoleWindow();
-#elif defined(P_PTHREADS)
+#else
   pthread_mutex_destroy(&m_mutex);
-#elif defined(P_VXWORKS)
-  semDelete((SEM_ID)m_mutex);
 #endif
 }
 
@@ -485,10 +479,8 @@ void PMemoryHeap::Lock()
 {
 #if defined(_WIN32)
   EnterCriticalSection(&m_mutex);
-#elif defined(P_PTHREADS)
+#else
   pthread_mutex_lock(&m_mutex);
-#elif defined(P_VXWORKS)
-  semTake((SEM_ID)m_mutex, WAIT_FOREVER);
 #endif
 }
 
@@ -497,10 +489,8 @@ void PMemoryHeap::Unlock()
 {
 #if defined(_WIN32)
   LeaveCriticalSection(&m_mutex);
-#elif defined(P_PTHREADS)
+#else
   pthread_mutex_unlock(&m_mutex);
-#elif defined(P_VXWORKS)
-  semGive((SEM_ID)m_mutex);
 #endif
 }
 

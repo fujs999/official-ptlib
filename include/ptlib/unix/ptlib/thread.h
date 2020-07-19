@@ -31,8 +31,6 @@
 // PThread
 
   public:
-    int PXBlockOnChildTerminate(int pid, const PTimeInterval & timeout);
-
     int PXBlockOnIO(
       int handle,
       int type,
@@ -41,37 +39,16 @@
 
     void PXAbortBlock() const;
 
-#ifdef P_PTHREADS
-
-  public:
 #ifndef P_HAS_SEMAPHORES
     void PXSetWaitingSemaphore(PSemaphore * sem);
 #endif
-    static bool PX_kill(PThreadIdentifier tid, PUniqueThreadIdentifier uid, int sig);
+    static bool PlatformKill(PThreadIdentifier tid, PUniqueThreadIdentifier uid, int sig);
 
   protected:
-    void PX_StartThread();
-    void PX_Suspended();
-    static void * PX_ThreadMain(void *);
-    static void PX_ThreadEnd(void *);
-
-    std::atomic<Priority> PX_priority;
-    
 #if defined(P_LINUX)
     PTimeInterval     PX_startTick;
     PTimeInterval     PX_endTick;
 #endif
-    mutable pthread_mutex_t   PX_suspendMutex;
-    int               PX_suspendCount;
-    enum PX_states {
-      PX_firstResume,
-      PX_starting,
-      PX_running,
-      PX_finishing,
-      PX_finished
-    };
-    std::atomic<PX_states> PX_state;
-
     std::unique_ptr<PSyncPoint> PX_synchroniseThreadFinish;
 
 #ifndef P_HAS_SEMAPHORES
@@ -79,37 +56,9 @@
     pthread_mutex_t   PX_WaitSemMutex;
 #endif
 
-    int unblockPipe[2];
+    int m_pxUnblockPipe[2];
     friend class PSocket;
-    friend void PX_SuspendSignalHandler(int);
 
-#else // P_PTHREADS
-
-#if defined(__BEOS__)
-
-  protected:
-    static int32 ThreadFunction(void * threadPtr);
-    thread_id mId;
-    int32 mPriority;
-    PINDEX mStackSize;
-    int32 mSuspendCount;
-  public:
-    int unblockPipe[2];
-
-#elif defined(VX_TASKS)
-  public:
-    SEM_ID syncPoint;
-    static void Trace(PThreadIdentifer threadId = 0);
-
-  private:
-    static int ThreadFunction(void * threadPtr);
-    long PX_threadId;
-    int priority;
-    PINDEX originalStackSize;
-
-#endif
-
-#endif // P_PTHREADS
 
 
 // End Of File ////////////////////////////////////////////////////////////////

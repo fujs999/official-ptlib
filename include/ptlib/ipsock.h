@@ -135,10 +135,6 @@ class PIPSocket : public PSocket
         bool operator==(u_long u) const { return  operator==((uint32_t)u); }
         bool operator!=(u_long u) const { return !operator==((uint32_t)u); }
 #endif
-#ifdef P_BEOS
-        bool operator==(in_addr_t a) const { return  operator==((uint32_t)a); }
-        bool operator!=(in_addr_t a) const { return !operator==((uint32_t)a); }
-#endif
         bool operator==(int i) const      { return  operator==((uint32_t)i); }
         bool operator!=(int i) const      { return !operator==((uint32_t)i); }
 

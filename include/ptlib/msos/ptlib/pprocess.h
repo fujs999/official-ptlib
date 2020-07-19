@@ -42,9 +42,7 @@
     bool m_waitOnExitConsoleWindow;
 
   friend PThread * PThread::Current();
-  friend UINT __stdcall PThread::MainFunction(void * thread);
   friend class PServiceProcess;
-  friend class PApplication;
 
   friend PDEFINE_WINMAIN(hInstance, hPrevInstance, lpCmdLine, nCmdShow);
 

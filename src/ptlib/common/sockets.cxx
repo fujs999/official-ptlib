@@ -248,7 +248,7 @@ uint16_t PIPSocket::sockaddr_wrapper::GetPort() const
 }
 
 
-#if (defined(P_PTHREADS) && !defined(P_THREAD_SAFE_LIBC)) || defined(__NUCLEUS_PLUS__)
+#if !defined(P_THREAD_SAFE_LIBC) || defined(__NUCLEUS_PLUS__)
 #define REENTRANT_BUFFER_LEN 1024
 #endif
 
@@ -573,7 +573,7 @@ PIPCacheData * PHostByName::GetHost(const PString & name)
         localErrNo = NETDB_SUCCESS;
     } while (localErrNo == TRY_AGAIN && --retry > 0);
 
-#elif (defined(P_PTHREADS) && !defined(P_THREAD_SAFE_LIBC)) || defined(__NUCLEUS_PLUS__)
+#elif !defined(P_THREAD_SAFE_LIBC) || defined(__NUCLEUS_PLUS__)
 
     char buffer[REENTRANT_BUFFER_LEN];
     struct hostent hostEnt;
@@ -703,7 +703,7 @@ PIPCacheData * PHostByAddr::GetHost(const PIPSocket::Address & addr)
                       &localErrNo);
     } while (localErrNo == TRY_AGAIN && --retry > 0);
 
-#elif (defined(P_PTHREADS) && !defined(P_THREAD_SAFE_LIBC)) || defined(__NUCLEUS_PLUS__) || defined (_WIN32)
+#elif !defined(P_THREAD_SAFE_LIBC) || defined(__NUCLEUS_PLUS__) || defined (_WIN32)
 
 #if defined(P_GETHOSTBYNAME_R)
 
@@ -2494,15 +2494,8 @@ bool PIPDatagramSocket::InternalWriteTo(const Slice * slices, size_t sliceCount,
     return SetErrorValues(BadParameter, EINVAL, LastWriteError);
 
   bool broadcast = addr.IsAny() || addr.IsBroadcast();
-  if (broadcast) {
-#ifdef P_BEOS
-    PAssertAlways("Broadcast option under BeOS is not implemented yet");
+  if (broadcast && !SetOption(SO_BROADCAST, 1))
     return false;
-#else
-    if (!SetOption(SO_BROADCAST, 1))
-      return false;
-#endif
-  }
   
 #ifdef P_MACOSX
   // Mac OS X does not treat 255.255.255.255 as a broadcast address (multihoming / ambiguity issues)
@@ -2549,10 +2542,8 @@ bool PIPDatagramSocket::InternalWriteTo(const Slice * slices, size_t sliceCount,
   
 #endif // P_MACOSX
 
-#ifndef P_BEOS
   if (broadcast)
     SetOption(SO_BROADCAST, 0);
-#endif
 
   return ok;
 }

@@ -48,11 +48,9 @@
 #endif
 
 
-#if defined(P_PTHREADS)
 #define P_PLATFORM_HAS_THREADS
 #ifndef __NUCLEUS_PLUS__
 #include <pthread.h>
-#endif
 #endif
 
 // If we're running effectively 'doze, then it's little endian.  If PoserPC,

@@ -62,6 +62,7 @@
 #include <limits>
 #include <typeinfo>
 #include <memory>
+#include <thread>
 
 #include "atomic.h"
 
@@ -102,6 +103,8 @@ using std::ostream, std::istream, std::ostringstream, std::cerr, std::cout, std:
   #define PASSERTINDEX(idx)
 #endif
 
+typedef std::thread::id PThreadIdentifier;
+#define PNullThreadIdentifier std::thread::id()
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1782,10 +1785,8 @@ class PMemoryHeap {
     void Unlock();
 #if defined(_WIN32)
     CRITICAL_SECTION m_mutex;
-#elif defined(P_PTHREADS)
+#else
     pthread_mutex_t m_mutex;
-#elif defined(P_VXWORKS)
-    void * m_mutex;
 #endif
 
 #else

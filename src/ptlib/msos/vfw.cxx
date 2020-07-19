@@ -473,7 +473,7 @@ bool PVideoInputDevice_VideoForWindows::Close()
  
   Stop();
 
-  ::PostThreadMessage(m_captureThread->GetThreadId(), WM_QUIT, 0, 0L);
+  ::PostThreadMessage(m_captureThread->GetUniqueIdentifier(), WM_QUIT, 0, 0L);
 
   // Some brain dead drivers may hang so we provide a timeout.
   if (!PThread::WaitAndDelete(m_captureThread, 5000))

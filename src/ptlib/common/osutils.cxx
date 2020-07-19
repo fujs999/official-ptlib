@@ -62,9 +62,8 @@ class PExternalThread : public PThread
   PCLASSINFO(PExternalThread, PThread);
   public:
     PExternalThread()
-      : PThread(false)
+      : PThread(Type::IsExternal, "External thread")
     {
-      SetThreadName("External thread");
       PTRACE(5, "Created external thread " << this << ","
                 " thread-id=" << GetCurrentThreadId() << ","
                 " unique-id=" << GetCurrentUniqueIdentifier());
@@ -99,8 +98,7 @@ class PSimpleThread : public PThread
       intptr_t parameter,
       AutoDeleteFlag deletion,
       Priority priorityLevel,
-      const PString & threadName,
-      PINDEX stackSize
+      const PString & threadName
     );
 
     ~PSimpleThread()
@@ -1996,7 +1994,7 @@ bool PArgList::Parse(const char * spec, bool optionsBeforeParams)
   bool hadMinusMinus = m_options.empty();
   while (arg < m_argumentArray.GetSize()) {
     const PString & argStr = m_argumentArray[arg];
-    if (hadMinusMinus || argStr[0] != '-' || argStr[1] == '\0') {
+    if (hadMinusMinus || argStr[0] != '-' || argStr.length() <= 1) {
       // have a parameter string
       m_parameterIndex.SetSize(param+1);
       m_parameterIndex[param++] = arg;
@@ -2063,10 +2061,10 @@ int PArgList::InternalParseOption(const PString & optStr, PINDEX offset, PINDEX 
     if (!opt.m_string.IsEmpty())
       opt.m_string += '\n';
 
-    if (opt.m_type == OptionalString && (offset == P_MAX_INDEX || m_argumentArray[arg][offset] == '\0'))
+    if (opt.m_type == OptionalString && (offset == P_MAX_INDEX || offset == m_argumentArray[arg].length()))
       return 0;
 
-    if (offset != P_MAX_INDEX && m_argumentArray[arg][offset] != '\0') {
+    if (offset != P_MAX_INDEX && offset != m_argumentArray[arg].length()) {
       opt.m_string += m_argumentArray[arg].Mid(offset);
       return 1;
     }
@@ -2360,7 +2358,7 @@ void PProcess::PreInitialise(int c, char ** v)
 PProcess::PProcess(const char * manuf, const char * name,
                    unsigned major, unsigned minor, CodeStatus stat, unsigned patch,
                    bool library, bool suppressStartup, unsigned oemVersion)
-  : PThread(true)
+  : PThread(Type::IsProcess, name)
   , m_library(library)
   , m_terminationValue(0)
   , m_manufacturer(manuf)
@@ -2503,38 +2501,11 @@ bool PProcess::SignalTimerChange()
 
 void PProcess::HouseKeeping()
 {
-  PSimpleTimer cleanExternalThreads;
-  static PTimeInterval const CleanExternalThreadsTime(0, 10);
-
   while (m_keepingHouse) {
 #if P_TIMERS
     PTimeInterval delay = m_timerList->Process();
-    if (delay > CleanExternalThreadsTime)
-      delay = CleanExternalThreadsTime;
-
     m_signalHouseKeeper.Wait(delay);
-#else
-    m_signalHouseKeeper.Wait(CleanExternalThreadsTime);
 #endif
-
-    if (cleanExternalThreads.HasExpired()) {
-      cleanExternalThreads = CleanExternalThreadsTime;
-      if (!m_externalThreads.IsEmpty()) {
-        m_threadMutex.Wait();
-        for (ThreadList::iterator it = m_externalThreads.begin(); it != m_externalThreads.end();) {
-          if (it->IsTerminated())
-            m_externalThreads.erase(it++);
-          else
-            ++it;
-        }
-        m_threadMutex.Signal();
-      }
-    }
-
-    // m_autoDeleteThreads is inherently thread safe
-    PThread * thread = NULL;
-    while (m_autoDeleteThreads.Dequeue(thread, 0))
-      delete thread;
 
     m_RunTimeSignalsQueueMutex.Wait();
     while (m_RunTimeSignalsQueueIn != m_RunTimeSignalsQueueOut) {
@@ -2585,8 +2556,8 @@ PProcess::~PProcess()
   for (ThreadMap::iterator it = m_activeThreads.begin(); it != m_activeThreads.end(); ++it) {
     PThread & thread = *it->second;
     switch (thread.m_type) {
-      case e_IsAutoDelete:
-      case e_IsManualDelete:
+      case Type::IsAutoDelete:
+      case Type::IsManualDelete:
         if (thread.IsTerminated()) {
           PTRACE(5, "Already terminated thread " << thread);
         }
@@ -2595,7 +2566,7 @@ PProcess::~PProcess()
           thread.Terminate();  // With extreme prejudice
         }
         break;
-      case e_IsExternal :
+      case Type::IsExternal :
         PTRACE(5, "Remaining external thread " << thread);
         break;
       default :
@@ -2603,15 +2574,6 @@ PProcess::~PProcess()
     }
   }
   m_activeThreads.clear();
-
-  PTRACE(4, "Terminated all threads, destroying "
-         << m_autoDeleteThreads.size() << " remaining auto-delete threads, and "
-         << m_externalThreads.size() << " remaining external threads.");
-  PThread * thread;
-  while (m_autoDeleteThreads.Dequeue(thread, 0))
-    delete thread;
-
-  m_externalThreads.RemoveAll();
 
   m_threadMutex.Signal();
 
@@ -2725,17 +2687,9 @@ void PProcess::OnThreadEnded(PThread &
 #if PTRACING
   const int LogLevel = 3;
   if (PTrace::CanTrace(LogLevel)) {
-#if !P_PROFILING
     PThread::Times times;
     if (thread.GetTimes(times))
-#endif // P_PROFILING
-    {
-      ostream & trace = PTRACE_BEGIN(LogLevel, "PTLib");
-      trace << "Thread ended: name=\"" << thread.GetThreadName() << "\", ";
-      if (thread.GetThreadId() != (PThreadIdentifier)thread.GetUniqueIdentifier())
-          trace << "id=" << thread.GetUniqueIdentifier() << ", ";
-      trace << times << PTrace::End;
-    }
+      PTRACE_BEGIN(LogLevel, "PTLib") << "Thread ended: " << thread << times << PTrace::End;
   }
 #endif //PTRACING
 }
@@ -3034,27 +2988,11 @@ void PProcess::InternalThreadEnded(PThread * thread)
   if (PAssertNULL(thread) == NULL)
     return;
 
-  // Do the log before mutex and thread being removed from m_activeThreads
-  PTRACE_IF(5, thread->IsAutoDelete(), thread, "Queuing auto-delete of thread " << *thread);
-
   PWaitAndSignal mutex(m_threadMutex);
 
   ThreadMap::iterator it = m_activeThreads.find(thread->GetThreadId());
   if (it != m_activeThreads.end() && it->second == thread)
     m_activeThreads.erase(it); // Not already gone, or re-used the thread ID for new thread.
-
-  // All of this is carefully constructed to avoid race condition deleting "thread"
-  if (thread->IsAutoDelete()) {
-    thread->SetNoAutoDelete();
-#ifdef P_PTHREADS
-    thread->PX_state = PThread::PX_finished;
-#endif
-    m_autoDeleteThreads.Enqueue(thread);
-  }
-#ifdef P_PTHREADS
-  else
-    thread->PX_state = PThread::PX_finished;
-#endif
 }
 
 
@@ -3082,38 +3020,159 @@ bool PProcess::HostSystemURLHandlerInfo::RegisterTypes(const PString & _types, b
 ///////////////////////////////////////////////////////////////////////////////
 // PThread
 
+thread_local PThread * PThread::sm_currentThread;
+
+PThread::PThread(AutoDeleteFlag deletion, Priority priority, PString threadName)
+  : PThread(deletion == AutoDeleteThread ? Type::IsAutoDelete : Type::IsManualDelete, std::move(threadName), priority)
+{
+}
+
+
+PThread::PThread(std::function<void()> mainFunction, PString threadName, bool startImmediate, AutoDeleteFlag deletion, Priority priority)
+  : PThread(deletion == AutoDeleteThread ? Type::IsAutoDelete : Type::IsManualDelete, std::move(threadName), priority, mainFunction)
+{
+  if (startImmediate)
+    Start();
+}
+
+
+PThread::PThread(PINDEX, AutoDeleteFlag deletion, Priority priority, PString threadName)
+  : PThread(deletion == AutoDeleteThread ? Type::IsAutoDelete : Type::IsManualDelete, std::move(threadName), priority)
+{
+}
+
+
+bool PThread::Start()
+{
+  if (!IsTerminated())
+    return false;
+
+  std::thread starter(std::bind(&PThread::InternalThreadMain, this));
+  m_nativeHandle = starter.native_handle();
+  starter.detach(); // Do not require keeping std::thread, it's pretty useless
+
+  PProcess::Current().InternalThreadStarted(this);
+  return true;
+}
+
+
+#if P_USE_THREAD_CANCEL
+static void PThread::PlatformCleanup(void* arg)
+{
+  reinterpret_cast<PThread*>(PAssertNULL(arg))->PlatformPostMain();
+}
+#endif
+
+
 void PThread::InternalThreadMain()
 {
-  InternalPreMain();
+  const std::lock_guard<std::timed_mutex> running(m_running);
+
+  sm_currentThread = this;
+
+  #if P_USE_THREAD_CANCEL
+    // make sure the cleanup routine is called when the thread is cancelled
+    pthread_cleanup_push(&PThread::PlatformCleanup, arg);
+    // Allow cancel to happen any time
+    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+    pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);
+  #endif
+
+  PlatformPreMain();
+  SetThreadName(GetThreadName());
+  SetPriority(m_priority.load());
 
   PProcess & process = PProcess::Current();
 
   process.OnThreadStart(*this);
-  Main();
+
+  if (m_mainFunction)
+    m_mainFunction();
+  else
+    Main();
   process.OnThreadEnded(*this);
 
-  InternalPostMain();
+  #if P_USE_THREAD_CANCEL
+    pthread_cleanup_pop(0);
+  #else
+    PlatformPostMain();
+  #endif
+}
+
+
+bool PThread::IsTerminated() const
+{
+  switch (m_type) {
+    case Type::IsProcess:
+      return false;
+    case Type::IsExternal:
+      return true;
+    default:
+      if (!m_nativeHandle)
+        return true;
+      if (!m_running.try_lock())
+        return false;
+      m_running.unlock();
+      return true;
+  }
+}
+
+
+void PThread::WaitForTermination() const
+{
+  if (GetThreadId() == GetCurrentThreadId()) {
+    PTRACE(3, "PTLib", "WaitForTermination short circuited");
+    return;
+  }
+
+  switch (m_type) {
+    case Type::IsProcess:
+    case Type::IsExternal:
+      break;
+    default:
+      if (m_nativeHandle) {
+        m_running.lock();
+        m_running.unlock();
+      }
+  }
+}
+
+
+bool PThread::WaitForTermination(const PTimeInterval& maxWait) const
+{
+  if (GetThreadId() == GetCurrentThreadId()) {
+    PTRACE(3, "PTLib", "WaitForTermination short circuited");
+    return true;
+  }
+
+  switch (m_type) {
+    case Type::IsProcess:
+      return false;
+    case Type::IsExternal:
+      return true;
+    default:
+      if (!m_nativeHandle)
+        return true;
+      if (!m_running.try_lock_for(maxWait.AsChronoNS()))
+        return false;
+      m_running.unlock();
+      return true;
+  }
 }
 
 
 PThread * PThread::Current()
 {
-  if (!PProcess::IsInitialised())
-    return NULL;
+  if (sm_currentThread)
+    return sm_currentThread;
 
-  PProcess & process = PProcess::Current();
+  if (!PAssert(PProcess::IsInitialised(), PLogicError))
+    std::terminate();
 
-  PWaitAndSignal mutex(process.m_threadMutex);
-  PProcess::ThreadMap::iterator it = process.m_activeThreads.find(GetCurrentThreadId());
-  if (it != process.m_activeThreads.end() && !it->second->IsTerminated())
-    return it->second;
-
-  if (process.m_shuttingDown)
-    return NULL;
-
-  PThread * thread = new PExternalThread;
-  process.m_externalThreads.Append(thread);
-  return thread;
+  static thread_local std::unique_ptr<PThread> m_external;
+  m_external = std::make_unique<PExternalThread>();
+  sm_currentThread = m_external.get();
+  return sm_currentThread;
 }
 
 
@@ -3281,59 +3340,21 @@ PThread::Times & PThread::Times::operator-=(const Times & rhs)
 }
 
 
-void PThread::PrintOn(ostream & strm) const
-{
-  strm << GetThreadName() << '@' << this;
-}
-
-
 PString PThread::GetThreadName() const
 {
   PWaitAndSignal mutex(m_threadNameMutex);
   return m_threadName;
 }
 
-#if defined(_MSC_VER)
-
-static void SetOperatingSystemThreadName(uint32_t threadId, const char * threadName)
-{
-  struct THREADNAME_INFO
-  {
-    uint32_t dwType;      // must be 0x1000
-    LPCSTR szName;     // pointer to name (in user addr space)
-    uint32_t dwThreadID;  // thread ID (-1=caller thread, but seems to set more than one thread's name)
-    uint32_t dwFlags;     // reserved for future use, must be zero
-  } threadInfo = { 0x1000, threadName, threadId, 0 };
-
-  __try
-  {
-    RaiseException(0x406D1388, 0, sizeof(threadInfo)/sizeof(uint32_t), (const ULONG_PTR *)&threadInfo) ;
-    // if not running under debugger exception comes back
-  }
-  __except(EXCEPTION_CONTINUE_EXECUTION)
-  {
-    // just keep on truckin'
-  }
-}
-
-#elif defined(P_PTHREADS) && !defined(P_MACOSX)
-  #if defined(P_MACOSX)
-    // For some bizarre reason Mac OS-X version of this function only has one argument.
-    // So can only be called from the current thread, other calls to SetThreadName() will be ignored
-    #define SetOperatingSystemThreadName(threadId, threadName) \
-                    if (pthread_self() == threadId) pthread_setname_np(threadId, threadName.Left(15))
-  #else
-    #define SetOperatingSystemThreadName(threadId, threadName) pthread_setname_np(threadId, threadName.Left(15))
-  #endif
-#else
-
-#define SetOperatingSystemThreadName(p1,p2)
-
-#endif // defined(_DEBUG) && defined(_MSC_VER)
 
 void PThread::SetThreadName(const PString & name)
 {
   PWaitAndSignal mutex(m_threadNameMutex);
+
+  if (IsTerminated()) {
+    m_threadName = name;
+    return;
+  }
 
   PUniqueThreadIdentifier uniqueId = GetUniqueIdentifier();
   if (name.Find('%') != P_MAX_INDEX)
@@ -3351,33 +3372,37 @@ void PThread::SetThreadName(const PString & name)
   }
 
   if (&PProcess::Current() != this)
-    SetOperatingSystemThreadName(GetThreadId(), m_threadName);
+    PlatformSetThreadName(m_threadName.Left(15));
 }
  
 
 void PThread::SetAutoDelete(AutoDeleteFlag deletion)
 {
+  static thread_local std::unique_ptr<PThread> autoDeleter;
+
   switch (m_type) {
-    case e_IsAutoDelete :
+    case Type::IsAutoDelete :
       if (deletion == AutoDeleteThread)
         return;
+      autoDeleter.reset(this);
       break;
 
-    case e_IsManualDelete :
+    case Type::IsManualDelete :
       if (deletion != AutoDeleteThread)
         return;
+      autoDeleter.release();
       break;
 
-    case e_IsProcess :
+    case Type::IsProcess :
       PAssert(deletion != AutoDeleteThread, PInvalidParameter);
       return;
 
-    case e_IsExternal :
+    case Type::IsExternal :
       PAssert(deletion == AutoDeleteThread, PInvalidParameter);
       return;
   }
 
-  m_type = deletion == AutoDeleteThread ? e_IsAutoDelete : e_IsManualDelete;
+  m_type = deletion == AutoDeleteThread ? Type::IsAutoDelete : Type::IsManualDelete;
 }
 
 
@@ -3385,15 +3410,13 @@ PThread * PThread::Create(const PNotifier & notifier,
                           intptr_t parameter,
                           AutoDeleteFlag deletion,
                           Priority priorityLevel,
-                          const PString & threadName,
-                          PINDEX stackSize)
+                          const PString & threadName)
 {
   PThread * thread = new PSimpleThread(notifier,
                                        parameter,
                                        deletion,
                                        priorityLevel,
-                                       threadName,
-                                       stackSize);
+                                       threadName);
   if (deletion != AutoDeleteThread)
     return thread;
 
@@ -3424,12 +3447,6 @@ bool PThread::WaitAndDelete(PThread * & threadToDelete, const PTimeInterval & ma
     return false;
   }
 
-  if (thread->IsSuspended()) {
-    // Ended before it started
-    delete thread;
-    return false;
-  }
-
   PTRACE(4, thread, "Waiting for thread " << *thread << " to terminate in " << maxWait << " seconds");
   if (thread->WaitForTermination(maxWait)) {
     // Orderly exit
@@ -3455,16 +3472,14 @@ bool PThread::WaitAndDelete(PThread * & threadToDelete, const PTimeInterval & ma
 
 PThread::~PThread()
 {
-  if (m_type != e_IsProcess && m_type != e_IsExternal && !WaitForTermination(1000)) {
+  if (m_type != Type::IsProcess && m_type != Type::IsExternal && !WaitForTermination(1000)) {
     Terminate();
     WaitForTermination(1000);
   }
 
-  PTRACE(5, "Destroying thread " << this << ' ' << m_threadName << ", id=" << m_threadId);
+  PlatformDestroy();
 
-  InternalDestroy();
-
-  if (m_type != e_IsProcess)
+  if (m_type != Type::IsProcess)
     PProcess::Current().InternalThreadEnded(this);
 }
 
@@ -3475,13 +3490,12 @@ PSimpleThread::PSimpleThread(const PNotifier & notifier,
                              intptr_t param,
                              AutoDeleteFlag deletion,
                              Priority priorityLevel,
-                             const PString & threadName,
-                             PINDEX stackSize)
-  : PThread(stackSize, deletion, priorityLevel, threadName),
+                             const PString & threadName)
+  : PThread(deletion, priorityLevel, threadName),
     callback(notifier),
     parameter(param)
 {
-  Resume();
+  Start();
 }
 
 

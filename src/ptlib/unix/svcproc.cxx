@@ -208,7 +208,7 @@ int PServiceProcess::InitialiseService()
   PString progName = GetFile().GetTitle();
 
   args.Parse("[Execution:]"
-#if !defined(BE_THREADS) && !defined(P_RTEMS)
+#if !defined(P_RTEMS)
              "d-daemon.           run as a daemon\n"
 #endif
              "x-execute.          execute as a normal program\n"
@@ -460,7 +460,7 @@ int PServiceProcess::InitialiseService()
 
   PSetErrorStream(new PSystemLog(PSystemLog::StdError));
 
-#if !defined(BE_THREADS) && !defined(P_RTEMS)
+#if !defined(P_RTEMS)
 
   // Run as a daemon, ie fork
   if (!pidfilename.IsEmpty()) {
@@ -513,7 +513,7 @@ int PServiceProcess::InitialiseService()
 
   pidFileToRemove = pidfilename;
 
-#endif // !BE_THREADS && !P_RTEMS
+#endif // !P_RTEMS
 #endif // !P_VXWORKS
   return -1;
 }

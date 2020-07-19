@@ -130,8 +130,8 @@ class StringHolder
       PCLASSINFO(TestThread, PThread);
       public:
         TestThread(StringHolder & _holder) 
-        : PThread(1000,NoAutoDeleteThread), holder(_holder)
-        { Resume(); }
+        : PThread(NoAutoDeleteThread), holder(_holder)
+        { Start(); }
 
         void Main() 
         { int count = 0; while (!finishFlag && count < COUNT_MAX) holder.TestString(count++, "sub"); }

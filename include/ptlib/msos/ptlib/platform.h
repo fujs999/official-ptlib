@@ -207,8 +207,6 @@ extern "C" PDEFINE_WINMAIN(hInstance, hPrevInstance, lpCmdLine, nCmdShow);
 
 #undef Yield
 
-#define PNullThreadIdentifier ((PThreadIdentifier)0)
-typedef UINT  PThreadIdentifier;
 #define P_THREAD_ID_FMT "%u"
 typedef UINT  PUniqueThreadIdentifier;
 typedef uint32_t PProcessIdentifier;

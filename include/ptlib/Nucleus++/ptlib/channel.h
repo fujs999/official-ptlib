@@ -52,12 +52,10 @@
 
     int  PXClose();
 
-#ifdef P_PTHREADS
 #define P_IO_BREAK_SIGNAL SIGPROF
   protected:
     PMutex    PX_readMutex;
     pthread_t PX_readThreadId;
-#endif
 };
 
 #endif

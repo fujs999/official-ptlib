@@ -32,7 +32,6 @@
 // PProcess
 
   public:
-    friend class PApplication;
     friend class PServiceProcess;
 
     ~PProcess();

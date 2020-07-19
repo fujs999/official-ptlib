@@ -578,6 +578,15 @@ PINLINE PThreadIdentifier PThread::GetThreadId() const
 PINLINE PUniqueThreadIdentifier PThread::GetUniqueIdentifier() const
   { return m_uniqueId; }
 
+PINLINE PThreadIdentifier PThread::GetCurrentThreadId()
+  { return std::this_thread::get_id(); }
+
+PINLINE void PThread::Sleep(const PTimeInterval& delay)
+  { std::this_thread::sleep_for(delay.AsChronoNS()); }
+
+PINLINE void PThread::Yield()
+  { std::this_thread::yield(); }
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // PProcess

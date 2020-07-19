@@ -215,10 +215,10 @@ class PDebugDLL : public PDynaLink
 
       // The thread information.
       HANDLE hThread;
-      if (id == PNullThreadIdentifier || id == GetCurrentThreadId())
+      if (id == PNullThreadIdentifier || id == PThread::GetCurrentThreadId())
         hThread = GetCurrentThread();
       else {
-        hThread = OpenThread(THREAD_QUERY_INFORMATION|THREAD_GET_CONTEXT|THREAD_SUSPEND_RESUME, FALSE, id);
+        hThread = OpenThread(THREAD_QUERY_INFORMATION|THREAD_GET_CONTEXT|THREAD_SUSPEND_RESUME, FALSE, *reinterpret_cast<DWORD *>(&id));
         if (hThread == NULL) {
           uint32_t err = ::GetLastError();
           strm << "\n    No thread: id=" << id << " (0x" << std::hex << id << std::dec << "), error=" << err;
@@ -234,7 +234,7 @@ class PDebugDLL : public PDynaLink
         memset(pThreadContext, 0, sizeof(threadContext));
         pThreadContext->ContextFlags = CONTEXT_FULL;
 
-        if (id == PNullThreadIdentifier || id == GetCurrentThreadId()) {
+        if (id == PNullThreadIdentifier || id == PThread::GetCurrentThreadId()) {
           RtlCaptureContext(pThreadContext);
           #if P_64BIT
           framesToSkip += 2;

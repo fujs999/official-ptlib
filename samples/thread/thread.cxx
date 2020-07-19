@@ -44,9 +44,9 @@ class MyThread1 : public PThread
 {
   PCLASSINFO(MyThread1, PThread);
   public:
-    MyThread1() : PThread(1000,NoAutoDeleteThread)
+    MyThread1() : PThread(NoAutoDeleteThread)
     {
-      Resume(); // start running this thread when it is created.
+      Start(); // start running this thread when it is created.
     }
 
     void Main() {
@@ -78,57 +78,67 @@ class MyThread2 : public PThread
 {
   PCLASSINFO(MyThread2, PThread);
   public:
-    MyThread2() : PThread(1000,NoAutoDeleteThread) {
-      exitFlag = false;
+    MyThread2()
+      : PThread(NoAutoDeleteThread)
+      , m_exitFlag(false)
+    {
     }
 
     void Main() {
-      while (1) {
+      for (;;) {
         // Check if we need to exit
-        exitMutex.Wait();
-        if (exitFlag == true) {
-          exitMutex.Signal();
+        if (m_exitFlag.load()) {
           break;
         }
-        exitMutex.Signal();
 
         // Display the number 2, then sleep for a short time
-        printf("2 "); fflush(stdout);
-	    Sleep(10); // sleep 10ms
+        printf("2 ");
+        fflush(stdout);
+	Sleep(10); // sleep 10ms
       }
     }
 
-    void Stop() {
-      // set the exit flag. On the next iteration, the thread's
-      // Main() function will exit cleanly.
-      exitMutex.Wait();
-      exitFlag = true;
-      exitMutex.Signal();
+    void Stop()
+    {
+      m_exitFlag.store(true);
     }
 
     protected:
-      PMutex exitMutex;
-      bool exitFlag;
+      atomic<bool> m_exitFlag;
 };
 
 
-void LockAthenB(PMutex & a, PMutex & b)
+void ExternalThread()
 {
-  PTRACE(1, "Locking A then B");
-  a.Wait();
-  b.Wait();
-  PTRACE(1, "Locked A then B");
-  PThread::Sleep(60000);
+  PThread::Sleep(1000);
+  cout << "External thread: " << PThread::Current() << endl;
+  PThread::Sleep(1000);
 }
 
 
-void LockBthenA(PMutex & a, PMutex & b)
+void LockAthenB(PMutex * a, PMutex * b)
 {
-  PTRACE(1, "Locking B then A");
-  b.Wait();
-  a.Wait();
-  PTRACE(1, "Locked B then A");
-  PThread::Sleep(60000);
+  cout << "Locking A then B" << endl;
+  a->Wait();
+  b->Wait();
+  cout << "Locked A then B" << endl;
+  PThread::Sleep(16000);
+  b->Signal();
+  a->Signal();
+  cout << "Unocked A then B" << endl;
+}
+
+
+void LockBthenA(PMutex * a, PMutex * b)
+{
+  cout << "Locking B then A" << endl;
+  b->Wait();
+  a->Wait();
+  cout << "Locked B then A" << endl;
+  PThread::Sleep(1000);
+  b->Signal();
+  a->Signal();
+  cout << "Unocked B then A" << endl;
 }
 
 
@@ -150,74 +160,60 @@ void ThreadTest::Main()
   cout << "Thread Test Program" << endl;
 
   PArgList & args = GetArguments();
-  args.Parse("d-deadlock. Test deadlock detection");
-
-  if (args.HasOption('d')) {
-    cout << "Testing deadlock detection." << endl;
-    PTRACE_INITIALISE(3, "stderr");
-    PTimedMutex a, b;
-    PThread * th1 = new PThread2Arg<PMutex &, PMutex &>(a, b, LockAthenB);
-    PThread * th2 = new PThread2Arg<PMutex &, PMutex &>(a, b, LockBthenA);
-    Sleep(30000);
-    delete th1;
-    delete th2;
-    return;
-  }
+  args.Parse(PTRACE_ARGLIST);
+  PTRACE_INITIALISE(args);
 
   cout << "This program will display the following:" << endl;
   cout << "             2 seconds of 1 1 1 1 1..." << endl;
   cout << " followed by 2 seconds of 1 2 1 2 1 2 1 2 1 2..." << endl;
   cout << " followed by 2 seconds of 2 2 2 2 2..." << endl;
-  cout << " followed by 2 seconds of 1 2 1 2 1 2 1 2 1 2..." << endl;
-  cout << endl;
-  cout << "It tests thread creation, suspend and resume functions." << endl;
   cout << endl;
 
   // Create the threads
   MyThread1 * mythread1 = new MyThread1();
   MyThread2 * mythread2 = new MyThread2();
 
-  // Thread 1 should now be running, as there is a Resume() function
+  // Thread 1 should now be running, as there is a Start() function
   // in the thread constructor.
   // Thread 2 should be suspended.
   // Sleep for three seconds. Only thread 1 will be running.
   // Display will show "1 1 1 1 1 1 1..."
-  sleep(2);
+  Sleep(2000);
 
 
   // Start the second thread.
   // Both threads should be running
   // Sleep for 3 seconds, allowing the threads to run.
   // Display will show "1 2 1 2 1 2 1 2 1 2..."
-  mythread2->Resume();
-  sleep(2);
-
-
-  // Suspend thread 1.
-  // Sleep for 3 seconds. Only thread 2 should be running.
-  // Display will show "2 2 2 2 2 2 2..."
-  mythread1->Suspend();
-  sleep(2);
-
-
-  // Resume thread 1.
-  // Sleep for 3 seconds. Both threads should be running.
-  // Display will show "1 2 1 2 1 2 1 2 1 2..."
-  mythread1->Resume();
-  sleep(2);
-
+  mythread2->Start();
+  Sleep(2000);
 
   // Clean up
   mythread1->Stop();
   mythread1->WaitForTermination();
-  cout << "Thread 1 terminated" << endl;
+
+  Sleep(2000);
 
   mythread2->Stop();
   mythread2->WaitForTermination();
-  cout << "Thread 2 terminated" << endl;
+
+  cout << endl;
 
   delete mythread1;
   delete mythread2;
 
+  cout << "Testing external thread." << endl;
+  std::thread* ext = new std::thread(&ExternalThread);
+  ext->join();
+  delete ext;
+
+  cout << "Testing deadlock detection." << endl;
+  PTimedMutex a, b;
+  PThread* th1 = new PThread(std::bind(LockAthenB, &a, &b));
+  PThread* th2 = new PThread(std::bind(LockBthenA, &a, &b));
+  Sleep(20000);
+  cout << "Deleting deadlock threads." << endl;
+  delete th1;
+  delete th2;
 }
 

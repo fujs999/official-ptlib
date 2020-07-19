@@ -114,7 +114,6 @@ void SNMPSrv::Main()
 {
   // You can set level to 4 for more debug info
   PTrace::SetLevel(1);
-  PThread::Suspend();
 }
 
 SNMPSrv::SNMPSrv()

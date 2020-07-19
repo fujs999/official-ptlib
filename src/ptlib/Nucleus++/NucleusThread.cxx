@@ -76,87 +76,8 @@ void PThread::Terminate()
   
   }
 
+
 #if !P_USE_INLINES
-
-// What a pfaff for something that's easy...
-// Still, at last I've written a function I'm pretty confident will work!
-bool PThread::IsTerminated() const
-  {
-#ifdef __NUCLEUS_MNT__
-  cout << "q";
-#else
-  printf("q");
-#endif
-  STATUS stat = NucleusTaskInfo->Update();
-  PAssert(stat == NU_SUCCESS, "Invalid Task Pointer on Termination Check");
-  return ((NucleusTaskInfo->taskStatus == NU_TERMINATED) || (NucleusTaskInfo->taskStatus == NU_FINISHED));
-  }
-#endif
-
-void PThread::WaitForTermination() const
-  {
-  while (!IsTerminated())
-    {
-    Current()->Sleep(10);
-    }
-  }
-
-bool PThread::WaitForTermination(const PTimeInterval & maxWait) const
-  {
-  PTimer timeout = maxWait;
-  while (!IsTerminated())
-    {
-    if (timeout == 0)
-      {
-      return false;
-      }
-    Current()->Sleep(10);
-    }
-  return true;
-  }
-
-void PThread::Suspend(bool susp)
-  {
-  STATUS stat;
-  if (susp)
-    {
-    if (++n_suspendCount != 1)
-      {
-      stat = NucleusTask->Suspend();
-      PAssert(stat == NU_SUCCESS, "Invalid Task Pointer on suspend");
-      }
-    }
-  else
-    {
-    Resume();
-    }
-  }
-  
-#if !P_USE_INLINES
-void PThread::Resume()
-  {
-  switch (--n_suspendCount)
-    {
-    case -1:
-      PAssertAlways("Resuming thread that hasn't been suspended!");
-      n_suspendCount = 0;
-      break;
-    case 0:
-        {
-        STATUS  stat = NucleusTask->Resume();
-        PAssert(stat == NU_SUCCESS, "Invalid Task Pointer on resume");
-        }
-      break;
-    default:  // Already handled in switch statement
-      break; 
-    }
-  }
-
-bool PThread::IsSuspended() const
-  {
-  return (n_suspendCount != 0);
-  }
-
 void PThread::SetPriority(Priority priorityLevel)
   {
   ((Task *)(NucleusTask))->ChangePriority(priorities[priorityLevel]);
@@ -190,11 +111,6 @@ PThread * PThread::Current()
   return ((pwNUTask *)Task::Current())->AssociatedPThread;
   }
 #endif
-
-void PThread::Yield()
-  {
-  Task::Relinquish();
-  }
 
 void PThread::Sleep(const PTimeInterval & time)
   {

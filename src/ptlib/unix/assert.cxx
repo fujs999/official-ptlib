@@ -190,110 +190,102 @@
   }
 
 
-    #if P_PTHREADS
-      struct PWalkStackInfo
-      {
-        enum { OtherThreadSkip = 6 };
-        std::timed_mutex m_mainMutex;
-        PThreadIdentifier m_threadId;
-        PUniqueThreadIdentifier m_uniqueId;
-        StackAddresses    m_addresses;
-        int               m_addressCount;
-        std::mutex        m_condMutex;
-        std::condition_variable m_condVar;
-        PTime             m_signalSentTime;
+    struct PWalkStackInfo
+    {
+      enum { OtherThreadSkip = 6 };
+      std::timed_mutex m_mainMutex;
+      PThreadIdentifier m_threadId;
+      PUniqueThreadIdentifier m_uniqueId;
+      StackAddresses    m_addresses;
+      int               m_addressCount;
+      std::mutex        m_condMutex;
+      std::condition_variable m_condVar;
+      PTime             m_signalSentTime;
 
-        PWalkStackInfo()
-          : m_threadId(PNullThreadIdentifier)
-          , m_uniqueId(0)
-          , m_addressCount(-1)
-          , m_signalSentTime(0)
-        {
+      PWalkStackInfo()
+        : m_threadId(PNullThreadIdentifier)
+        , m_uniqueId(0)
+        , m_addressCount(-1)
+        , m_signalSentTime(0)
+      {
+      }
+
+      void WalkOther(ostream & strm, PThreadIdentifier tid, PUniqueThreadIdentifier uid, bool noSymbols)
+      {
+        DEBUG_CERR("WalkOther: " << PThread::GetIdentifiersAsString(tid, uid));
+
+        if (tid == 0) {
+          strm << "\n\tStack trace WalkOther with zero thread ID.";
+          return;
         }
 
-        void WalkOther(ostream & strm, PThreadIdentifier tid, PUniqueThreadIdentifier uid, bool noSymbols)
-        {
-          DEBUG_CERR("WalkOther: " << PThread::GetIdentifiersAsString(tid, uid));
+        auto when = std::chrono::steady_clock::now() + std::chrono::seconds(2);
 
-          if (tid == 0) {
-            strm << "\n\tStack trace WalkOther with zero thread ID.";
-            return;
-          }
+        if (!m_mainMutex.try_lock_until(when)) {
+          strm << "\n\tStack trace system is too busy to WalkOther";
+          DEBUG_CERR("WalkOther: mutex timeout");
+          return;
+        }
 
-          auto when = std::chrono::steady_clock::now() + std::chrono::seconds(2);
-
-          if (!m_mainMutex.try_lock_until(when)) {
-            strm << "\n\tStack trace system is too busy to WalkOther";
-            DEBUG_CERR("WalkOther: mutex timeout");
-            return;
-          }
-
-          m_threadId = tid;
-          m_uniqueId = uid;
-          m_addressCount = -1;
-          m_addresses.resize(InternalMaxStackWalk+OtherThreadSkip);
-          m_signalSentTime.SetCurrentTime();
-          if (!PThread::PX_kill(tid, uid, PProcess::WalkStackSignal)) {
-            strm << "\n\tThread " << PThread::GetIdentifiersAsString(tid, uid) << " is no longer running";
-            m_mainMutex.unlock();
-            return;
-          }
-
-          try {
-            std::unique_lock<std::mutex> lock(m_condMutex);
-            if (!m_condVar.wait_until(lock, when, [this]() { return m_addressCount >= 0; }))
-              strm << "\n\tNo response getting stack trace for " << PThread::GetIdentifiersAsString(tid, uid);
-            else
-              InternalWalkStack(strm, OtherThreadSkip, m_addresses, noSymbols);
-          }
-          catch (...) {
-            strm << "\n\tError getting stack trace for " << PThread::GetIdentifiersAsString(tid, uid);
-          }
-
-          m_threadId = PNullThreadIdentifier;
-          m_uniqueId = 0;
-
+        m_threadId = tid;
+        m_uniqueId = uid;
+        m_addressCount = -1;
+        m_addresses.resize(InternalMaxStackWalk+OtherThreadSkip);
+        m_signalSentTime.SetCurrentTime();
+        if (!PThread::PlatformKill(tid, uid, PProcess::WalkStackSignal)) {
+          strm << "\n\tThread " << PThread::GetIdentifiersAsString(tid, uid) << " is no longer running";
           m_mainMutex.unlock();
-          DEBUG_CERR("WalkOther: done");
+          return;
         }
 
-        void OthersWalk()
-        {
-          PThreadIdentifier tid = PThread::GetCurrentThreadId();
-          PUniqueThreadIdentifier uid = PThread::GetCurrentUniqueIdentifier();
-
-          if (!m_signalSentTime.IsValid()) {
-            PTRACE(0, "StackWalk", "No stack walk in operation, unexpected signal " << PProcess::WalkStackSignal);
-            return;
-          }
-
-          if (m_threadId == PNullThreadIdentifier) {
-            PTRACE(0, "StackWalk", "Thread took too long (" << m_signalSentTime.GetElapsed() << "s) to respond to signal.");
-            return;
-          }
-
-          if (m_threadId != tid || (m_uniqueId != 0 && m_uniqueId != uid)) {
-            PTRACE(0, "StackWalk", "Signal received on " << PThread::GetIdentifiersAsString(tid, uid) <<
-                                   " but expected " << PThread::GetIdentifiersAsString(m_threadId, m_uniqueId));
-            return;
-          }
-
-          int addressCount = backtrace(m_addresses.data(), m_addresses.size());
-          m_addresses.resize(addressCount < 0 ? 0 : addressCount);
-
-          m_condMutex.lock();
-          m_addressCount = m_addresses.size();
-          m_condVar.notify_one();
-          m_condMutex.unlock();
+        try {
+          std::unique_lock<std::mutex> lock(m_condMutex);
+          if (!m_condVar.wait_until(lock, when, [this]() { return m_addressCount >= 0; }))
+            strm << "\n\tNo response getting stack trace for " << PThread::GetIdentifiersAsString(tid, uid);
+          else
+            InternalWalkStack(strm, OtherThreadSkip, m_addresses, noSymbols);
         }
-      };
-    #else // P_PTHREADS
-      struct PWalkStackInfo
+        catch (...) {
+          strm << "\n\tError getting stack trace for " << PThread::GetIdentifiersAsString(tid, uid);
+        }
+
+        m_threadId = PNullThreadIdentifier;
+        m_uniqueId = 0;
+
+        m_mainMutex.unlock();
+        DEBUG_CERR("WalkOther: done");
+      }
+
+      void OthersWalk()
       {
-        void WalkOther(ostream &, PThreadIdentifier, bool) { }
-        void OthersWalk() { }
-      };
-    #endif // P_PTHREADS
+        PThreadIdentifier tid = PThread::GetCurrentThreadId();
+        PUniqueThreadIdentifier uid = PThread::GetCurrentUniqueIdentifier();
+
+        if (!m_signalSentTime.IsValid()) {
+          PTRACE(0, "StackWalk", "No stack walk in operation, unexpected signal " << PProcess::WalkStackSignal);
+          return;
+        }
+
+        if (m_threadId == PNullThreadIdentifier) {
+          PTRACE(0, "StackWalk", "Thread took too long (" << m_signalSentTime.GetElapsed() << "s) to respond to signal.");
+          return;
+        }
+
+        if (m_threadId != tid || (m_uniqueId != 0 && m_uniqueId != uid)) {
+          PTRACE(0, "StackWalk", "Signal received on " << PThread::GetIdentifiersAsString(tid, uid) <<
+                                  " but expected " << PThread::GetIdentifiersAsString(m_threadId, m_uniqueId));
+          return;
+        }
+
+        int addressCount = backtrace(m_addresses.data(), m_addresses.size());
+        m_addresses.resize(addressCount < 0 ? 0 : addressCount);
+
+        m_condMutex.lock();
+        m_addressCount = m_addresses.size();
+        m_condVar.notify_one();
+        m_condMutex.unlock();
+      }
+    };
 
     static PWalkStackInfo s_otherThreadStack;
 
@@ -359,22 +351,6 @@
 
   static bool AssertAction(int, const char *)
   {
-    return false;
-  }
-
-#elif defined(P_BEOS)
-
-  static const char ActionMessage[] = "Entering debugger";
-
-  static bool AssertAction(int c, const char * msg)
-  {
-    // Pop up the debugger dialog that gives the user the necessary choices
-    // "Ignore" is not supported on BeOS but you can instruct the
-    // debugger to continue executing.
-    // Note: if you choose "debug" you get a debug prompt. Type bdb to
-    // start the Be Debugger.
-    debugger(msg);
-
     return false;
   }
 

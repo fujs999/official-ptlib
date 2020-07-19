@@ -73,7 +73,7 @@ extern "C" {\
 
 /*$MACRO PDECLARE_PROCESS(cls,ancestor,manuf,name,major,minor,status,build)
    This macro is used to declare the components necessary for a user PWLib
-   process. This will declare the PProcess descendent class, eg PApplication,
+   process. This will declare the PProcess descendent class, eg PMyApp,
    and create an instance of the class. See the <code>PCREATE_PROCESS</code> macro
    for more details.
  */
@@ -93,13 +93,12 @@ extern "C" {\
    "programme" in the  context of the operating system. Note that there can
    only be one instance of a PProcess class in a given programme.
    
-   The instance of a PProcess or its GUI descendent <code>PApplication</code> is
-   usually a static variable created by the application writer. This is the
-   initial "anchor" point for all data structures in an application. As the
-   application writer never needs to access the standard system
-   <code>main()</code> function, it is in the library, the programmes
-   execution begins with the virtual function <code>PThread::Main()</code> on a
-   process.
+   The instance of a derived class from PProcess is usually a static variable
+   created by the application writer. This is the initial "anchor" point for
+   all data structures in an application. As the application writer never
+   needs to access the standard system <code>main()</code> function, it is in
+   the library, the programmes execution begins with the virtual function
+   <code>PThread::Main()</code> on a process.
  */
 class PProcess : public PThread
 {
@@ -688,10 +687,6 @@ class PProcess : public PThread
     ThreadMap m_activeThreads;
     void InternalThreadStarted(PThread * thread);
     void InternalThreadEnded(PThread * thread);
-    
-    typedef PList<PThread> ThreadList;
-    ThreadList m_externalThreads;
-    PSyncQueue<PThread*> m_autoDeleteThreads;
 
     atomic<bool>   m_keepingHouse;
     PThread      * m_houseKeeper; // Thread for doing timers, thread clean up etc.

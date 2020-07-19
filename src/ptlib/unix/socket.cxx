@@ -254,10 +254,8 @@ PChannel::Errors PSocket::Select(SelectList & read,
   PINDEX i, j;
   int result = -1;
   Errors lastError = NoError;
-#if P_PTHREADS
   PThread * unblockThread = PThread::Current();
   int unblockPipe = unblockThread->unblockPipe[0];
-#endif
   SelectList * list[3] = { &read, &write, &except };
   PSocket * firstSocket = NULL;
 
@@ -267,13 +265,9 @@ PChannel::Errors PSocket::Select(SelectList & read,
   ::pollfd * pfd = (::pollfd *)alloca(pfdSize);
   memset(pfd, 0, pfdSize);
 
-#if P_PTHREADS
   PINDEX count = 1;
   pfd[0].fd = unblockPipe;
   pfd[0].events = POLLIN;
-#else
-  PIDNEX count = 0;
-#endif
 
   for (i = 0; i < 3; i++) {
     for (SelectList::iterator it = list[i]->begin(); it != list[i]->end(); it++) {
@@ -291,13 +285,11 @@ PChannel::Errors PSocket::Select(SelectList & read,
       static int const EventBit[3] = { POLLIN | POLLNVAL, POLLOUT | POLLNVAL, POLLERR | POLLNVAL };
       pfd[j].events |= EventBit[i];
 
-#if P_PTHREADS
       PSocket & socket = *it;
       socket.px_selectMutex[i].Wait();
       socket.px_threadMutex.Wait();
       socket.px_selectThread[i] = unblockThread;
       socket.px_threadMutex.Signal();
-#endif
     }
   }
 
@@ -308,7 +300,6 @@ PChannel::Errors PSocket::Select(SelectList & read,
   } while (result < 0 && errno == EINTR);
 
   if (firstSocket->ConvertOSError(result)) {
-#if P_PTHREADS
     if (pfd[0].revents != 0) {
       PTRACE2(6, NULL, "Select unblocked fd=" << unblockPipe);
       char ch;
@@ -317,7 +308,6 @@ PChannel::Errors PSocket::Select(SelectList & read,
       );
       lastError = Interrupted;
     }
-#endif
   }
   else
     lastError = firstSocket->GetErrorCode();
@@ -370,21 +360,17 @@ PChannel::Errors PSocket::Select(SelectList & read,
         if (firstSocket == NULL)
           firstSocket = &socket;
       }
-#if P_PTHREADS
       socket.px_selectMutex[i].Wait();
       socket.px_threadMutex.Wait();
       socket.px_selectThread[i] = unblockThread;
       socket.px_threadMutex.Signal();
-#endif
     }
   }
 
   if (lastError == NoError) {
-#if P_PTHREADS
     fds[0] += unblockPipe;
     if (unblockPipe > maxfds)
       maxfds = unblockPipe;
-#endif
 
     P_timeval tval = timeout;
     do {
@@ -394,7 +380,6 @@ PChannel::Errors PSocket::Select(SelectList & read,
     } while (result < 0 && errno == EINTR);
 
     if (firstSocket->ConvertOSError(result)) {
-#if P_PTHREADS
       if (fds[0].IsPresent(unblockPipe)) {
         PTRACE2(6, NULL, "Select unblocked fd=" << unblockPipe);
         char ch;
@@ -403,7 +388,6 @@ PChannel::Errors PSocket::Select(SelectList & read,
         );
         lastError = Interrupted;
       }
-#endif
     }
     else
       lastError = firstSocket->GetErrorCode();
@@ -1725,12 +1709,7 @@ bool PIPSocket::GetInterfaceTable(InterfaceTable & list, bool includeDown)
 #endif
 
             if (ioctl(sock.GetHandle(), SIOCGIFNETMASK, &ifReq) >= 0) {
-              PIPSocket::Address mask = 
-#ifndef P_BEOS
-    ((sockaddr_in *)&ifReq.ifr_netmask)->sin_addr;
-#else
-    ((sockaddr_in *)&ifReq.ifr_mask)->sin_addr;
-#endif // !P_BEOS
+              PIPSocket::Address mask = ((sockaddr_in *)&ifReq.ifr_netmask)->sin_addr;
               PINDEX i;
               for (i = 0; i < list.GetSize(); i++) {
 #ifdef P_TORNADO

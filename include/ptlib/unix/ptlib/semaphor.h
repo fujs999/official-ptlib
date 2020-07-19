@@ -28,8 +28,6 @@
  */
 
   protected:
-#if defined(P_PTHREADS)
-
   #if defined(P_HAS_SEMAPHORES)
     mutable sem_t m_semaphore;
     #if defined(P_HAS_NAMED_SEMAPHORES)
@@ -48,31 +46,5 @@
     mutable unsigned queuedLocks;
     friend class PThread;
   #endif
-
-#elif defined(__BEOS__)
-
-  public:
-    PSemaphore(bool fNested); 
-
-  protected:
-    bool mfNested; // Does it support recursive locks?
-    thread_id mOwner; // delete can be called by owner thread
-    sem_id semId;
-    volatile int32 mCount;
-
-#elif defined(VX_TASKS)
-
-  public:
-    PSemaphore( SEM_ID anId );
-  protected:
-    mutable SEM_ID semId;
-
-#else
-
-  protected:
-    PQUEUE(ThreadQueue, PThread);
-    ThreadQueue waitQueue;
-
-#endif
 
 // End Of File ////////////////////////////////////////////////////////////////
