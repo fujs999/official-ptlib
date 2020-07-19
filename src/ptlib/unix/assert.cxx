@@ -128,7 +128,7 @@
             DEBUG_CERR("/proc/self/maps: \"" << line << '"');
             size_t pos = line.find("r-xp");
             if (pos != std::string::npos && line.find(exeFile.c_str()) != std::string::npos) {
-              textSegmentOffset = std::stoull(line, 0, 16);
+              textSegmentOffset = strtoull(line.c_str(), NULL, 16);
               DEBUG_CERR("textSegmentOffset=0x" << hex << textSegmentOffset << dec);
               if (textSegmentOffset != 0)
                 cmd << " --section=.text";
