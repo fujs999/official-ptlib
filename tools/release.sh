@@ -329,7 +329,7 @@ function create_tag () {
   fi
 
   if $need_push; then
-    ( cd $base ; $GIT push --all --tags )
+    ( cd $base && $GIT push --all && $GIT push --tags )
   fi
 }
 
