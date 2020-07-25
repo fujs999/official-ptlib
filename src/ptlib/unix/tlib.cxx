@@ -1115,20 +1115,17 @@ PThread::PThread(Type type, PString threadName, Priority priority, std::function
   #endif
 
   switch (type) {
-    case Type::IsManualDelete:
-      return;
-
-    case Type::IsAutoDelete:
-      // If need to be deleted automatically, make sure thread that does it runs.
-      PProcess::Current().SignalTimerChange();
-      return;
-
-    default:
+    case Type::IsExternal:
+      PProcess::Current().InternalThreadStarted(this);
+      // Do next case
+    case Type::IsProcess:
       sm_currentThread = this;
       m_threadId = GetCurrentThreadId();
       m_uniqueId = GetCurrentUniqueIdentifier();
-      if (type == Type::IsExternal)
-        PProcess::Current().InternalThreadStarted(this);
+      break;
+
+    default:
+      break;
   }
 }
 
@@ -1263,7 +1260,7 @@ bool PThread::PlatformKill(PThreadIdentifier tid, PUniqueThreadIdentifier uid, i
       // Output direct to stream, do not use PTRACE as it might cause an infinite recursion.
       ostream* trace = PTrace::GetStream();
       if (trace != NULL)
-        *trace << "pthread_kill failed for thread " << GetIdentifiersAsString(tid, uid)
+        *trace << "pthread_kill failed for thread " << Identifiers(tid, uid)
         << " errno " << error << ' ' << strerror(error) << endl;
       #endif // PTRACING
   }

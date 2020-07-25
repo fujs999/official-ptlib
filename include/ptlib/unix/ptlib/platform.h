@@ -407,17 +407,13 @@ typedef void (*PRunTimeSignalHandler)(int, siginfo_t *, void *);
 #include <pthread.h>
 
 #ifdef P_LINUX
+  #define P_HAS_UNIQUE_THREAD_ID_FMT 1
   typedef pid_t PUniqueThreadIdentifier;
-  #define P_UNIQUE_THREAD_ID_FMT "%u"
-  #define P_THREAD_ID_FMT "0x%lx"
 #elif defined(P_MACOSX)
+  #define P_HAS_UNIQUE_THREAD_ID_FMT 1
   typedef uint64_t PUniqueThreadIdentifier;
-  #define P_UNIQUE_THREAD_ID_FMT "%llu"
-  #define P_THREAD_ID_FMT "%p"
 #else
-  typedef pthread_t PUniqueThreadIdentifier;
-  #define P_UNIQUE_THREAD_ID_FMT "%u"
-  #define P_THREAD_ID_FMT "%u"
+  typedef std::thread::id PUniqueThreadIdentifier;
 #endif
 
 #ifndef P_ANDROID

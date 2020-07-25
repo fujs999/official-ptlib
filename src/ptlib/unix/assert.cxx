@@ -212,7 +212,7 @@
 
       void WalkOther(ostream & strm, PThreadIdentifier tid, PUniqueThreadIdentifier uid, bool noSymbols)
       {
-        DEBUG_CERR("WalkOther: " << PThread::GetIdentifiersAsString(tid, uid));
+        DEBUG_CERR("WalkOther: " << PThread::Identifiers(tid, uid));
 
         if (tid == 0) {
           strm << "\n\tStack trace WalkOther with zero thread ID.";
@@ -233,7 +233,7 @@
         m_addresses.resize(InternalMaxStackWalk+OtherThreadSkip);
         m_signalSentTime.SetCurrentTime();
         if (!PThread::PlatformKill(tid, uid, PProcess::WalkStackSignal)) {
-          strm << "\n\tThread " << PThread::GetIdentifiersAsString(tid, uid) << " is no longer running";
+          strm << "\n\tThread " << PThread::Identifiers(tid, uid) << " is no longer running";
           m_mainMutex.unlock();
           return;
         }
@@ -241,12 +241,12 @@
         try {
           std::unique_lock<std::mutex> lock(m_condMutex);
           if (!m_condVar.wait_until(lock, when, [this]() { return m_addressCount >= 0; }))
-            strm << "\n\tNo response getting stack trace for " << PThread::GetIdentifiersAsString(tid, uid);
+            strm << "\n\tNo response getting stack trace for " << PThread::Identifiers(tid, uid);
           else
             InternalWalkStack(strm, OtherThreadSkip, m_addresses, noSymbols);
         }
         catch (...) {
-          strm << "\n\tError getting stack trace for " << PThread::GetIdentifiersAsString(tid, uid);
+          strm << "\n\tError getting stack trace for " << PThread::Identifiers(tid, uid);
         }
 
         m_threadId = PNullThreadIdentifier;
@@ -272,8 +272,8 @@
         }
 
         if (m_threadId != tid || (m_uniqueId != 0 && m_uniqueId != uid)) {
-          PTRACE(0, "StackWalk", "Signal received on " << PThread::GetIdentifiersAsString(tid, uid) <<
-                                  " but expected " << PThread::GetIdentifiersAsString(m_threadId, m_uniqueId));
+          PTRACE(0, "StackWalk", "Signal received on " << PThread::Identifiers(tid, uid) <<
+                                  " but expected " << PThread::Identifiers(m_threadId, m_uniqueId));
           return;
         }
 

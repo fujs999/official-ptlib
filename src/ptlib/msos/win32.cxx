@@ -727,20 +727,12 @@ PThread::PThread(Type type, PString threadName, Priority priority, std::function
   #endif
 {
   switch (type) {
+    case Type::IsExternal:
+      PProcess::Current().InternalThreadStarted(this);
+      // Do next case
     case Type::IsProcess :
       sm_currentThread = this;
-      m_threadHandle = GetCurrentThread();
-      break;
-
-    case Type::IsExternal:
-      sm_currentThread = this;
-      m_threadHandle.Duplicate(GetCurrentThread());
-      PProcess::Current().InternalThreadStarted(this);
-      break;
-
-    case Type::IsAutoDelete:
-      // If need to be deleted automatically, make sure thread that does it runs.
-      PProcess::Current().SignalTimerChange();
+      PlatformPreMain();
       break;
 
     default:
@@ -765,6 +757,7 @@ void PThread::PlatformDestroy()
 
 void PThread::PlatformPreMain()
 {
+  m_uniqueId = ::GetCurrentThreadId();
   m_threadHandle.Duplicate(::GetCurrentThread());
 }
 

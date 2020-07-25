@@ -844,7 +844,7 @@ void PTraceInfo::InternalEnd(ostream & paramStream)
   }
 
   if (HasOption(Thread)) {
-#if P_64BIT && !defined(WIN32) && !defined(P_UNIQUE_THREAD_ID_FMT)
+#if P_64BIT && !defined(WIN32) && !P_HAS_UNIQUE_THREAD_ID_FMT
     static const PINDEX ThreadNameWidth = 31;
 #else
     static const PINDEX ThreadNameWidth = 23;
@@ -2426,7 +2426,7 @@ PProcess::PProcess(const char * manuf, const char * name,
 #endif // _WIN32
 
   if (m_productName.IsEmpty())
-    m_productName = m_executableFile.GetTitle().ToLower();
+    m_productName = m_executableFile.GetTitle();
 
   SetThreadName(GetName());
 
@@ -3189,28 +3189,19 @@ PString PThread::GetThreadName(PThreadIdentifier id)
       return it->second->GetThreadName();
   }
 
-  return "Unknown thread, id=" + GetIdentifiersAsString(id, 0);
+  return PSTRSTRM("Unknown thread, id=" << Identifiers(id, 0));
 }
 
 
-#ifdef P_UNIQUE_THREAD_ID_FMT
-PString PThread::GetIdentifiersAsString(PThreadIdentifier tid, PUniqueThreadIdentifier uid)
+ostream & operator<<(ostream & strm, const PThread::Identifiers& ids)
 {
-  if (tid == PNullThreadIdentifier)
-    return "(null)";
-  if (uid == 0)
-    return psprintf(P_THREAD_ID_FMT, tid);
-  return PString(PString::Printf, P_THREAD_ID_FMT " (" P_UNIQUE_THREAD_ID_FMT ")", tid, uid);
+  strm << ids.m_tid;
+  #if P_HAS_UNIQUE_THREAD_ID_FMT
+    if (uid != 0)
+      strm << " (" << uid << ')';
+  #endif
+  return strm;
 }
-#else
-PString PThread::GetIdentifiersAsString(PThreadIdentifier tid, PUniqueThreadIdentifier)
-{
-  if (tid == PNullThreadIdentifier)
-    return "(null)";
-
-  return psprintf(P_THREAD_ID_FMT, tid);
-}
-#endif
 
 
 PINDEX PThread::GetTotalCount()
@@ -3351,25 +3342,26 @@ void PThread::SetThreadName(const PString & name)
 {
   PWaitAndSignal mutex(m_threadNameMutex);
 
-  if (IsTerminated()) {
+  if (!name.empty())
     m_threadName = name;
-    return;
+  else {
+    m_threadName = typeid(*this).name();
+    auto space = m_threadName.find(' ');
+    if (space != string::npos)
+      m_threadName.erase(0, space+1);
   }
+
+  if (IsTerminated())
+    return;
 
   PUniqueThreadIdentifier uniqueId = GetUniqueIdentifier();
+  if (uniqueId == 0)
+    return;
+
   if (name.Find('%') != P_MAX_INDEX)
     m_threadName = psprintf(name, uniqueId);
-  else {
-#ifdef P_UNIQUE_THREAD_ID_FMT
-    PString idStr(PString::Printf, ":" P_UNIQUE_THREAD_ID_FMT, uniqueId);
-#else
-    PString idStr(PString::Printf, ":" P_THREAD_ID_FMT, uniqueId);
-#endif
-
-    m_threadName = name;
-    if (m_threadName.Find(idStr) == P_MAX_INDEX)
-      m_threadName += idStr;
-  }
+  else
+    m_threadName = PSTRSTRM(m_threadName << ':' << uniqueId);
 
   if (&PProcess::Current() != this)
     PlatformSetThreadName(m_threadName.Left(15));
@@ -3527,7 +3519,7 @@ unsigned PTimedMutex::CtorDtorLogLevel = UINT_MAX;
 
 static void OutputThreadInfo(ostream & strm, PThreadIdentifier tid, PUniqueThreadIdentifier uid, bool noSymbols)
 {
-  strm << " id=" << PThread::GetIdentifiersAsString(tid, uid) << ", name=\"" << PThread::GetThreadName(tid) << '"';
+  strm << " id=" << PThread::Identifiers(tid, uid) << ", name=\"" << PThread::GetThreadName(tid) << '"';
   if (noSymbols)
     strm << ", stack=";
   PTrace::WalkStack(strm, tid, uid, noSymbols);

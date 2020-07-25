@@ -259,11 +259,18 @@ class PThread : public PObject
       */
     static PString GetCurrentThreadName() { return GetThreadName(GetCurrentThreadId()); }
 
-    /**Convert to thread identifers as a string.
+    /**For outputting thread ID's to a stream.
        For platforms where unique thread id is different from the "normal" thread id,
        then the output will append it to the thread id string, e.g. "0x12345678 (54321)".
       */
-    static PString GetIdentifiersAsString(PThreadIdentifier tid, PUniqueThreadIdentifier uid);
+    class Identifiers
+    {
+        PThreadIdentifier m_tid;
+        PUniqueThreadIdentifier m_uid;
+      public:
+        Identifiers(PThreadIdentifier tid, PUniqueThreadIdentifier uid) : m_tid(tid), m_uid(uid) { }
+        friend ostream & operator<<(ostream& strm, const Identifiers & ids);
+    };
 
     /** Change the name of the thread. Thread names are a optional debugging aid.
 

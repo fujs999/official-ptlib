@@ -622,23 +622,14 @@ void PServiceProcess::AsynchronousRunTimeSignal(int signal, PProcessIdentifier s
     PThreadIdentifier tid = GetCurrentThreadId();
     PUniqueThreadIdentifier uid = PThread::GetCurrentUniqueIdentifier();
 
-    const char * couldNotWrite = ", stderr write failed";
-    {
-      /* We get basic crash information using purely static memory (we hope) as,
-         if the heap is trashed, all the PTRACE/PSystemLog stuff is very likely
-         to also crash, and we never see this info. */
-      char buffer[1000];
-      int length = snprintf(buffer, sizeof(buffer),
-                            "\nCaught %s (%s), in thread " P_THREAD_ID_FMT " (" P_UNIQUE_THREAD_ID_FMT ")\n",
-                            sigmsg, GetRunTimeSignalName(signal), tid, uid);
-      if (length > 0 && write(STDERR_FILENO, buffer, length) >= length)
-        couldNotWrite = "";
-    }
+    cerr << "Caught " << sigmsg << " (" << GetRunTimeSignalName(signal) << "),"
+            " thread-id=" << PThread::Identifiers(tid, uid) << ","
+            " name=\"" << PThread::GetThreadName(tid) << '"';
 
     PSystemLog log(PSystemLog::Fatal);
     log << "Caught " << sigmsg << " (" << GetRunTimeSignalName(signal) << "),"
-           " thread-id=" << PThread::GetIdentifiersAsString(tid, uid) << ","
-           " name=\"" << PThread::GetThreadName(tid) << '"' << couldNotWrite;
+           " thread-id=" << PThread::Identifiers(tid, uid) << ","
+           " name=\"" << PThread::GetThreadName(tid) << '"';
 
 #if PTRACING
     log << ", stack:";
