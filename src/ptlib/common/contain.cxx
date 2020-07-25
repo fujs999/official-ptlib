@@ -680,7 +680,8 @@ PString::PString(const PBYTEArray & buf)
   if (bufSize > 0) {
     if (buf[bufSize-1] == '\0')
       --bufSize;
-    memcpy(GetPointerAndSetLength(bufSize), buf, bufSize);
+    const char * ptr = (const char*)(const BYTE*)buf;
+    assign(ptr, ptr+bufSize);
   }
 }
 
@@ -803,14 +804,14 @@ PString::PString(ConversionType type, const char * str, ...)
     case Pascal :
       if (*str != '\0') {
         PINDEX length = *str & 0xff;
-        memcpy(GetPointerAndSetLength(length), str+1, length);
+        assign(str+1, str+length+1);
       }
       break;
 
     case Basic :
       if (str[0] != '\0' && str[1] != '\0') {
         PINDEX length = (str[0] & 0xff) | ((str[1] & 0xff) << 8);
-        memcpy(GetPointerAndSetLength(length), str+2, length);
+        assign(str+2, str+length+2);
       }
       break;
 
@@ -1807,22 +1808,18 @@ PString PString::Trim() const
 
 PString PString::ToLower() const
 {
-  PString newStr;
-  for (char *cpos = newStr.GetPointerAndSetLength(length()); *cpos != '\0'; cpos++) {
-    if (isupper(*cpos & 0xff))
-      *cpos = (char)tolower(*cpos & 0xff);
-  }
+  PString newStr = *this;
+  for (auto & it : newStr)
+    it = std::tolower(it, std::locale("C"));
   return newStr;
 }
 
 
 PString PString::ToUpper() const
 {
-  PString newStr;
-  for (char *cpos = newStr.GetPointerAndSetLength(length()); *cpos != '\0'; cpos++) {
-    if (islower(*cpos & 0xff))
-      *cpos = (char)toupper(*cpos & 0xff);
-  }
+  PString newStr = *this;
+  for (auto& it : newStr)
+    it = std::toupper(it, std::locale("C"));
   return newStr;
 }
 
