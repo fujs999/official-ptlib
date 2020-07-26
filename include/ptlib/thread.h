@@ -449,13 +449,13 @@ class PThread : public PObject
 
   private:
     void InternalThreadMain();
+    void InternalThreadEnded();
     void PlatformPreMain();
-    void PlatformPostMain();
     void PlatformDestroy();
     void PlatformSetThreadName(const char * name);
-    #if P_USE_THREAD_CANCEL
-    static void PlatformCleanup(void *);
-    #endif
+#if P_USE_THREAD_CANCEL
+    static void PlatformThreadEnded(void *);
+#endif
 
     friend class PProcess;
     friend class PExternalThread;
@@ -473,12 +473,14 @@ class PThread : public PObject
     PString               m_threadName; // Give the thread a name for debugging purposes.
     PCriticalSection      m_threadNameMutex;
 
-    mutable std::timed_mutex m_running;
-    std::atomic<void*>       m_nativeHandle;
-    PThreadIdentifier        m_threadId;
-    PUniqueThreadIdentifier  m_uniqueId;
+    mutable std::timed_mutex        m_running;
+    std::thread::native_handle_type m_nativeHandle;
+    PThreadIdentifier               m_threadId;
+    PUniqueThreadIdentifier         m_uniqueId;
+    PTime                           m_threadStartTime;
+    PTime                           m_threadEndTime;
 
-    static thread_local PThread* sm_currentThread;
+    static thread_local PThread * sm_currentThread;
 
     // Include platform dependent part of class
 #ifdef _WIN32

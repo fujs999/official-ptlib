@@ -694,13 +694,11 @@ dnl check for pthreads library
 
 AX_PTHREAD([], [AC_MSG_ERROR(Must have pthreads!)])
 
-HAS_PTHREADS=yes
-AC_DEFINE(P_PTHREADS, 1, "PThreads found")
-
 LIBS="$PTHREAD_LIBS $LIBS"
 CPPFLAGS="$CPPFLAGS -D_REENTRANT"
 CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
 CXXFLAGS="$CXXFLAGS $PTHREAD_CFLAGS"
+LDFLAGS="$LDFLAGS $PTHREAD_CFLAGS"
 if test "$CC" != "$PTHREAD_CC"; then
     AC_MSG_WARN([Overriding default CC to $PTHREAD_CC])
     CC="$PTHREAD_CC"

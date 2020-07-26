@@ -762,13 +762,6 @@ void PThread::PlatformPreMain()
 }
 
 
-void PThread::PlatformPostMain()
-{
-  m_nativeHandle = nullptr;
-  PProcess::Current().InternalThreadEnded(this);
-}
-
-
 void PThread::PlatformSetThreadName(const char* name)
 {
   struct THREADNAME_INFO

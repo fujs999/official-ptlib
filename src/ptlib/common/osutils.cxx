@@ -3057,9 +3057,9 @@ bool PThread::Start()
 
 
 #if P_USE_THREAD_CANCEL
-static void PThread::PlatformCleanup(void* arg)
+void PThread::PlatformThreadEnded(void* arg)
 {
-  reinterpret_cast<PThread*>(PAssertNULL(arg))->PlatformPostMain();
+  reinterpret_cast<PThread*>(PAssertNULL(arg))->InternalThreadEnded();
 }
 #endif
 
@@ -3069,10 +3069,11 @@ void PThread::InternalThreadMain()
   const std::lock_guard<std::timed_mutex> running(m_running);
 
   sm_currentThread = this;
+  m_threadStartTime.SetCurrentTime();
 
   #if P_USE_THREAD_CANCEL
     // make sure the cleanup routine is called when the thread is cancelled
-    pthread_cleanup_push(&PThread::PlatformCleanup, arg);
+    pthread_cleanup_push(&PThread::PlatformThreadEnded, this);
     // Allow cancel to happen any time
     pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
     pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);
@@ -3082,21 +3083,27 @@ void PThread::InternalThreadMain()
   SetThreadName(GetThreadName());
   SetPriority(m_priority.load());
 
-  PProcess & process = PProcess::Current();
-
-  process.OnThreadStart(*this);
+  PProcess::Current().OnThreadStart(*this);
 
   if (m_mainFunction)
     m_mainFunction();
   else
     Main();
-  process.OnThreadEnded(*this);
 
   #if P_USE_THREAD_CANCEL
     pthread_cleanup_pop(0);
   #else
-    PlatformPostMain();
+    InternalThreadEnded();
   #endif
+}
+
+
+void PThread::InternalThreadEnded()
+{
+  m_threadEndTime.SetCurrentTime();
+  PProcess & process = PProcess::Current();
+  process.OnThreadEnded(*this);
+  process.InternalThreadEnded(this);
 }
 
 
@@ -3197,8 +3204,8 @@ ostream & operator<<(ostream & strm, const PThread::Identifiers& ids)
 {
   strm << ids.m_tid;
   #if P_HAS_UNIQUE_THREAD_ID_FMT
-    if (uid != 0)
-      strm << " (" << uid << ')';
+    if (ids.m_uid != 0)
+      strm << " (" << ids.m_uid << ')';
   #endif
   return strm;
 }

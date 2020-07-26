@@ -203,8 +203,7 @@
       PTime             m_signalSentTime;
 
       PWalkStackInfo()
-        : m_threadId(PNullThreadIdentifier)
-        , m_uniqueId(0)
+        : m_uniqueId(0)
         , m_addressCount(-1)
         , m_signalSentTime(0)
       {
@@ -214,7 +213,7 @@
       {
         DEBUG_CERR("WalkOther: " << PThread::Identifiers(tid, uid));
 
-        if (tid == 0) {
+        if (tid == PNullThreadIdentifier) {
           strm << "\n\tStack trace WalkOther with zero thread ID.";
           return;
         }

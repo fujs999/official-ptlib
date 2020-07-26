@@ -671,7 +671,7 @@ bool PThread::GetTimes(Times & times)
   times.m_name = GetThreadName();
   times.m_threadId = m_threadId;
   times.m_uniqueId = GetUniqueIdentifier();
-  times.m_real = (PX_endTick != 0 ? PX_endTick : PTimer::Tick()) - PX_startTick;
+  times.m_real = (m_threadEndTime.IsValid() ? m_threadEndTime : PTime()) - m_threadStartTime;
   times.m_sample.SetCurrentTime();
 
   std::stringstream path;
@@ -1075,9 +1075,6 @@ static int GetSchedParam(PThread::Priority priority, sched_param& param)
 #endif
 
 
-static pthread_mutex_t MutexInitialiser = PTHREAD_MUTEX_INITIALIZER;
-
-
 #define new PNEW
 
 
@@ -1098,20 +1095,19 @@ PThread::PThread(Type type, PString threadName, Priority priority, std::function
   , m_mainFunction(std::move(mainFunction))
   , m_priority(priority)
   , m_threadName(std::move(threadName))
-  , m_nativeHandle(nullptr)
+  , m_nativeHandle(0)
   , m_uniqueId(0)
-  #if defined(P_LINUX)
-  , PX_startTick(PTimer::Tick())
-  #endif
+  , m_threadStartTime(0)
+  , m_threadEndTime(0)
   #ifndef P_HAS_SEMAPHORES
   , PX_waitingSemaphore(NULL)
   , PX_WaitSemMutex(MutexInitialiser)
   #endif
 {
   #ifdef P_RTEMS
-  PAssertOS(socketpair(AF_INET, SOCK_STREAM, 0, unblockPipe) == 0);
+  PAssertOS(socketpair(AF_INET, SOCK_STREAM, 0, m_threadUnblockPipe) == 0);
   #else
-  PAssertOS(::pipe(unblockPipe) == 0);
+  PAssertOS(::pipe(m_threadUnblockPipe) == 0);
   #endif
 
   switch (type) {
@@ -1132,7 +1128,7 @@ PThread::PThread(Type type, PString threadName, Priority priority, std::function
 
 void PThread::PrintOn(ostream& strm) const
 {
-  strm << "obj=" << this << " name=\"" << GetThreadName() << "\", id=" << GetUniqueIdentifier();
+  strm << "obj=" << this << " name=\"" << GetThreadName() << "\", uid=" << GetUniqueIdentifier();
 }
 
 
@@ -1143,75 +1139,21 @@ void PThread::PrintOn(ostream& strm) const
 //  for that thread to stop before continuing
 //
 
-void PThread::InternalDestroy()
+void PThread::PlatformDestroy()
 {
-  /* If manual delete, wait for thread to really end before
-     proceeding with destruction */
-  if (PX_synchroniseThreadFinish.get() != NULL)
-    PX_synchroniseThreadFinish->Wait();
-
   // close I/O unblock pipes
-  ::close(unblockPipe[0]);
-  ::close(unblockPipe[1]);
+  ::close(m_threadUnblockPipe[0]);
+  ::close(m_threadUnblockPipe[1]);
 
   #ifndef P_HAS_SEMAPHORES
-  pthread_mutex_destroy(&PX_WaitSemMutex);
+    pthread_mutex_destroy(&PX_WaitSemMutex);
   #endif
 }
 
 
 void PThread::PlatformPreMain()
 {
-  PAssert(PX_state == PX_starting, PLogicError);
-  PX_state = PX_running;
-
   m_uniqueId = GetCurrentUniqueIdentifier();
-  #if defined(P_LINUX)
-  PX_startTick = PTimer::Tick();
-  #endif
-
-  /* If manual delete thread, there is a race on the thread actually ending
-     and the PThread object being deleted. This flag is used to synchronise
-     those actions. */
-  if (!IsAutoDelete())
-    PX_synchroniseThreadFinish.reset(new PSyncPoint());
-}
-
-
-void PThread::PlatformPostMain()
-{
-  m_nativeHandle = nullptr;
-
-  /* Bizarely, this can get called by pthread_cleanup_push() when a thread
-     is started! Seems to be a load and/or race on use of thread ID's inside
-     the system library. Anyway, need to make sure we are really ending. */
-  if (PX_state.exchange(PX_finishing) != PX_running)
-    return;
-
-  #if defined(P_LINUX)
-  PX_endTick = PTimer::Tick();
-  #endif
-
-    /* Need to check this before the InternalThreadEnded() as an auto
-       delete thread would be deleted in that function. */
-  bool doThreadFinishedSignal = PX_synchroniseThreadFinish.get() != NULL;
-
-  /* The thread changed from manual to auto delete somewhere, so we need to
-     do the signal now, due to the thread being deleted in InternalThreadEnded() */
-  if (doThreadFinishedSignal && IsAutoDelete()) {
-    doThreadFinishedSignal = false; // Don't do it after
-    PX_synchroniseThreadFinish->Signal();
-  }
-
-  /* If auto delete, "this" may have be deleted any nanosecond after
-     this function, as it is asynchronously done by the housekeeping thread. */
-  PProcess::Current().InternalThreadEnded(this);
-
-  /* We know the thread is not auto delete and the destructor is either
-     not run yet, or is waiting on this signal, so "this" is still safe
-     to use. */
-  if (doThreadFinishedSignal)
-    PX_synchroniseThreadFinish->Signal();
 }
 
 
@@ -1222,9 +1164,7 @@ void PThread::PlatformSetThreadName(const char* name)
     // So can only be called from the current thread, other calls to SetThreadName() will be ignored
   if (pthread_self() == threadId)
   #endif
-  {
-    pthread_setname_np(m_stdThread->native_handle(), name);
-  }
+    pthread_setname_np(m_nativeHandle, name);
 }
 
 
@@ -1233,15 +1173,17 @@ bool PThread::PlatformKill(PThreadIdentifier tid, PUniqueThreadIdentifier uid, i
   if (!PProcess::IsInitialised())
     return false;
 
+  pthread_t thread;
   PProcess& process = PProcess::Current();
   {
     PWaitAndSignal mutex(process.m_threadMutex);
     PProcess::ThreadMap::iterator it = process.m_activeThreads.find(tid);
     if (it == process.m_activeThreads.end() || (uid != 0 && it->second->GetUniqueIdentifier() != uid))
       return false;
+    thread = it->second->m_nativeHandle;
   }
 
-  int error = pthread_kill(tid, sig);
+  int error = pthread_kill(thread, sig);
   switch (error) {
     case 0:
       return true;
@@ -1325,7 +1267,7 @@ void PThread::SetPriority(Priority priorityLevel)
 
   #if defined(P_LINUX)
   struct sched_param params;
-  PAssertWithRetry(pthread_setschedparam, m_threadId, GetSchedParam(priorityLevel, params), &params);
+  PAssertWithRetry(pthread_setschedparam, m_nativeHandle, GetSchedParam(priorityLevel, params), &params);
 
   #elif defined(P_ANDROID)
   if (Current() != this) {
@@ -1466,7 +1408,7 @@ void PThread::PXSetWaitingSemaphore(PSemaphore* sem)
 void PThread::Terminate()
 {
   // if thread was not created by PTLib, then don't terminate it
-  if (m_type == e_IsExternal)
+  if (m_type == Type::IsExternal)
     return;
 
   // if the thread is already terminated, then nothing to do
@@ -1501,9 +1443,9 @@ void PThread::Terminate()
 
   if (m_threadId != PNullThreadIdentifier) {
     #if P_USE_THREAD_CANCEL
-    pthread_cancel(m_threadId);
+    pthread_cancel(m_nativeHandle);
     #else
-    pthread_kill(m_threadId, SIGKILL);
+    pthread_kill(m_nativeHandle, SIGKILL);
     #endif
     WaitForTermination(100);
   }
@@ -1551,7 +1493,7 @@ int PThread::PXBlockOnIO(int handle, int type, const PTimeInterval& timeout)
   }
   pfd[0].events |= POLLERR;
 
-  pfd[1].fd = unblockPipe[0];
+  pfd[1].fd = m_threadUnblockPipe[0];
   pfd[1].events = POLLIN;
 
   do {
@@ -1559,10 +1501,10 @@ int PThread::PXBlockOnIO(int handle, int type, const PTimeInterval& timeout)
   } while (retval < 0 && errno == EINTR);
 
   uint8_t dummy;
-  if (retval > 0 && pfd[1].revents != 0 && ::read(unblockPipe[0], &dummy, 1) == 1) {
+  if (retval > 0 && pfd[1].revents != 0 && ::read(m_threadUnblockPipe[0], &dummy, 1) == 1) {
     errno = ECANCELED;
     retval = -1;
-    PTRACE(6, "PTLib\tUnblocked I/O fd=" << unblockPipe[0]);
+    PTRACE(6, "PTLib\tUnblocked I/O fd=" << m_threadUnblockPipe[0]);
   }
 
   #else // P_HAS_POLL
@@ -1595,20 +1537,20 @@ int PThread::PXBlockOnIO(int handle, int type, const PTimeInterval& timeout)
     }
 
     // include the termination pipe into all blocking I/O functions
-    read_fds += unblockPipe[0];
+    read_fds += m_threadUnblockPipe[0];
 
     P_timeval tval = timeout;
     PPROFILE_SYSTEM(
-      retval = ::select(PMAX(handle, unblockPipe[0]) + 1,
+      retval = ::select(PMAX(handle, m_threadUnblockPipe[0]) + 1,
                         read_fds, write_fds, exception_fds, tval);
     );
   } while (retval < 0 && errno == EINTR);
 
   uint8_t dummy;
-  if (retval > 0 && read_fds.IsPresent(unblockPipe[0]) && ::read(unblockPipe[0], &ch, 1) == 1) {
+  if (retval > 0 && read_fds.IsPresent(m_threadUnblockPipe[0]) && ::read(m_threadUnblockPipe[0], &ch, 1) == 1) {
     errno = ECANCELED;
     retval = -1;
-    PTRACE(6, "PTLib\tUnblocked I/O fd=" << unblockPipe[0]);
+    PTRACE(6, "PTLib\tUnblocked I/O fd=" << m_threadUnblockPipe[0]);
   }
 
   #endif // P_HAS_POLL
@@ -1619,8 +1561,8 @@ int PThread::PXBlockOnIO(int handle, int type, const PTimeInterval& timeout)
 void PThread::PXAbortBlock() const
 {
   static uint8_t ch = 0;
-  PAssertOS(::write(unblockPipe[1], &ch, 1) == 1);
-  PTRACE(6, "PTLib\tUnblocking I/O fd=" << unblockPipe[0] << " thread=" << GetThreadName());
+  PAssertOS(::write(m_threadUnblockPipe[1], &ch, 1) == 1);
+  PTRACE(6, "PTLib\tUnblocking I/O fd=" << m_threadUnblockPipe[0] << " thread=" << *this);
 }
 
 

@@ -45,18 +45,13 @@
     static bool PlatformKill(PThreadIdentifier tid, PUniqueThreadIdentifier uid, int sig);
 
   protected:
-#if defined(P_LINUX)
-    PTimeInterval     PX_startTick;
-    PTimeInterval     PX_endTick;
-#endif
-    std::unique_ptr<PSyncPoint> PX_synchroniseThreadFinish;
+    int m_threadUnblockPipe[2];
 
 #ifndef P_HAS_SEMAPHORES
-    PSemaphore      * PX_waitingSemaphore;
-    pthread_mutex_t   PX_WaitSemMutex;
+    PSemaphore      * m_waitingSemaphore;
+    pthread_mutex_t   m_waitSemMutex;
 #endif
 
-    int m_pxUnblockPipe[2];
     friend class PSocket;
 
 

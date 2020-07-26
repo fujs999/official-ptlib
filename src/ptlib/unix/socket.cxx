@@ -255,7 +255,7 @@ PChannel::Errors PSocket::Select(SelectList & read,
   int result = -1;
   Errors lastError = NoError;
   PThread * unblockThread = PThread::Current();
-  int unblockPipe = unblockThread->unblockPipe[0];
+  int unblockPipe = unblockThread->m_threadUnblockPipe[0];
   SelectList * list[3] = { &read, &write, &except };
   PSocket * firstSocket = NULL;
 
