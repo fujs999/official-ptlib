@@ -1118,9 +1118,12 @@ void PThread::PlatformSetThreadName(const char* name)
   #if defined(P_MACOSX)
     // For some bizarre reason Mac OS-X version of this function only has one argument.
     // So can only be called from the current thread, other calls to SetThreadName() will be ignored
-  if (pthread_self() == threadId)
+    if (GetCurrentThreadId() == GetThreadId())
+      pthread_setname_np(name);
+  #else
+    if (m_nativeHandle != 0)
+      pthread_setname_np(m_nativeHandle, name);
   #endif
-    pthread_setname_np(m_nativeHandle, name);
 }
 
 
@@ -1216,9 +1219,8 @@ GetThreadBasePriority()
 void PThread::SetPriority(Priority priorityLevel)
 {
   PTRACE(4, "PTLib", "Setting thread priority to " << priorityLevel);
-  m_priority.store(priorityLevel);
 
-  if (IsTerminated())
+  if (m_nativeHandle == 0)
     return;
 
   #if defined(P_LINUX)
@@ -1320,6 +1322,9 @@ void PThread::SetPriority(Priority priorityLevel)
 PThread::Priority PThread::GetPriority() const
 {
   #if defined(LINUX)
+  if (m_nativeHandle == 0)
+    return NormalPriority;
+
   int policy;
   struct sched_param params;
 
@@ -1344,7 +1349,7 @@ PThread::Priority PThread::GetPriority() const
   }
   #endif
 
-  return m_priority.load();
+  return NormalPriority;
 }
 
 
