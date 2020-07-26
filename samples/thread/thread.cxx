@@ -111,7 +111,8 @@ class MyThread2 : public PThread
 void ExternalThread()
 {
   PThread::Sleep(1000);
-  cout << "External thread: " << PThread::Current() << endl;
+  PThread * thread = PThread::Current();
+  cout << "External thread: " << thread << ' ' << thread->GetThreadName() << endl;
   PThread::Sleep(1000);
 }
 
@@ -207,6 +208,9 @@ void ThreadTest::Main()
   ext->join();
   delete ext;
 
+  #if PTRACING
+    PTrace::SetLevel(std::max(PTrace::GetLevel(), 1U));
+  #endif
   cout << "Testing deadlock detection." << endl;
   PTimedMutex a, b;
   PThread* th1 = new PThread(std::bind(LockAthenB, &a, &b));

@@ -715,50 +715,20 @@ void PWin32Overlapped::Reset()
 ///////////////////////////////////////////////////////////////////////////////
 // Threads
 
-PThread::PThread(Type type, PString threadName, Priority priority, std::function<void()> mainFunction)
-  : m_type(type)
-  , m_mainFunction(std::move(mainFunction))
-  , m_priority(priority)
-  , m_threadName(std::move(threadName))
-  , m_nativeHandle(nullptr)
-  , m_uniqueId(0)
-  #if defined(P_WIN_COM)
-  , m_comInitialised(false)
-  #endif
+void PThread::PlatformConstruct()
 {
-  switch (type) {
-    case Type::IsExternal:
-      PProcess::Current().InternalThreadStarted(this);
-      // Do next case
-    case Type::IsProcess :
-      sm_currentThread = this;
-      PlatformPreMain();
-      break;
-
-    default:
-      break;
-  }
+  #if defined(P_WIN_COM)
+    m_comInitialised = false;
+  #endif
 }
 
 
 void PThread::PlatformDestroy()
 {
-  if (m_type == Type::IsProcess)
-    m_threadHandle.Detach();
-  else
-    m_threadHandle.Close();
-
   #if defined(P_WIN_COM)
   if (m_comInitialised)
     ::CoUninitialize();
   #endif
-}
-
-
-void PThread::PlatformPreMain()
-{
-  m_uniqueId = ::GetCurrentThreadId();
-  m_threadHandle.Duplicate(::GetCurrentThread());
 }
 
 
@@ -786,23 +756,16 @@ void PThread::Terminate()
 {
   if (PAssert(m_type != Type::IsProcess, "Cannot terminate the process!") &&
       m_threadHandle.IsValid() &&
-      !m_threadHandle.Wait(0)) {
+      !m_threadHandle.Wait(0))
+  {
     PTRACE(2, "PTLib\tTerminating thread " << *this);
     TerminateThread(m_threadHandle, 1);
   }
 }
 
 
-void PThread::PrintOn(ostream& strm) const
-{
-  strm << "obj=" << this << " name=\"" << GetThreadName() << "\", ";
-}
-
-
 void PThread::SetPriority(Priority priorityLevel)
 {
-  m_priority.store(priorityLevel);
-
   static int const priorities[NumPriority] = {
     THREAD_PRIORITY_LOWEST,
     THREAD_PRIORITY_BELOW_NORMAL,
@@ -810,15 +773,13 @@ void PThread::SetPriority(Priority priorityLevel)
     THREAD_PRIORITY_ABOVE_NORMAL,
     THREAD_PRIORITY_HIGHEST
   };
-  if (PAssert(!IsTerminated(), "Operation on terminated thread"))
+  if (PAssert(m_threadHandle.IsValid(), "Operation on terminated thread"))
     SetThreadPriority(m_threadHandle, priorities[priorityLevel]);
 }
 
 
 PThread::Priority PThread::GetPriority() const
 {
-  PAssert(!IsTerminated(), "Operation on terminated thread");
-
   switch (GetThreadPriority(m_threadHandle)) {
     case THREAD_PRIORITY_LOWEST:
       return LowestPriority;

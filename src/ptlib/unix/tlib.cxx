@@ -1080,55 +1080,17 @@ static int GetSchedParam(PThread::Priority priority, sched_param& param)
 
 //////////////////////////////////////////////////////////////////////////////
 
-//
-//  Called to construct a PThread for either:
-//
-//       a) The primordial PProcesss thread
-//       b) A non-PTLib thread that needs to use PTLib routines, such as PTRACE
-//
-//  This is always called in the context of the running thread, so naturally, the thread
-//  is not paused
-//
-
-PThread::PThread(Type type, PString threadName, Priority priority, std::function<void()> mainFunction)
-  : m_type(type)
-  , m_mainFunction(std::move(mainFunction))
-  , m_priority(priority)
-  , m_threadName(std::move(threadName))
-  , m_nativeHandle(0)
-  , m_uniqueId(0)
-  , m_threadStartTime(0)
-  , m_threadEndTime(0)
+void PThread::PlatformConstruct()
+{
   #ifndef P_HAS_SEMAPHORES
-  , PX_waitingSemaphore(NULL)
-  , PX_WaitSemMutex(MutexInitialiser)
+    PX_waitingSemaphore = NULL;
+    PX_WaitSemMutex = MutexInitialiser;
   #endif
-{
   #ifdef P_RTEMS
-  PAssertOS(socketpair(AF_INET, SOCK_STREAM, 0, m_threadUnblockPipe) == 0);
+    PAssertOS(socketpair(AF_INET, SOCK_STREAM, 0, m_threadUnblockPipe) == 0);
   #else
-  PAssertOS(::pipe(m_threadUnblockPipe) == 0);
+    PAssertOS(::pipe(m_threadUnblockPipe) == 0);
   #endif
-
-  switch (type) {
-    case Type::IsExternal:
-      PProcess::Current().InternalThreadStarted(this);
-      // Do next case
-    case Type::IsProcess:
-      sm_currentThread = this;
-      m_threadId = GetCurrentThreadId();
-      m_uniqueId = GetCurrentUniqueIdentifier();
-      break;
-
-    default:
-      break;
-  }
-}
-
-
-void PThread::PrintOn(ostream& strm) const
-{
-  strm << "obj=" << this << " name=\"" << GetThreadName() << "\", uid=" << GetUniqueIdentifier();
 }
 
 
@@ -1148,12 +1110,6 @@ void PThread::PlatformDestroy()
   #ifndef P_HAS_SEMAPHORES
     pthread_mutex_destroy(&PX_WaitSemMutex);
   #endif
-}
-
-
-void PThread::PlatformPreMain()
-{
-  m_uniqueId = GetCurrentUniqueIdentifier();
 }
 
 
@@ -1388,7 +1344,7 @@ PThread::Priority PThread::GetPriority() const
   }
   #endif
 
-  return NormalPriority; /* as good a guess as any */
+  return m_priority.load();
 }
 
 

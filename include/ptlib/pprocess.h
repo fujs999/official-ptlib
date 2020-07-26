@@ -713,6 +713,7 @@ class PProcess : public PThread
 
 
   friend class PThread;
+  friend class PExternalThread;
 
 
 // Include platform dependent part of class

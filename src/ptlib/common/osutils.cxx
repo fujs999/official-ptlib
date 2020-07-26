@@ -62,18 +62,16 @@ class PExternalThread : public PThread
   PCLASSINFO(PExternalThread, PThread);
   public:
     PExternalThread()
-      : PThread(Type::IsExternal, "External thread")
+      : PThread(Type::IsExternal, "External", PThread::NumPriority)
     {
-      PTRACE(5, "Created external thread " << this << ","
-                " thread-id=" << GetCurrentThreadId() << ","
-                " unique-id=" << GetCurrentUniqueIdentifier());
+      InternalThreadStarted();
+      PProcess::Current().InternalThreadStarted(this);
+      PTRACE(5, "Created external thread " << *this);
     }
 
     ~PExternalThread()
     {
-      PTRACE(5, "Destroyed external thread " << this << ","
-                " thread-id=" << GetThreadId() << ","
-                " unique-id=" << GetUniqueIdentifier());
+      PTRACE(5, "Destroyed external thread " << *this);
     }
 
     virtual void Main()
@@ -348,7 +346,7 @@ public:
       fn.Replace("%P", PString(PProcess::GetCurrentProcessID()), true);
 
       if (!rollover.empty() && fn.Find(rollover) == P_MAX_INDEX)
-        fn = fn.GetDirectory() + fn.GetTitle() + rollover + fn.GetType();
+        fn = PSTRSTRM(fn.GetDirectory() << fn.GetTitle() << rollover << fn.GetType());
 
       PFile::OpenOptions options = PFile::Create;
       if ((m_options & AppendToFile) == 0)
@@ -2373,6 +2371,15 @@ PProcess::PProcess(const char * manuf, const char * name,
   , m_RunTimeSignalsQueueIn(0)
   , m_RunTimeSignalsQueueOut(0)
 {
+  #if PTRACING
+  // Do this before PProcessInstance is set to avoid a recursive loop with PTimedMutex
+  PTraceInfo::Instance();
+  #endif
+
+  PAssert(PProcessInstance == NULL, "Only one instance of PProcess allowed");
+  PProcessInstance = this;
+
+  // Versions
   m_version.m_major = major;
   m_version.m_minor = minor;
   m_version.m_status = stat;
@@ -2382,14 +2389,7 @@ PProcess::PProcess(const char * manuf, const char * name,
   m_version.m_git = NULL;
 
   m_activeThreads[GetThreadId()] = this;
-
-#if PTRACING
-  // Do this before PProcessInstance is set to avoid a recursive loop with PTimedMutex
-  PTraceInfo::Instance();
-#endif
-
-  PAssert(PProcessInstance == NULL, "Only one instance of PProcess allowed");
-  PProcessInstance = this;
+  PThread::InternalThreadStarted();
 
 #if PTRACING
   PTraceInfo::Instance().InitialiseFromEnvironment();
@@ -3042,17 +3042,48 @@ PThread::PThread(PINDEX, AutoDeleteFlag deletion, Priority priority, PString thr
 }
 
 
+PThread::PThread(Type type, PString threadName, Priority priority, std::function<void()> mainFunction)
+  : m_type(type)
+  , m_mainFunction(std::move(mainFunction))
+  , m_initialPriority(priority)
+  , m_threadName(std::move(threadName))
+  , m_uniqueId(0)
+  , m_threadStartTime(0)
+  , m_threadEndTime(0)
+{
+}
+
+
 bool PThread::Start()
 {
   if (!IsTerminated())
     return false;
 
   std::thread starter(std::bind(&PThread::InternalThreadMain, this));
+  m_threadId = starter.get_id();
   m_nativeHandle = starter.native_handle();
   starter.detach(); // Do not require keeping std::thread, it's pretty useless
 
   PProcess::Current().InternalThreadStarted(this);
   return true;
+}
+
+
+void PThread::InternalThreadStarted()
+{
+  sm_currentThread = this;
+  m_threadStartTime.SetCurrentTime();
+  m_threadId = std::this_thread::get_id();
+  m_uniqueId = GetCurrentUniqueIdentifier();
+
+  #if _WIN32
+    m_threadHandle.Duplicate(::GetCurrentThread());
+  #endif
+
+  SetThreadName(GetThreadName());
+
+  if (m_initialPriority < PThread::NumPriority)
+    SetPriority(m_initialPriority);
 }
 
 
@@ -3066,10 +3097,7 @@ void PThread::PlatformThreadEnded(void* arg)
 
 void PThread::InternalThreadMain()
 {
-  const std::lock_guard<std::timed_mutex> running(m_running);
-
-  sm_currentThread = this;
-  m_threadStartTime.SetCurrentTime();
+  const std::lock_guard<std::timed_mutex> running(m_threadRunning);
 
   #if P_USE_THREAD_CANCEL
     // make sure the cleanup routine is called when the thread is cancelled
@@ -3079,10 +3107,7 @@ void PThread::InternalThreadMain()
     pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);
   #endif
 
-  PlatformPreMain();
-  SetThreadName(GetThreadName());
-  SetPriority(m_priority.load());
-
+  InternalThreadStarted();
   PProcess::Current().OnThreadStart(*this);
 
   if (m_mainFunction)
@@ -3115,11 +3140,9 @@ bool PThread::IsTerminated() const
     case Type::IsExternal:
       return true;
     default:
-      if (!m_nativeHandle)
-        return true;
-      if (!m_running.try_lock())
+      if (!m_threadRunning.try_lock())
         return false;
-      m_running.unlock();
+      m_threadRunning.unlock();
       return true;
   }
 }
@@ -3137,10 +3160,8 @@ void PThread::WaitForTermination() const
     case Type::IsExternal:
       break;
     default:
-      if (m_nativeHandle) {
-        m_running.lock();
-        m_running.unlock();
-      }
+      m_threadRunning.lock();
+      m_threadRunning.unlock();
   }
 }
 
@@ -3158,11 +3179,9 @@ bool PThread::WaitForTermination(const PTimeInterval& maxWait) const
     case Type::IsExternal:
       return true;
     default:
-      if (!m_nativeHandle)
-        return true;
-      if (!m_running.try_lock_for(maxWait.AsChronoNS()))
+      if (!m_threadRunning.try_lock_for(maxWait.AsChronoNS()))
         return false;
-      m_running.unlock();
+      m_threadRunning.unlock();
       return true;
   }
 }
@@ -3208,6 +3227,15 @@ ostream & operator<<(ostream & strm, const PThread::Identifiers& ids)
       strm << " (" << ids.m_uid << ')';
   #endif
   return strm;
+}
+
+
+void PThread::PrintOn(ostream& strm) const
+{
+  strm << "obj=" << this << ", name=\"" << GetThreadName() << '"';
+  #if P_HAS_UNIQUE_THREAD_ID_FMT
+    strm  << ", tid=" << GetThreadId();
+  #endif
 }
 
 
@@ -3340,14 +3368,14 @@ PThread::Times & PThread::Times::operator-=(const Times & rhs)
 
 PString PThread::GetThreadName() const
 {
-  PWaitAndSignal mutex(m_threadNameMutex);
+  std::lock_guard<std::mutex> lock(m_threadNameMutex);
   return m_threadName;
 }
 
 
 void PThread::SetThreadName(const PString & name)
 {
-  PWaitAndSignal mutex(m_threadNameMutex);
+  std::lock_guard<std::mutex> lock(m_threadNameMutex);
 
   if (!name.empty())
     m_threadName = name;
@@ -3357,9 +3385,6 @@ void PThread::SetThreadName(const PString & name)
     if (space != string::npos)
       m_threadName.erase(0, space+1);
   }
-
-  if (IsTerminated())
-    return;
 
   PUniqueThreadIdentifier uniqueId = GetUniqueIdentifier();
   if (uniqueId == 0)

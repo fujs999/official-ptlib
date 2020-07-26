@@ -450,7 +450,7 @@ class PThread : public PObject
   private:
     void InternalThreadMain();
     void InternalThreadEnded();
-    void PlatformPreMain();
+    void PlatformConstruct();
     void PlatformDestroy();
     void PlatformSetThreadName(const char * name);
 #if P_USE_THREAD_CANCEL
@@ -465,17 +465,18 @@ class PThread : public PObject
     PThread& operator=(const PThread&) = delete;
 
   protected:
+    void InternalThreadStarted();
+
     enum class Type { IsAutoDelete, IsManualDelete, IsProcess, IsExternal } m_type;
     PThread(Type type, PString name, Priority priorityLevel = NormalPriority, std::function<void()> mainFunction = {});
 
-    std::function<void()> m_mainFunction;
-    std::atomic<Priority> m_priority;
-    PString               m_threadName; // Give the thread a name for debugging purposes.
-    PCriticalSection      m_threadNameMutex;
-
-    mutable std::timed_mutex        m_running;
+    std::function<void()>           m_mainFunction;
+    const Priority                  m_initialPriority;
+    PString                         m_threadName; // Give the thread a name for debugging purposes.
+    mutable std::mutex              m_threadNameMutex;
+    mutable std::timed_mutex        m_threadRunning;
     std::thread::native_handle_type m_nativeHandle;
-    PThreadIdentifier               m_threadId;
+    std::atomic<PThreadIdentifier>  m_threadId;
     PUniqueThreadIdentifier         m_uniqueId;
     PTime                           m_threadStartTime;
     PTime                           m_threadEndTime;
