@@ -329,7 +329,7 @@ function create_tag () {
   fi
 
   if $need_push; then
-    ( cd $base ; $GIT push --all --tags )
+    ( cd $base && $GIT push --all && $GIT push --tags )
   fi
 }
 
@@ -526,12 +526,12 @@ function update_website () {
 
 function do_all_for_release () {
   clean_copy
-  create_changelog
   create_tag
-  create_archive
+  create_changelog
   create_docs
-  update_website
+  create_archive
   upload_to_sourceforge
+  update_website
 }
 
 #
