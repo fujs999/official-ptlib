@@ -1314,7 +1314,7 @@ bool PDirectory::GetEntries(Entries & entries, const PCaselessString & sortBy, c
   if (sortBy.NumCompare("permissions") == EqualTo)
     return GetEntries(entries, SortByPermission, glob);
 
-  return GetEntries(entries, glob);
+  return GetEntries(entries, Unsorted, glob);
 }
 
 struct PDirectorySortPred
