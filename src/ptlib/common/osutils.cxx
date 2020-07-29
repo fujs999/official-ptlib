@@ -341,7 +341,7 @@ PTHREAD_MUTEX_RECURSIVE_NP
 
     // Delete the old stream outside the lock to avoid potential deadlock caused by
     // stream flush; the PSystemLog mutex should be locked before the PTraceInfo one
-    ostream * oldStream = nullptr;
+    ostream * oldStream = NULL;
 
     Lock();
 
@@ -1314,7 +1314,7 @@ bool PDirectory::GetEntries(Entries & entries, const PCaselessString & sortBy, c
   if (sortBy.NumCompare("permissions") == EqualTo)
     return GetEntries(entries, SortByPermission, glob);
 
-  return GetEntries(entries, glob);
+  return GetEntries(entries, Unsorted, glob);
 }
 
 struct PDirectorySortPred
@@ -2647,7 +2647,7 @@ void PProcess::HouseKeeping()
     if (cleanExternalThreads.HasExpired()) {
       cleanExternalThreads = CleanExternalThreadsTime;
       // Delete old threads as this vector pops off the stack, outside of the mutex lock
-      std::vector<PSharedPtr<PExternalThread>> oldThreads;
+      std::vector< PSharedPtr<PExternalThread> > oldThreads;
       PWaitAndSignal mutex(m_threadMutex);
       for (ThreadList::iterator it = m_externalThreads.begin(); it != m_externalThreads.end();) {
         if ((*it)->IsTerminated()) {
@@ -2740,7 +2740,8 @@ PProcess::~PProcess()
          << terminatedThreads << " already terminated, "
          << threadsToTerminate.size() << " to terminate.");
 
-  for (PThread *thread : threadsToTerminate) {
+  for (std::vector<PThread*>::iterator it = threadsToTerminate.begin(); it != threadsToTerminate.end(); ++it) {
+    PThread * thread = *it;
     PTRACE(3, "Terminating thread " << thread);
     thread->Terminate();  // With extreme prejudice
   }
