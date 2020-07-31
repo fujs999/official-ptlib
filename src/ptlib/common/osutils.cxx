@@ -3339,6 +3339,7 @@ void PThread::GetTimes(std::vector<Times> & allThreadTimes)
 {
   std::vector<PThreadIdentifier> identifiers;
   if (PProcess::Current().GetAllThreadIdentifiers(identifiers)) {
+    allThreadTimes.reserve(identifiers.size());
     Times threadTimes;
     for (std::vector<PThreadIdentifier>::iterator it = identifiers.begin(); it != identifiers.end(); ++it) {
       if (GetTimes(*it, threadTimes))
