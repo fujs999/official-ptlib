@@ -556,6 +556,8 @@ static inline PMicroSeconds jiffies_to_usecs(const uint64_t jiffies)
 
 static bool InternalGetTimes(const char * filename, PThread::Times & times)
 {
+  // Do not use any PTLib functions in here as they could do a PTRACE, and thus deadlock
+
   /* From the man page on the "stat" file
   Status information about the process. This is used by ps(1). It is defined in /usr/src/linux/fs/proc/array.c.
   The fields, in order, with their proper scanf(3) format specifiers, are:
@@ -666,14 +668,13 @@ static bool InternalGetTimes(const char * filename, PThread::Times & times)
     return true;
   }
 
-  PTRACE(4, "Could not obtain thread times from " << filename);
   return false;
 }
 
 
 bool PThread::GetTimes(Times & times)
 {
-  // Do not use any PTLib functions in here as they could to a PTRACE, and this deadlock
+  // Do not use any PTLib functions in here as they could do a PTRACE, and thus deadlock
   times.m_name = GetThreadName();
   times.m_threadId = m_threadId;
   times.m_uniqueId = GetUniqueIdentifier();
