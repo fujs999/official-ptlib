@@ -1380,11 +1380,21 @@ PProcessIdentifier PProcess::GetCurrentProcessID()
 
 void PProcess::GetMemoryUsage(MemoryUsage & usage)
 {
+  usage = MemoryUsage();
+
   PROCESS_MEMORY_COUNTERS info;
   info.cb = sizeof(info);
   if (GetProcessMemoryInfo(GetCurrentProcess(), &info, sizeof(info))) {
     usage.m_virtual = info.PeakWorkingSetSize;
     usage.m_resident = info.WorkingSetSize;
+    usage.m_blocks = info.WorkingSetSize;
+  }
+
+  MEMORYSTATUSEX status;
+  status.dwLength = sizeof(status);
+  if (GlobalMemoryStatusEx(&status)) {
+    usage.m_total = status.ullTotalPhys;
+    usage.m_available = status.ullAvailPhys;
   }
 }
 

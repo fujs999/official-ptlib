@@ -326,6 +326,7 @@ class PProcess : public PThread
     */
     PTime GetStartTime() const;
 
+    // Memory usage informatiom. All values are in bytes.
     struct MemoryUsage {
       MemoryUsage()
         : m_virtual(0)
@@ -333,13 +334,17 @@ class PProcess : public PThread
         , m_max(0)
         , m_current(0)
         , m_blocks(0)
+        , m_total(0)
+        , m_available(0)
         { }
 
-      size_t m_virtual;
-      size_t m_resident;
-      size_t m_max;
-      size_t m_current;
-      size_t m_blocks;
+      size_t m_virtual;   ///< Virtual memory used by process
+      size_t m_resident;  ///< Resident memory used by process
+      size_t m_max;       ///< Maxmimum memory used in heap
+      size_t m_current;   ///< Current memory used in heap
+      size_t m_blocks;    ///< Number of mapped regions
+      size_t m_total;     ///< Total physical memory in system
+      size_t m_available; ///< Available physical memory in system
     };
 
     /**Get process memory suage.
