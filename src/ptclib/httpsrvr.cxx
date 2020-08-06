@@ -1190,6 +1190,7 @@ PWebSocket::PWebSocket()
   : m_client(false)
   , m_fragmentingWrite(false)
   , m_binaryWrite(false)
+  , m_maxFrameSize(1000000000) // A gigabyte seems a lot
   , m_remainingPayload(0)
   , m_currentMask(-1)
   , m_fragmentedRead(false)
@@ -1228,6 +1229,14 @@ bool PWebSocket::InternalRead(void * buf, PINDEX len)
       return false;
 
     PBYTEArray payload;
+
+    if (m_remainingPayload > m_maxFrameSize) {
+      PTRACE(3, "Closing due to excessive frame size: " << m_remainingPayload << " > " << m_maxFrameSize);
+      InternalWrite(ConnectionClose, false, payload, payload.GetSize());
+      CloseBaseReadChannel();
+      return false;
+    }
+
     switch (opCode) {
       case Continuation :
       case TextFrame :
