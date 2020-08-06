@@ -630,6 +630,11 @@ AS_CASE([$target_cpu],
 
    mips64 | mips64el, [
       target_64bit=1
+      AC_ARG_ENABLE(graviton2, AS_HELP_STRING([--enable-graviton2],[Optimise compiler for Graviton2 processor]))
+      AS_VAR_IF([enable_graviton2], [yes], [
+         CFLAGS="-march=armv8.2-a+fp16+rcpc+dotprod+crypto -mtune=cortex-a72 $CFLAGS"
+         CXXFLAGS="-march=armv8.2-a+fp16+rcpc+dotprod+crypto -mtune=cortex-a72 $CXXFLAGS"
+      ])
    ],
       AC_MSG_WARN([CPU \"$target_cpu\" not recognized - assuming 32 bit])
       target_64bit=0
@@ -718,6 +723,22 @@ MY_COMPILE_IFELSE(
    [CPPFLAGS="-Wno-unknown-pragmas $CPPFLAGS"]
 )
 
+MY_COMPILE_IFELSE(
+   [compiler -fno-diagnostics-show-caret],
+   [-Werror -fno-diagnostics-show-caret],
+   [],
+   [],
+   [CPPFLAGS="-fno-diagnostics-show-caret $CPPFLAGS"]
+)
+
+MY_COMPILE_IFELSE(
+   [compiler -fno-caret-diagnostics],
+   [-Werror -fno-caret-diagnostics],
+   [],
+   [],
+   [CPPFLAGS="-fno-caret-diagnostics $CPPFLAGS"]
+)
+
 AC_LANG_PUSH(C++)
 
 MY_COMPILE_IFELSE(
@@ -737,22 +758,26 @@ MY_COMPILE_IFELSE(
 )
 
 MY_COMPILE_IFELSE(
-   [Disable deprecated-declarations warning (-Wno-deprecated-declarations)],
-   [-Werror -Wdeprecated-declarations -Wno-deprecated-declarations],
-   [],
-   [],
-   [CXXFLAGS="$CXXFLAGS -Wno-deprecated-declarations"]
-)
-
-MY_COMPILE_IFELSE(
    [Disable potentially evaluated expression warning (-Wno-potentially-evaluated-expression)],
    [-Werror -Wpotentially-evaluated-expression -Wno-potentially-evaluated-expression],
    [],
    [],
-   [CXXFLAGS="$CXXFLAGS -Wno-potentially-evaluated-expression"]
+   [CXXFLAGS="-Wno-potentially-evaluated-expression $CXXFLAGS"]
 )
 
 AC_LANG_POP(C++)
+
+AC_ARG_ENABLE(deprecated, AS_HELP_STRING([--disable-deprecated],[Stop compiler warning about deprecated functions]))
+
+if test "${enable_deprecated}" != "yes" ; then
+   MY_COMPILE_IFELSE(
+      [compiler -Wno-deprecated-declarations],
+      [-Werror -Wno-deprecated-declarations],
+      [],
+      [],
+      [CPPFLAGS="$CPPFLAGS -Wno-deprecated-declarations"]
+   )
+fi
 
 MY_COMPILE_IFELSE(
    [warnings (-Wall)],

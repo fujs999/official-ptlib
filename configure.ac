@@ -272,56 +272,6 @@ fi
 dnl ########################################################################
 dnl look for compile flags
 
-MY_COMPILE_IFELSE(
-   [compiler -felide-constructors],
-   [-Werror -felide-constructors],
-   [],
-   [],
-   [CXXFLAGS="-felide-constructors $CXXFLAGS"]
-)
-
-MY_COMPILE_IFELSE(
-   [compiler -Wreorder],
-   [-Werror -Wreorder],
-   [],
-   [],
-   [CXXFLAGS="-Wreorder $CXXFLAGS"]
-)
-
-
-AC_LANG_PUSH(C)
-
-MY_COMPILE_IFELSE(
-   [compiler -fno-diagnostics-show-caret],
-   [-Werror -fno-diagnostics-show-caret],
-   [],
-   [],
-   [CPPFLAGS="$CPPFLAGS -fno-diagnostics-show-caret"]
-)
-
-MY_COMPILE_IFELSE(
-   [compiler -fno-caret-diagnostics],
-   [-Werror -fno-caret-diagnostics],
-   [],
-   [],
-   [CPPFLAGS="$CPPFLAGS -fno-caret-diagnostics"]
-)
-
-
-AC_ARG_ENABLE(deprecated, AS_HELP_STRING([--disable-deprecated],[Stop compiler warning about deprecated functions]))
-
-if test "${enable_deprecated}" = "no" ; then
-   MY_COMPILE_IFELSE(
-      [compiler -Wno-deprecated-declarations],
-      [-Werror -Wno-deprecated-declarations],
-      [],
-      [],
-      [CPPFLAGS="$CPPFLAGS -Wno-deprecated-declarations"]
-   )
-fi
-
-AC_LANG_POP(C)
-
 AC_MSG_CHECKING(if compiler uses RTTI by default)
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
    [
@@ -345,7 +295,7 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
    ],
    [
       AC_MSG_RESULT(no)
-      CPPFLAGS="$CPPFLAGS -frtti"
+      CXXFLAGS="-frtti $CXXFLAGS"
    ]
 )
 
