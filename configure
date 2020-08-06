@@ -6461,10 +6461,6 @@ rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
   aarch64*) :
 
       target_64bit=1
-    ;; #(
-  mips64 | mips64el) :
-
-      target_64bit=1
       # Check whether --enable-graviton2 was given.
 if test "${enable_graviton2+set}" = set; then :
   enableval=$enable_graviton2;
@@ -6476,6 +6472,10 @@ fi
          CXXFLAGS="-march=armv8.2-a+fp16+rcpc+dotprod+crypto -mtune=cortex-a72 $CXXFLAGS"
 
 fi
+    ;; #(
+  mips64 | mips64el) :
+
+      target_64bit=1
     ;; #(
   *) :
     { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: CPU \"$target_cpu\" not recognized - assuming 32 bit" >&5
