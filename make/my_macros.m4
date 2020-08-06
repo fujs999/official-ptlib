@@ -628,8 +628,8 @@ AS_CASE([$target_cpu],
       target_64bit=1
       AC_ARG_ENABLE(graviton2, AS_HELP_STRING([--enable-graviton2],[Optimise compiler for Graviton2 processor]))
       AS_VAR_IF([enable_graviton2], [yes], [
-         CFLAGS="-march=armv8.2-a+fp16+rcpc+dotprod+crypto -mtune=cortex-a72 $CFLAGS"
-         CXXFLAGS="-march=armv8.2-a+fp16+rcpc+dotprod+crypto -mtune=cortex-a72 $CXXFLAGS"
+         CFLAGS="-march=armv8.2-a+fp16 -mtune=cortex-a72 $CFLAGS"
+         CXXFLAGS="-march=armv8.2-a+fp16 -mtune=cortex-a72 $CXXFLAGS"
       ])
    ],
 
