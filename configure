@@ -958,10 +958,11 @@ enable_ios
 enable_cpp11
 enable_cpp14
 enable_cpp17
+enable_graviton2
 enable_force32
+enable_deprecated
 with_profiling
 enable_minsize
-enable_deprecated
 enable_exceptions
 with_allocator
 enable_pindex_is_size_t
@@ -1741,10 +1742,11 @@ Optional Features:
   --enable-cpp11          Enable C++11 build
   --enable-cpp14          Enable C++14 build
   --enable-cpp17          Enable C++17 build
+  --enable-graviton2      Optimise compiler for Graviton2 processor
   --enable-force32        Force 32-bit x86 build
+  --disable-deprecated    Stop compiler warning about deprecated functions
   --enable-minsize        Minimise the size of the lib by disabling least used
                           options
-  --disable-deprecated    Stop compiler warning about deprecated functions
   --enable-exceptions     enable C++ exceptions
   --enable-pindex_is_size_t
                           enable PINDEX set to size_t
@@ -6459,6 +6461,17 @@ rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
   aarch64*) :
 
       target_64bit=1
+      # Check whether --enable-graviton2 was given.
+if test "${enable_graviton2+set}" = set; then :
+  enableval=$enable_graviton2;
+fi
+
+      if test "x$enable_graviton2" = xyes; then :
+
+         CFLAGS="-march=armv8.2-a+fp16 -mtune=cortex-a72 $CFLAGS"
+         CXXFLAGS="-march=armv8.2-a+fp16 -mtune=cortex-a72 $CXXFLAGS"
+
+fi
     ;; #(
   mips64 | mips64el) :
 
@@ -6703,6 +6716,74 @@ fi
 
 
 
+
+   oldCPPFLAGS="$CPPFLAGS"
+   CPPFLAGS="$CPPFLAGS -Werror -fno-diagnostics-show-caret"
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking compiler -fno-diagnostics-show-caret" >&5
+$as_echo_n "checking compiler -fno-diagnostics-show-caret... " >&6; }
+   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  usable=yes
+else
+  usable=no
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
+$as_echo "$usable" >&6; }
+   CPPFLAGS="$oldCPPFLAGS"
+
+   if test "x$usable" = "xyes"; then :
+  CPPFLAGS="-fno-diagnostics-show-caret $CPPFLAGS"
+
+fi
+
+
+
+
+   oldCPPFLAGS="$CPPFLAGS"
+   CPPFLAGS="$CPPFLAGS -Werror -fno-caret-diagnostics"
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking compiler -fno-caret-diagnostics" >&5
+$as_echo_n "checking compiler -fno-caret-diagnostics... " >&6; }
+   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  usable=yes
+else
+  usable=no
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
+$as_echo "$usable" >&6; }
+   CPPFLAGS="$oldCPPFLAGS"
+
+   if test "x$usable" = "xyes"; then :
+  CPPFLAGS="-fno-caret-diagnostics $CPPFLAGS"
+
+fi
+
+
+
 ac_ext=cpp
 ac_cpp='$CXXCPP $CPPFLAGS'
 ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -6781,40 +6862,6 @@ fi
 
 
    oldCPPFLAGS="$CPPFLAGS"
-   CPPFLAGS="$CPPFLAGS -Werror -Wdeprecated-declarations -Wno-deprecated-declarations"
-   { $as_echo "$as_me:${as_lineno-$LINENO}: checking Disable deprecated-declarations warning (-Wno-deprecated-declarations)" >&5
-$as_echo_n "checking Disable deprecated-declarations warning (-Wno-deprecated-declarations)... " >&6; }
-   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_cxx_try_compile "$LINENO"; then :
-  usable=yes
-else
-  usable=no
-
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
-$as_echo "$usable" >&6; }
-   CPPFLAGS="$oldCPPFLAGS"
-
-   if test "x$usable" = "xyes"; then :
-  CXXFLAGS="$CXXFLAGS -Wno-deprecated-declarations"
-
-fi
-
-
-
-
-   oldCPPFLAGS="$CPPFLAGS"
    CPPFLAGS="$CPPFLAGS -Werror -Wpotentially-evaluated-expression -Wno-potentially-evaluated-expression"
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking Disable potentially evaluated expression warning (-Wno-potentially-evaluated-expression)" >&5
 $as_echo_n "checking Disable potentially evaluated expression warning (-Wno-potentially-evaluated-expression)... " >&6; }
@@ -6841,7 +6888,7 @@ $as_echo "$usable" >&6; }
    CPPFLAGS="$oldCPPFLAGS"
 
    if test "x$usable" = "xyes"; then :
-  CXXFLAGS="$CXXFLAGS -Wno-potentially-evaluated-expression"
+  CXXFLAGS="-Wno-potentially-evaluated-expression $CXXFLAGS"
 
 fi
 
@@ -6853,6 +6900,48 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
+
+# Check whether --enable-deprecated was given.
+if test "${enable_deprecated+set}" = set; then :
+  enableval=$enable_deprecated;
+fi
+
+
+if test "${enable_deprecated}" != "yes" ; then
+
+   oldCPPFLAGS="$CPPFLAGS"
+   CPPFLAGS="$CPPFLAGS -Werror -Wno-deprecated-declarations"
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking compiler -Wno-deprecated-declarations" >&5
+$as_echo_n "checking compiler -Wno-deprecated-declarations... " >&6; }
+   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  usable=yes
+else
+  usable=no
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
+$as_echo "$usable" >&6; }
+   CPPFLAGS="$oldCPPFLAGS"
+
+   if test "x$usable" = "xyes"; then :
+  CPPFLAGS="$CPPFLAGS -Wno-deprecated-declarations"
+
+fi
+
+
+fi
 
 
    oldCPPFLAGS="$CPPFLAGS"
@@ -7610,200 +7699,6 @@ $as_echo "no" >&6; }
 fi
 
 
-
-   oldCPPFLAGS="$CPPFLAGS"
-   CPPFLAGS="$CPPFLAGS -Werror -felide-constructors"
-   { $as_echo "$as_me:${as_lineno-$LINENO}: checking compiler -felide-constructors" >&5
-$as_echo_n "checking compiler -felide-constructors... " >&6; }
-   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_cxx_try_compile "$LINENO"; then :
-  usable=yes
-else
-  usable=no
-
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
-$as_echo "$usable" >&6; }
-   CPPFLAGS="$oldCPPFLAGS"
-
-   if test "x$usable" = "xyes"; then :
-  CXXFLAGS="-felide-constructors $CXXFLAGS"
-
-fi
-
-
-
-
-   oldCPPFLAGS="$CPPFLAGS"
-   CPPFLAGS="$CPPFLAGS -Werror -Wreorder"
-   { $as_echo "$as_me:${as_lineno-$LINENO}: checking compiler -Wreorder" >&5
-$as_echo_n "checking compiler -Wreorder... " >&6; }
-   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_cxx_try_compile "$LINENO"; then :
-  usable=yes
-else
-  usable=no
-
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
-$as_echo "$usable" >&6; }
-   CPPFLAGS="$oldCPPFLAGS"
-
-   if test "x$usable" = "xyes"; then :
-  CXXFLAGS="-Wreorder $CXXFLAGS"
-
-fi
-
-
-
-
-ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-
-
-   oldCPPFLAGS="$CPPFLAGS"
-   CPPFLAGS="$CPPFLAGS -Werror -fno-diagnostics-show-caret"
-   { $as_echo "$as_me:${as_lineno-$LINENO}: checking compiler -fno-diagnostics-show-caret" >&5
-$as_echo_n "checking compiler -fno-diagnostics-show-caret... " >&6; }
-   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-  usable=yes
-else
-  usable=no
-
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
-$as_echo "$usable" >&6; }
-   CPPFLAGS="$oldCPPFLAGS"
-
-   if test "x$usable" = "xyes"; then :
-  CPPFLAGS="$CPPFLAGS -fno-diagnostics-show-caret"
-
-fi
-
-
-
-
-   oldCPPFLAGS="$CPPFLAGS"
-   CPPFLAGS="$CPPFLAGS -Werror -fno-caret-diagnostics"
-   { $as_echo "$as_me:${as_lineno-$LINENO}: checking compiler -fno-caret-diagnostics" >&5
-$as_echo_n "checking compiler -fno-caret-diagnostics... " >&6; }
-   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-  usable=yes
-else
-  usable=no
-
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
-$as_echo "$usable" >&6; }
-   CPPFLAGS="$oldCPPFLAGS"
-
-   if test "x$usable" = "xyes"; then :
-  CPPFLAGS="$CPPFLAGS -fno-caret-diagnostics"
-
-fi
-
-
-
-
-# Check whether --enable-deprecated was given.
-if test "${enable_deprecated+set}" = set; then :
-  enableval=$enable_deprecated;
-fi
-
-
-if test "${enable_deprecated}" = "no" ; then
-
-   oldCPPFLAGS="$CPPFLAGS"
-   CPPFLAGS="$CPPFLAGS -Werror -Wno-deprecated-declarations"
-   { $as_echo "$as_me:${as_lineno-$LINENO}: checking compiler -Wno-deprecated-declarations" >&5
-$as_echo_n "checking compiler -Wno-deprecated-declarations... " >&6; }
-   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-  usable=yes
-else
-  usable=no
-
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
-$as_echo "$usable" >&6; }
-   CPPFLAGS="$oldCPPFLAGS"
-
-   if test "x$usable" = "xyes"; then :
-  CPPFLAGS="$CPPFLAGS -Wno-deprecated-declarations"
-
-fi
-
-
-fi
-
-ac_ext=cpp
-ac_cpp='$CXXCPP $CPPFLAGS'
-ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
-
-
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking if compiler uses RTTI by default" >&5
 $as_echo_n "checking if compiler uses RTTI by default... " >&6; }
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -7840,7 +7735,7 @@ else
 
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
-      CPPFLAGS="$CPPFLAGS -frtti"
+      CXXFLAGS="-frtti $CXXFLAGS"
 
 
 fi
