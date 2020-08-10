@@ -606,8 +606,10 @@ uninstall:
 	       $(DESTDIR)$(includedir)/ptlib_config.h \
 	       $(DESTDIR)$(includedir)/ptbuildopts.h \
 	       $(DESTDIR)$(datarootdir)/ptlib \
-	       $(DESTDIR)$(libdir)/$(PTLIB_PLUGIN_DIR) \
 	       $(DESTDIR)$(libdir)/pkgconfig/ptlib.pc
+ifneq (,$(PTLIB_PLUGIN_DIR))
+	rm -rf $(DESTDIR)$(libdir)/$(PTLIB_PLUGIN_DIR)
+endif
 	rm -f $(DESTDIR)$(libdir)/$(notdir $(PTLIB_OPT_STATIC_FILE)) \
 	      $(DESTDIR)$(libdir)/$(notdir $(PTLIB_DEBUG_STATIC_FILE)) \
 	      $(DESTDIR)$(libdir)/$(notdir $(PTLIB_OPT_SHARED_FILE)) \
