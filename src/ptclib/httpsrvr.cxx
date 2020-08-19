@@ -1186,7 +1186,7 @@ bool PWebSocket::InternalRead(void * buf, PINDEX len)
 
       case Ping :
         // RFC6455/5.5.2 echo ping payload
-        if (!ReadMasked(payload.GetPointer(m_remainingPayload), m_remainingPayload))
+        if (!ReadMasked(payload.GetPointer((PINDEX)m_remainingPayload), (PINDEX)m_remainingPayload))
           return false;
         if (!InternalWrite(Pong, false, payload, payload.GetSize()))
           return false;
@@ -1194,13 +1194,13 @@ bool PWebSocket::InternalRead(void * buf, PINDEX len)
 
       case Pong :
         // Odd, as we don't currently support sending pings, ignore it.
-        if (!ReadMasked(payload.GetPointer(m_remainingPayload), m_remainingPayload))
+        if (!ReadMasked(payload.GetPointer((PINDEX)m_remainingPayload), (PINDEX)m_remainingPayload))
           return false;
         break;
 
       case ConnectionClose :
         // RFC6455/5.5.1 get reason codes, if present
-        if (!ReadMasked(payload.GetPointer(m_remainingPayload), m_remainingPayload))
+        if (!ReadMasked(payload.GetPointer((PINDEX)m_remainingPayload), (PINDEX)m_remainingPayload))
           return false;
         PTRACE(3, "WebSocket closed:\n" << PHexDump(payload, false));
         InternalWrite(ConnectionClose, false, payload, payload.GetSize());
