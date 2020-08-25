@@ -1,7 +1,7 @@
 %global version_major  2
 %global version_minor  19
 %global version_patch  4
-%global version_oem    9
+%global version_oem    10
 
 # Branch ID should be 0 for local builds/PRs
 # Jenkins builds should use 1 for develop, 2 for master (release builds)
