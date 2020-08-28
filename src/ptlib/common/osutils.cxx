@@ -247,6 +247,10 @@ public:
       newStream = &cerr;
 #endif
 
+    // Delete the old stream outside the lock to avoid potential deadlock caused by
+    // stream flush; the PSystemLog mutex should be locked before the PTraceInfo one
+    ostream * oldStream = NULL;
+
     m_mutex.lock();
 
     if (m_stream != &cerr && m_stream != &cout)
@@ -254,6 +258,8 @@ public:
     m_stream = newStream;
 
     m_mutex.unlock();
+
+    delete oldStream;
   }
 
   bool AdjustOptions(unsigned addedOptions, unsigned removedOptions)
