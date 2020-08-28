@@ -112,7 +112,7 @@ void ExternalThread()
 {
   PThread::Sleep(1000);
   PThread * thread = PThread::Current();
-  cout << "External thread: " << thread << ' ' << thread->GetThreadName() << endl;
+  cout << "External thread: " << thread << ' ' << thread->GetThreadName().ToLiteral() << endl;
   PThread::Sleep(1000);
 }
 
@@ -149,75 +149,78 @@ void LockBthenA(PMutex * a, PMutex * b)
 class ThreadTest : public PProcess
 {
   PCLASSINFO(ThreadTest, PProcess)
-  public:
-    void Main();
+public:
+  void Main()
+  {
+    cout << "Thread Test Program" << endl;
+
+    PArgList & args = GetArguments();
+    args.Parse(PTRACE_ARGLIST);
+    PTRACE_INITIALISE(args);
+
+    SimpleTest();
+    ExternalTest();
+    DeadlockTest();
+  }
+
+  void SimpleTest()
+  {
+    cout << "This program will display the following:" << endl;
+    cout << "             2 seconds of 1 1 1 1 1..." << endl;
+    cout << " followed by 2 seconds of 1 2 1 2 1 2 1 2 1 2..." << endl;
+    cout << " followed by 2 seconds of 2 2 2 2 2..." << endl;
+    cout << endl;
+
+    // Create the threads
+    auto mythread1 = std::make_unique<MyThread1>();
+    auto mythread2 = std::make_unique<MyThread2>();
+
+    // Thread 1 should now be running, as there is a Start() function
+    // in the thread constructor.
+    // Thread 2 should be suspended.
+    // Sleep for three seconds. Only thread 1 will be running.
+    // Display will show "1 1 1 1 1 1 1..."
+    Sleep(2000);
+
+
+    // Start the second thread.
+    // Both threads should be running
+    // Sleep for 3 seconds, allowing the threads to run.
+    // Display will show "1 2 1 2 1 2 1 2 1 2..."
+    mythread2->Start();
+    Sleep(2000);
+
+    // Clean up
+    mythread1->Stop();
+    mythread1->WaitForTermination();
+
+    Sleep(2000);
+
+    mythread2->Stop();
+    mythread2->WaitForTermination();
+
+    cout << endl;
+  }
+
+  void ExternalTest()
+  {
+    cout << "\nTesting external thread." << endl;
+    auto ext = std::make_unique<std::thread>(&ExternalThread);
+    ext->join();
+  }
+
+  void DeadlockTest()
+  {
+    #if PTRACING
+    PTrace::SetLevel(std::max(PTrace::GetLevel(), 1U));
+    #endif
+    cout << "\nTesting deadlock detection." << endl;
+    PTimedMutex a, b;
+    auto th1 = std::make_unique<PThread>(std::bind(LockAthenB, &a, &b));
+    auto th2 = std::make_unique<PThread>(std::bind(LockBthenA, &a, &b));
+    Sleep(20000);
+    cout << "Deleting deadlock threads." << endl;
+  }
 };
 
 PCREATE_PROCESS(ThreadTest);
-
-// The main program
-void ThreadTest::Main()
-{
-  cout << "Thread Test Program" << endl;
-
-  PArgList & args = GetArguments();
-  args.Parse(PTRACE_ARGLIST);
-  PTRACE_INITIALISE(args);
-
-  cout << "This program will display the following:" << endl;
-  cout << "             2 seconds of 1 1 1 1 1..." << endl;
-  cout << " followed by 2 seconds of 1 2 1 2 1 2 1 2 1 2..." << endl;
-  cout << " followed by 2 seconds of 2 2 2 2 2..." << endl;
-  cout << endl;
-
-  // Create the threads
-  MyThread1 * mythread1 = new MyThread1();
-  MyThread2 * mythread2 = new MyThread2();
-
-  // Thread 1 should now be running, as there is a Start() function
-  // in the thread constructor.
-  // Thread 2 should be suspended.
-  // Sleep for three seconds. Only thread 1 will be running.
-  // Display will show "1 1 1 1 1 1 1..."
-  Sleep(2000);
-
-
-  // Start the second thread.
-  // Both threads should be running
-  // Sleep for 3 seconds, allowing the threads to run.
-  // Display will show "1 2 1 2 1 2 1 2 1 2..."
-  mythread2->Start();
-  Sleep(2000);
-
-  // Clean up
-  mythread1->Stop();
-  mythread1->WaitForTermination();
-
-  Sleep(2000);
-
-  mythread2->Stop();
-  mythread2->WaitForTermination();
-
-  cout << endl;
-
-  delete mythread1;
-  delete mythread2;
-
-  cout << "Testing external thread." << endl;
-  std::thread* ext = new std::thread(&ExternalThread);
-  ext->join();
-  delete ext;
-
-  #if PTRACING
-    PTrace::SetLevel(std::max(PTrace::GetLevel(), 1U));
-  #endif
-  cout << "Testing deadlock detection." << endl;
-  PTimedMutex a, b;
-  PThread* th1 = new PThread(std::bind(LockAthenB, &a, &b));
-  PThread* th2 = new PThread(std::bind(LockBthenA, &a, &b));
-  Sleep(20000);
-  cout << "Deleting deadlock threads." << endl;
-  delete th1;
-  delete th2;
-}
-
