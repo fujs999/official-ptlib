@@ -97,13 +97,14 @@ PHTML::~PHTML()
 
 PBoolean PHTML::Is(ElementInSet elmt) const
 {
-  return m_elementSet[elmt];
+  return elmt < NumElementsInSet && m_elementSet[elmt];
 }
 
 
 void PHTML::Set(ElementInSet elmt)
 {
-  m_elementSet[elmt] = true;
+  if (elmt < NumElementsInSet)
+    m_elementSet[elmt] = true;
 }
 
 
