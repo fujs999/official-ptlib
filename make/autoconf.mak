@@ -209,7 +209,7 @@ else # autoconf
   $(CONFIGURE): $(CONFIGURE).ac
 	@echo ---------------------------------------------------------------------
 	@echo The configure script requires updating, but autoconf/aclocal is not available.
-	@echo Install autoconf v2.$(AUTOCONF_VERSION) and aclocal v1.${ACLOCAL_VERSION), or later.
+	@echo Install autoconf v2.$(AUTOCONF_VERSION) and aclocal v1.$(ACLOCAL_VERSION), or later.
 	@echo Alternatively, execute the command:
 	@echo touch $@
 	@echo ---------------------------------------------------------------------
