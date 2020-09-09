@@ -338,13 +338,13 @@ class PProcess : public PThread
         , m_available(0)
         { }
 
-      size_t m_virtual;   ///< Virtual memory used by process
-      size_t m_resident;  ///< Resident memory used by process
-      size_t m_max;       ///< Maxmimum memory used in heap
-      size_t m_current;   ///< Current memory used in heap
-      size_t m_blocks;    ///< Number of mapped regions
-      size_t m_total;     ///< Total physical memory in system
-      size_t m_available; ///< Available physical memory in system
+      uint64_t m_virtual;   ///< Virtual memory used by process
+      uint64_t m_resident;  ///< Resident memory used by process
+      uint64_t m_max;       ///< Maxmimum memory used in heap
+      uint64_t m_current;   ///< Current memory used in heap
+      uint64_t m_blocks;    ///< Number of mapped regions
+      uint64_t m_total;     ///< Total physical memory in system
+      uint64_t m_available; ///< Available physical memory in system
     };
 
     /**Get process memory suage.
