@@ -447,15 +447,16 @@ void PSystemLogToNetwork::Output(PSystemLog::Level level, const char * msg)
 
 #if defined(_WIN32)
 
+#include <ptlib/msos/ptlib/debstrm.h>
+
 void PSystemLogToDebug::Output(PSystemLog::Level level, const char * msg)
 {
   if (level > m_thresholdLevel || !PProcess::IsInitialised())
     return;
 
-  PStringStream strm;
+  PDebugStream strm;
   OutputToStream(strm, level, msg);
-  PVarString str = strm;
-  OutputDebugString(str);
+  strm.flush();
 }
 
 #elif defined(P_ANDROID)

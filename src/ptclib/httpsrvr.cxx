@@ -1813,13 +1813,9 @@ bool PHTTPResource::InternalOnCommand(PHTTPServer & server,
       PStringToString postData;
       if (PHTTP::FormUrlEncoded() == connectInfo.GetMIME().Get(PHTTP::ContentTypeTag(), PHTTP::FormUrlEncoded()))
         PURL::SplitQueryVars(connectInfo.GetEntityBody(), postData);
-      if (!OnPOSTData(*request, postData)) {
-        if (request->code != PHTTP::RequestOK)
-          server.OnError(request->code, "", connectInfo);
-        retVal = false;
-      }
+      retVal = OnPOSTData(*request, postData);
     }
-    if (!LoadHeaders(*request)) 
+    else if (!LoadHeaders(*request)) 
       retVal = server.OnError(request->code, connectInfo.GetURL().AsString(), connectInfo);
     else if (cmd != PHTTP::GET)
       retVal = request->outMIME.Contains(PHTTP::ContentLengthTag());

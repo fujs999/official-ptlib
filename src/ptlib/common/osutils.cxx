@@ -253,6 +253,8 @@ PTHREAD_MUTEX_RECURSIVE_NP
         m_contextIdentifier = m_threadAddress->GetTraceContextIdentifier();
       if (m_objectClass.NumCompare("class ") == PObject::EqualTo)
         m_objectClass.Delete(0, 6);
+      else if (m_objectClass.NumCompare("struct ") == PObject::EqualTo)
+        m_objectClass.Delete(0, 7);
     }
 
     unsigned      m_level;
