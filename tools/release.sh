@@ -285,9 +285,9 @@ function create_tag () {
     if [ $version_file_changed ]; then
       # Add or remove a space to force check in
       if grep --quiet "revision.h " "$REVISION_FILE" ; then
-        sed -i ''  "s/revision.h /revision.h/" "$REVISION_FILE"
+        sed --in-place  "s/revision.h /revision.h/" "$REVISION_FILE"
       else
-        sed -i '' "s/revision.h/revision.h /" "$REVISION_FILE"
+        sed --in-place "s/revision.h/revision.h /" "$REVISION_FILE"
       fi
       msg="Update release version number to $release_verstr"
       pushd ${base} > /dev/null
