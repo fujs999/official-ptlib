@@ -146,6 +146,8 @@ fi
 previous_verstr=${previous_version[0]}.${previous_version[1]}.${previous_version[2]}
 release_verstr=${release_version[0]}.${release_version[1]}.${release_version[2]}
 
+echo "Release version: ${release_verstr}, previous: ${previous_verstr}"
+
 
 #
 #  set calculated names
@@ -384,7 +386,7 @@ function create_archive () {
   if [ "${base}" != "${BASE_ZIP}" ]; then
     mv ${base} ${BASE_ZIP}
   fi
-  exclusions="-x .git*"
+  exclusions="-x *.git*"
   for ext in ${BINARY_EXT[*]} ; do
     files=`find ${BASE_ZIP} -name \*.${ext}`
     if [ -n "$files" ]; then
