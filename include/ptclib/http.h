@@ -869,9 +869,9 @@ class PHTTPClientPool : public PObject
     PTimeInterval m_connectTimeout;
     PTimeInterval m_readTimeout;
 #if P_SSL
-    PString m_authority;    // Directory, file or data
-    PString m_certificate;  // File or data
-    PString m_privateKey;   // File or data
+    PString  m_authority;    // Directory, file or data
+    PString  m_certificate;  // File or data
+    PString  m_privateKey;   // File or data
 #endif
 
     PDECLARE_MUTEX(m_mutex);
