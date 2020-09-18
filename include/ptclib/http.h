@@ -751,19 +751,28 @@ class PHTTPClient : public PHTTP
     /// Get persistent connection mode
     bool GetPersistent() const { return m_persist; }
 
+    /// Set max redirects on operation
+    void SetMaxRedirects(
+      unsigned maxRedirects
+    ) { m_maxRedirects = maxRedirects; }
+
+    /// Get max redirects on operation
+    unsigned GetMaxRedirects() const { return m_maxRedirects; }
+
 #if PTRACING
     static PINDEX MaxTraceContentSize;
 #endif
 
   protected:
-    PString m_userAgentName;
-    bool    m_persist;
-    PString m_userName;
-    PString m_password;
+    PString  m_userAgentName;
+    bool     m_persist;
+    unsigned m_maxRedirects;
+    PString  m_userName;
+    PString  m_password;
 #if P_SSL
-    PString m_authority;    // Directory, file or data
-    PString m_certificate;  // File or data
-    PString m_privateKey;   // File or data
+    PString  m_authority;    // Directory, file or data
+    PString  m_certificate;  // File or data
+    PString  m_privateKey;   // File or data
 #endif
     PHTTPClientAuthentication * m_authentication;
 };

@@ -241,6 +241,7 @@ struct PHTTPClient_FileWriter : public PHTTPContentProcessor
 PHTTPClient::PHTTPClient(const PString & userAgent)
   : m_userAgentName(userAgent)
   , m_persist(true)
+  , m_maxRedirects(10)
   , m_authentication(NULL)
 {
 }
@@ -289,9 +290,15 @@ int PHTTPClient::ExecuteCommand(Commands cmd,
   if (m_persist && !outMIME.Contains(ConnectionTag()))
     outMIME.SetAt(ConnectionTag(), KeepAliveTag());
 
+  unsigned redirectCount = m_maxRedirects;
   bool needAuthentication = true;
+  bool forceReopen = false;
   PURL adjustableURL = url;
-  for (int retry = 3; retry > 0; --retry) {
+  for (unsigned retry = 0; retry < 3; ++retry) {
+    if (forceReopen)
+      CloseBaseReadChannel();
+    forceReopen = true;
+
     if (!ConnectURL(adjustableURL))
       break;
 
@@ -303,61 +310,61 @@ int PHTTPClient::ExecuteCommand(Commands cmd,
         outMIME.SetAt(HostTag, url.GetHostPort());
     }
 
-    if (!WriteCommand(cmd, url.AsString(PURL::RelativeOnly), outMIME, processor)) {
-      SetLastResponse(TransportWriteError, PString::Empty(), LastWriteError);
-      break;
-    }
+    if (!WriteCommand(cmd, url.AsString(PURL::RelativeOnly), outMIME, processor))
+      continue;
 
     // If not persisting need to shut down write so other end stops reading
     if (!m_persist && !outMIME.Has(ContentLengthTag))
       Shutdown(ShutdownWrite);
 
     // Await a response, if all OK exit loop
-    if (ReadResponse(replyMIME) && (m_lastResponseCode != Continue || ReadResponse(replyMIME))) {
-      if (IsOK(m_lastResponseCode))
-        return m_lastResponseCode;
+    if (!ReadResponse(replyMIME))
+      continue;
 
-      switch (m_lastResponseCode) {
-        case MovedPermanently:
-        case MovedTemporarily:
-          adjustableURL = replyMIME("Location");
-          if (adjustableURL.IsEmpty())
+    if (m_lastResponseCode == Continue && !ReadResponse(replyMIME))
+      continue;
+
+    if (IsOK(m_lastResponseCode))
+      return m_lastResponseCode;
+
+    switch (m_lastResponseCode) {
+      case MovedPermanently:
+      case MovedTemporarily:
+        if (redirectCount-- > 0) {
+          PURL newLocation = replyMIME("Location");
+          if (!newLocation.IsEmpty() && adjustableURL != newLocation) {
+            adjustableURL = newLocation;
+            retry = 0; // Go back to full quota of retries.
             continue;
-          break;
-
-        case UnAuthorised:
-          if (needAuthentication && replyMIME.Contains("WWW-Authenticate") && !(m_userName.IsEmpty() && m_password.IsEmpty())) {
-            // authenticate 
-            PString errorMsg;
-            PHTTPClientAuthentication * newAuth = PHTTPClientAuthentication::ParseAuthenticationRequired(false, replyMIME, errorMsg);
-            if (newAuth != NULL) {
-              newAuth->SetUsername(m_userName);
-              newAuth->SetPassword(m_password);
-
-              delete m_authentication;
-              m_authentication = newAuth;
-              needAuthentication = false;
-              continue;
-            }
-
-            m_lastResponseInfo += " - " + errorMsg;
           }
-          // Do next case
-
-        default:
-          break;
-      }
-
-      retry = 0; // No more retries
-    }
-    else {
-      // If not persisting, we have no oppurtunity to write again, just error out
-      if (!m_persist)
+        }
         break;
 
-      // ... we close the channel and allow ConnectURL() to reopen it.
-      Close();
+      case UnAuthorised:
+        if (needAuthentication && replyMIME.Contains("WWW-Authenticate") && !(m_userName.IsEmpty() && m_password.IsEmpty())) {
+          // authenticate 
+          PString errorMsg;
+          PHTTPClientAuthentication * newAuth = PHTTPClientAuthentication::ParseAuthenticationRequired(false, replyMIME, errorMsg);
+          if (newAuth != NULL) {
+            newAuth->SetUsername(m_userName);
+            newAuth->SetPassword(m_password);
+
+            delete m_authentication;
+            m_authentication = newAuth;
+            needAuthentication = false;
+            forceReopen = !m_persist; // Don't close and reopen if persisting
+            continue;
+          }
+
+          m_lastResponseInfo += " - " + errorMsg;
+        }
+        // Do next case
+
+      default:
+        break;
     }
+
+    break; // No more retries
   }
 
   PTRACE_IF(3, !IsOK(m_lastResponseCode), "Error " << m_lastResponseCode << ' ' << m_lastResponseInfo.Left(m_lastResponseInfo.FindOneOf("\r\n")));
@@ -419,8 +426,10 @@ bool PHTTPClient::WriteCommand(Commands cmd,
     if (trace != NULL)
       *trace << PHTTPClient_OutputBody(data, len);
 #endif
-    if (!Write(data, len))
+    if (!Write(data, len)) {
+      SetLastResponse(TransportWriteError, PString::Empty(), LastWriteError);
       return false;
+    }
   }
 
 #if PTRACING
