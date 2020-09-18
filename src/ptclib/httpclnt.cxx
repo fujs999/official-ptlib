@@ -307,7 +307,9 @@ PHTTP::StatusCode PHTTPClient::ExecuteCommand(Commands cmd,
 
     if (!WriteCommand(cmd, url.AsString(PURL::RelativeOnly), outMIME, processor)) {
       SetLastResponse(TransportWriteError, PString::Empty(), LastWriteError);
-      break;
+      // Close it and retry
+      Close();
+      continue;
     }
 
     // If not persisting need to shut down write so other end stops reading
