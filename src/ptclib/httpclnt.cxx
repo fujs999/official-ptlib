@@ -325,7 +325,7 @@ PHTTP::StatusCode PHTTPClient::ExecuteCommand(Commands cmd,
       continue;
 
     if (IsOK(m_lastResponseCode))
-      return m_lastResponseCode;
+      return (StatusCode)m_lastResponseCode;
 
     switch (m_lastResponseCode) {
       case MovedPermanently:
