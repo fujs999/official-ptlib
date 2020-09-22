@@ -292,7 +292,7 @@ int PHTTPClient::ExecuteCommand(Commands cmd,
 
   unsigned redirectCount = m_maxRedirects;
   bool needAuthentication = true;
-  bool forceReopen = false;
+  bool forceReopen = !m_persist;
   PURL adjustableURL = url;
   for (unsigned retry = 0; retry < 3; ++retry) {
     if (forceReopen)
@@ -323,6 +323,10 @@ int PHTTPClient::ExecuteCommand(Commands cmd,
 
     if (m_lastResponseCode == Continue && !ReadResponse(replyMIME))
       continue;
+
+    // If remote does not want us to persist, then don't
+    if (m_persist && (replyMIME.Get(ConnectionTag) *= "close"))
+      m_persist = false;
 
     if (IsOK(m_lastResponseCode))
       return m_lastResponseCode;
