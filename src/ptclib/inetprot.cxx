@@ -439,7 +439,7 @@ PBoolean PInternetProtocol::ReadResponse()
 {
   PString line;
   if (!ReadLine(line))
-    return SetLastResponse(-1, "Remote shutdown", LastReadError);
+    return SetLastResponse(-1, "Response first line", LastReadError);
 
   PINDEX continuePos = ParseResponse(line);
   if (continuePos == 0)
@@ -523,16 +523,23 @@ bool PInternetProtocol::SetLastResponse(int code, const PString & info, ErrorGro
   if (code == 0 || (code >= 200 && code < 300))
     return true;
 
-  if (code < 200) {
-    Errors err = GetErrorCode(group);
-    if (err != NoError) {
-      m_lastResponseInfo = GetErrorText(group);
-      m_lastResponseInfo.sprintf(" (errno=%i)", GetErrorNumber(group));
-      return false;
-    }
-  }
+  if (code >= 300)
+    return false;
 
-  return SetErrorValues(ProtocolFailure, code, group);
+  Errors errCode = GetErrorCode(group);
+  if (errCode== NoError && group != LastReadError && group != LastWriteError)
+    return SetErrorValues(ProtocolFailure, code, group);
+
+  PString errText = GetErrorText(group);
+  int errNum = GetErrorNumber(group);
+  if (errText.IsEmpty() && errNum == 0)
+    errText = "Remote shutdown";
+  else if (errText.IsEmpty())
+    errText.sprintf("errno=%i", errNum);
+  else
+    errText.sprintf(" (errno=%i)", errNum);
+  m_lastResponseInfo &= errText;
+  return false;
 }
 
 
