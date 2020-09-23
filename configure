@@ -6243,7 +6243,12 @@ fi
 
    darwin* )
       target_os=Darwin
-      target_release=10.14
+      target_release=`xcodebuild -showsdks | sed -n 's/.* macosx\(.*\)/\1/p' | sort | tail -n 1`
+      if ${target_release+:} false; then :
+
+else
+  as_fn_error $? "Unable to determine iOS release number" "$LINENO" 5
+fi
 
       CPPFLAGS="-mmacosx-version-min=$target_release $CPPFLAGS"
       LDFLAGS="-mmacosx-version-min=$target_release $LDFLAGS"
