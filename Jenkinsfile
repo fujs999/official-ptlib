@@ -1,5 +1,10 @@
 pipeline {
-  agent none
+  agent {
+    node {
+      label "master"
+      customWorkspace "${JOB_NAME.replaceAll('%2F', '_')}"
+    }
+  }
 
   options {
     buildDiscarder logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '', daysToKeepStr: '200', numToKeepStr: '200')
@@ -70,6 +75,21 @@ pipeline {
               build job: "/zsdk-opal/develop", quietPeriod: 60, wait: false
             }
           }
+        }
+      }
+    }
+
+    stage('tag-release') {
+      when {
+        branch 'release/*'
+      }
+      steps {
+        // Set the key to do the git push to "THis is probably Geo's key!"
+        sshagent(['9a03ea9a-2af6-4f40-a178-6231e71d8dab']) {
+          sh """
+            git tag ${env.BRANCH_NAME.replaceAll("release/", "")}-2.${BUILD_NUMBER}
+            git push --tags
+          """
         }
       }
     }
