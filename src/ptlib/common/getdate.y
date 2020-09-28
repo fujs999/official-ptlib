@@ -1,4 +1,6 @@
+%require "3.0"
 %define api.pure
+%parse-param {struct Variables * VARIABLE}
 
 %{
 /*
@@ -40,12 +42,6 @@
   #define STDAPICALLTYPE
 #endif
 
-
-#ifdef YYBISON
-  #ifndef YYPURE
-    #define YYPURE 1
-  #endif
-#endif
 
 extern int  STDAPICALLTYPE PTimeGetChar(void * stream);
 extern void STDAPICALLTYPE PTimeUngetChar(void * stream, int c);
@@ -112,26 +108,7 @@ struct Variables {
     time_t	yyRelSeconds;
 };
 
-static int PTime_yyparse(void *);
-
-#define VARIABLE	((struct Variables*)parseParam)
-#define YYPARSE_PARAM	parseParam
-#define yyparse		PTime_yyparse
-#define yyerror		PTime_yyerror
-
-#if YYPURE
-  #define YYLEX_PARAM	VARIABLE
-  #define yylex		PTime_yylex
-  #define LOCK()
-  #define UNLOCK()
-#else
-  #define yylex()	PTime_yylex(&yylval, VARIABLE)
-
-  #include <pthread.h>
-  static pthread_mutex_t PTime_mutex = PTHREAD_MUTEX_INITIALIZER;
-  #define LOCK()   pthread_mutex_lock(&PTime_mutex);
-  #define UNLOCK() pthread_mutex_unlock(&PTime_mutex);
-#endif
+#define yylex(yylval) PTime_yylex(yylval, VARIABLE)
 
 %}
 
@@ -143,7 +120,7 @@ static int PTime_yyparse(void *);
 %{
 static void SetPossibleDate(struct Variables*, time_t, time_t, time_t);
 static int PTime_yylex(YYSTYPE * yylval, struct Variables * vars);
-static void yyerror(char const *msg);
+static void yyerror(struct Variables * vars, char const * msg);
 %}
 
 %token	tAGO tDAY tDAYZONE tID tMERIDIAN tMINUTE_UNIT tMONTH tMONTH_UNIT
@@ -982,9 +959,7 @@ time_t STDAPICALLTYPE PTimeParse(void * inputStream, struct tm * now, int timezo
     var.yyHaveTime = 0;
     var.yyHaveZone = 0;
 
-    LOCK();
     yyparse(&var);
-    UNLOCK();
 
     if (var.yyHaveTime > 1 || var.yyHaveZone > 1 ||
 	var.yyHaveDate > 1 || var.yyHaveDay > 1)
@@ -1023,7 +998,7 @@ time_t STDAPICALLTYPE PTimeParse(void * inputStream, struct tm * now, int timezo
 #pragma warning(disable:4028 4100 4211)
 #endif
 
-void yyerror(const char * s)
+void yyerror(struct Variables * vars, const char * s)
 {
 }
 
