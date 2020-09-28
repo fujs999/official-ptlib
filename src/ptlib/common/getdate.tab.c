@@ -1,19 +1,19 @@
-/* A Bison parser, made by GNU Bison 2.6.4.  */
+/* A Bison parser, made by GNU Bison 3.0.4.  */
 
 /* Bison implementation for Yacc-like parsers in C
-   
-      Copyright (C) 1984, 1989-1990, 2000-2012 Free Software Foundation, Inc.
-   
+
+   Copyright (C) 1984, 1989-1990, 2000-2015 Free Software Foundation, Inc.
+
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
-   
+
    This program is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
-   
+
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
@@ -26,7 +26,7 @@
    special exception, which will cause the skeleton and the resulting
    Bison output files to be licensed under the GNU General Public
    License without this special exception.
-   
+
    This special exception was added by the Free Software Foundation in
    version 2.2 of Bison.  */
 
@@ -44,7 +44,7 @@
 #define YYBISON 1
 
 /* Bison version.  */
-#define YYBISON_VERSION "2.6.4"
+#define YYBISON_VERSION "3.0.4"
 
 /* Skeleton name.  */
 #define YYSKELETON_NAME "yacc.c"
@@ -62,8 +62,7 @@
 
 
 /* Copy the first part of user declarations.  */
-/* Line 358 of yacc.c  */
-#line 3 "ptlib/common/getdate.y"
+#line 5 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.y" /* yacc.c:339  */
 
 /*
 **  Originally written by Steven M. Bellovin <smb@research.att.com> while
@@ -107,9 +106,9 @@
 
 extern int  STDAPICALLTYPE PTimeGetChar(void * stream);
 extern void STDAPICALLTYPE PTimeUngetChar(void * stream, int c);
-extern int STDAPICALLTYPE PTimeGetDateOrder();
-extern int STDAPICALLTYPE PTimeIsMonthName(const char *, int, int);
-extern int STDAPICALLTYPE PTimeIsDayName(const char *, int, int);
+extern int  STDAPICALLTYPE PTimeGetDateOrder();
+extern int  STDAPICALLTYPE PTimeIsMonthName(const char *, int, int);
+extern int  STDAPICALLTYPE PTimeIsDayName(const char *, int, int);
 
 
 #define EPOCH		1970
@@ -170,41 +169,16 @@ struct Variables {
     time_t	yyRelSeconds;
 };
 
-#define VARIABLE ((struct Variables*)parseParam)
+#define yylex(yylval) PTime_yylex(yylval, VARIABLE)
 
 
-#define YYLEX_PARAM	VARIABLE
-#define YYPARSE_PARAM	parseParam
+#line 176 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.tab.c" /* yacc.c:339  */
 
-#define yyparse		PTime_yyparse
-#define yylex		PTime_yylex
-#define yyerror		PTime_yyerror
-
-#define GCC_VERSION (__GNUC__ * 10000 \
-                    + __GNUC_MINOR__ * 100 \
-                    + __GNUC_PATCHLEVEL__)
-
-static int yyparse(void *); 
-
-#ifdef __GNUC__
-static int yyerror(char const *msg);
-#else
-static void yyerror(char const *msg);
-#endif
-
-
-static void SetPossibleDate(struct Variables*, time_t, time_t, time_t);
-
-
-
-/* Line 358 of yacc.c  */
-#line 203 "ptlib/common/getdate.tab.c"
-
-# ifndef YY_NULL
+# ifndef YY_NULLPTR
 #  if defined __cplusplus && 201103L <= __cplusplus
-#   define YY_NULL nullptr
+#   define YY_NULLPTR nullptr
 #  else
-#   define YY_NULL 0
+#   define YY_NULLPTR 0
 #  endif
 # endif
 
@@ -217,7 +191,7 @@ static void SetPossibleDate(struct Variables*, time_t, time_t, time_t);
 #endif
 
 
-/* Enabling traces.  */
+/* Debug traces.  */
 #ifndef YYDEBUG
 # define YYDEBUG 0
 #endif
@@ -225,80 +199,65 @@ static void SetPossibleDate(struct Variables*, time_t, time_t, time_t);
 extern int yydebug;
 #endif
 
-/* Tokens.  */
+/* Token type.  */
 #ifndef YYTOKENTYPE
 # define YYTOKENTYPE
-   /* Put the tokens into the symbol table, so that GDB and other debuggers
-      know about them.  */
-   enum yytokentype {
-     tAGO = 258,
-     tDAY = 259,
-     tDAYZONE = 260,
-     tID = 261,
-     tMERIDIAN = 262,
-     tMINUTE_UNIT = 263,
-     tMONTH = 264,
-     tMONTH_UNIT = 265,
-     tSNUMBER = 266,
-     tS4DIGITNUMBER = 267,
-     tUNUMBER = 268,
-     t4DIGITNUMBER = 269,
-     t6DIGITNUMBER = 270,
-     t8DIGITNUMBER = 271,
-     tSEC_UNIT = 272,
-     tZONE = 273,
-     tMILZONE = 274,
-     tRFC3339 = 275,
-     tDST = 276
-   };
+  enum yytokentype
+  {
+    tAGO = 258,
+    tDAY = 259,
+    tDAYZONE = 260,
+    tID = 261,
+    tMERIDIAN = 262,
+    tMINUTE_UNIT = 263,
+    tMONTH = 264,
+    tMONTH_UNIT = 265,
+    tSNUMBER = 266,
+    tS4DIGITNUMBER = 267,
+    tUNUMBER = 268,
+    t4DIGITNUMBER = 269,
+    t6DIGITNUMBER = 270,
+    t8DIGITNUMBER = 271,
+    tSEC_UNIT = 272,
+    tZONE = 273,
+    tMILZONE = 274,
+    tRFC3339 = 275,
+    tDST = 276
+  };
 #endif
 
-
+/* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
-typedef union YYSTYPE
+
+union YYSTYPE
 {
-/* Line 374 of yacc.c  */
-#line 139 "ptlib/common/getdate.y"
+#line 115 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.y" /* yacc.c:355  */
 
     time_t		Number;
     enum _MERIDIAN	Meridian;
 
+#line 240 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.tab.c" /* yacc.c:355  */
+};
 
-/* Line 374 of yacc.c  */
-#line 270 "ptlib/common/getdate.tab.c"
-} YYSTYPE;
+typedef union YYSTYPE YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
-# define yystype YYSTYPE /* obsolescent; will be withdrawn */
 # define YYSTYPE_IS_DECLARED 1
 #endif
 
 
-#ifndef __GNUC__
-static
-#endif
-int yylex(YYSTYPE * yylval, struct Variables * vars);
 
-
-#ifdef YYPARSE_PARAM
-#if defined __STDC__ || defined __cplusplus
-int yyparse (void *YYPARSE_PARAM);
-#else
-int yyparse ();
-#endif
-#else /* ! YYPARSE_PARAM */
-#if defined __STDC__ || defined __cplusplus
-int yyparse (void);
-#else
-int yyparse ();
-#endif
-#endif /* ! YYPARSE_PARAM */
+int yyparse (struct Variables * VARIABLE);
 
 
 
 /* Copy the second part of user declarations.  */
+#line 120 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.y" /* yacc.c:358  */
 
-/* Line 377 of yacc.c  */
-#line 297 "ptlib/common/getdate.tab.c"
+static void SetPossibleDate(struct Variables*, time_t, time_t, time_t);
+static int PTime_yylex(YYSTYPE * yylval, struct Variables * vars);
+static void yyerror(struct Variables * vars, char const * msg);
+
+#line 261 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.tab.c" /* yacc.c:358  */
 
 #ifdef short
 # undef short
@@ -312,11 +271,8 @@ typedef unsigned char yytype_uint8;
 
 #ifdef YYTYPE_INT8
 typedef YYTYPE_INT8 yytype_int8;
-#elif (defined __STDC__ || defined __C99__FUNC__ \
-     || defined __cplusplus || defined _MSC_VER)
-typedef signed char yytype_int8;
 #else
-typedef short int yytype_int8;
+typedef signed char yytype_int8;
 #endif
 
 #ifdef YYTYPE_UINT16
@@ -336,8 +292,7 @@ typedef short int yytype_int16;
 #  define YYSIZE_T __SIZE_TYPE__
 # elif defined size_t
 #  define YYSIZE_T size_t
-# elif ! defined YYSIZE_T && (defined __STDC__ || defined __C99__FUNC__ \
-     || defined __cplusplus || defined _MSC_VER)
+# elif ! defined YYSIZE_T
 #  include <stddef.h> /* INFRINGES ON USER NAME SPACE */
 #  define YYSIZE_T size_t
 # else
@@ -359,6 +314,33 @@ typedef short int yytype_int16;
 # endif
 #endif
 
+#ifndef YY_ATTRIBUTE
+# if (defined __GNUC__                                               \
+      && (2 < __GNUC__ || (__GNUC__ == 2 && 96 <= __GNUC_MINOR__)))  \
+     || defined __SUNPRO_C && 0x5110 <= __SUNPRO_C
+#  define YY_ATTRIBUTE(Spec) __attribute__(Spec)
+# else
+#  define YY_ATTRIBUTE(Spec) /* empty */
+# endif
+#endif
+
+#ifndef YY_ATTRIBUTE_PURE
+# define YY_ATTRIBUTE_PURE   YY_ATTRIBUTE ((__pure__))
+#endif
+
+#ifndef YY_ATTRIBUTE_UNUSED
+# define YY_ATTRIBUTE_UNUSED YY_ATTRIBUTE ((__unused__))
+#endif
+
+#if !defined _Noreturn \
+     && (!defined __STDC_VERSION__ || __STDC_VERSION__ < 201112)
+# if defined _MSC_VER && 1200 <= _MSC_VER
+#  define _Noreturn __declspec (noreturn)
+# else
+#  define _Noreturn YY_ATTRIBUTE ((__noreturn__))
+# endif
+#endif
+
 /* Suppress unused-variable warnings by "using" E.  */
 #if ! defined lint || defined __GNUC__
 # define YYUSE(E) ((void) (E))
@@ -366,23 +348,25 @@ typedef short int yytype_int16;
 # define YYUSE(E) /* empty */
 #endif
 
-/* Identity function, used to suppress warnings about constant conditions.  */
-#ifndef lint
-# define YYID(N) (N)
+#if defined __GNUC__ && 407 <= __GNUC__ * 100 + __GNUC_MINOR__
+/* Suppress an incorrect diagnostic about yylval being uninitialized.  */
+# define YY_IGNORE_MAYBE_UNINITIALIZED_BEGIN \
+    _Pragma ("GCC diagnostic push") \
+    _Pragma ("GCC diagnostic ignored \"-Wuninitialized\"")\
+    _Pragma ("GCC diagnostic ignored \"-Wmaybe-uninitialized\"")
+# define YY_IGNORE_MAYBE_UNINITIALIZED_END \
+    _Pragma ("GCC diagnostic pop")
 #else
-#if (defined __STDC__ || defined __C99__FUNC__ \
-     || defined __cplusplus || defined _MSC_VER)
-static int
-YYID (int yyi)
-#else
-static int
-YYID (yyi)
-    int yyi;
+# define YY_INITIAL_VALUE(Value) Value
 #endif
-{
-  return yyi;
-}
+#ifndef YY_IGNORE_MAYBE_UNINITIALIZED_BEGIN
+# define YY_IGNORE_MAYBE_UNINITIALIZED_BEGIN
+# define YY_IGNORE_MAYBE_UNINITIALIZED_END
 #endif
+#ifndef YY_INITIAL_VALUE
+# define YY_INITIAL_VALUE(Value) /* Nothing. */
+#endif
+
 
 #if ! defined yyoverflow || YYERROR_VERBOSE
 
@@ -401,8 +385,7 @@ YYID (yyi)
 #    define alloca _alloca
 #   else
 #    define YYSTACK_ALLOC alloca
-#    if ! defined _ALLOCA_H && ! defined EXIT_SUCCESS && (defined __STDC__ || defined __C99__FUNC__ \
-     || defined __cplusplus || defined _MSC_VER)
+#    if ! defined _ALLOCA_H && ! defined EXIT_SUCCESS
 #     include <stdlib.h> /* INFRINGES ON USER NAME SPACE */
       /* Use EXIT_SUCCESS as a witness for stdlib.h.  */
 #     ifndef EXIT_SUCCESS
@@ -414,8 +397,8 @@ YYID (yyi)
 # endif
 
 # ifdef YYSTACK_ALLOC
-   /* Pacify GCC's `empty if-body' warning.  */
-#  define YYSTACK_FREE(Ptr) do { /* empty */; } while (YYID (0))
+   /* Pacify GCC's 'empty if-body' warning.  */
+#  define YYSTACK_FREE(Ptr) do { /* empty */; } while (0)
 #  ifndef YYSTACK_ALLOC_MAXIMUM
     /* The OS might guarantee only one guard page at the bottom of the stack,
        and a page size can be as small as 4096 bytes.  So we cannot safely
@@ -431,7 +414,7 @@ YYID (yyi)
 #  endif
 #  if (defined __cplusplus && ! defined EXIT_SUCCESS \
        && ! ((defined YYMALLOC || defined malloc) \
-	     && (defined YYFREE || defined free)))
+             && (defined YYFREE || defined free)))
 #   include <stdlib.h> /* INFRINGES ON USER NAME SPACE */
 #   ifndef EXIT_SUCCESS
 #    define EXIT_SUCCESS 0
@@ -439,15 +422,13 @@ YYID (yyi)
 #  endif
 #  ifndef YYMALLOC
 #   define YYMALLOC malloc
-#   if ! defined malloc && ! defined EXIT_SUCCESS && (defined __STDC__ || defined __C99__FUNC__ \
-     || defined __cplusplus || defined _MSC_VER)
+#   if ! defined malloc && ! defined EXIT_SUCCESS
 void *malloc (YYSIZE_T); /* INFRINGES ON USER NAME SPACE */
 #   endif
 #  endif
 #  ifndef YYFREE
 #   define YYFREE free
-#   if ! defined free && ! defined EXIT_SUCCESS && (defined __STDC__ || defined __C99__FUNC__ \
-     || defined __cplusplus || defined _MSC_VER)
+#   if ! defined free && ! defined EXIT_SUCCESS
 void free (void *); /* INFRINGES ON USER NAME SPACE */
 #   endif
 #  endif
@@ -457,7 +438,7 @@ void free (void *); /* INFRINGES ON USER NAME SPACE */
 
 #if (! defined yyoverflow \
      && (! defined __cplusplus \
-	 || (defined YYSTYPE_IS_TRIVIAL && YYSTYPE_IS_TRIVIAL)))
+         || (defined YYSTYPE_IS_TRIVIAL && YYSTYPE_IS_TRIVIAL)))
 
 /* A type that is properly aligned for any stack member.  */
 union yyalloc
@@ -482,16 +463,16 @@ union yyalloc
    elements in the stack, and YYPTR gives the new location of the
    stack.  Advance YYPTR to a properly aligned location for the next
    stack.  */
-# define YYSTACK_RELOCATE(Stack_alloc, Stack)				\
-    do									\
-      {									\
-	YYSIZE_T yynewbytes;						\
-	YYCOPY (&yyptr->Stack_alloc, Stack, yysize);			\
-	Stack = &yyptr->Stack_alloc;					\
-	yynewbytes = yystacksize * sizeof (*Stack) + YYSTACK_GAP_MAXIMUM; \
-	yyptr += yynewbytes / sizeof (*yyptr);				\
-      }									\
-    while (YYID (0))
+# define YYSTACK_RELOCATE(Stack_alloc, Stack)                           \
+    do                                                                  \
+      {                                                                 \
+        YYSIZE_T yynewbytes;                                            \
+        YYCOPY (&yyptr->Stack_alloc, Stack, yysize);                    \
+        Stack = &yyptr->Stack_alloc;                                    \
+        yynewbytes = yystacksize * sizeof (*Stack) + YYSTACK_GAP_MAXIMUM; \
+        yyptr += yynewbytes / sizeof (*yyptr);                          \
+      }                                                                 \
+    while (0)
 
 #endif
 
@@ -510,7 +491,7 @@ union yyalloc
           for (yyi = 0; yyi < (Count); yyi++)   \
             (Dst)[yyi] = (Src)[yyi];            \
         }                                       \
-      while (YYID (0))
+      while (0)
 #  endif
 # endif
 #endif /* !YYCOPY_NEEDED */
@@ -526,17 +507,19 @@ union yyalloc
 #define YYNNTS  12
 /* YYNRULES -- Number of rules.  */
 #define YYNRULES  51
-/* YYNRULES -- Number of states.  */
+/* YYNSTATES -- Number of states.  */
 #define YYNSTATES  63
 
-/* YYTRANSLATE(YYLEX) -- Bison symbol number corresponding to YYLEX.  */
+/* YYTRANSLATE[YYX] -- Symbol number corresponding to YYX as returned
+   by yylex, with out-of-bounds checking.  */
 #define YYUNDEFTOK  2
 #define YYMAXUTOK   276
 
-#define YYTRANSLATE(YYX)						\
+#define YYTRANSLATE(YYX)                                                \
   ((unsigned int) (YYX) <= YYMAXUTOK ? yytranslate[YYX] : YYUNDEFTOK)
 
-/* YYTRANSLATE[YYLEX] -- Bison symbol number corresponding to YYLEX.  */
+/* YYTRANSLATE[TOKEN-NUM] -- Symbol number corresponding to TOKEN-NUM
+   as returned by yylex, without out-of-bounds checking.  */
 static const yytype_uint8 yytranslate[] =
 {
        0,     2,     2,     2,     2,     2,     2,     2,     2,     2,
@@ -570,47 +553,15 @@ static const yytype_uint8 yytranslate[] =
 };
 
 #if YYDEBUG
-/* YYPRHS[YYN] -- Index of the first RHS symbol of rule number YYN in
-   YYRHS.  */
-static const yytype_uint8 yyprhs[] =
-{
-       0,     0,     3,     4,     7,     9,    11,    13,    15,    17,
-      19,    22,    25,    28,    33,    38,    45,    52,    54,    56,
-      59,    61,    63,    66,    69,    73,    79,    84,    86,    90,
-      93,    98,   101,   105,   108,   110,   113,   116,   118,   121,
-     124,   126,   129,   132,   134,   136,   138,   140,   142,   144,
-     146,   147
-};
-
-/* YYRHS -- A `-1'-separated list of the rules' RHS.  */
-static const yytype_int8 yyrhs[] =
-{
-      26,     0,    -1,    -1,    26,    27,    -1,    28,    -1,    29,
-      -1,    31,    -1,    30,    -1,    32,    -1,    35,    -1,    13,
-       7,    -1,    14,    12,    -1,    15,    12,    -1,    34,    22,
-      34,    36,    -1,    34,    22,    34,    12,    -1,    34,    22,
-      34,    22,    34,    36,    -1,    34,    22,    34,    22,    34,
-      12,    -1,    18,    -1,     5,    -1,    18,    21,    -1,    19,
-      -1,     4,    -1,     4,    23,    -1,    34,     4,    -1,    34,
-      24,    34,    -1,    34,    24,    34,    24,    34,    -1,    34,
-      11,    11,    20,    -1,    16,    -1,    34,     9,    11,    -1,
-       9,    34,    -1,     9,    34,    23,    34,    -1,    34,     9,
-      -1,    34,     9,    34,    -1,    33,     3,    -1,    33,    -1,
-      34,     8,    -1,    11,     8,    -1,     8,    -1,    11,    17,
-      -1,    34,    17,    -1,    17,    -1,    11,    10,    -1,    34,
-      10,    -1,    10,    -1,    13,    -1,    14,    -1,    15,    -1,
-      13,    -1,    14,    -1,    15,    -1,    -1,     7,    -1
-};
-
-/* YYRLINE[YYN] -- source line where rule number YYN was defined.  */
+  /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_uint16 yyrline[] =
 {
-       0,   155,   155,   156,   159,   162,   165,   168,   171,   174,
-     177,   183,   191,   199,   205,   212,   218,   228,   232,   237,
-     241,   251,   255,   259,   265,   268,   271,   275,   280,   284,
-     291,   296,   303,   308,   312,   315,   318,   321,   324,   327,
-     330,   333,   336,   339,   344,   347,   350,   355,   381,   392,
-     409,   412
+       0,   137,   137,   138,   141,   144,   147,   150,   153,   156,
+     159,   165,   173,   181,   187,   194,   200,   210,   214,   219,
+     223,   233,   237,   241,   247,   250,   253,   257,   262,   266,
+     273,   278,   285,   290,   294,   297,   300,   303,   306,   309,
+     312,   315,   318,   321,   326,   329,   332,   337,   363,   374,
+     391,   394
 };
 #endif
 
@@ -624,13 +575,13 @@ static const char *const yytname[] =
   "tS4DIGITNUMBER", "tUNUMBER", "t4DIGITNUMBER", "t6DIGITNUMBER",
   "t8DIGITNUMBER", "tSEC_UNIT", "tZONE", "tMILZONE", "tRFC3339", "tDST",
   "':'", "','", "'/'", "$accept", "spec", "item", "time", "zone", "day",
-  "date", "rel", "relunit", "unumber", "number", "o_merid", YY_NULL
+  "date", "rel", "relunit", "unumber", "number", "o_merid", YY_NULLPTR
 };
 #endif
 
 # ifdef YYPRINT
-/* YYTOKNUM[YYLEX-NUM] -- Internal token number corresponding to
-   token YYLEX-NUM.  */
+/* YYTOKNUM[NUM] -- (External) token number corresponding to the
+   (internal) symbol number NUM (which must be that of a token).  */
 static const yytype_uint16 yytoknum[] =
 {
        0,   256,   257,   258,   259,   260,   261,   262,   263,   264,
@@ -639,52 +590,18 @@ static const yytype_uint16 yytoknum[] =
 };
 # endif
 
-/* YYR1[YYN] -- Symbol number of symbol that rule YYN derives.  */
-static const yytype_uint8 yyr1[] =
-{
-       0,    25,    26,    26,    27,    27,    27,    27,    27,    27,
-      28,    28,    28,    28,    28,    28,    28,    29,    29,    29,
-      29,    30,    30,    30,    31,    31,    31,    31,    31,    31,
-      31,    31,    31,    32,    32,    33,    33,    33,    33,    33,
-      33,    33,    33,    33,    34,    34,    34,    35,    35,    35,
-      36,    36
-};
-
-/* YYR2[YYN] -- Number of symbols composing right hand side of rule YYN.  */
-static const yytype_uint8 yyr2[] =
-{
-       0,     2,     0,     2,     1,     1,     1,     1,     1,     1,
-       2,     2,     2,     4,     4,     6,     6,     1,     1,     2,
-       1,     1,     2,     2,     3,     5,     4,     1,     3,     2,
-       4,     2,     3,     2,     1,     2,     2,     1,     2,     2,
-       1,     2,     2,     1,     1,     1,     1,     1,     1,     1,
-       0,     1
-};
-
-/* YYDEFACT[STATE-NAME] -- Default reduction number in state STATE-NUM.
-   Performed when YYTABLE doesn't specify something else to do.  Zero
-   means the default is an error.  */
-static const yytype_uint8 yydefact[] =
-{
-       2,     0,     1,    21,    18,    37,     0,    43,     0,    44,
-      45,    46,    27,    40,    17,    20,     3,     4,     5,     7,
-       6,     8,    34,     0,     9,    22,    44,    45,    46,    29,
-      36,    41,    38,    10,    11,    12,    19,    33,    23,    35,
-      31,    42,     0,    39,     0,     0,     0,    28,    32,     0,
-      50,    24,    30,    26,    51,    14,     0,    13,     0,    50,
-      25,    16,    15
-};
-
-/* YYDEFGOTO[NTERM-NUM].  */
-static const yytype_int8 yydefgoto[] =
-{
-      -1,     1,    16,    17,    18,    19,    20,    21,    22,    23,
-      24,    57
-};
-
-/* YYPACT[STATE-NUM] -- Index in YYTABLE of the portion describing
-   STATE-NUM.  */
 #define YYPACT_NINF -27
+
+#define yypact_value_is_default(Yystate) \
+  (!!((Yystate) == (-27)))
+
+#define YYTABLE_NINF -50
+
+#define yytable_value_is_error(Yytable_value) \
+  0
+
+  /* YYPACT[STATE-NUM] -- Index in YYTABLE of the portion describing
+     STATE-NUM.  */
 static const yytype_int8 yypact[] =
 {
      -27,    49,   -27,   -10,   -27,   -27,   -11,   -27,     1,    10,
@@ -696,17 +613,37 @@ static const yytype_int8 yypact[] =
      -27,   -27,   -27
 };
 
-/* YYPGOTO[NTERM-NUM].  */
+  /* YYDEFACT[STATE-NUM] -- Default reduction number in state STATE-NUM.
+     Performed when YYTABLE does not specify something else to do.  Zero
+     means the default is an error.  */
+static const yytype_uint8 yydefact[] =
+{
+       2,     0,     1,    21,    18,    37,     0,    43,     0,    44,
+      45,    46,    27,    40,    17,    20,     3,     4,     5,     7,
+       6,     8,    34,     0,     9,    22,    44,    45,    46,    29,
+      36,    41,    38,    10,    11,    12,    19,    33,    23,    35,
+      31,    42,     0,    39,     0,     0,     0,    28,    32,     0,
+      50,    24,    30,    26,    51,    14,     0,    13,     0,    50,
+      25,    16,    15
+};
+
+  /* YYPGOTO[NTERM-NUM].  */
 static const yytype_int8 yypgoto[] =
 {
      -27,   -27,   -27,   -27,   -27,   -27,   -27,   -27,   -27,    -6,
      -27,   -26
 };
 
-/* YYTABLE[YYPACT[STATE-NUM]].  What to do in state STATE-NUM.  If
-   positive, shift that token.  If negative, reduce the rule which
-   number is the opposite.  If YYTABLE_NINF, syntax error.  */
-#define YYTABLE_NINF -50
+  /* YYDEFGOTO[NTERM-NUM].  */
+static const yytype_int8 yydefgoto[] =
+{
+      -1,     1,    16,    17,    18,    19,    20,    21,    22,    23,
+      24,    57
+};
+
+  /* YYTABLE[YYPACT[STATE-NUM]] -- What to do in state STATE-NUM.  If
+     positive, shift that token.  If negative, reduce the rule whose
+     number is the opposite.  If YYTABLE_NINF, syntax error.  */
 static const yytype_int8 yytable[] =
 {
       29,    38,    26,    27,    28,    39,    40,    41,    42,    30,
@@ -721,12 +658,6 @@ static const yytype_int8 yytable[] =
        0,   -49,     0,     0,     0,     0,     0,     0,    35,   -49,
      -49,   -49,   -49,     0,   -49,   -49
 };
-
-#define yypact_value_is_default(Yystate) \
-  (!!((Yystate) == (-27)))
-
-#define yytable_value_is_error(Yytable_value) \
-  YYID (0)
 
 static const yytype_int8 yycheck[] =
 {
@@ -743,8 +674,8 @@ static const yytype_int8 yycheck[] =
       14,    15,    16,    -1,    18,    19
 };
 
-/* YYSTOS[STATE-NUM] -- The (internal number of the) accessing
-   symbol of state STATE-NUM.  */
+  /* YYSTOS[STATE-NUM] -- The (internal number of the) accessing
+     symbol of state STATE-NUM.  */
 static const yytype_uint8 yystos[] =
 {
        0,    26,     0,     4,     5,     8,     9,    10,    11,    13,
@@ -756,30 +687,38 @@ static const yytype_uint8 yystos[] =
       34,    12,    36
 };
 
-#define yyerrok		(yyerrstatus = 0)
-#define yyclearin	(yychar = YYEMPTY)
-#define YYEMPTY		(-2)
-#define YYEOF		0
+  /* YYR1[YYN] -- Symbol number of symbol that rule YYN derives.  */
+static const yytype_uint8 yyr1[] =
+{
+       0,    25,    26,    26,    27,    27,    27,    27,    27,    27,
+      28,    28,    28,    28,    28,    28,    28,    29,    29,    29,
+      29,    30,    30,    30,    31,    31,    31,    31,    31,    31,
+      31,    31,    31,    32,    32,    33,    33,    33,    33,    33,
+      33,    33,    33,    33,    34,    34,    34,    35,    35,    35,
+      36,    36
+};
 
-#define YYACCEPT	goto yyacceptlab
-#define YYABORT		goto yyabortlab
-#define YYERROR		goto yyerrorlab
+  /* YYR2[YYN] -- Number of symbols on the right hand side of rule YYN.  */
+static const yytype_uint8 yyr2[] =
+{
+       0,     2,     0,     2,     1,     1,     1,     1,     1,     1,
+       2,     2,     2,     4,     4,     6,     6,     1,     1,     2,
+       1,     1,     2,     2,     3,     5,     4,     1,     3,     2,
+       4,     2,     3,     2,     1,     2,     2,     1,     2,     2,
+       1,     2,     2,     1,     1,     1,     1,     1,     1,     1,
+       0,     1
+};
 
 
-/* Like YYERROR except do call yyerror.  This remains here temporarily
-   to ease the transition to the new meaning of YYERROR, for GCC.
-   Once GCC version 2 has supplanted version 1, this can go.  However,
-   YYFAIL appears to be in use.  Nevertheless, it is formally deprecated
-   in Bison 2.4.2's NEWS entry, where a plan to phase it out is
-   discussed.  */
+#define yyerrok         (yyerrstatus = 0)
+#define yyclearin       (yychar = YYEMPTY)
+#define YYEMPTY         (-2)
+#define YYEOF           0
 
-#define YYFAIL		goto yyerrlab
-#if defined YYFAIL
-  /* This is here to suppress warnings from the GCC cpp's
-     -Wunused-macros.  Normally we don't worry about that warning, but
-     some users do, and we want to make it easy for users to remove
-     YYFAIL uses, which will produce warnings from Bison 2.5.  */
-#endif
+#define YYACCEPT        goto yyacceptlab
+#define YYABORT         goto yyabortlab
+#define YYERROR         goto yyerrorlab
+
 
 #define YYRECOVERING()  (!!yyerrstatus)
 
@@ -795,57 +734,16 @@ do                                                              \
     }                                                           \
   else                                                          \
     {                                                           \
-      yyerror (YY_("syntax error: cannot back up")); \
-      YYERROR;							\
-    }								\
-while (YYID (0))
+      yyerror (VARIABLE, YY_("syntax error: cannot back up")); \
+      YYERROR;                                                  \
+    }                                                           \
+while (0)
+
+/* Error token number */
+#define YYTERROR        1
+#define YYERRCODE       256
 
 
-#define YYTERROR	1
-#define YYERRCODE	256
-
-/* YYLLOC_DEFAULT -- Set CURRENT to span from RHS[1] to RHS[N].
-   If N is 0, then set CURRENT to the empty location which ends
-   the previous symbol: RHS[0] (always defined).  */
-
-#ifndef YYLLOC_DEFAULT
-# define YYLLOC_DEFAULT(Current, Rhs, N)                                \
-    do                                                                  \
-      if (YYID (N))                                                     \
-        {                                                               \
-          (Current).first_line   = YYRHSLOC (Rhs, 1).first_line;        \
-          (Current).first_column = YYRHSLOC (Rhs, 1).first_column;      \
-          (Current).last_line    = YYRHSLOC (Rhs, N).last_line;         \
-          (Current).last_column  = YYRHSLOC (Rhs, N).last_column;       \
-        }                                                               \
-      else                                                              \
-        {                                                               \
-          (Current).first_line   = (Current).last_line   =              \
-            YYRHSLOC (Rhs, 0).last_line;                                \
-          (Current).first_column = (Current).last_column =              \
-            YYRHSLOC (Rhs, 0).last_column;                              \
-        }                                                               \
-    while (YYID (0))
-#endif
-
-#define YYRHSLOC(Rhs, K) ((Rhs)[K])
-
-
-
-/* This macro is provided for backward compatibility. */
-
-#ifndef YY_LOCATION_PRINT
-# define YY_LOCATION_PRINT(File, Loc) ((void) 0)
-#endif
-
-
-/* YYLEX -- calling `yylex' with the right arguments.  */
-
-#ifdef YYLEX_PARAM
-# define YYLEX yylex (&yylval, YYLEX_PARAM)
-#else
-# define YYLEX yylex (&yylval)
-#endif
 
 /* Enable debugging if requested.  */
 #if YYDEBUG
@@ -855,56 +753,47 @@ while (YYID (0))
 #  define YYFPRINTF fprintf
 # endif
 
-# define YYDPRINTF(Args)			\
-do {						\
-  if (yydebug)					\
-    YYFPRINTF Args;				\
-} while (YYID (0))
+# define YYDPRINTF(Args)                        \
+do {                                            \
+  if (yydebug)                                  \
+    YYFPRINTF Args;                             \
+} while (0)
 
-# define YY_SYMBOL_PRINT(Title, Type, Value, Location)			  \
-do {									  \
-  if (yydebug)								  \
-    {									  \
-      YYFPRINTF (stderr, "%s ", Title);					  \
-      yy_symbol_print (stderr,						  \
-		  Type, Value); \
-      YYFPRINTF (stderr, "\n");						  \
-    }									  \
-} while (YYID (0))
-
-
-/*--------------------------------.
-| Print this symbol on YYOUTPUT.  |
-`--------------------------------*/
-
-/*ARGSUSED*/
-#if (defined __STDC__ || defined __C99__FUNC__ \
-     || defined __cplusplus || defined _MSC_VER)
-static void
-yy_symbol_value_print (FILE *yyoutput, int yytype, YYSTYPE const * const yyvaluep)
-#else
-static void
-yy_symbol_value_print (yyoutput, yytype, yyvaluep)
-    FILE *yyoutput;
-    int yytype;
-    YYSTYPE const * const yyvaluep;
+/* This macro is provided for backward compatibility. */
+#ifndef YY_LOCATION_PRINT
+# define YY_LOCATION_PRINT(File, Loc) ((void) 0)
 #endif
+
+
+# define YY_SYMBOL_PRINT(Title, Type, Value, Location)                    \
+do {                                                                      \
+  if (yydebug)                                                            \
+    {                                                                     \
+      YYFPRINTF (stderr, "%s ", Title);                                   \
+      yy_symbol_print (stderr,                                            \
+                  Type, Value, VARIABLE); \
+      YYFPRINTF (stderr, "\n");                                           \
+    }                                                                     \
+} while (0)
+
+
+/*----------------------------------------.
+| Print this symbol's value on YYOUTPUT.  |
+`----------------------------------------*/
+
+static void
+yy_symbol_value_print (FILE *yyoutput, int yytype, YYSTYPE const * const yyvaluep, struct Variables * VARIABLE)
 {
   FILE *yyo = yyoutput;
   YYUSE (yyo);
+  YYUSE (VARIABLE);
   if (!yyvaluep)
     return;
 # ifdef YYPRINT
   if (yytype < YYNTOKENS)
     YYPRINT (yyoutput, yytoknum[yytype], *yyvaluep);
-# else
-  YYUSE (yyoutput);
 # endif
-  switch (yytype)
-    {
-      default:
-	break;
-    }
+  YYUSE (yytype);
 }
 
 
@@ -912,24 +801,13 @@ yy_symbol_value_print (yyoutput, yytype, yyvaluep)
 | Print this symbol on YYOUTPUT.  |
 `--------------------------------*/
 
-#if (defined __STDC__ || defined __C99__FUNC__ \
-     || defined __cplusplus || defined _MSC_VER)
 static void
-yy_symbol_print (FILE *yyoutput, int yytype, YYSTYPE const * const yyvaluep)
-#else
-static void
-yy_symbol_print (yyoutput, yytype, yyvaluep)
-    FILE *yyoutput;
-    int yytype;
-    YYSTYPE const * const yyvaluep;
-#endif
+yy_symbol_print (FILE *yyoutput, int yytype, YYSTYPE const * const yyvaluep, struct Variables * VARIABLE)
 {
-  if (yytype < YYNTOKENS)
-    YYFPRINTF (yyoutput, "token %s (", yytname[yytype]);
-  else
-    YYFPRINTF (yyoutput, "nterm %s (", yytname[yytype]);
+  YYFPRINTF (yyoutput, "%s %s (",
+             yytype < YYNTOKENS ? "token" : "nterm", yytname[yytype]);
 
-  yy_symbol_value_print (yyoutput, yytype, yyvaluep);
+  yy_symbol_value_print (yyoutput, yytype, yyvaluep, VARIABLE);
   YYFPRINTF (yyoutput, ")");
 }
 
@@ -938,16 +816,8 @@ yy_symbol_print (yyoutput, yytype, yyvaluep)
 | TOP (included).                                                   |
 `------------------------------------------------------------------*/
 
-#if (defined __STDC__ || defined __C99__FUNC__ \
-     || defined __cplusplus || defined _MSC_VER)
 static void
 yy_stack_print (yytype_int16 *yybottom, yytype_int16 *yytop)
-#else
-static void
-yy_stack_print (yybottom, yytop)
-    yytype_int16 *yybottom;
-    yytype_int16 *yytop;
-#endif
 {
   YYFPRINTF (stderr, "Stack now");
   for (; yybottom <= yytop; yybottom++)
@@ -958,49 +828,42 @@ yy_stack_print (yybottom, yytop)
   YYFPRINTF (stderr, "\n");
 }
 
-# define YY_STACK_PRINT(Bottom, Top)				\
-do {								\
-  if (yydebug)							\
-    yy_stack_print ((Bottom), (Top));				\
-} while (YYID (0))
+# define YY_STACK_PRINT(Bottom, Top)                            \
+do {                                                            \
+  if (yydebug)                                                  \
+    yy_stack_print ((Bottom), (Top));                           \
+} while (0)
 
 
 /*------------------------------------------------.
 | Report that the YYRULE is going to be reduced.  |
 `------------------------------------------------*/
 
-#if (defined __STDC__ || defined __C99__FUNC__ \
-     || defined __cplusplus || defined _MSC_VER)
 static void
-yy_reduce_print (YYSTYPE *yyvsp, int yyrule)
-#else
-static void
-yy_reduce_print (yyvsp, yyrule)
-    YYSTYPE *yyvsp;
-    int yyrule;
-#endif
+yy_reduce_print (yytype_int16 *yyssp, YYSTYPE *yyvsp, int yyrule, struct Variables * VARIABLE)
 {
+  unsigned long int yylno = yyrline[yyrule];
   int yynrhs = yyr2[yyrule];
   int yyi;
-  unsigned long int yylno = yyrline[yyrule];
   YYFPRINTF (stderr, "Reducing stack by rule %d (line %lu):\n",
-	     yyrule - 1, yylno);
+             yyrule - 1, yylno);
   /* The symbols being reduced.  */
   for (yyi = 0; yyi < yynrhs; yyi++)
     {
       YYFPRINTF (stderr, "   $%d = ", yyi + 1);
-      yy_symbol_print (stderr, yyrhs[yyprhs[yyrule] + yyi],
-		       &(yyvsp[(yyi + 1) - (yynrhs)])
-		       		       );
+      yy_symbol_print (stderr,
+                       yystos[yyssp[yyi + 1 - yynrhs]],
+                       &(yyvsp[(yyi + 1) - (yynrhs)])
+                                              , VARIABLE);
       YYFPRINTF (stderr, "\n");
     }
 }
 
-# define YY_REDUCE_PRINT(Rule)		\
-do {					\
-  if (yydebug)				\
-    yy_reduce_print (yyvsp, Rule); \
-} while (YYID (0))
+# define YY_REDUCE_PRINT(Rule)          \
+do {                                    \
+  if (yydebug)                          \
+    yy_reduce_print (yyssp, yyvsp, Rule, VARIABLE); \
+} while (0)
 
 /* Nonzero means print parse trace.  It is left uninitialized so that
    multiple parsers can coexist.  */
@@ -1014,7 +877,7 @@ int yydebug;
 
 
 /* YYINITDEPTH -- initial size of the parser's stacks.  */
-#ifndef	YYINITDEPTH
+#ifndef YYINITDEPTH
 # define YYINITDEPTH 200
 #endif
 
@@ -1037,15 +900,8 @@ int yydebug;
 #   define yystrlen strlen
 #  else
 /* Return the length of YYSTR.  */
-#if (defined __STDC__ || defined __C99__FUNC__ \
-     || defined __cplusplus || defined _MSC_VER)
 static YYSIZE_T
 yystrlen (const char *yystr)
-#else
-static YYSIZE_T
-yystrlen (yystr)
-    const char *yystr;
-#endif
 {
   YYSIZE_T yylen;
   for (yylen = 0; yystr[yylen]; yylen++)
@@ -1061,16 +917,8 @@ yystrlen (yystr)
 #  else
 /* Copy YYSRC to YYDEST, returning the address of the terminating '\0' in
    YYDEST.  */
-#if (defined __STDC__ || defined __C99__FUNC__ \
-     || defined __cplusplus || defined _MSC_VER)
 static char *
 yystpcpy (char *yydest, const char *yysrc)
-#else
-static char *
-yystpcpy (yydest, yysrc)
-    char *yydest;
-    const char *yysrc;
-#endif
 {
   char *yyd = yydest;
   const char *yys = yysrc;
@@ -1100,27 +948,27 @@ yytnamerr (char *yyres, const char *yystr)
       char const *yyp = yystr;
 
       for (;;)
-	switch (*++yyp)
-	  {
-	  case '\'':
-	  case ',':
-	    goto do_not_strip_quotes;
+        switch (*++yyp)
+          {
+          case '\'':
+          case ',':
+            goto do_not_strip_quotes;
 
-	  case '\\':
-	    if (*++yyp != '\\')
-	      goto do_not_strip_quotes;
-	    /* Fall through.  */
-	  default:
-	    if (yyres)
-	      yyres[yyn] = *yyp;
-	    yyn++;
-	    break;
+          case '\\':
+            if (*++yyp != '\\')
+              goto do_not_strip_quotes;
+            /* Fall through.  */
+          default:
+            if (yyres)
+              yyres[yyn] = *yyp;
+            yyn++;
+            break;
 
-	  case '"':
-	    if (yyres)
-	      yyres[yyn] = '\0';
-	    return yyn;
-	  }
+          case '"':
+            if (yyres)
+              yyres[yyn] = '\0';
+            return yyn;
+          }
     do_not_strip_quotes: ;
     }
 
@@ -1143,12 +991,11 @@ static int
 yysyntax_error (YYSIZE_T *yymsg_alloc, char **yymsg,
                 yytype_int16 *yyssp, int yytoken)
 {
-  YYSIZE_T yysize0 = yytnamerr (YY_NULL, yytname[yytoken]);
+  YYSIZE_T yysize0 = yytnamerr (YY_NULLPTR, yytname[yytoken]);
   YYSIZE_T yysize = yysize0;
-  YYSIZE_T yysize1;
   enum { YYERROR_VERBOSE_ARGS_MAXIMUM = 5 };
   /* Internationalized format string. */
-  const char *yyformat = YY_NULL;
+  const char *yyformat = YY_NULLPTR;
   /* Arguments of yyformat. */
   char const *yyarg[YYERROR_VERBOSE_ARGS_MAXIMUM];
   /* Number of reported tokens (one for the "unexpected", one per
@@ -1156,10 +1003,6 @@ yysyntax_error (YYSIZE_T *yymsg_alloc, char **yymsg,
   int yycount = 0;
 
   /* There are many possibilities here to consider:
-     - Assume YYFAIL is not used.  It's too flawed to consider.  See
-       <http://lists.gnu.org/archive/html/bison-patches/2009-12/msg00024.html>
-       for details.  YYERROR is fine as it does not invoke this
-       function.
      - If this state is a consistent state with a default action, then
        the only way this function was invoked is if the default action
        is an error action.  In that case, don't check for expected
@@ -1208,11 +1051,13 @@ yysyntax_error (YYSIZE_T *yymsg_alloc, char **yymsg,
                     break;
                   }
                 yyarg[yycount++] = yytname[yyx];
-                yysize1 = yysize + yytnamerr (YY_NULL, yytname[yyx]);
-                if (! (yysize <= yysize1
-                       && yysize1 <= YYSTACK_ALLOC_MAXIMUM))
-                  return 2;
-                yysize = yysize1;
+                {
+                  YYSIZE_T yysize1 = yysize + yytnamerr (YY_NULLPTR, yytname[yyx]);
+                  if (! (yysize <= yysize1
+                         && yysize1 <= YYSTACK_ALLOC_MAXIMUM))
+                    return 2;
+                  yysize = yysize1;
+                }
               }
         }
     }
@@ -1232,10 +1077,12 @@ yysyntax_error (YYSIZE_T *yymsg_alloc, char **yymsg,
 # undef YYCASE_
     }
 
-  yysize1 = yysize + yystrlen (yyformat);
-  if (! (yysize <= yysize1 && yysize1 <= YYSTACK_ALLOC_MAXIMUM))
-    return 2;
-  yysize = yysize1;
+  {
+    YYSIZE_T yysize1 = yysize + yystrlen (yyformat);
+    if (! (yysize <= yysize1 && yysize1 <= YYSTACK_ALLOC_MAXIMUM))
+      return 2;
+    yysize = yysize1;
+  }
 
   if (*yymsg_alloc < yysize)
     {
@@ -1272,31 +1119,18 @@ yysyntax_error (YYSIZE_T *yymsg_alloc, char **yymsg,
 | Release the memory associated to this symbol.  |
 `-----------------------------------------------*/
 
-/*ARGSUSED*/
-#if (defined __STDC__ || defined __C99__FUNC__ \
-     || defined __cplusplus || defined _MSC_VER)
 static void
-yydestruct (const char *yymsg, int yytype, YYSTYPE *yyvaluep)
-#else
-static void
-yydestruct (yymsg, yytype, yyvaluep)
-    const char *yymsg;
-    int yytype;
-    YYSTYPE *yyvaluep;
-#endif
+yydestruct (const char *yymsg, int yytype, YYSTYPE *yyvaluep, struct Variables * VARIABLE)
 {
   YYUSE (yyvaluep);
-
+  YYUSE (VARIABLE);
   if (!yymsg)
     yymsg = "Deleting";
   YY_SYMBOL_PRINT (yymsg, yytype, yyvaluep, yylocationp);
 
-  switch (yytype)
-    {
-
-      default:
-	break;
-    }
+  YY_IGNORE_MAYBE_UNINITIALIZED_BEGIN
+  YYUSE (yytype);
+  YY_IGNORE_MAYBE_UNINITIALIZED_END
 }
 
 
@@ -1306,55 +1140,18 @@ yydestruct (yymsg, yytype, yyvaluep)
 | yyparse.  |
 `----------*/
 
-#ifdef YYPARSE_PARAM
-#if (defined __STDC__ || defined __C99__FUNC__ \
-     || defined __cplusplus || defined _MSC_VER)
 int
-yyparse (void *YYPARSE_PARAM)
-#else
-int
-yyparse (YYPARSE_PARAM)
-    void *YYPARSE_PARAM;
-#endif
-#else /* ! YYPARSE_PARAM */
-#if (defined __STDC__ || defined __C99__FUNC__ \
-     || defined __cplusplus || defined _MSC_VER)
-int
-yyparse (void)
-#else
-int
-yyparse ()
-
-#endif
-#endif
+yyparse (struct Variables * VARIABLE)
 {
 /* The lookahead symbol.  */
 int yychar;
 
 
-#if defined __GNUC__ && (4 < __GNUC__ + (6 <= __GNUC_MINOR__))
-/* Suppress an incorrect diagnostic about yylval being uninitialized.  */
-# define YY_IGNORE_MAYBE_UNINITIALIZED_BEGIN \
-    _Pragma ("GCC diagnostic push") \
-    _Pragma ("GCC diagnostic ignored \"-Wmaybe-uninitialized\"")
-# define YY_IGNORE_MAYBE_UNINITIALIZED_END \
-    _Pragma ("GCC diagnostic pop")
-#else
+/* The semantic value of the lookahead symbol.  */
 /* Default value used for initialization, for pacifying older GCCs
    or non-GCC compilers.  */
-static YYSTYPE yyval_default;
-# define YYLVAL_INITIALIZE() (yylval = yyval_default)
-#endif
-#ifndef YYLVAL_INITIALIZE
-# define YYLVAL_INITIALIZE()
-#endif
-#ifndef YY_IGNORE_MAYBE_UNINITIALIZED_BEGIN
-# define YY_IGNORE_MAYBE_UNINITIALIZED_BEGIN
-# define YY_IGNORE_MAYBE_UNINITIALIZED_END
-#endif
-
-/* The semantic value of the lookahead symbol.  */
-YYSTYPE yylval;
+YY_INITIAL_VALUE (static YYSTYPE yyval_default;)
+YYSTYPE yylval YY_INITIAL_VALUE (= yyval_default);
 
     /* Number of syntax errors so far.  */
     int yynerrs;
@@ -1364,8 +1161,8 @@ YYSTYPE yylval;
     int yyerrstatus;
 
     /* The stacks and their tools:
-       `yyss': related to states.
-       `yyvs': related to semantic values.
+       'yyss': related to states.
+       'yyvs': related to semantic values.
 
        Refer to the stacks through separate pointers, to allow yyoverflow
        to reallocate them elsewhere.  */
@@ -1403,8 +1200,8 @@ YYSTYPE yylval;
      Keep to zero when no symbol should be popped.  */
   int yylen = 0;
 
-  yyss = yyssa;
-  yyvs = yyvsa;
+  yyssp = yyss = yyssa;
+  yyvsp = yyvs = yyvsa;
   yystacksize = YYINITDEPTH;
 
   YYDPRINTF ((stderr, "Starting parse\n"));
@@ -1413,15 +1210,6 @@ YYSTYPE yylval;
   yyerrstatus = 0;
   yynerrs = 0;
   yychar = YYEMPTY; /* Cause a token to be read.  */
-
-  /* Initialize stack pointers.
-     Waste one element of value and location stack
-     so that they stay on the same level as the state stack.
-     The wasted elements are never initialized.  */
-  yyssp = yyss;
-  yyvsp = yyvs;
-
-  YYLVAL_INITIALIZE ();
   goto yysetstate;
 
 /*------------------------------------------------------------.
@@ -1442,23 +1230,23 @@ YYSTYPE yylval;
 
 #ifdef yyoverflow
       {
-	/* Give user a chance to reallocate the stack.  Use copies of
-	   these so that the &'s don't force the real ones into
-	   memory.  */
-	YYSTYPE *yyvs1 = yyvs;
-	yytype_int16 *yyss1 = yyss;
+        /* Give user a chance to reallocate the stack.  Use copies of
+           these so that the &'s don't force the real ones into
+           memory.  */
+        YYSTYPE *yyvs1 = yyvs;
+        yytype_int16 *yyss1 = yyss;
 
-	/* Each stack pointer address is followed by the size of the
-	   data in use in that stack, in bytes.  This used to be a
-	   conditional around just the two extra args, but that might
-	   be undefined if yyoverflow is a macro.  */
-	yyoverflow (YY_("memory exhausted"),
-		    &yyss1, yysize * sizeof (*yyssp),
-		    &yyvs1, yysize * sizeof (*yyvsp),
-		    &yystacksize);
+        /* Each stack pointer address is followed by the size of the
+           data in use in that stack, in bytes.  This used to be a
+           conditional around just the two extra args, but that might
+           be undefined if yyoverflow is a macro.  */
+        yyoverflow (YY_("memory exhausted"),
+                    &yyss1, yysize * sizeof (*yyssp),
+                    &yyvs1, yysize * sizeof (*yyvsp),
+                    &yystacksize);
 
-	yyss = yyss1;
-	yyvs = yyvs1;
+        yyss = yyss1;
+        yyvs = yyvs1;
       }
 #else /* no yyoverflow */
 # ifndef YYSTACK_RELOCATE
@@ -1466,22 +1254,22 @@ YYSTYPE yylval;
 # else
       /* Extend the stack our own way.  */
       if (YYMAXDEPTH <= yystacksize)
-	goto yyexhaustedlab;
+        goto yyexhaustedlab;
       yystacksize *= 2;
       if (YYMAXDEPTH < yystacksize)
-	yystacksize = YYMAXDEPTH;
+        yystacksize = YYMAXDEPTH;
 
       {
-	yytype_int16 *yyss1 = yyss;
-	union yyalloc *yyptr =
-	  (union yyalloc *) YYSTACK_ALLOC (YYSTACK_BYTES (yystacksize));
-	if (! yyptr)
-	  goto yyexhaustedlab;
-	YYSTACK_RELOCATE (yyss_alloc, yyss);
-	YYSTACK_RELOCATE (yyvs_alloc, yyvs);
+        yytype_int16 *yyss1 = yyss;
+        union yyalloc *yyptr =
+          (union yyalloc *) YYSTACK_ALLOC (YYSTACK_BYTES (yystacksize));
+        if (! yyptr)
+          goto yyexhaustedlab;
+        YYSTACK_RELOCATE (yyss_alloc, yyss);
+        YYSTACK_RELOCATE (yyvs_alloc, yyvs);
 #  undef YYSTACK_RELOCATE
-	if (yyss1 != yyssa)
-	  YYSTACK_FREE (yyss1);
+        if (yyss1 != yyssa)
+          YYSTACK_FREE (yyss1);
       }
 # endif
 #endif /* no yyoverflow */
@@ -1490,10 +1278,10 @@ YYSTYPE yylval;
       yyvsp = yyvs + yysize - 1;
 
       YYDPRINTF ((stderr, "Stack size increased to %lu\n",
-		  (unsigned long int) yystacksize));
+                  (unsigned long int) yystacksize));
 
       if (yyss + yystacksize - 1 <= yyssp)
-	YYABORT;
+        YYABORT;
     }
 
   YYDPRINTF ((stderr, "Entering state %d\n", yystate));
@@ -1522,7 +1310,7 @@ yybackup:
   if (yychar == YYEMPTY)
     {
       YYDPRINTF ((stderr, "Reading a token: "));
-      yychar = YYLEX;
+      yychar = yylex (&yylval);
     }
 
   if (yychar <= YYEOF)
@@ -1587,7 +1375,7 @@ yyreduce:
   yylen = yyr2[yyn];
 
   /* If YYLEN is nonzero, implement the default value of the action:
-     `$$ = $1'.
+     '$$ = $1'.
 
      Otherwise, the following line sets YYVAL to garbage.
      This behavior is undocumented and Bison
@@ -1601,473 +1389,472 @@ yyreduce:
   switch (yyn)
     {
         case 4:
-/* Line 1813 of yacc.c  */
-#line 159 "ptlib/common/getdate.y"
+#line 141 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.y" /* yacc.c:1646  */
     {
 	    VARIABLE->yyHaveTime++;
 	}
+#line 1397 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.tab.c" /* yacc.c:1646  */
     break;
 
   case 5:
-/* Line 1813 of yacc.c  */
-#line 162 "ptlib/common/getdate.y"
+#line 144 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.y" /* yacc.c:1646  */
     {
 	    VARIABLE->yyHaveZone++;
 	}
+#line 1405 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.tab.c" /* yacc.c:1646  */
     break;
 
   case 6:
-/* Line 1813 of yacc.c  */
-#line 165 "ptlib/common/getdate.y"
+#line 147 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.y" /* yacc.c:1646  */
     {
 	    VARIABLE->yyHaveDate++;
 	}
+#line 1413 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.tab.c" /* yacc.c:1646  */
     break;
 
   case 7:
-/* Line 1813 of yacc.c  */
-#line 168 "ptlib/common/getdate.y"
+#line 150 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.y" /* yacc.c:1646  */
     {
 	    VARIABLE->yyHaveDay++;
 	}
+#line 1421 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.tab.c" /* yacc.c:1646  */
     break;
 
   case 8:
-/* Line 1813 of yacc.c  */
-#line 171 "ptlib/common/getdate.y"
+#line 153 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.y" /* yacc.c:1646  */
     {
 	    VARIABLE->yyHaveRel++;
 	}
+#line 1429 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.tab.c" /* yacc.c:1646  */
     break;
 
   case 10:
-/* Line 1813 of yacc.c  */
-#line 177 "ptlib/common/getdate.y"
+#line 159 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.y" /* yacc.c:1646  */
     {
-	    VARIABLE->yyHour = (yyvsp[(1) - (2)].Number);
+	    VARIABLE->yyHour = (yyvsp[-1].Number);
 	    VARIABLE->yyMinutes = 0;
 	    VARIABLE->yySeconds = 0;
-	    VARIABLE->yyMeridian = (yyvsp[(2) - (2)].Meridian);
+	    VARIABLE->yyMeridian = (yyvsp[0].Meridian);
 	}
+#line 1440 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.tab.c" /* yacc.c:1646  */
     break;
 
   case 11:
-/* Line 1813 of yacc.c  */
-#line 183 "ptlib/common/getdate.y"
+#line 165 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.y" /* yacc.c:1646  */
     {
-	    VARIABLE->yyHour = (yyvsp[(1) - (2)].Number)/100;
-	    VARIABLE->yyMinutes = (yyvsp[(1) - (2)].Number)%100;
+	    VARIABLE->yyHour = (yyvsp[-1].Number)/100;
+	    VARIABLE->yyMinutes = (yyvsp[-1].Number)%100;
 	    VARIABLE->yySeconds = 0;
 	    VARIABLE->yyMeridian = MER24;
 	    VARIABLE->yyDSTmode = DSToff;
-	    VARIABLE->yyTimezone = - ((yyvsp[(2) - (2)].Number) % 100 + ((yyvsp[(2) - (2)].Number) / 100) * 60);
+	    VARIABLE->yyTimezone = - ((yyvsp[0].Number) % 100 + ((yyvsp[0].Number) / 100) * 60);
         }
+#line 1453 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.tab.c" /* yacc.c:1646  */
     break;
 
   case 12:
-/* Line 1813 of yacc.c  */
-#line 191 "ptlib/common/getdate.y"
+#line 173 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.y" /* yacc.c:1646  */
     {
-	    VARIABLE->yyHour = (yyvsp[(1) - (2)].Number)/10000;
-	    VARIABLE->yyMinutes = ((yyvsp[(1) - (2)].Number)/100)%100;
-	    VARIABLE->yySeconds = (yyvsp[(1) - (2)].Number) % 100;
+	    VARIABLE->yyHour = (yyvsp[-1].Number)/10000;
+	    VARIABLE->yyMinutes = ((yyvsp[-1].Number)/100)%100;
+	    VARIABLE->yySeconds = (yyvsp[-1].Number) % 100;
 	    VARIABLE->yyMeridian = MER24;
 	    VARIABLE->yyDSTmode = DSToff;
-	    VARIABLE->yyTimezone = - ((yyvsp[(2) - (2)].Number) % 100 + ((yyvsp[(2) - (2)].Number) / 100) * 60);
+	    VARIABLE->yyTimezone = - ((yyvsp[0].Number) % 100 + ((yyvsp[0].Number) / 100) * 60);
         }
+#line 1466 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.tab.c" /* yacc.c:1646  */
     break;
 
   case 13:
-/* Line 1813 of yacc.c  */
-#line 199 "ptlib/common/getdate.y"
+#line 181 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.y" /* yacc.c:1646  */
     {
-	    VARIABLE->yyHour = (yyvsp[(1) - (4)].Number);
-	    VARIABLE->yyMinutes = (yyvsp[(3) - (4)].Number);
+	    VARIABLE->yyHour = (yyvsp[-3].Number);
+	    VARIABLE->yyMinutes = (yyvsp[-1].Number);
 	    VARIABLE->yySeconds = 0;
-	    VARIABLE->yyMeridian = (yyvsp[(4) - (4)].Meridian);
+	    VARIABLE->yyMeridian = (yyvsp[0].Meridian);
 	}
+#line 1477 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.tab.c" /* yacc.c:1646  */
     break;
 
   case 14:
-/* Line 1813 of yacc.c  */
-#line 205 "ptlib/common/getdate.y"
+#line 187 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.y" /* yacc.c:1646  */
     {
-	    VARIABLE->yyHour = (yyvsp[(1) - (4)].Number);
-	    VARIABLE->yyMinutes = (yyvsp[(3) - (4)].Number);
+	    VARIABLE->yyHour = (yyvsp[-3].Number);
+	    VARIABLE->yyMinutes = (yyvsp[-1].Number);
 	    VARIABLE->yyMeridian = MER24;
 	    VARIABLE->yyDSTmode = DSToff;
-	    VARIABLE->yyTimezone = - ((yyvsp[(4) - (4)].Number) % 100 + ((yyvsp[(4) - (4)].Number) / 100) * 60);
+	    VARIABLE->yyTimezone = - ((yyvsp[0].Number) % 100 + ((yyvsp[0].Number) / 100) * 60);
 	}
+#line 1489 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.tab.c" /* yacc.c:1646  */
     break;
 
   case 15:
-/* Line 1813 of yacc.c  */
-#line 212 "ptlib/common/getdate.y"
+#line 194 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.y" /* yacc.c:1646  */
     {
-	    VARIABLE->yyHour = (yyvsp[(1) - (6)].Number);
-	    VARIABLE->yyMinutes = (yyvsp[(3) - (6)].Number);
-	    VARIABLE->yySeconds = (yyvsp[(5) - (6)].Number);
-	    VARIABLE->yyMeridian = (yyvsp[(6) - (6)].Meridian);
+	    VARIABLE->yyHour = (yyvsp[-5].Number);
+	    VARIABLE->yyMinutes = (yyvsp[-3].Number);
+	    VARIABLE->yySeconds = (yyvsp[-1].Number);
+	    VARIABLE->yyMeridian = (yyvsp[0].Meridian);
 	}
+#line 1500 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.tab.c" /* yacc.c:1646  */
     break;
 
   case 16:
-/* Line 1813 of yacc.c  */
-#line 218 "ptlib/common/getdate.y"
+#line 200 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.y" /* yacc.c:1646  */
     {
-	    VARIABLE->yyHour = (yyvsp[(1) - (6)].Number);
-	    VARIABLE->yyMinutes = (yyvsp[(3) - (6)].Number);
-	    VARIABLE->yySeconds = (yyvsp[(5) - (6)].Number);
+	    VARIABLE->yyHour = (yyvsp[-5].Number);
+	    VARIABLE->yyMinutes = (yyvsp[-3].Number);
+	    VARIABLE->yySeconds = (yyvsp[-1].Number);
 	    VARIABLE->yyMeridian = MER24;
 	    VARIABLE->yyDSTmode = DSToff;
-	    VARIABLE->yyTimezone = - ((yyvsp[(6) - (6)].Number) % 100 + ((yyvsp[(6) - (6)].Number) / 100) * 60);
+	    VARIABLE->yyTimezone = - ((yyvsp[0].Number) % 100 + ((yyvsp[0].Number) / 100) * 60);
 	}
+#line 1513 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.tab.c" /* yacc.c:1646  */
     break;
 
   case 17:
-/* Line 1813 of yacc.c  */
-#line 228 "ptlib/common/getdate.y"
+#line 210 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.y" /* yacc.c:1646  */
     {
-	    VARIABLE->yyTimezone = (yyvsp[(1) - (1)].Number);
+	    VARIABLE->yyTimezone = (yyvsp[0].Number);
 	    VARIABLE->yyDSTmode = DSToff;
 	}
+#line 1522 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.tab.c" /* yacc.c:1646  */
     break;
 
   case 18:
-/* Line 1813 of yacc.c  */
-#line 232 "ptlib/common/getdate.y"
+#line 214 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.y" /* yacc.c:1646  */
     {
-	    VARIABLE->yyTimezone = (yyvsp[(1) - (1)].Number);
+	    VARIABLE->yyTimezone = (yyvsp[0].Number);
 	    VARIABLE->yyDSTmode = DSTon;
 	}
+#line 1531 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.tab.c" /* yacc.c:1646  */
     break;
 
   case 19:
-/* Line 1813 of yacc.c  */
-#line 237 "ptlib/common/getdate.y"
+#line 219 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.y" /* yacc.c:1646  */
     {
-	    VARIABLE->yyTimezone = (yyvsp[(1) - (2)].Number);
+	    VARIABLE->yyTimezone = (yyvsp[-1].Number);
 	    VARIABLE->yyDSTmode = DSTon;
 	}
+#line 1540 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.tab.c" /* yacc.c:1646  */
     break;
 
   case 20:
-/* Line 1813 of yacc.c  */
-#line 241 "ptlib/common/getdate.y"
+#line 223 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.y" /* yacc.c:1646  */
     {
             if (VARIABLE->yyHaveTime > 0) {
-	      VARIABLE->yyTimezone = (yyvsp[(1) - (1)].Number);
+	      VARIABLE->yyTimezone = (yyvsp[0].Number);
 	      VARIABLE->yyDSTmode = DSToff;
             }
             else
               VARIABLE->yyHaveZone--;
         }
+#line 1553 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.tab.c" /* yacc.c:1646  */
     break;
 
   case 21:
-/* Line 1813 of yacc.c  */
-#line 251 "ptlib/common/getdate.y"
+#line 233 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.y" /* yacc.c:1646  */
     {
 	    VARIABLE->yyDayOrdinal = 1;
-	    VARIABLE->yyDayNumber = (yyvsp[(1) - (1)].Number);
+	    VARIABLE->yyDayNumber = (yyvsp[0].Number);
 	}
+#line 1562 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.tab.c" /* yacc.c:1646  */
     break;
 
   case 22:
-/* Line 1813 of yacc.c  */
-#line 255 "ptlib/common/getdate.y"
+#line 237 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.y" /* yacc.c:1646  */
     {
 	    VARIABLE->yyDayOrdinal = 1;
-	    VARIABLE->yyDayNumber = (yyvsp[(1) - (2)].Number);
+	    VARIABLE->yyDayNumber = (yyvsp[-1].Number);
 	}
+#line 1571 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.tab.c" /* yacc.c:1646  */
     break;
 
   case 23:
-/* Line 1813 of yacc.c  */
-#line 259 "ptlib/common/getdate.y"
+#line 241 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.y" /* yacc.c:1646  */
     {
-	    VARIABLE->yyDayOrdinal = (yyvsp[(1) - (2)].Number);
-	    VARIABLE->yyDayNumber = (yyvsp[(2) - (2)].Number);
+	    VARIABLE->yyDayOrdinal = (yyvsp[-1].Number);
+	    VARIABLE->yyDayNumber = (yyvsp[0].Number);
 	}
+#line 1580 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.tab.c" /* yacc.c:1646  */
     break;
 
   case 24:
-/* Line 1813 of yacc.c  */
-#line 265 "ptlib/common/getdate.y"
+#line 247 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.y" /* yacc.c:1646  */
     {
-	    SetPossibleDate(VARIABLE, (yyvsp[(1) - (3)].Number), (yyvsp[(3) - (3)].Number), VARIABLE->yyYear);
+	    SetPossibleDate(VARIABLE, (yyvsp[-2].Number), (yyvsp[0].Number), VARIABLE->yyYear);
 	}
+#line 1588 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.tab.c" /* yacc.c:1646  */
     break;
 
   case 25:
-/* Line 1813 of yacc.c  */
-#line 268 "ptlib/common/getdate.y"
+#line 250 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.y" /* yacc.c:1646  */
     {
-	    SetPossibleDate(VARIABLE, (yyvsp[(1) - (5)].Number), (yyvsp[(3) - (5)].Number), (yyvsp[(5) - (5)].Number));
+	    SetPossibleDate(VARIABLE, (yyvsp[-4].Number), (yyvsp[-2].Number), (yyvsp[0].Number));
 	}
+#line 1596 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.tab.c" /* yacc.c:1646  */
     break;
 
   case 26:
-/* Line 1813 of yacc.c  */
-#line 271 "ptlib/common/getdate.y"
+#line 253 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.y" /* yacc.c:1646  */
     {
 	    /* ISO 8601 format.  yyyy-mm-dd.  */
-	    SetPossibleDate(VARIABLE, (yyvsp[(1) - (4)].Number), -(yyvsp[(2) - (4)].Number), -(yyvsp[(3) - (4)].Number));
+	    SetPossibleDate(VARIABLE, (yyvsp[-3].Number), -(yyvsp[-2].Number), -(yyvsp[-1].Number));
 	}
+#line 1605 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.tab.c" /* yacc.c:1646  */
     break;
 
   case 27:
-/* Line 1813 of yacc.c  */
-#line 275 "ptlib/common/getdate.y"
+#line 257 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.y" /* yacc.c:1646  */
     {
-	    VARIABLE->yyDay= ((yyvsp[(1) - (1)].Number))%100;
-	    VARIABLE->yyMonth= ((yyvsp[(1) - (1)].Number)/100)%100;
-	    VARIABLE->yyYear = (yyvsp[(1) - (1)].Number)/10000;
+	    VARIABLE->yyDay= ((yyvsp[0].Number))%100;
+	    VARIABLE->yyMonth= ((yyvsp[0].Number)/100)%100;
+	    VARIABLE->yyYear = (yyvsp[0].Number)/10000;
 	}
+#line 1615 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.tab.c" /* yacc.c:1646  */
     break;
 
   case 28:
-/* Line 1813 of yacc.c  */
-#line 280 "ptlib/common/getdate.y"
+#line 262 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.y" /* yacc.c:1646  */
     {
 	    /* e.g. 17-JUN-1992.  */
-	    SetPossibleDate(VARIABLE, (yyvsp[(1) - (3)].Number), (yyvsp[(2) - (3)].Number), -(yyvsp[(3) - (3)].Number));
+	    SetPossibleDate(VARIABLE, (yyvsp[-2].Number), (yyvsp[-1].Number), -(yyvsp[0].Number));
 	}
+#line 1624 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.tab.c" /* yacc.c:1646  */
     break;
 
   case 29:
-/* Line 1813 of yacc.c  */
-#line 284 "ptlib/common/getdate.y"
+#line 266 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.y" /* yacc.c:1646  */
     {
-	    VARIABLE->yyMonth = (yyvsp[(1) - (2)].Number);
-	    if ((yyvsp[(2) - (2)].Number) > 31)
-	      VARIABLE->yyYear = (yyvsp[(2) - (2)].Number);
+	    VARIABLE->yyMonth = (yyvsp[-1].Number);
+	    if ((yyvsp[0].Number) > 31)
+	      VARIABLE->yyYear = (yyvsp[0].Number);
 	    else
-	      VARIABLE->yyDay = (yyvsp[(2) - (2)].Number);
+	      VARIABLE->yyDay = (yyvsp[0].Number);
 	}
+#line 1636 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.tab.c" /* yacc.c:1646  */
     break;
 
   case 30:
-/* Line 1813 of yacc.c  */
-#line 291 "ptlib/common/getdate.y"
+#line 273 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.y" /* yacc.c:1646  */
     {
-	    VARIABLE->yyMonth = (yyvsp[(1) - (4)].Number);
-	    VARIABLE->yyDay = (yyvsp[(2) - (4)].Number);
-	    VARIABLE->yyYear = (yyvsp[(4) - (4)].Number);
+	    VARIABLE->yyMonth = (yyvsp[-3].Number);
+	    VARIABLE->yyDay = (yyvsp[-2].Number);
+	    VARIABLE->yyYear = (yyvsp[0].Number);
 	}
+#line 1646 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.tab.c" /* yacc.c:1646  */
     break;
 
   case 31:
-/* Line 1813 of yacc.c  */
-#line 296 "ptlib/common/getdate.y"
+#line 278 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.y" /* yacc.c:1646  */
     {
-	    if ((yyvsp[(1) - (2)].Number) > 31)
-	      VARIABLE->yyYear = (yyvsp[(1) - (2)].Number);
+	    if ((yyvsp[-1].Number) > 31)
+	      VARIABLE->yyYear = (yyvsp[-1].Number);
 	    else
-	      VARIABLE->yyDay = (yyvsp[(1) - (2)].Number);
-	    VARIABLE->yyMonth = (yyvsp[(2) - (2)].Number);
+	      VARIABLE->yyDay = (yyvsp[-1].Number);
+	    VARIABLE->yyMonth = (yyvsp[0].Number);
 	}
+#line 1658 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.tab.c" /* yacc.c:1646  */
     break;
 
   case 32:
-/* Line 1813 of yacc.c  */
-#line 303 "ptlib/common/getdate.y"
+#line 285 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.y" /* yacc.c:1646  */
     {
-	    SetPossibleDate(VARIABLE, (yyvsp[(1) - (3)].Number), (yyvsp[(2) - (3)].Number), (yyvsp[(3) - (3)].Number));
+	    SetPossibleDate(VARIABLE, (yyvsp[-2].Number), (yyvsp[-1].Number), (yyvsp[0].Number));
 	}
+#line 1666 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.tab.c" /* yacc.c:1646  */
     break;
 
   case 33:
-/* Line 1813 of yacc.c  */
-#line 308 "ptlib/common/getdate.y"
+#line 290 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.y" /* yacc.c:1646  */
     {
 	    VARIABLE->yyRelSeconds = -VARIABLE->yyRelSeconds;
 	    VARIABLE->yyRelMonth = -VARIABLE->yyRelMonth;
 	}
+#line 1675 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.tab.c" /* yacc.c:1646  */
     break;
 
   case 35:
-/* Line 1813 of yacc.c  */
-#line 315 "ptlib/common/getdate.y"
+#line 297 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.y" /* yacc.c:1646  */
     {
-	    VARIABLE->yyRelSeconds += (yyvsp[(1) - (2)].Number) * (yyvsp[(2) - (2)].Number) * 60L;
+	    VARIABLE->yyRelSeconds += (yyvsp[-1].Number) * (yyvsp[0].Number) * 60L;
 	}
+#line 1683 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.tab.c" /* yacc.c:1646  */
     break;
 
   case 36:
-/* Line 1813 of yacc.c  */
-#line 318 "ptlib/common/getdate.y"
+#line 300 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.y" /* yacc.c:1646  */
     {
-	    VARIABLE->yyRelSeconds += (yyvsp[(1) - (2)].Number) * (yyvsp[(2) - (2)].Number) * 60L;
+	    VARIABLE->yyRelSeconds += (yyvsp[-1].Number) * (yyvsp[0].Number) * 60L;
 	}
+#line 1691 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.tab.c" /* yacc.c:1646  */
     break;
 
   case 37:
-/* Line 1813 of yacc.c  */
-#line 321 "ptlib/common/getdate.y"
+#line 303 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.y" /* yacc.c:1646  */
     {
-	    VARIABLE->yyRelSeconds += (yyvsp[(1) - (1)].Number) * 60L;
+	    VARIABLE->yyRelSeconds += (yyvsp[0].Number) * 60L;
 	}
+#line 1699 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.tab.c" /* yacc.c:1646  */
     break;
 
   case 38:
-/* Line 1813 of yacc.c  */
-#line 324 "ptlib/common/getdate.y"
+#line 306 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.y" /* yacc.c:1646  */
     {
-	    VARIABLE->yyRelSeconds += (yyvsp[(1) - (2)].Number);
+	    VARIABLE->yyRelSeconds += (yyvsp[-1].Number);
 	}
+#line 1707 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.tab.c" /* yacc.c:1646  */
     break;
 
   case 39:
-/* Line 1813 of yacc.c  */
-#line 327 "ptlib/common/getdate.y"
+#line 309 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.y" /* yacc.c:1646  */
     {
-	    VARIABLE->yyRelSeconds += (yyvsp[(1) - (2)].Number);
+	    VARIABLE->yyRelSeconds += (yyvsp[-1].Number);
 	}
+#line 1715 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.tab.c" /* yacc.c:1646  */
     break;
 
   case 40:
-/* Line 1813 of yacc.c  */
-#line 330 "ptlib/common/getdate.y"
+#line 312 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.y" /* yacc.c:1646  */
     {
 	    VARIABLE->yyRelSeconds++;
 	}
+#line 1723 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.tab.c" /* yacc.c:1646  */
     break;
 
   case 41:
-/* Line 1813 of yacc.c  */
-#line 333 "ptlib/common/getdate.y"
+#line 315 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.y" /* yacc.c:1646  */
     {
-	    VARIABLE->yyRelMonth += (yyvsp[(1) - (2)].Number) * (yyvsp[(2) - (2)].Number);
+	    VARIABLE->yyRelMonth += (yyvsp[-1].Number) * (yyvsp[0].Number);
 	}
+#line 1731 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.tab.c" /* yacc.c:1646  */
     break;
 
   case 42:
-/* Line 1813 of yacc.c  */
-#line 336 "ptlib/common/getdate.y"
+#line 318 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.y" /* yacc.c:1646  */
     {
-	    VARIABLE->yyRelMonth += (yyvsp[(1) - (2)].Number) * (yyvsp[(2) - (2)].Number);
+	    VARIABLE->yyRelMonth += (yyvsp[-1].Number) * (yyvsp[0].Number);
 	}
+#line 1739 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.tab.c" /* yacc.c:1646  */
     break;
 
   case 43:
-/* Line 1813 of yacc.c  */
-#line 339 "ptlib/common/getdate.y"
+#line 321 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.y" /* yacc.c:1646  */
     {
-	    VARIABLE->yyRelMonth += (yyvsp[(1) - (1)].Number);
+	    VARIABLE->yyRelMonth += (yyvsp[0].Number);
 	}
+#line 1747 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.tab.c" /* yacc.c:1646  */
     break;
 
   case 44:
-/* Line 1813 of yacc.c  */
-#line 344 "ptlib/common/getdate.y"
+#line 326 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.y" /* yacc.c:1646  */
     {
-	    (yyval.Number) = (yyvsp[(1) - (1)].Number);
+	    (yyval.Number) = (yyvsp[0].Number);
 	}
+#line 1755 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.tab.c" /* yacc.c:1646  */
     break;
 
   case 45:
-/* Line 1813 of yacc.c  */
-#line 347 "ptlib/common/getdate.y"
+#line 329 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.y" /* yacc.c:1646  */
     {
-	    (yyval.Number) = (yyvsp[(1) - (1)].Number);
+	    (yyval.Number) = (yyvsp[0].Number);
 	}
+#line 1763 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.tab.c" /* yacc.c:1646  */
     break;
 
   case 46:
-/* Line 1813 of yacc.c  */
-#line 350 "ptlib/common/getdate.y"
+#line 332 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.y" /* yacc.c:1646  */
     {
-	    (yyval.Number) = (yyvsp[(1) - (1)].Number);
+	    (yyval.Number) = (yyvsp[0].Number);
 	}
+#line 1771 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.tab.c" /* yacc.c:1646  */
     break;
 
   case 47:
-/* Line 1813 of yacc.c  */
-#line 355 "ptlib/common/getdate.y"
+#line 337 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.y" /* yacc.c:1646  */
     {
 	    if (VARIABLE->yyHaveTime && VARIABLE->yyHaveDate && !VARIABLE->yyHaveRel)
-		VARIABLE->yyYear = (yyvsp[(1) - (1)].Number);
+		VARIABLE->yyYear = (yyvsp[0].Number);
 	    else {
-		if((yyvsp[(1) - (1)].Number)>240000) {
+		if((yyvsp[0].Number)>240000) {
 		    VARIABLE->yyHaveDate++;
-		    VARIABLE->yyDay= ((yyvsp[(1) - (1)].Number))%100;
-		    VARIABLE->yyMonth= ((yyvsp[(1) - (1)].Number)/100)%100;
-		    VARIABLE->yyYear = (yyvsp[(1) - (1)].Number)/10000;
+		    VARIABLE->yyDay= ((yyvsp[0].Number))%100;
+		    VARIABLE->yyMonth= ((yyvsp[0].Number)/100)%100;
+		    VARIABLE->yyYear = (yyvsp[0].Number)/10000;
 		}
 		else {
 		    VARIABLE->yyHaveTime++;
-		    if ((yyvsp[(1) - (1)].Number) < 10000) {
-		    	VARIABLE->yyHour = (yyvsp[(1) - (1)].Number) / 100;
-		    	VARIABLE->yyMinutes = (yyvsp[(1) - (1)].Number) % 100;
+		    if ((yyvsp[0].Number) < 10000) {
+		    	VARIABLE->yyHour = (yyvsp[0].Number) / 100;
+		    	VARIABLE->yyMinutes = (yyvsp[0].Number) % 100;
 		        VARIABLE->yySeconds = 0;
 		    }
 		    else {
-	                VARIABLE->yyHour = (yyvsp[(1) - (1)].Number)/10000;
-	                VARIABLE->yyMinutes = ((yyvsp[(1) - (1)].Number)/100)%100;
-	                VARIABLE->yySeconds = (yyvsp[(1) - (1)].Number) % 100;
+	                VARIABLE->yyHour = (yyvsp[0].Number)/10000;
+	                VARIABLE->yyMinutes = ((yyvsp[0].Number)/100)%100;
+	                VARIABLE->yySeconds = (yyvsp[0].Number) % 100;
                     }
 		    VARIABLE->yyMeridian = MER24;
 	        }
 	    }
 	}
+#line 1802 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.tab.c" /* yacc.c:1646  */
     break;
 
   case 48:
-/* Line 1813 of yacc.c  */
-#line 381 "ptlib/common/getdate.y"
+#line 363 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.y" /* yacc.c:1646  */
     {
 	    if (VARIABLE->yyHaveTime && VARIABLE->yyHaveDate && !VARIABLE->yyHaveRel)
-		VARIABLE->yyYear = (yyvsp[(1) - (1)].Number);
+		VARIABLE->yyYear = (yyvsp[0].Number);
 	    else {
 	        VARIABLE->yyHaveTime++;
-	        VARIABLE->yyHour = (yyvsp[(1) - (1)].Number)/100;
-	        VARIABLE->yyMinutes = (yyvsp[(1) - (1)].Number)%100;
+	        VARIABLE->yyHour = (yyvsp[0].Number)/100;
+	        VARIABLE->yyMinutes = (yyvsp[0].Number)%100;
 	        VARIABLE->yySeconds = 0;
 	        VARIABLE->yyMeridian = MER24;
             }
         }
+#line 1818 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.tab.c" /* yacc.c:1646  */
     break;
 
   case 49:
-/* Line 1813 of yacc.c  */
-#line 392 "ptlib/common/getdate.y"
+#line 374 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.y" /* yacc.c:1646  */
     {
-	    if (!VARIABLE->yyHaveDate && (yyvsp[(1) - (1)].Number)>240000) {
+	    if (!VARIABLE->yyHaveDate && (yyvsp[0].Number)>240000) {
 		VARIABLE->yyHaveDate++;
-		VARIABLE->yyDay= ((yyvsp[(1) - (1)].Number))%100;
-		VARIABLE->yyMonth= ((yyvsp[(1) - (1)].Number)/100)%100;
-		VARIABLE->yyYear = (yyvsp[(1) - (1)].Number)/10000;
+		VARIABLE->yyDay= ((yyvsp[0].Number))%100;
+		VARIABLE->yyMonth= ((yyvsp[0].Number)/100)%100;
+		VARIABLE->yyYear = (yyvsp[0].Number)/10000;
 	    }
 	    else if (!VARIABLE->yyHaveTime) {
 	        VARIABLE->yyHaveTime++;
-	        VARIABLE->yyHour = (yyvsp[(1) - (1)].Number)/10000;
-	        VARIABLE->yyMinutes = ((yyvsp[(1) - (1)].Number)/100)%100;
-	        VARIABLE->yySeconds = (yyvsp[(1) - (1)].Number) % 100;
+	        VARIABLE->yyHour = (yyvsp[0].Number)/10000;
+	        VARIABLE->yyMinutes = ((yyvsp[0].Number)/100)%100;
+	        VARIABLE->yySeconds = (yyvsp[0].Number) % 100;
 	        VARIABLE->yyMeridian = MER24;
             }
         }
+#line 1838 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.tab.c" /* yacc.c:1646  */
     break;
 
   case 50:
-/* Line 1813 of yacc.c  */
-#line 409 "ptlib/common/getdate.y"
+#line 391 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.y" /* yacc.c:1646  */
     {
 	    (yyval.Meridian) = MER24;
 	}
+#line 1846 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.tab.c" /* yacc.c:1646  */
     break;
 
   case 51:
-/* Line 1813 of yacc.c  */
-#line 412 "ptlib/common/getdate.y"
+#line 394 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.y" /* yacc.c:1646  */
     {
-	    (yyval.Meridian) = (yyvsp[(1) - (1)].Meridian);
+	    (yyval.Meridian) = (yyvsp[0].Meridian);
 	}
+#line 1854 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.tab.c" /* yacc.c:1646  */
     break;
 
 
-/* Line 1813 of yacc.c  */
-#line 2066 "ptlib/common/getdate.tab.c"
+#line 1858 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.tab.c" /* yacc.c:1646  */
       default: break;
     }
   /* User semantic actions sometimes alter yychar, and that requires
@@ -2089,7 +1876,7 @@ yyreduce:
 
   *++yyvsp = yyval;
 
-  /* Now `shift' the result of the reduction.  Determine what state
+  /* Now 'shift' the result of the reduction.  Determine what state
      that goes to, based on the state we popped back to and the rule
      number reduced by.  */
 
@@ -2104,9 +1891,9 @@ yyreduce:
   goto yynewstate;
 
 
-/*------------------------------------.
-| yyerrlab -- here on detecting error |
-`------------------------------------*/
+/*--------------------------------------.
+| yyerrlab -- here on detecting error.  |
+`--------------------------------------*/
 yyerrlab:
   /* Make sure we have latest lookahead translation.  See comments at
      user semantic actions for why this is necessary.  */
@@ -2117,7 +1904,7 @@ yyerrlab:
     {
       ++yynerrs;
 #if ! YYERROR_VERBOSE
-      yyerror (YY_("syntax error"));
+      yyerror (VARIABLE, YY_("syntax error"));
 #else
 # define YYSYNTAX_ERROR yysyntax_error (&yymsg_alloc, &yymsg, \
                                         yyssp, yytoken)
@@ -2144,7 +1931,7 @@ yyerrlab:
                 yymsgp = yymsg;
               }
           }
-        yyerror (yymsgp);
+        yyerror (VARIABLE, yymsgp);
         if (yysyntax_error_status == 2)
           goto yyexhaustedlab;
       }
@@ -2157,20 +1944,20 @@ yyerrlab:
   if (yyerrstatus == 3)
     {
       /* If just tried and failed to reuse lookahead token after an
-	 error, discard it.  */
+         error, discard it.  */
 
       if (yychar <= YYEOF)
-	{
-	  /* Return failure if at end of input.  */
-	  if (yychar == YYEOF)
-	    YYABORT;
-	}
+        {
+          /* Return failure if at end of input.  */
+          if (yychar == YYEOF)
+            YYABORT;
+        }
       else
-	{
-	  yydestruct ("Error: discarding",
-		      yytoken, &yylval);
-	  yychar = YYEMPTY;
-	}
+        {
+          yydestruct ("Error: discarding",
+                      yytoken, &yylval, VARIABLE);
+          yychar = YYEMPTY;
+        }
     }
 
   /* Else will try to reuse lookahead token after shifting the error
@@ -2189,7 +1976,7 @@ yyerrorlab:
   if (/*CONSTCOND*/ 0)
      goto yyerrorlab;
 
-  /* Do not reclaim the symbols of the rule which action triggered
+  /* Do not reclaim the symbols of the rule whose action triggered
      this YYERROR.  */
   YYPOPSTACK (yylen);
   yylen = 0;
@@ -2202,29 +1989,29 @@ yyerrorlab:
 | yyerrlab1 -- common code for both syntax error and YYERROR.  |
 `-------------------------------------------------------------*/
 yyerrlab1:
-  yyerrstatus = 3;	/* Each real token shifted decrements this.  */
+  yyerrstatus = 3;      /* Each real token shifted decrements this.  */
 
   for (;;)
     {
       yyn = yypact[yystate];
       if (!yypact_value_is_default (yyn))
-	{
-	  yyn += YYTERROR;
-	  if (0 <= yyn && yyn <= YYLAST && yycheck[yyn] == YYTERROR)
-	    {
-	      yyn = yytable[yyn];
-	      if (0 < yyn)
-		break;
-	    }
-	}
+        {
+          yyn += YYTERROR;
+          if (0 <= yyn && yyn <= YYLAST && yycheck[yyn] == YYTERROR)
+            {
+              yyn = yytable[yyn];
+              if (0 < yyn)
+                break;
+            }
+        }
 
       /* Pop the current state because it cannot handle the error token.  */
       if (yyssp == yyss)
-	YYABORT;
+        YYABORT;
 
 
       yydestruct ("Error: popping",
-		  yystos[yystate], yyvsp);
+                  yystos[yystate], yyvsp, VARIABLE);
       YYPOPSTACK (1);
       yystate = *yyssp;
       YY_STACK_PRINT (yyss, yyssp);
@@ -2261,7 +2048,7 @@ yyabortlab:
 | yyexhaustedlab -- memory exhaustion comes here.  |
 `-------------------------------------------------*/
 yyexhaustedlab:
-  yyerror (YY_("memory exhausted"));
+  yyerror (VARIABLE, YY_("memory exhausted"));
   yyresult = 2;
   /* Fall through.  */
 #endif
@@ -2273,16 +2060,16 @@ yyreturn:
          user semantic actions for why this is necessary.  */
       yytoken = YYTRANSLATE (yychar);
       yydestruct ("Cleanup: discarding lookahead",
-                  yytoken, &yylval);
+                  yytoken, &yylval, VARIABLE);
     }
-  /* Do not reclaim the symbols of the rule which action triggered
+  /* Do not reclaim the symbols of the rule whose action triggered
      this YYABORT or YYACCEPT.  */
   YYPOPSTACK (yylen);
   YY_STACK_PRINT (yyss, yyssp);
   while (yyssp != yyss)
     {
       yydestruct ("Cleanup: popping",
-		  yystos[*yyssp], yyvsp);
+                  yystos[*yyssp], yyvsp, VARIABLE);
       YYPOPSTACK (1);
     }
 #ifndef yyoverflow
@@ -2293,13 +2080,9 @@ yyreturn:
   if (yymsg != yymsgbuf)
     YYSTACK_FREE (yymsg);
 #endif
-  /* Make sure YYID is used.  */
-  return YYID (yyresult);
+  return yyresult;
 }
-
-
-/* Line 2076 of yacc.c  */
-#line 417 "ptlib/common/getdate.y"
+#line 399 "/mnt/w/ubuntu_stable/ptlib/src/ptlib/common/getdate.y" /* yacc.c:1906  */
 
 
 /* Month and day table. */
@@ -2612,10 +2395,7 @@ static int LookupWord(char * buff, YYSTYPE * yylval, struct Variables * vars)
 #pragma warning(disable:4211)
 #endif
 
-#ifndef __GNUC__
-static
-#endif
-int yylex(YYSTYPE * yylval, struct Variables * vars)
+static int PTime_yylex(YYSTYPE * yylval, struct Variables * vars)
 {
     register char	*p;
     char		buff[20];
@@ -2905,16 +2685,9 @@ time_t STDAPICALLTYPE PTimeParse(void * inputStream, struct tm * now, int timezo
 #pragma warning(disable:4028 4100 4211)
 #endif
 
-#ifdef __GNUC__
-int yyerror(const char * s)
-{
-  return 0;
-}
-#else
-static void yyerror(const char * s)
+void yyerror(struct Variables * vars, const char * s)
 {
 }
-#endif
 
 #ifdef _MSC_VER
 #pragma warning(default:4028 4100 4211)
