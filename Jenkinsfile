@@ -1,5 +1,10 @@
 pipeline {
-  agent none
+  agent {
+    node {
+      label "master"
+      customWorkspace "${JOB_NAME.replaceAll('%2F', '_')}"
+    }
+  }
 
   options {
     buildDiscarder logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '', daysToKeepStr: '200', numToKeepStr: '200')
