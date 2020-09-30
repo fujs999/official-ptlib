@@ -471,12 +471,13 @@ bool PHTTPClient::ReadResponse(PMIMEInfo & replyMIME)
   PString body;
   if (m_lastResponseCode >= 300) {
     bool readOK;
-   #if PTRACING
-    if (PTrace::CanTrace(4) && replyMIME.GetVar(ContentLengthTag(), numeric_limits<int64_t>::max()) <= (int64_t)MaxTraceContentSize)
+    static const long MaxBodyOnError = 1000000; // Protect against malice
+    if (replyMIME.GetInteger(ContentLengthTag, MaxBodyOnError) < MaxBodyOnError)
       readOK = ReadContentBody(replyMIME, body);
-    else
-   #endif
-      readOK = ReadContentBody(replyMIME); // Waste body
+    else {
+      readOK = ReadContentBody(replyMIME); // Waste body, if huge
+      body = "Large body ignored";
+    }
     if (!readOK)
       return SetLastResponse(TransportReadError, "Response body", PChannel::LastReadError);
   }
