@@ -241,7 +241,6 @@ PTHREAD_MUTEX_RECURSIVE_NP
       , m_fileName(fileName)
       , m_lineNum(lineNum)
       , m_objectAddress(instance)
-      , m_objectClass(instance ? instance->GetClass() : "")
       , m_threadAddress(PThread::Current())
       , m_threadName(m_threadAddress ? m_threadAddress->GetThreadName() : "")
       , m_contextIdentifier(instance ? instance->GetTraceContextIdentifier() : 0)
@@ -251,10 +250,8 @@ PTHREAD_MUTEX_RECURSIVE_NP
     {
       if (m_contextIdentifier == 0 && m_threadAddress != NULL)
         m_contextIdentifier = m_threadAddress->GetTraceContextIdentifier();
-      if (m_objectClass.NumCompare("class ") == PObject::EqualTo)
-        m_objectClass.Delete(0, 6);
-      else if (m_objectClass.NumCompare("struct ") == PObject::EqualTo)
-        m_objectClass.Delete(0, 7);
+      if (instance)
+        m_objectClass = instance->GetClassName();
     }
 
     unsigned      m_level;
@@ -611,7 +608,7 @@ ostream & PTrace::PrintInfo(ostream & strm, bool crlf)
     strm << "network: " << dynamic_cast<PSystemLogToNetwork *>(info.m_stream)->GetServer();
 #endif
   else
-    strm << typeid(*info.m_stream).name();
+    strm << PObject::GetClassName(typeid(*info.m_stream));
 
   strm << ", Options:" << OptionsToString(info.m_options) << info.m_rolloverPattern;
 
@@ -2446,7 +2443,7 @@ int PProcess::InternalMain(void *)
     Main();
   }
   catch (const std::exception & e) {
-    PAssertAlways(PSTRSTRM("Exception (" << typeid(e).name() << " \"" << e.what() << "\") caught in process main, terminating"));
+    PAssertAlways(PSTRSTRM("Exception (" << PObject::GetClassName(typeid(e)) << " \"" << e.what() << "\") caught in process main, terminating"));
     AbortProcess(136);
   }
   catch (...) {

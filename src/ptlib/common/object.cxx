@@ -48,6 +48,9 @@
 #else
 #include <signal.h>
 #endif
+#if P_HAS_DEMANGLE
+ #include <cxxabi.h>
+#endif
 
 
 PDebugLocation::PDebugLocation(const PDebugLocation * location)
@@ -270,7 +273,7 @@ bool PAssertException(const char * source, const std::exception * ex)
   std::ostringstream msg;
   msg << "Exception ";
   if (ex != NULL)
-    msg << '(' << typeid(*ex).name() << " \"" << ex->what() << "\") ";
+    msg << '(' << PObject::GetClassName(typeid(*ex)) << " \"" << ex->what() << "\") ";
   msg << "caught in " << source;
   InternalAssertFunc(s_ExceptionLocation, msg.str().c_str());
   return false;
@@ -316,7 +319,7 @@ PObject::Comparison PObject::Compare(const PObject & obj) const
 
 void PObject::PrintOn(ostream & strm) const
 {
-  strm << GetClass();
+  strm << GetClassName();
 }
 
 
@@ -328,6 +331,29 @@ void PObject::ReadFrom(istream &)
 PINDEX PObject::HashFunction() const
 {
   return 0;
+}
+
+
+std::string PObject::GetClassName(const std::type_info & t)
+{
+  std::string name;
+#if P_HAS_DEMANGLE
+  int status = -1;
+  char * demangle = abi::__cxa_demangle(t.name(), NULL, NULL, &status);
+  if (status == 0) {
+    name = demangle;
+    runtime_free(demangle);
+  }
+  else
+#endif
+    name = t.name();
+
+  if (name.compare(0, 6, "class ") == 0)
+    name.erase(0, 6);
+  else if (name.compare(0, 7, "struct ") == 0)
+    name.erase(0, 7);
+
+  return name;
 }
 
 
@@ -1040,7 +1066,7 @@ static void __cdecl MyCrtDumpClient(void * ptr, size_t size)
 {
   if(_CrtReportBlockType(ptr) == P_CLIENT_BLOCK) {
     const PObject * obj = (PObject *)ptr;
-    _RPT1(_CRT_WARN, "Class %s\n", obj->GetClass());
+    _RPT1(_CRT_WARN, "Class %s\n", obj->GetClassName());
     hadCrtDumpLeak = true;
   }
 
