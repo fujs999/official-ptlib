@@ -969,7 +969,7 @@ void TypeBase::PrintStart(ostream & strm) const
     }
     strm << ": ";
   }
-  strm << tag << GetClass() << ' ';
+  strm << tag << GetClassName() << ' ';
   Module->SetIndentLevel(1);
 }
 

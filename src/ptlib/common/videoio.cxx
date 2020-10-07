@@ -499,7 +499,7 @@ PVideoDevice::~PVideoDevice()
 
 void PVideoDevice::PrintOn(ostream & strm) const
 {
-  strm << GetClass() << " &" << this << ' ';
+  strm << GetClassName() << " &" << this << ' ';
   PVideoFrameInfo::PrintOn(strm);
   strm << " [" << m_deviceName << "] {";
 
@@ -1338,7 +1338,7 @@ PVideoInputDevice * PVideoInputDevice::CreateOpenedDevice(const PString & driver
   if (device == NULL)
     return NULL;
 
-  PTRACE(4, device, "Found video input device: " << device->GetClass());
+  PTRACE(4, device, "Found video input device: " << device->GetClassName());
   if (device->Open(adjustedDeviceName, startImmediate))
     return device;
 
