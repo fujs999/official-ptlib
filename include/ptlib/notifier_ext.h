@@ -36,6 +36,50 @@
 
 ///////////////////////////////////////////////////////////////////////
 
+/**Safe notification.
+
+   This is an abstract class for which a descendent is declared for every
+   function that may be called. The <code>PDECLARE_SAFE_NOTIFIER</code>
+   macro makes this declaration.
+
+   See PNotifierFunctionTemplate for more information.
+  */
+template <typename ParamType>
+class PSafeNotifierFunction : public PNotifierFunctionTemplate<ParamType>
+{
+  typedef PNotifierFunctionTemplate<ParamType> Parent;
+  PCLASSINFO(PSafeNotifierFunction, Parent);
+
+  public:
+    PSafeNotifierFunction(void * voidTarget, PSafeObject * safeTarget)
+      : Parent(voidTarget)
+      , m_safeTarget(safeTarget)
+    { }
+
+  protected:
+    PSafePtr<PSafeObject> m_safeTarget;
+};
+
+
+/** Declare a safe notifier object class.
+    See PDECLARE_NOTIFIER2 for more information.
+  */
+#define PDECLARE_SAFE_NOTIFIER_EXT(notifierType, notifierArg, notifiee, func, ParamType, ParamArg) \
+            PDECLARE_NOTIFIER_COMMON(notifierType, notifierArg, notifiee, func, ParamType, ParamArg, PSafeNotifierFunction<ParamType>)
+
+/** Declare a safe notifier object class.
+    See PDECLARE_NOTIFIER2 for more information.
+  */
+#define PDECLARE_SAFE_NOTIFIER2(notifierType,   notifiee, func, ParamType  ) \
+     PDECLARE_SAFE_NOTIFIER_EXT(notifierType, , notifiee, func, ParamType, )
+
+/// Declare safe PNotifier derived class with P_INT_PTR parameter. Uses PDECLARE_SAFE_NOTIFIER2 macro.
+#define PDECLARE_SAFE_NOTIFIER(notifierType, notifiee, func) \
+       PDECLARE_SAFE_NOTIFIER2(notifierType, notifiee, func, P_INT_PTR)
+
+
+///////////////////////////////////////////////////////////////////////
+
 typedef unsigned long PNotifierIdentifer;
 
 /** Validated PNotifier class.
