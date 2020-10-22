@@ -1066,7 +1066,7 @@ static void __cdecl MyCrtDumpClient(void * ptr, size_t size)
 {
   if(_CrtReportBlockType(ptr) == P_CLIENT_BLOCK) {
     const PObject * obj = (PObject *)ptr;
-    _RPT1(_CRT_WARN, "Class %s\n", obj->GetClassName());
+    _RPT1(_CRT_WARN, "Class %s\n", obj->GetClassName().c_str());
     hadCrtDumpLeak = true;
   }
 
