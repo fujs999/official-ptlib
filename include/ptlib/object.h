@@ -174,6 +174,26 @@ typedef bool   PBoolean;
 
 
 ///////////////////////////////////////////////////////////////////////////////
+// Deal with different C++ versions
+#if (__cplusplus >= 201103L)
+  template <typename T> class PAutoPtr : public std::unique_ptr<T>
+  {
+    public:
+      PAutoPtr() { }
+      explicit PAutoPtr(T * p) : std::unique_ptr<T>(p) { }
+      void transfer(PAutoPtr & other) { *this = std::move(other); }
+  };
+#else
+  template <typename T> class PAutoPtr : public std::auto_ptr<T>
+  {
+    public:
+      PAutoPtr() { }
+      explicit PAutoPtr(T * p) : std::auto_ptr<T>(p) { }
+      void transfer(PAutoPtr & other) { *this = other; }
+  };
+#endif
+
+///////////////////////////////////////////////////////////////////////////////
 // Handy macros
 
 /// Count the number of arguments passed in macro
@@ -2025,7 +2045,7 @@ class PSingleton
   public:
     PSingleton()
     {
-      static auto_ptr<Type> s_pointer;
+      static PAutoPtr<Type> s_pointer;
       static GuardType s_guard(0);
       if (s_guard++ != 0) {
         s_guard = 1;
