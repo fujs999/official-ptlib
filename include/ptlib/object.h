@@ -174,24 +174,23 @@ typedef bool   PBoolean;
 
 
 ///////////////////////////////////////////////////////////////////////////////
-// Deal with different C++ versions
+// Deal with different C++ versions and auto_ptr deprecation
 #if (__cplusplus >= 201103L)
-  template <typename T> class PAutoPtr : public std::unique_ptr<T>
-  {
-    public:
-      PAutoPtr() { }
-      explicit PAutoPtr(T * p) : std::unique_ptr<T>(p) { }
-      void transfer(PAutoPtr & other) { *this = std::move(other); }
-  };
+  #define PAutoPtrBase unique_ptr
 #else
-  template <typename T> class PAutoPtr : public std::auto_ptr<T>
-  {
-    public:
-      PAutoPtr() { }
-      explicit PAutoPtr(T * p) : std::auto_ptr<T>(p) { }
-      void transfer(PAutoPtr & other) { *this = other; }
-  };
+  #define PAutoPtrBase auto_ptr
 #endif
+
+template <typename T>
+class PAutoPtr : public std::PAutoPtrBase<T>
+{
+  public:
+    PAutoPtr() { }
+    explicit PAutoPtr(T * p) : std::PAutoPtrBase<T>(p) { }
+    PAutoPtr(PAutoPtr & other) : std::PAutoPtrBase<T>(other.release()) { }
+    void transfer(PAutoPtr & other) { reset(other.release()); }
+};
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // Handy macros
