@@ -188,7 +188,7 @@ class PAutoPtr : public std::PAutoPtrBase<T>
     PAutoPtr() { }
     explicit PAutoPtr(T * p) : std::PAutoPtrBase<T>(p) { }
     PAutoPtr(PAutoPtr & other) : std::PAutoPtrBase<T>(other.release()) { }
-    void transfer(PAutoPtr & other) { reset(other.release()); }
+    void transfer(PAutoPtr & other) { this->reset(other.release()); }
 };
 
 
