@@ -174,6 +174,25 @@ typedef bool   PBoolean;
 
 
 ///////////////////////////////////////////////////////////////////////////////
+// Deal with different C++ versions and auto_ptr deprecation
+#if (__cplusplus >= 201103L)
+  #define PAutoPtrBase unique_ptr
+#else
+  #define PAutoPtrBase auto_ptr
+#endif
+
+template <typename T>
+class PAutoPtr : public std::PAutoPtrBase<T>
+{
+  public:
+    PAutoPtr() { }
+    explicit PAutoPtr(T * p) : std::PAutoPtrBase<T>(p) { }
+    PAutoPtr(PAutoPtr & other) : std::PAutoPtrBase<T>(other.release()) { }
+    void transfer(PAutoPtr & other) { reset(other.release()); }
+};
+
+
+///////////////////////////////////////////////////////////////////////////////
 // Handy macros
 
 /// Count the number of arguments passed in macro
@@ -2025,7 +2044,7 @@ class PSingleton
   public:
     PSingleton()
     {
-      static auto_ptr<Type> s_pointer;
+      static PAutoPtr<Type> s_pointer;
       static GuardType s_guard(0);
       if (s_guard++ != 0) {
         s_guard = 1;

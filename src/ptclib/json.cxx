@@ -1111,7 +1111,7 @@ static PHMAC * CreateHMAC(const PJWT::Algorithm algorithm)
 
 PString PJWT::Encode(const PString & secret, const Algorithm algorithm)
 {
-  std::auto_ptr<PHMAC> hmac(CreateHMAC(algorithm));
+  PAutoPtr<PHMAC> hmac(CreateHMAC(algorithm));
   if (!hmac.get())
     return PString::Empty();
 
@@ -1157,7 +1157,7 @@ bool PJWT::Decode(const PString & str, const PString & secret, const PTime & ver
     return false;
   }
 
-  std::auto_ptr<PHMAC> hmac(CreateHMAC(AlgorithmFromString(hdrObj.GetString("alg"))));
+  PAutoPtr<PHMAC> hmac(CreateHMAC(AlgorithmFromString(hdrObj.GetString("alg"))));
   if (!hmac.get()) {
     PTRACE(2, "Unsupported JWT algorithm.");
     return false;
