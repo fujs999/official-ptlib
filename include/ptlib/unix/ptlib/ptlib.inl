@@ -55,13 +55,6 @@ PINLINE PProcessIdentifier PProcess::GetCurrentProcessID()
 
 ///////////////////////////////////////////////////////////////////////////////
 
-PINLINE unsigned PTimer::Resolution()
-{
-  return 1;
-}
-
-///////////////////////////////////////////////////////////////////////////////
-
 PINLINE bool PDirectory::IsRoot() const
   { return IsSeparator((*this)[0]) && ((*this)[1] == '\0'); }
 

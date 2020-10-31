@@ -31,32 +31,6 @@
 
 
 ///////////////////////////////////////////////////////////////////////////////
-// PTimer
-
-#if !defined(_WIN32)
-
-#if CLOCKS_PER_SEC==1000
-
-PINLINE PTimeInterval PTimer::Tick()
-  { return clock(); }
-
-PINLINE unsigned PTimer::Resolution()
-  { return 1; }
-
-#else
-
-PINLINE PTimeInterval PTimer::Tick()
-  { return (int64_t)clock()*CLOCKS_PER_SEC/1000; }
-
-PINLINE unsigned PTimer::Resolution()
-  { return 1000/CLOCKS_PER_SEC; }
-
-#endif
-
-#endif
-
-
-///////////////////////////////////////////////////////////////////////////////
 // PDirectory
 
 PINLINE bool PDirectory::IsSeparator(char c)

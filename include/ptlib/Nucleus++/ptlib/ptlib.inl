@@ -45,20 +45,6 @@ PINLINE uint32_t PProcess::GetProcessID() const
 
 ///////////////////////////////////////////////////////////////////////////////
 
-PINLINE unsigned PTimer::Resolution()
-#ifdef __NUCLEUS_PLUS__
-  {
-// Returns number of milliseconds per tick
-  return 10;
-  }
-#elif defined(P_SUN4)
-  { return 1000; }
-#else
-  { return (unsigned)(1000/CLOCKS_PER_SEC); }
-#endif
-
-///////////////////////////////////////////////////////////////////////////////
-
 PINLINE bool PDirectory::IsRoot() const
 #ifdef WOT_NO_FILESYSTEM
   { return true;}

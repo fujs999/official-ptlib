@@ -176,47 +176,6 @@ PString PTime::GetTimeZoneString(TimeZoneType type)
 
 
 ///////////////////////////////////////////////////////////////////////////////
-// PTimeInterval 
-
-static unsigned GetDivisor()
-{
-  LARGE_INTEGER frequency;
-  if (QueryPerformanceFrequency(&frequency))
-    return (unsigned)frequency.QuadPart/1000;
-
-  return 0;
-}
-
-PTimeInterval PTimer::Tick()
-{
-  static unsigned divisor = GetDivisor();
-
-  if (divisor == 0)
-    return (int)(GetTickCount()&0x7fffffff);
-  
-  LARGE_INTEGER count;
-  QueryPerformanceCounter(&count);
-  return PTimeInterval::MicroSeconds(count.QuadPart*1000/divisor);
-}
-
-
-unsigned PTimer::Resolution()
-{
-  LARGE_INTEGER frequency;
-  if (QueryPerformanceFrequency(&frequency) && frequency.QuadPart >= 1000)
-    return 1;
-
-  DWORD timeAdjustment;
-  DWORD timeIncrement;
-  BOOL timeAdjustmentDisabled;
-  if (GetSystemTimeAdjustment(&timeAdjustment, &timeIncrement, &timeAdjustmentDisabled))
-    return timeIncrement/10000;
-
-  return 55;
-}
-
-
-///////////////////////////////////////////////////////////////////////////////
 // Directories
 
 void PDirectory::Construct()

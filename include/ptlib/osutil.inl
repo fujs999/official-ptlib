@@ -37,6 +37,18 @@
 PINLINE PTimeInterval::PTimeInterval(int64_t millisecs)
   : m_nanoseconds(millisecs*MilliToNano) { }
 
+PINLINE PTimeInterval::PTimeInterval(const std::chrono::nanoseconds& nsecs)
+  : m_nanoseconds(nsecs.count()) { }
+
+PINLINE PTimeInterval::PTimeInterval(const std::chrono::microseconds& usecs)
+  : m_nanoseconds(usecs.count()*MicroToNano) { }
+
+PINLINE PTimeInterval::PTimeInterval(const std::chrono::milliseconds& msecs)
+  : m_nanoseconds(msecs.count()*MilliToNano) { }
+
+PINLINE PTimeInterval::PTimeInterval(const std::chrono::seconds& secs)
+  : m_nanoseconds(secs.count()*SecsToNano) { }
+
 PINLINE PTimeInterval::PTimeInterval(const PTimeInterval & other)
   : m_nanoseconds(other.InternalGet()) { }
 
@@ -278,6 +290,11 @@ PINLINE const PNotifier & PTimer::GetNotifier() const
 PINLINE void PTimer::SetNotifier(const PNotifier & func, const PString & threadName)
   { m_callback = func; m_threadName = threadName; }
 
+PINLINE PTimeInterval PTimer::Tick()
+  { return std::chrono::high_resolution_clock::now().time_since_epoch().count(); }
+
+PINLINE unsigned PTimer::Resolution()
+  { return SecsToNano/std::chrono::high_resolution_clock::period::den; }
 
 #endif // P_TIMERS
 

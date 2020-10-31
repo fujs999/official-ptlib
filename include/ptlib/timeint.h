@@ -81,6 +81,18 @@ class PTimeInterval : public PObject
     PTimeInterval(
       const PString & str   ///< String representation of time interval.
     );
+    PTimeInterval(
+      const std::chrono::nanoseconds& nsecs
+    );
+    PTimeInterval(
+      const std::chrono::microseconds& usecs
+    );
+    PTimeInterval(
+      const std::chrono::milliseconds& msecs
+    );
+    PTimeInterval(
+      const std::chrono::seconds& secs
+    );
 
     PTimeInterval(const PTimeInterval & other);
     PTimeInterval & operator=(const PTimeInterval & other);

@@ -358,33 +358,6 @@ PFilePathString PFilePath::Canonicalise(const PFilePathString & path, bool isDir
 
 ///////////////////////////////////////////////////////////////////////////////
 //
-// timer
-
-
-PTimeInterval PTimer::Tick()
-{
-#if defined(_POSIX_TIMERS) && _POSIX_TIMERS > 0
-  struct timespec ts;
-  clock_gettime(CLOCK_MONOTONIC, &ts);
-  return PTimeInterval::NanoSeconds(ts.tv_nsec, ts.tv_sec);
-#elif defined(P_MACOSX) || defined(P_IOS)
-  static mach_timebase_info_data_t timebaseInfo;
-  if (timebaseInfo.denom == 0) {
-    mach_timebase_info(&timebaseInfo);
-    timebaseInfo.denom *= 1000000; // Want milliseconds, not nanoseconds
-  }
-  return mach_absolute_time() * timebaseInfo.numer / timebaseInfo.denom;
-#else
-  #warning System does not have clock_gettime with CLOCK_MONOTONIC, using gettimeofday
-  struct timeval tv;
-  gettimeofday(&tv, NULL);
-  return PTimeInterval::MicroSeconds(tv.tv_usec, tv.tv_sec);
-#endif // P_VXWORKS
-}
-
-
-///////////////////////////////////////////////////////////////////////////////
-//
 // PDirectory
 //
 
