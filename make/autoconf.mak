@@ -48,6 +48,10 @@ ifndef ACLOCAL
   ACLOCAL := aclocal
 endif
 
+ifndef ACLOCAL_VERSION
+  ACLOCAL_VERSION :=15
+endif
+
 ifndef ACLOCAL_M4
   ACLOCAL_M4 := $(TOP_LEVEL_DIR)/aclocal.m4
 endif
@@ -184,6 +188,7 @@ $(CONFIG_FILE_PATHS) : $(CONFIG_STATUS)
 
 ifeq ($(shell which $(AUTOCONF) > /dev/null && \
               which $(ACLOCAL) > /dev/null && \
+              test `aclocal --version | sed -n "s/aclocal.* 1.\\([0-9]*\\).*/\\1/p"` -ge $(ACLOCAL_VERSION) && \
               test `autoconf --version | sed -n "s/autoconf.*2.\\([0-9]*\\)/\\1/p"` -ge $(AUTOCONF_VERSION) \
               ; echo $$?),0)
   AUTOCONF_AVAILABLE := yes
@@ -203,8 +208,9 @@ else # autoconf
 
   $(CONFIGURE): $(CONFIGURE).ac
 	@echo ---------------------------------------------------------------------
-	@echo The configure script requires updating but autoconf not is installed.
-	@echo Either install autoconf v2.$(AUTOCONF_VERSION) or later or execute the command:
+	@echo The configure script requires updating, but autoconf/aclocal is not available.
+	@echo Install autoconf v2.$(AUTOCONF_VERSION) and aclocal v1.$(ACLOCAL_VERSION), or later.
+	@echo Alternatively, execute the command:
 	@echo touch $@
 	@echo ---------------------------------------------------------------------
 

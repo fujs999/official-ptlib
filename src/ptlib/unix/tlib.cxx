@@ -550,6 +550,8 @@ static inline PMicroSeconds jiffies_to_usecs(const uint64_t jiffies)
 
 static bool InternalGetTimes(const char * filename, PThread::Times & times)
 {
+  // Do not use any PTLib functions in here as they could do a PTRACE, and thus deadlock
+
   /* From the man page on the "stat" file
   Status information about the process. This is used by ps(1). It is defined in /usr/src/linux/fs/proc/array.c.
   The fields, in order, with their proper scanf(3) format specifiers, are:
@@ -660,14 +662,13 @@ static bool InternalGetTimes(const char * filename, PThread::Times & times)
     return true;
   }
 
-  PTRACE(4, "Could not obtain thread times from " << filename);
   return false;
 }
 
 
 bool PThread::GetTimes(Times & times)
 {
-  // Do not use any PTLib functions in here as they could to a PTRACE, and this deadlock
+  // Do not use any PTLib functions in here as they could do a PTRACE, and thus deadlock
   times.m_name = GetThreadName();
   times.m_threadId = m_threadId;
   times.m_uniqueId = GetUniqueIdentifier();
@@ -713,15 +714,38 @@ bool PProcess::GetSystemTimes(Times & times)
 
 void PProcess::GetMemoryUsage(MemoryUsage & usage)
 {
-  std::ifstream proc("/proc/self/statm");
-  size_t virtPages, resPages;
-  proc >> virtPages >> resPages;
-  if (proc.good()) {
-    usage.m_virtual = virtPages * 4096;
-    usage.m_resident = resPages * 4096;
+  usage = MemoryUsage();
+
+  {
+    ifstream proc("/proc/self/statm");
+    size_t virtPages, resPages;
+    proc >> virtPages >> resPages;
+    if (proc.good()) {
+      usage.m_virtual = virtPages * 4096;
+      usage.m_resident = resPages * 4096;
+    }
   }
-  else
-    usage.m_virtual = usage.m_resident = 0;
+
+  {
+    usage.m_total = usage.m_available = 0;
+    ifstream proc("/proc/meminfo");
+    std::string line;
+    size_t memfree = 0, buffers = 0, cached = 0;
+    while (getline(proc, line).good()) {
+      if (line.compare(0, 8, "MemTotal") == 0)
+        usage.m_total = strtoull(line.c_str()+9, NULL, 10)*1000;
+      else if (line.compare(0, 12, "MemAvailable") == 0)
+        usage.m_available = strtoull(line.c_str()+13, NULL, 10)*1000;
+      else if (line.compare(0, 7, "MemFree") == 0)
+        memfree = strtoull(line.c_str()+8, NULL, 10)*1000;
+      else if (line.compare(0, 7, "Buffers") == 0)
+        buffers = strtoull(line.c_str()+8, NULL, 10)*1000;
+      else if (line.compare(0, 6, "Cached") == 0)
+        cached = strtoull(line.c_str()+7, NULL, 10)*1000;
+    }
+    if (usage.m_available == 0)
+      usage.m_available = memfree + buffers + cached;
+  }
 
 #if P_HAS_MALLOC_INFO
   char * buffer = NULL;

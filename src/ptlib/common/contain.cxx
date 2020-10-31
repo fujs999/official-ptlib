@@ -1304,16 +1304,32 @@ PString PString::Mid(PINDEX start, PINDEX len) const
     return operator()(start, start+len-1);
 }
 
-PString PString::Ellipsis(PINDEX maxLength, PINDEX fromEnd) const
+PString PString::Ellipsis(PINDEX maxLength, PINDEX fromEnd, bool ansi) const
 {
   if (GetLength() <= maxLength)
     return *this;
 
-  maxLength -= 3;
+  if (ansi) {
+    maxLength -= 3;
+    if (fromEnd > maxLength)
+      fromEnd = maxLength;
+
+    return Left(maxLength-fromEnd) + "..." + Right(fromEnd);
+  }
+
+  PWCharArray wide = AsWide();
+  PINDEX wideLength = wide.GetSize()-1;
+  if (wideLength <= maxLength)
+    return *this;
+
+  --maxLength;
   if (fromEnd > maxLength)
     fromEnd = maxLength;
 
-  return Left(maxLength-fromEnd) + "..." + Right(fromEnd);
+  PString left(wide.GetPointer(), maxLength - fromEnd);
+  static PConstString const ellipsis("\xE2\x80\xA6");
+  PString right(wide.GetPointer()+wideLength-fromEnd, fromEnd);
+  return left + ellipsis + right;
 }
 
 
@@ -1902,29 +1918,30 @@ PBYTEArray PString::ToPascal() const
 }
 
 
-PString PString::ToLiteral() const
+PString PString::ToLiteral(bool ascii) const
 {
-  PString str('"');
+  PStringStream strm;
   for (const char * p = c_str(); *p != '\0'; p++) {
     if (*p == '"')
-      str += "\\\"";
+      strm << "\\\"";
     else if (*p == '\\')
-      str += "\\\\";
-    else if (isprint(*p & 0xff))
-      str += *p;
+      strm << "\\\\";
+    else if (isprint(*p) || (!ascii && (*p & 0x80) != 0))
+      strm << *p;
     else {
       PINDEX i;
       for (i = 0; i < PARRAYSIZE(PStringEscapeValue); i++) {
         if (*p == PStringEscapeValue[i]) {
-          str += PString('\\') + (char)PStringEscapeCode[i];
+          strm << '\\' << (char)PStringEscapeCode[i];
           break;
         }
       }
       if (i >= PARRAYSIZE(PStringEscapeValue))
-        str.sprintf("\\%03o", *p & 0xff);
+        strm << '\\' << std::oct << setfill('0') << setw(3) << (*p & 0xff);
     }
   }
-  return str + '"';
+  strm << '"';
+  return strm;
 }
 
 

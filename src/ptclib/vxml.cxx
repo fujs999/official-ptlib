@@ -464,6 +464,9 @@ public:
     if (m_library == NULL || !m_library->SLControl.IsPresent())
       return INT_MIN;
 
+    PTRACE(5, "Sign Language Control:"
+           " instance=" << instance << ","
+           " data=" << ctrl.ToLiteral());
     SLControlData data;
     data.m_instance = instance;
     data.m_control = ctrl;
@@ -1453,6 +1456,32 @@ bool PVXMLSession::Close()
 }
 
 
+#if P_SCRIPTS
+/* These functions will add in the owner composite structures in the scripting language,
+so session.connection.redirect.ani = "1234" will work even if session.connection.redirect,
+or session.connection, do not yet exist. */
+static bool SetScriptVariableOrComposite(PScriptLanguage & scriptContext, const PString & fullVarName, const char * value)
+{
+  return value != NULL ? scriptContext.SetString(fullVarName, value) : scriptContext.CreateComposite(fullVarName);
+}
+
+static bool SetScriptVariableRecursive(PScriptLanguage & scriptContext, const PString & fullVarName, const char * value)
+{
+  if (SetScriptVariableOrComposite(scriptContext, fullVarName, value))
+    return true;
+
+  PINDEX dot = fullVarName.FindLast('.');
+  if (dot == P_MAX_INDEX)
+    return false;
+
+  if (!SetScriptVariableRecursive(scriptContext, fullVarName.Left(dot), NULL))
+    return false;
+
+  return SetScriptVariableOrComposite(scriptContext, fullVarName, value);
+}
+#endif // P_SCRIPTS
+
+
 void PVXMLSession::InternalThreadMain()
 {
   PTRACE(4, "Execution thread started.");
@@ -1480,6 +1509,9 @@ void PVXMLSession::InternalThreadMain()
       #endif
     }
 #endif
+
+    for (PStringToString::iterator it = m_variables.begin(); it != m_variables.end(); ++it)
+      SetScriptVariableRecursive(*m_scriptContext, it->first, it->second);
 
     PTime now;
     m_variableScope = SessionScope;
@@ -2076,32 +2108,6 @@ PCaselessString PVXMLSession::GetVar(const PString & varName) const
   PTRACE(4, "GetVar[" << fullVarName << "]=" << value.ToLiteral());
   return value;
 }
-
-
-#if P_SCRIPTS
-/* These functions will add in the owner composite structures in the scripting language,
-   so session.connection.redirect.ani = "1234" will work even if session.connection.redirect,
-   or session.connection, do not yet exist. */
-static bool SetScriptVariableOrComposite(PScriptLanguage & scriptContext, const PString & fullVarName, const char * value)
-{
-  return value != NULL ? scriptContext.SetString(fullVarName, value) : scriptContext.CreateComposite(fullVarName);
-}
-
-static bool SetScriptVariableRecursive(PScriptLanguage & scriptContext, const PString & fullVarName, const char * value)
-{
-  if (SetScriptVariableOrComposite(scriptContext, fullVarName, value))
-    return true;
-
-  PINDEX dot = fullVarName.FindLast('.');
-  if (dot == P_MAX_INDEX)
-    return false;
-
-  if (!SetScriptVariableRecursive(scriptContext, fullVarName.Left(dot), NULL))
-    return false;
-
-  return SetScriptVariableOrComposite(scriptContext, fullVarName, value);
-}
-#endif // P_SCRIPTS
 
 
 void PVXMLSession::SetVar(const PString & varName, const PString & value)

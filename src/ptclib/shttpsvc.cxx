@@ -171,7 +171,7 @@ bool PSecureHTTPServiceProcess::SetServerCertificate(const PFilePath & certifica
 bool PSecureHTTPServiceProcess::SetServerCredentials(const PString & cert, const PString & key, const PString & ca)
 {
   if (m_sslContext == NULL)
-    m_sslContext = new PSSLContext(PSSLContext::TLSv1);
+    m_sslContext = new PSSLContext(PSSLContext::TLSv1_2);
 
   if (m_sslContext->SetCredentials(ca, cert, key))
       return true;

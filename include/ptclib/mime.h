@@ -233,6 +233,7 @@ class PMIMEInfo : public PStringOptions
           ".snd", "audio/basic"
           ".wav", "audio/wav"
           ".gif", "image/gif"
+          ".png", "image/png"
           ".xbm", "image/x-bitmap"
           ".tif", "image/tiff"
           ".tiff", "image/tiff"

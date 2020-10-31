@@ -32,6 +32,7 @@
 
 #include <ctype.h>
 #include <signal.h>
+#include <fstream>
 #include <stdexcept>
 #include <ptlib/pprocess.h>
 
@@ -119,13 +120,34 @@
       FILE * pipe;
       {
         std::stringstream cmd;
-        cmd << "addr2line -e \"" << PProcess::Current().GetFile() << '"';
+        PString exeFile = PProcess::Current().GetFile();
+        cmd << "addr2line '--exe=" << exeFile << '\'';
+
+        uint64_t textSegmentOffset = 0;
+        if (::getenv("PTLIB_BACKTRACE_MAPPING")) {
+          std::ifstream maps("/proc/self/maps");
+          while (maps.good()) {
+            std::string line;
+            std::getline(maps, line);
+            DEBUG_CERR("/proc/self/maps: \"" << line << '"');
+            size_t pos = line.find("r-xp");
+            if (pos != std::string::npos && line.find(exeFile.c_str()) != std::string::npos) {
+              textSegmentOffset = strtoull(line.c_str(), NULL, 16);
+              DEBUG_CERR("textSegmentOffset=0x" << hex << textSegmentOffset << dec);
+              if (textSegmentOffset != 0)
+                cmd << " --section=.text";
+              break;
+            }
+          }
+        }
+
         for (unsigned i = framesToSkip; i < addresses.size(); ++i)
-          cmd << ' ' << addresses[i];
+          cmd << ' ' << (const void *)(((const char *)addresses[i]) - textSegmentOffset);
         std::string cmdstr = cmd.str();
         DEBUG_CERR("InternalWalkStack: before " << cmdstr);
         pipe = popen(cmdstr.c_str(), "r");
       }
+
       DEBUG_CERR("InternalWalkStack: addr2line pipe=" << pipe);
       if (pipe != NULL) {
         for (unsigned i = framesToSkip; i < addresses.size(); ++i) {
@@ -137,7 +159,7 @@
             break;
           }
           DEBUG_CERR("InternalWalkStack: line=\"" << line << '"');
-          if (line == "??:0")
+          if (line == "??:0" || line == "??:?")
             line.clear();
         }
         DEBUG_CERR("InternalWalkStack: closing pipe=" << pipe);

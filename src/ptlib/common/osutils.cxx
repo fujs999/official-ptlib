@@ -167,7 +167,6 @@ public:
       , m_fileName(fileName)
       , m_lineNum(lineNum)
       , m_objectAddress(instance)
-      , m_objectClass(instance ? instance->GetClass() : "")
       , m_threadAddress(PThread::Current())
       , m_threadName(m_threadAddress ? m_threadAddress->GetThreadName() : "")
       , m_contextIdentifier(instance ? instance->GetTraceContextIdentifier() : 0)
@@ -177,8 +176,8 @@ public:
     {
       if (m_contextIdentifier == 0 && m_threadAddress != NULL)
         m_contextIdentifier = m_threadAddress->GetTraceContextIdentifier();
-      if (m_objectClass.NumCompare("class ") == PObject::EqualTo)
-        m_objectClass.Delete(0, 6);
+      if (instance)
+        m_objectClass = instance->GetClassName();
     }
 
     unsigned      m_level;
@@ -515,7 +514,7 @@ ostream & PTrace::PrintInfo(ostream & strm, bool crlf)
     strm << "network: " << dynamic_cast<PSystemLogToNetwork *>(info.m_stream)->GetServer();
 #endif
   else
-    strm << typeid(*info.m_stream).name();
+    strm << PObject::GetClassName(typeid(*info.m_stream));
 
   strm << ", Options:" << OptionsToString(info.m_options) << info.m_rolloverPattern;
 
@@ -1161,7 +1160,7 @@ bool PDirectory::Create(const PString & p, int perm, bool recurse)
   PDirectory dir = p;
   
 #if defined(WIN32)
-  if (_mkdir(dir) == 0)
+  if (_wmkdir(dir.AsWide()) == 0)
 #elif defined(P_VXWORKS)
   if (mkdir(dir) == 0)
 #else    
@@ -1212,7 +1211,7 @@ bool PDirectory::GetEntries(Entries & entries, const PCaselessString & sortBy, c
   if (sortBy.NumCompare("permissions") == EqualTo)
     return GetEntries(entries, SortByPermission, glob);
 
-  return GetEntries(entries, glob);
+  return GetEntries(entries, Unsorted, glob);
 }
 
 struct PDirectorySortPred
@@ -2549,7 +2548,7 @@ PProcess::~PProcess()
 
   Sleep(100);  // Give threads time to die a natural death
 
-  m_threadMutex.Wait();
+m_threadMutex.Wait();
 
   // OK, if there are any other threads left, we get really insistent...
   PTRACE(4, "Cleaning up " << m_activeThreads.size()-1 << " remaining threads.");
@@ -3279,6 +3278,7 @@ void PThread::GetTimes(std::vector<Times> & allThreadTimes)
 {
   std::vector<PThreadIdentifier> identifiers;
   if (PProcess::Current().GetAllThreadIdentifiers(identifiers)) {
+    allThreadTimes.reserve(identifiers.size());
     Times threadTimes;
     for (std::vector<PThreadIdentifier>::iterator it = identifiers.begin(); it != identifiers.end(); ++it) {
       if (GetTimes(*it, threadTimes))

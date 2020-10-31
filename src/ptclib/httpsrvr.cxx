@@ -1190,6 +1190,7 @@ PWebSocket::PWebSocket()
   : m_client(false)
   , m_fragmentingWrite(false)
   , m_binaryWrite(false)
+  , m_maxFrameSize(1000000000) // A gigabyte seems a lot
   , m_remainingPayload(0)
   , m_currentMask(-1)
   , m_fragmentedRead(false)
@@ -1228,6 +1229,14 @@ bool PWebSocket::InternalRead(void * buf, PINDEX len)
       return false;
 
     PBYTEArray payload;
+
+    if (m_remainingPayload > m_maxFrameSize) {
+      PTRACE(3, "Closing due to excessive frame size: " << m_remainingPayload << " > " << m_maxFrameSize);
+      InternalWrite(ConnectionClose, false, payload, payload.GetSize());
+      CloseBaseReadChannel();
+      return false;
+    }
+
     switch (opCode) {
       case Continuation :
       case TextFrame :
@@ -1236,7 +1245,7 @@ bool PWebSocket::InternalRead(void * buf, PINDEX len)
 
       case Ping :
         // RFC6455/5.5.2 echo ping payload
-        if (!ReadMasked(payload.GetPointer(m_remainingPayload), m_remainingPayload))
+        if (!ReadMasked(payload.GetPointer((PINDEX)m_remainingPayload), (PINDEX)m_remainingPayload))
           return false;
         if (!InternalWrite(Pong, false, payload, payload.GetSize()))
           return false;
@@ -1244,13 +1253,13 @@ bool PWebSocket::InternalRead(void * buf, PINDEX len)
 
       case Pong :
         // Odd, as we don't currently support sending pings, ignore it.
-        if (!ReadMasked(payload.GetPointer(m_remainingPayload), m_remainingPayload))
+        if (!ReadMasked(payload.GetPointer((PINDEX)m_remainingPayload), (PINDEX)m_remainingPayload))
           return false;
         break;
 
       case ConnectionClose :
         // RFC6455/5.5.1 get reason codes, if present
-        if (!ReadMasked(payload.GetPointer(m_remainingPayload), m_remainingPayload))
+        if (!ReadMasked(payload.GetPointer((PINDEX)m_remainingPayload), (PINDEX)m_remainingPayload))
           return false;
         PTRACE(3, "WebSocket close command received\n" << PHexDump(payload, false));
         InternalWrite(ConnectionClose, false, payload, payload.GetSize());
@@ -1804,13 +1813,9 @@ bool PHTTPResource::InternalOnCommand(PHTTPServer & server,
       PStringToString postData;
       if (PHTTP::FormUrlEncoded() == connectInfo.GetMIME().Get(PHTTP::ContentTypeTag(), PHTTP::FormUrlEncoded()))
         PURL::SplitQueryVars(connectInfo.GetEntityBody(), postData);
-      if (!OnPOSTData(*request, postData)) {
-        if (request->code != PHTTP::RequestOK)
-          server.OnError(request->code, "", connectInfo);
-        retVal = false;
-      }
+      retVal = OnPOSTData(*request, postData);
     }
-    if (!LoadHeaders(*request)) 
+    else if (!LoadHeaders(*request)) 
       retVal = server.OnError(request->code, connectInfo.GetURL().AsString(), connectInfo);
     else if (cmd != PHTTP::GET)
       retVal = request->outMIME.Contains(PHTTP::ContentLengthTag());
@@ -2539,7 +2544,7 @@ bool PHTTPDirectory::LoadHeaders(PHTTPRequest & request)
     else
       reply << "Unknown";
     reply << PHTML::TableData(PHTML::AlignRight)
-          << PString(::PString::ScaleSI, it->size) << 'B'
+          << PString(::PString::ScaleSI, it->size, 4) << 'B'
           << PHTML::TableData()
           << it->modified.AsString("hh:mm:ss dd-MMM-yyyy")
           << PHTML::TableData(PHTML::AlignCentre)

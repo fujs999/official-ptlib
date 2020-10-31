@@ -869,9 +869,9 @@ class PHTTPClientPool : public PObject
     PTimeInterval m_connectTimeout;
     PTimeInterval m_readTimeout;
 #if P_SSL
-    PString m_authority;    // Directory, file or data
-    PString m_certificate;  // File or data
-    PString m_privateKey;   // File or data
+    PString  m_authority;    // Directory, file or data
+    PString  m_certificate;  // File or data
+    PString  m_privateKey;   // File or data
 #endif
 
     PDECLARE_MUTEX(m_mutex);
@@ -984,12 +984,17 @@ class PWebSocket : public PIndirectChannel
       bool txt = true
     ) { m_binaryWrite = !txt; }
 
+    /// Set security credentials
     void SetSSLCredentials(
-      const PString & authority,
-      const PString & certificate,
-      const PString & privateKey
+      const PString & authority,    ///< Authority directory/filename/data
+      const PString & certificate,  ///< Certificate filename/data
+      const PString & privateKey    ///< Private key filename/data
     );
 
+  ///  Set maximum possible frame size. Defaults to 1GB.
+    void SetMaxFrameSize(
+      uint64_t maxFrameSize  ///< New maximum size.
+    ) { maxFrameSize = m_maxFrameSize; }
 
   protected:
     enum OpCodes
@@ -1025,6 +1030,7 @@ class PWebSocket : public PIndirectChannel
     bool     m_client;
     bool     m_fragmentingWrite;
     bool     m_binaryWrite;
+    uint64_t m_maxFrameSize;
     PDECLARE_MUTEX(m_writeMutex);
 
     uint64_t m_remainingPayload;

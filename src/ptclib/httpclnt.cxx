@@ -292,8 +292,13 @@ PHTTP::StatusCode PHTTPClient::ExecuteCommand(Commands cmd,
 
   unsigned redirectCount = m_maxRedirects;
   bool needAuthentication = true;
+  bool forceReopen = !m_persist;
   PURL adjustableURL = url;
-  for (int retry = 0; retry < 3; ++retry) {
+  for (unsigned retry = 0; retry < 3; ++retry) {
+    if (forceReopen)
+      CloseBaseReadChannel();
+    forceReopen = true;
+
     if (!ConnectURL(adjustableURL))
       break;
 
@@ -305,66 +310,65 @@ PHTTP::StatusCode PHTTPClient::ExecuteCommand(Commands cmd,
         outMIME.SetAt(HostTag, url.GetHostPort());
     }
 
-    if (!WriteCommand(cmd, url.AsString(PURL::RelativeOnly), outMIME, processor)) {
-      SetLastResponse(TransportWriteError, PString::Empty(), LastWriteError);
-      break;
-    }
+    if (!WriteCommand(cmd, url.AsString(PURL::RelativeOnly), outMIME, processor))
+      continue;
 
     // If not persisting need to shut down write so other end stops reading
     if (!m_persist && !outMIME.Has(ContentLengthTag))
       Shutdown(ShutdownWrite);
 
     // Await a response, if all OK exit loop
-    if (ReadResponse(replyMIME) && (m_lastResponseCode != Continue || ReadResponse(replyMIME))) {
-      if (IsOK(m_lastResponseCode))
-        return (StatusCode)m_lastResponseCode;
+    if (!ReadResponse(replyMIME))
+      continue;
 
-      switch (m_lastResponseCode) {
-        case MovedPermanently:
-        case MovedTemporarily:
-          if (redirectCount-- > 0) {
-            PURL newLocation = replyMIME("Location");
-            if (!newLocation.IsEmpty() && adjustableURL != newLocation) {
-              adjustableURL = newLocation;
-              retry = 0;
-              continue;
-            }
+    if (m_lastResponseCode == Continue && !ReadResponse(replyMIME))
+      continue;
+
+    // If remote does not want us to persist, then don't
+    if (m_persist && (replyMIME.Get(ConnectionTag) *= "close"))
+      m_persist = false;
+
+    if (IsOK(m_lastResponseCode))
+      return (StatusCode)m_lastResponseCode;
+
+    switch (m_lastResponseCode) {
+      case MovedPermanently:
+      case MovedTemporarily:
+        if (redirectCount-- > 0) {
+          PURL newLocation = replyMIME("Location");
+          if (!newLocation.IsEmpty() && adjustableURL != newLocation) {
+            adjustableURL = newLocation;
+            retry = 0; // Go back to full quota of retries.
+            continue;
           }
-          break;
-
-        case UnAuthorised:
-          if (needAuthentication && replyMIME.Contains("WWW-Authenticate") && !(m_userName.IsEmpty() && m_password.IsEmpty())) {
-            // authenticate 
-            PString errorMsg;
-            PHTTPClientAuthentication * newAuth = PHTTPClientAuthentication::ParseAuthenticationRequired(false, replyMIME, errorMsg);
-            if (newAuth != NULL) {
-              newAuth->SetUsername(m_userName);
-              newAuth->SetPassword(m_password);
-
-              delete m_authentication;
-              m_authentication = newAuth;
-              needAuthentication = false;
-              continue;
-            }
-
-            m_lastResponseInfo += " - " + errorMsg;
-          }
-          // Do next case
-
-        default:
-          break;
-      }
-
-      retry = INT_MAX-1; // No more retries
-    }
-    else {
-      // If not persisting, we have no oppurtunity to write again, just error out
-      if (!m_persist)
+        }
         break;
 
-      // ... we close the channel and allow ConnectURL() to reopen it.
-      Close();
+      case UnAuthorised:
+        if (needAuthentication && replyMIME.Contains("WWW-Authenticate") && !(m_userName.IsEmpty() && m_password.IsEmpty())) {
+          // authenticate 
+          PString errorMsg;
+          PHTTPClientAuthentication * newAuth = PHTTPClientAuthentication::ParseAuthenticationRequired(false, replyMIME, errorMsg);
+          if (newAuth != NULL) {
+            newAuth->SetUsername(m_userName);
+            newAuth->SetPassword(m_password);
+
+            delete m_authentication;
+            m_authentication = newAuth;
+            needAuthentication = false;
+            forceReopen = !m_persist; // Don't close and reopen if persisting
+            continue;
+          }
+
+          m_lastResponseInfo += " - " + errorMsg;
+        }
+        // Do next case
+
+      default:
+        break;
     }
+
+    break; // No more retries
   }
 
   PTRACE_IF(3, !IsOK(m_lastResponseCode), "Error " << m_lastResponseCode << ' ' << m_lastResponseInfo.Left(m_lastResponseInfo.FindOneOf("\r\n")));
@@ -426,8 +430,10 @@ bool PHTTPClient::WriteCommand(Commands cmd,
     if (trace != NULL)
       *trace << PHTTPClient_OutputBody(data, len);
 #endif
-    if (!Write(data, len))
+    if (!Write(data, len)) {
+      SetLastResponse(TransportWriteError, PString::Empty(), LastWriteError);
       return false;
+    }
   }
 
 #if PTRACING
@@ -441,54 +447,60 @@ bool PHTTPClient::WriteCommand(Commands cmd,
 bool PHTTPClient::ReadResponse(PMIMEInfo & replyMIME)
 {
   PString http = ReadString(7);
-  if (!http.IsEmpty()) {
-    UnRead(http);
+  if (http.IsEmpty())
+    return SetLastResponse(TransportReadError, "Response first byte", PChannel::LastReadError);
 
-    if (http.Find("HTTP/") == P_MAX_INDEX) {
-      PTRACE(3, "Read HTTP/0.9 OK");
-      return SetLastResponse(PHTTP::RequestOK, "HTTP/0.9");
-    }
+  UnRead(http);
 
-    if (http[0] == '\n')
-      ReadString(1);
-    else if (http[0] == '\r' &&  http[1] == '\n')
-      ReadString(2);
-
-    if (PHTTP::ReadResponse()) {
-      bool readOK = replyMIME.Read(*this);
-
-      PString body;
-      if (m_lastResponseCode >= 300) {
-#if PTRACING
-        if (PTrace::CanTrace(4) && replyMIME.GetVar(ContentLengthTag(), numeric_limits<int64_t>::max()) <= (int64_t)MaxTraceContentSize)
-          ReadContentBody(replyMIME, body);
-        else
-#endif
-          ReadContentBody(replyMIME); // Waste body
-      }
-
-#if PTRACING
-      if (PTrace::CanTrace(3)) {
-        ostream & strm = PTRACE_BEGIN(3);
-        strm << "Response ";
-        if (PTrace::CanTrace(4))
-          strm << '\n';
-        strm << m_lastResponseCode << ' ' << m_lastResponseInfo;
-        if (PTrace::CanTrace(4))
-          strm << '\n' << replyMIME << PHTTPClient_OutputBody(body.GetPointer(), body.GetLength());
-        strm << PTrace::End;
-      }
-#endif
-
-      if (!body.IsEmpty())
-        m_lastResponseInfo += '\n' + body;
-
-      if (readOK)
-        return true;
-    }
+  if (http.Find("HTTP/") == P_MAX_INDEX) {
+    PTRACE(3, "Read HTTP/0.9 OK");
+    return SetLastResponse(PHTTP::RequestOK, "HTTP/0.9");
   }
- 
-  return SetLastResponse(TransportReadError, "Premature shutdown");
+
+  if (http[0] == '\n')
+    ReadString(1);
+  else if (http[0] == '\r' &&  http[1] == '\n')
+    ReadString(2);
+
+  if (!PHTTP::ReadResponse())
+    return false; // Error info set in above
+
+  if (!replyMIME.Read(*this))
+    return SetLastResponse(TransportReadError, "Response MIME", PChannel::LastReadError);
+
+  PString body;
+  if (m_lastResponseCode >= 300) {
+    bool readOK;
+    static const long MaxBodyOnError = 1000000; // Protect against malice
+    if (replyMIME.GetInteger(ContentLengthTag, MaxBodyOnError) < MaxBodyOnError)
+      readOK = ReadContentBody(replyMIME, body);
+    else {
+      readOK = ReadContentBody(replyMIME); // Waste body, if huge
+      body = "Large body ignored";
+    }
+    if (!readOK)
+      return SetLastResponse(TransportReadError, "Response body", PChannel::LastReadError);
+  }
+  else if (m_lastResponseCode == NoContent && !replyMIME.Contains(ContentLengthTag))
+    replyMIME.SetInteger(ContentLengthTag, 0);
+
+#if PTRACING
+  if (PTrace::CanTrace(3)) {
+    ostream & strm = PTRACE_BEGIN(3);
+    strm << "Response ";
+    if (PTrace::CanTrace(4))
+      strm << '\n';
+    strm << m_lastResponseCode << ' ' << m_lastResponseInfo;
+    if (PTrace::CanTrace(4))
+      strm << '\n' << replyMIME << PHTTPClient_OutputBody(body.GetPointer(), body.GetLength());
+    strm << PTrace::End;
+  }
+#endif
+
+  if (!body.IsEmpty())
+    m_lastResponseInfo += '\n' + body;
+
+  return true;
 }
 
 
@@ -800,7 +812,7 @@ bool PHTTPClient::ConnectURL(const PURL & url)
     std::unique_ptr<PTCPSocket> tcp(new PTCPSocket(url.GetPort()));
       tcp->SetReadTimeout(readTimeout);
       if (!tcp->Connect(host))
-        return SetLastResponse(TransportConnectError, tcp->GetErrorText() + psprintf(" (errno=%i)", tcp->GetErrorNumber()));
+        return SetLastResponse(TransportConnectError, PSTRSTRM("TCP connect fail: " << tcp->GetErrorText() << " (errno=" << tcp->GetErrorNumber() << ')'));
 
       std::unique_ptr<PSSLContext> context(new PSSLContext(method));
       if (!context->SetCredentials(m_authority, m_certificate, m_privateKey))
@@ -812,13 +824,13 @@ bool PHTTPClient::ConnectURL(const PURL & url)
         break;
 
       if ((unsigned)ssl->GetErrorNumber() != 0x9408f10b || method <= PSSLContext::BeginMethod)
-        return SetLastResponse(TransportConnectError, ssl->GetErrorText());
+        return SetLastResponse(TransportConnectError, "SSL connect fail: " + ssl->GetErrorText());
 
       --method;
     }
 
     if (!ssl->CheckHostName(host))
-        return SetLastResponse(TransportConnectError, ssl->GetErrorText());
+        return SetLastResponse(TransportConnectError, "SSL host check fail: " + ssl->GetErrorText());
 
     if (!Open(ssl.release()))
       return SetLastResponse(TransportConnectError, PString::Empty());

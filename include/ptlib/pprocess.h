@@ -323,6 +323,7 @@ class PProcess : public PThread
     */
     PTime GetStartTime() const;
 
+    // Memory usage informatiom. All values are in bytes.
     struct MemoryUsage {
       MemoryUsage()
         : m_virtual(0)
@@ -330,13 +331,17 @@ class PProcess : public PThread
         , m_max(0)
         , m_current(0)
         , m_blocks(0)
+        , m_total(0)
+        , m_available(0)
         { }
 
-      size_t m_virtual;
-      size_t m_resident;
-      size_t m_max;
-      size_t m_current;
-      size_t m_blocks;
+      uint64_t m_virtual;   ///< Virtual memory used by process
+      uint64_t m_resident;  ///< Resident memory used by process
+      uint64_t m_max;       ///< Maxmimum memory used in heap
+      uint64_t m_current;   ///< Current memory used in heap
+      uint64_t m_blocks;    ///< Number of mapped regions
+      uint64_t m_total;     ///< Total physical memory in system
+      uint64_t m_available; ///< Available physical memory in system
     };
 
     /**Get process memory suage.
@@ -680,8 +685,11 @@ class PProcess : public PThread
 
     PTime m_programStartTime;           // time at which process was intantiated, i.e. started
 
-    bool   m_shuttingDown;
-    PCriticalSection m_threadMutex;
+    atomic<bool> m_shuttingDown;
+
+    // Do not write trace logs while holding m_threadMutex, as most trace logs lock
+    // the target log mutex before obtaining this in PThread::Current().
+    PCriticalSection m_threadMutex; 
 
     typedef std::map<PThreadIdentifier, PThread *> ThreadMap;
     ThreadMap m_activeThreads;

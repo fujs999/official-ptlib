@@ -125,3 +125,4 @@ EXPORTS
     _wmemcpy
     _wmemset
     _wmemmove
+    _yyparse

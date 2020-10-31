@@ -3083,31 +3083,26 @@ bool PSSLChannelDTLS::ExecuteHandshake()
   if (PAssertNULL(m_ssl) == NULL)
     return false;
 
-  PTRACE(5, "DTLS executing handshake.");
-
   SSL_set_mode(m_ssl, SSL_MODE_AUTO_RETRY);
   SSL_set_read_ahead(m_ssl, 1);
   SSL_CTX_set_read_ahead(*m_context, 1);
 
   for (;;) {
+    PTRACE(5, "DTLS executing handshake.");
     int ret = SSL_do_handshake(m_ssl);
-    if (ret == 1) {
-      PTRACE(3, "DTLS handshake successful.");
-      return true;
-    }
+    if (ret == 1)
+      return SetErrorValues(NoError, 0, LastGeneralError);
 
-    if (!IsOpen())
+    if (CheckNotOpen())
       return false;
 
-    int errorCode = SSL_get_error(m_ssl, ret);
-    switch (errorCode) {
+    switch (SSL_get_error(m_ssl, ret)) {
       case SSL_ERROR_WANT_READ :
       case SSL_ERROR_WANT_WRITE :
         break; // Do handshake again
 
       default :
-        PTRACE(2, "DTLS handshake failed (" << ret << ") - " << PSSLError(errorCode));
-        return false;
+        return ConvertOSError(-1, LastGeneralError);
     }
   }
 }

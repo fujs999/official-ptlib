@@ -36,6 +36,25 @@
 
 ///////////////////////////////////////////////////////////////////////
 
+/** Declare a safe notifier object class.
+    See PDECLARE_NOTIFIER2 for more information.
+  */
+#define PDECLARE_SAFE_NOTIFIER_EXT(notifierType, notifierArg, notifiee, func, ParamType, ParamArg) \
+            PDECLARE_NOTIFIER_COMMON(notifierType, notifierArg, notifiee, func, ParamType, ParamArg, PSafeNotifierFunction<ParamType>)
+
+/** Declare a safe notifier object class.
+    See PDECLARE_NOTIFIER2 for more information.
+  */
+#define PDECLARE_SAFE_NOTIFIER2(notifierType,   notifiee, func, ParamType  ) \
+     PDECLARE_SAFE_NOTIFIER_EXT(notifierType, , notifiee, func, ParamType, )
+
+/// Declare safe PNotifier derived class with P_INT_PTR parameter. Uses PDECLARE_SAFE_NOTIFIER2 macro.
+#define PDECLARE_SAFE_NOTIFIER(notifierType, notifiee, func) \
+       PDECLARE_SAFE_NOTIFIER2(notifierType, notifiee, func, P_INT_PTR)
+
+
+///////////////////////////////////////////////////////////////////////
+
 typedef unsigned long PNotifierIdentifer;
 
 /** Validated PNotifier class.

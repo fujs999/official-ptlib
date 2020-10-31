@@ -2160,6 +2160,8 @@ class PObject {
     __inline static const char * Class() { return typeid(PObject).name(); }
     __inline const char * GetClass() const { return typeid(const_cast<PObject &>(*this)).name(); }
     __inline bool IsClass(const char * name) const { return strcmp(name, Class()) == 0; }
+    static std::string GetClassName(const std::type_info & t);
+    __inline std::string GetClassName() const { return GetClassName(typeid(const_cast<PObject &>(*this))); }
 
     __inline const PObject * PTraceObjectInstance() const { return this; }
     __inline static const PObject * PTraceObjectInstance(const char *) { return NULL; }

@@ -1232,11 +1232,21 @@ PProcessIdentifier PProcess::GetCurrentProcessID()
 
 void PProcess::GetMemoryUsage(MemoryUsage & usage)
 {
+  usage = MemoryUsage();
+
   PROCESS_MEMORY_COUNTERS info;
   info.cb = sizeof(info);
   if (GetProcessMemoryInfo(GetCurrentProcess(), &info, sizeof(info))) {
     usage.m_virtual = info.PeakWorkingSetSize;
     usage.m_resident = info.WorkingSetSize;
+    usage.m_blocks = info.WorkingSetSize;
+  }
+
+  MEMORYSTATUSEX status;
+  status.dwLength = sizeof(status);
+  if (GlobalMemoryStatusEx(&status)) {
+    usage.m_total = status.ullTotalPhys;
+    usage.m_available = status.ullAvailPhys;
   }
 }
 
@@ -1670,18 +1680,12 @@ int PDebugStream::Buffer::overflow(int c)
     setp(p, epptr());
     p[bufSize] = '\0';
 
-#ifdef UNICODE
     // Note we do NOT use PWideString here as it could cause infinitely
     // recursive calls if there is an error!
     PINDEX length = strlen(p);
-    wchar_t * unicode = new wchar_t[length+1];
-    unicode[length] = 0;
-    MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, p, length, unicode, length+1);
-    OutputDebugString(unicode);
-    delete [] unicode;
-#else
-    OutputDebugString(p);
-#endif
+    std::vector<wchar_t> unicode(length+1);
+    MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, p, length, unicode.data(), length+1);
+    OutputDebugStringW(unicode.data());
   }
 
   return 0;

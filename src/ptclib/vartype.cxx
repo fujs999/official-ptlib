@@ -134,7 +134,7 @@ bool PVarType::SetType(BasicType type, int option)
       break;
 
     default :
-      memset(&m_, 0, sizeof(m_));
+      m_ = { };
   }
 
   return true;

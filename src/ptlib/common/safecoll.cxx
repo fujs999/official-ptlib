@@ -98,7 +98,7 @@ bool PSafeObject::SafeReference()
   unsigned level = count == 0  || m_traceContextIdentifier == 1234567890 ? 3 : 7;
   if (PTrace::CanTrace(level)) {
     ostream & trace = PTRACE_BEGIN(level);
-    trace << GetClass() << ' ' << (void *)this;
+    trace << GetClassName() << ' ' << (void *)this;
     if (count != 0)
       trace << " incremented reference count to " << count;
     else {
@@ -134,7 +134,7 @@ bool PSafeObject::SafeDereference()
 #endif
   m_safetyMutex.Signal();
 
-  PTRACE(level, GetClass() << ' ' << (void *)this << " decremented reference count to " << count);
+  PTRACE(level, GetClassName() << ' ' << (void *)this << " decremented reference count to " << count);
 
   // At this point the object could be deleted in another trhead, do not use it anymore!
   return mayBeDeleted;

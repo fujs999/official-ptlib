@@ -146,6 +146,8 @@ fi
 previous_verstr=${previous_version[0]}.${previous_version[1]}.${previous_version[2]}
 release_verstr=${release_version[0]}.${release_version[1]}.${release_version[2]}
 
+echo "Release version: ${release_verstr}, previous: ${previous_verstr}"
+
 
 #
 #  set calculated names
@@ -185,6 +187,7 @@ function clean_copy () {
   exists=`$GIT ls-remote --tags ${repository} | grep "$release_tag" 2>/dev/null`
   if [ -d "$base" ]; then
     echo "Cleaning $base"
+    rm -rf "$base/html" "$base/autom4te.cache"
     pushd $base >/dev/null
     $GIT clean -x --force --quiet
     if [ -n "$exists" ]; then
@@ -284,9 +287,9 @@ function create_tag () {
     if [ $version_file_changed ]; then
       # Add or remove a space to force check in
       if grep --quiet "revision.h " "$REVISION_FILE" ; then
-        sed -i ''  "s/revision.h /revision.h/" "$REVISION_FILE"
+        sed --in-place  "s/revision.h /revision.h/" "$REVISION_FILE"
       else
-        sed -i '' "s/revision.h/revision.h /" "$REVISION_FILE"
+        sed --in-place "s/revision.h/revision.h /" "$REVISION_FILE"
       fi
       msg="Update release version number to $release_verstr"
       pushd ${base} > /dev/null
@@ -329,7 +332,7 @@ function create_tag () {
   fi
 
   if $need_push; then
-    ( cd $base ; $GIT push --all --tags )
+    ( cd $base && $GIT push --all && $GIT push --tags )
   fi
 }
 
@@ -368,20 +371,22 @@ function create_archive () {
   clean_copy
 
   echo Creating source archive $SRC_ARCHIVE_TBZ2
+  rm -f $SRC_ARCHIVE_TBZ2
   if [ "${base}" != "${BASE_TAR}" ]; then
     mv ${base} ${BASE_TAR}
   fi
-  exclusions="--exclude=.gitignore --exclude=.gitattributes"
+  exclusions="--exclude=.git*"
   $TAR -cjf $SRC_ARCHIVE_TBZ2 $exclusions ${BASE_TAR} >/dev/null
   if [ "${base}" != "${BASE_TAR}" ]; then
     mv ${BASE_TAR} ${base}
   fi
 
   echo Creating source archive ${SRC_ARCHIVE_ZIP}
+  rm -f $SRC_ARCHIVE_ZIP
   if [ "${base}" != "${BASE_ZIP}" ]; then
     mv ${base} ${BASE_ZIP}
   fi
-  exclusions="-x .gitignore -x .gitattributes"
+  exclusions="-x *.git*"
   for ext in ${BINARY_EXT[*]} ; do
     files=`find ${BASE_ZIP} -name \*.${ext}`
     if [ -n "$files" ]; then
@@ -526,12 +531,12 @@ function update_website () {
 
 function do_all_for_release () {
   clean_copy
-  create_changelog
   create_tag
+  create_changelog
   create_archive
   create_docs
-  update_website
   upload_to_sourceforge
+  update_website
 }
 
 #
