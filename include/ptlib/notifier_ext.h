@@ -40,7 +40,7 @@
     See PDECLARE_NOTIFIER2 for more information.
   */
 #define PDECLARE_SAFE_NOTIFIER_EXT(notifierType, notifierArg, notifiee, func, ParamType, ParamArg) \
-            PDECLARE_NOTIFIER_COMMON(notifierType, notifierArg, notifiee, func, ParamType, ParamArg, PSafeNotifierFunction<ParamType>)
+             PDECLARE_NOTIFIER_EXT(notifierType, notifierArg, notifiee, func, ParamType, ParamArg, PNotifierTemplate<ParamType, PSafeObject, PSafePtr<PSafeObject>>)
 
 /** Declare a safe notifier object class.
     See PDECLARE_NOTIFIER2 for more information.
@@ -99,18 +99,18 @@ class PValidatedNotifierTarget
 
    See PNotifierFunctionTemplate for more information.
   */
-template <typename ParamType, class NotifierType = PObject, class TargetType = PObject>
+template <typename ParamType, class NotifierType = PObject, class TargetType = PObject*>
 class PValidatedNotifier : public PNotifierTemplate<ParamType, NotifierType, TargetType>
 {
     typedef PNotifierTemplate<ParamType, NotifierType, TargetType> Parent;
     PCLASSINFO(PValidatedNotifier, Parent);
   public:
     PValidatedNotifier() { }
-    PValidatedNotifier(typename Parent::Function fn, TargetType * target, PValidatedNotifierTarget & notifierTarget)
+    PValidatedNotifier(typename Parent::Function fn, TargetType target, PValidatedNotifierTarget & notifierTarget)
       : Parent(std::move(fn), target)
       , m_targetID(notifierTarget.m_validatedNotifierId)
     { }
-    PValidatedNotifier(typename Parent::Function fn, TargetType * target, PValidatedNotifierTarget * notifierTarget)
+    PValidatedNotifier(typename Parent::Function fn, TargetType target, PValidatedNotifierTarget * notifierTarget)
       : Parent(std::move(fn), target)
       , m_targetID(notifierTarget->m_validatedNotifierId)
     { }
@@ -212,7 +212,7 @@ class PAsyncNotifierTarget
    function is called. It is usually easier to simply make sure the data is
    passed by value and never pointer or reference.
   */
-template <typename ParamType, class NotifierType = PObject, class TargetType = PObject>
+template <typename ParamType, class NotifierType = PObject, class TargetType = PObject*>
 class PAsyncNotifier : public PNotifierTemplate<ParamType, NotifierType, TargetType>, PAsyncNotifierCallback
 {
     typedef PNotifierTemplate<ParamType, NotifierType, TargetType> Parent;
@@ -221,11 +221,11 @@ class PAsyncNotifier : public PNotifierTemplate<ParamType, NotifierType, TargetT
     NotifierType * m_notifier;
     ParamType      m_param;
   public:
-    PAsyncNotifier(typename Parent::Function fn, TargetType * target, PAsyncNotifierTarget & notifierTarget)
+    PAsyncNotifier(typename Parent::Function fn, TargetType target, PAsyncNotifierTarget & notifierTarget)
       : Parent(std::move(fn), target)
       , m_notifier(nullptr)
     { }
-    PAsyncNotifier(typename Parent::Function fn, TargetType * target, PAsyncNotifierTarget * notifierTarget)
+    PAsyncNotifier(typename Parent::Function fn, TargetType target, PAsyncNotifierTarget * notifierTarget)
       : Parent(std::move(fn), target)
       , m_notifier(nullptr)
     { }

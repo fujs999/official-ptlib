@@ -33,21 +33,21 @@
 ///////////////////////////////////////////////////////////////////////////////
 // General notification mechanism from one object to another
 
-template <typename ParamType, class NotifierType = PObject, class TargetType = PObject>
+template <typename ParamType, class NotifierType = PObject, class TargetType = PObject*>
 class PNotifierTemplate : public PObject, public std::function<void(NotifierType &, ParamType)>
 {
     PCLASSINFO(PNotifierTemplate, PObject);
   protected:
-    TargetType * m_target;
+    TargetType m_target;
   public:
     typedef std::function<void(NotifierType &, ParamType)> Function;
 
     PNotifierTemplate() : m_target(nullptr) { }
     PNotifierTemplate(nullptr_t *) : m_target(nullptr) { }
-    PNotifierTemplate(Function fn, TargetType * target) : Function(std::move(fn)), m_target(target) { }
+    PNotifierTemplate(Function fn, TargetType target) : Function(std::move(fn)), m_target(target) { }
 
     P_DEPRECATED bool IsNULL() const { return Function::operator bool(); }
-    TargetType * GetTarget() const { return m_target; }
+    TargetType GetTarget() const { return m_target; }
 };
 
 /** \class PNotifier
