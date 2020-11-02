@@ -344,7 +344,7 @@ static int GetNextChar(const PString & command, PINDEX & pos, PTimeInterval * ti
 {
   int temp;
 
-  if (pos >= command.length())
+  if (pos >= command.GetLength())
     return NextCharEndOfString;
 
   if (command[pos] != '\\')

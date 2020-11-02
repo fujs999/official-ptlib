@@ -1902,7 +1902,7 @@ void PString::InternalFromWChar(const wchar_t * wstr, PINDEX len)
   else {
     std::wstring_convert<std::codecvt_utf8<wchar_t>> ucs2conv;
     assign(ucs2conv.to_bytes(wstr, wstr+len));
-    PTRACE_IF(2, ucs2conv.converted() < len, "Error converting UCS-2 (" << len << ") to UTF-8 (" << ucs2conv.converted() << ')');
+    PTRACE_IF(2, ucs2conv.converted() < size_t(len), "Error converting UCS-2 (" << len << ") to UTF-8 (" << ucs2conv.converted() << ')');
   }
 }
 

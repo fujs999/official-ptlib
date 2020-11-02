@@ -2064,10 +2064,10 @@ int PArgList::InternalParseOption(const PString & optStr, PINDEX offset, PINDEX 
     if (!opt.m_string.IsEmpty())
       opt.m_string += '\n';
 
-    if (opt.m_type == OptionalString && (offset == P_MAX_INDEX || offset == m_argumentArray[arg].length()))
+    if (opt.m_type == OptionalString && (offset == P_MAX_INDEX || offset == m_argumentArray[arg].GetLength()))
       return 0;
 
-    if (offset != P_MAX_INDEX && offset != m_argumentArray[arg].length()) {
+    if (offset != P_MAX_INDEX && offset != m_argumentArray[arg].GetLength()) {
       opt.m_string += m_argumentArray[arg].Mid(offset);
       return 1;
     }
