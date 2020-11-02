@@ -140,23 +140,23 @@ PICMPSocket::PICMPSocket()
 
 bool PICMPSocket::IsOpen() const
 {
-  return icmpHandle != NULL;
+  return m_icmpHandle != NULL;
 }
 
 
 bool PICMPSocket::OpenSocket()
 {
-  return ICMP.IsLoaded() && (icmpHandle = ICMP.IcmpCreateFile()) != NULL;
+  return ICMP.IsLoaded() && (m_icmpHandle = ICMP.IcmpCreateFile()) != NULL;
 }
 
 
 bool PICMPSocket::Close()
 {
-  if (icmpHandle == NULL) 
+  if (m_icmpHandle == NULL) 
     return true;
 
   PAssert(ICMP.IsLoaded(), PLogicError);
-  return ICMP.IcmpCloseHandle(icmpHandle);
+  return ICMP.IcmpCloseHandle(m_icmpHandle);
 }
 
 const char * PICMPSocket::GetProtocolName() const
@@ -204,7 +204,7 @@ bool PICMPSocket::Ping(const PString & host, PingInfo & info)
 
   ICMPECHO * reply = (ICMPECHO *)malloc(sizeof(ICMPECHO)+sendBufferSize);
 
-  if (ICMP.IcmpSendEcho(icmpHandle,
+  if (ICMP.IcmpSendEcho(m_icmpHandle,
             addr,
             sendBufferPtr, sendBufferSize,
             &requestOptions,

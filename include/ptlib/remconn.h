@@ -284,9 +284,15 @@ class PRemoteConnection : public PObject
 
 // Include platform dependent part of class
 #ifdef _WIN32
-#include "msos/ptlib/remconn.h"
+  private:
+    HRASCONN rasConnection;
 #else
-#include "unix/ptlib/remconn.h"
+  protected:
+    PString        pppDeviceName;
+    PPipeChannel * pipeChannel;
+    bool           wasConnected;
+    Status         status;
+    PString        deviceStr;
 #endif
 };
 

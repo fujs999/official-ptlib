@@ -329,6 +329,9 @@ PINLINE PTimeInterval PChannel::GetWriteTimeout() const
 PINLINE intptr_t PChannel::GetHandle() const
   { return os_handle; }
 
+PINLINE int PChannel::GetOSHandleAsInt() const
+  { return static_cast<int>(GetHandle()); }
+
 PINLINE void PChannel::AbortCommandString()
   { m_abortCommandString = true; }
 

@@ -402,13 +402,6 @@ class PTimer : public PTimeInterval
     mutable PTimedMutex  m_callbackMutex;
 
     friend class Emitter;
-
-// Include platform dependent part of class
-#ifdef _WIN32
-#include "msos/ptlib/timer.h"
-#else
-#include "unix/ptlib/timer.h"
-#endif
 };
 
 

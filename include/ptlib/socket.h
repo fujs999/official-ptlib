@@ -64,6 +64,29 @@ class PSocket : public PChannel
     PSocket();
 
   public:
+    ~PSocket();
+
+  ///@name Overrides from class PChannel.
+    /** Low level read from the channel.
+
+        @return
+        true if at least len bytes were written to the channel.
+    */
+    virtual bool Read(
+      void * buf,   ///< Pointer to a block of memory to receive the read bytes.
+      PINDEX len    ///< Maximum number of bytes to read into the buffer.
+    );
+
+    /** Low level write to the channel.
+
+       @return
+       true if at least len bytes were written to the channel.
+    */
+    virtual bool Write(
+      const void * buf, ///< Pointer to a block of memory to write.
+      PINDEX len        ///< Number of bytes to write.
+    );
+
   /**@name Socket establishment functions */
   //@{
     /**Connect a socket to a remote host on the specified port number. This is
@@ -531,9 +554,17 @@ class PSocket : public PChannel
 
 // Include platform dependent part of class
 #ifdef _WIN32
-#include "msos/ptlib/socket.h"
+  public:
+    virtual bool Close();
+    virtual PString GetErrorText(ErrorGroup group = NumErrorGroups) const;
+    static PString GetErrorText(Errors lastError, int osError = 0) { return PChannel::GetErrorText(lastError, osError); }
+
+  protected:
+    virtual HANDLE GetAsyncReadHandle() const;
+    virtual HANDLE GetAsyncWriteHandle() const;
 #else
-#include "unix/ptlib/socket.h"
+  public:
+    static unsigned NoBufferRetryCount;
 #endif
 };
 

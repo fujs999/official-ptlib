@@ -159,16 +159,9 @@ class PUDPSocket : public PIPDatagramSocket
 
     virtual const char * GetProtocolName() const;
 
-// Include platform dependent part of class
-#ifdef _WIN32
-#include "msos/ptlib/udpsock.h"
-#else
-#include "unix/ptlib/udpsock.h"
-#endif
-
-    private:
-      AddressAndPort m_sendAddressAndPort;
-      AddressAndPort m_lastReceiveAddressAndPort;
+  private:
+    AddressAndPort m_sendAddressAndPort;
+    AddressAndPort m_lastReceiveAddressAndPort;
 };
 
 

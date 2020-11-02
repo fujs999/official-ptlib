@@ -483,6 +483,12 @@ typedef void (*PRunTimeSignalHandler)(int, siginfo_t *, void *);
 #define UINT64_MAX	std::numeric_limits<uint64_t>::max()
 #endif
 
+#define _read(fd,vp,st)         ::read(fd, vp, (size_t)st)
+#define _write(fd,vp,st)        ::write(fd, vp, (size_t)st)
+#define _fdopen(fd,m)           ::fdopen(fd, m)
+#define _lseek(fd,off,w)        ::lseek(fd, (off_t)off, w)
+#define _close(fd)              ::close(fd)
+
 
 ///////////////////////////////////////////
 // Type used for array indexes and sizes

@@ -160,9 +160,30 @@ class PSemaphore : public PSync
 
 // Include platform dependent part of class
 #ifdef _WIN32
-#include "msos/ptlib/semaphor.h"
+  public:
+    HANDLE GetHandle() const { return m_handle; }
+  protected:
+    PWin32Handle m_handle;
 #else
-#include "unix/ptlib/semaphor.h"
+protected:
+  #if defined(P_HAS_SEMAPHORES)
+    mutable sem_t m_semaphore;
+    #if defined(P_HAS_NAMED_SEMAPHORES)
+      mutable struct SemPtr {
+        SemPtr() : ptr(NULL) { }
+        sem_t * ptr;
+      } m_namedSemaphore;
+      __inline sem_t * GetSemPtr() const { return m_namedSemaphore.ptr != NULL ? m_namedSemaphore.ptr : &m_semaphore; }
+    #else
+      __inline sem_t * GetSemPtr() const { return &m_semaphore; }
+    #endif
+  #else
+    mutable pthread_mutex_t mutex;
+    mutable pthread_cond_t  condVar;
+    mutable unsigned currentCount;
+    mutable unsigned queuedLocks;
+    friend class PThread;
+  #endif
 #endif
 };
 

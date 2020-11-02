@@ -30,8 +30,6 @@
 
 #if P_VIDEO
 
-#include <ptlib/video.h>
-
 #ifdef __GNUC__
 #pragma implementation "vconvert.h"
 #endif

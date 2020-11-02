@@ -35,13 +35,16 @@
 #endif
 
 
-class PConfig;
+#include <ptlib/channel.h>
 
 #if HAVE_TERMIOS_H
   #include <termios.h>
 #elif HAVE_SYS_TERMIOS_H
   #include <sys/termios.h>
 #endif
+
+
+class PConfig;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -191,6 +194,12 @@ class PSerialChannel : public PChannel
       PConfig & cfg  ///< Configuration file to read serial port attributes from.
     );
 #endif // P_CONFIG_FILE
+
+    /// <summary>
+    ///  Close the channel
+    /// </summary>
+    /// <returns></returns>
+    virtual bool Close();
 
     /**Get a list of the available serial ports. This returns a set of
        platform dependent strings which describe the serial ports of the
@@ -387,9 +396,27 @@ class PSerialChannel : public PChannel
 
 // Include platform dependent part of class
 #ifdef _WIN32
-#include "msos/ptlib/serchan.h"
+  public:
+    virtual bool Read(void * buf, PINDEX len);
+    virtual bool Write(const void * buf, PINDEX len);
+
+  private:
+    bool SetCommsParam(uint32_t speed, uint8_t data, Parity parity, uint8_t stop, FlowControl inputFlow, FlowControl outputFlow);
+
+    HANDLE m_commsResource;
+    enum { InputQueueSize = 2048, OutputQueueSize = 1024 };
+    DCB m_deviceControlBlock;
 #else
-#include "unix/ptlib/serchan.h"
+  public:
+    bool Close();
+
+  private:
+    struct termios m_oldTermio;
+    struct termios m_currentTermio;
+    uint32_t m_baudRate;
+    uint8_t  m_dataBits;
+    Parity   m_parityBits;
+    uint8_t  m_stopBits;
 #endif
 };
 

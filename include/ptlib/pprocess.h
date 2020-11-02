@@ -128,6 +128,9 @@ class PProcess : public PThread
       bool suppressStartup = false,    ///< Do not execute Startup()
       unsigned oemVersion = 0          ///< OEM version number of the product
     );
+
+    // Destroy process
+    ~PProcess();
   //@}
 
   /**@name Overrides from class PObject */
@@ -722,13 +725,23 @@ class PProcess : public PThread
 
   friend class PThread;
   friend class PExternalThread;
+  friend class PServiceProcess;
 
 
 // Include platform dependent part of class
 #ifdef _WIN32
-#include "msos/ptlib/pprocess.h"
+  public:
+    virtual bool IsGUIProcess() const;
+    void WaitOnExitConsoleWindow();
+    void SetWaitOnExitConsoleWindow(bool b) { m_waitOnExitConsoleWindow = b; }
+  private:
+    bool m_waitOnExitConsoleWindow;
 #else
-#include "unix/ptlib/pprocess.h"
+  #if P_HAS_BACKTRACE && PTRACING
+    public:
+      enum { WalkStackSignal = SIGTRAP };
+      void InternalWalkStackSignaled();
+  #endif
 #endif
 };
 

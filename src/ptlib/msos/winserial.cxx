@@ -39,20 +39,20 @@
 
 void PSerialChannel::Construct()
 {
-  commsResource = INVALID_HANDLE_VALUE;
+  m_commsResource = INVALID_HANDLE_VALUE;
 
   char str[50] = "com1";
   GetProfileString("ports", str, "9600,n,8,1,x", &str[5], sizeof(str)-6);
   str[4] = ':';
-  memset(&deviceControlBlock, 0, sizeof(deviceControlBlock));
-  deviceControlBlock.DCBlength = sizeof(deviceControlBlock);
-  BuildCommDCB(str, &deviceControlBlock);
+  memset(&m_deviceControlBlock, 0, sizeof(m_deviceControlBlock));
+  m_deviceControlBlock.DCBlength = sizeof(m_deviceControlBlock);
+  BuildCommDCB(str, &m_deviceControlBlock);
 
   // These values are not set by BuildCommDCB
-  deviceControlBlock.XoffChar = 19;
-  deviceControlBlock.XonChar = 17;
-  deviceControlBlock.XoffLim = (QUEUE_SIZE * 7)/8;  // upper limit before XOFF is sent to stop reception
-  deviceControlBlock.XonLim = (QUEUE_SIZE * 3)/4;   // lower limit before XON is sent to re-enabled reception
+  m_deviceControlBlock.XoffChar = 19;
+  m_deviceControlBlock.XonChar = 17;
+  m_deviceControlBlock.XoffLim = (QUEUE_SIZE * 7)/8;  // upper limit before XOFF is sent to stop reception
+  m_deviceControlBlock.XonLim = (QUEUE_SIZE * 3)/4;   // lower limit before XON is sent to re-enabled reception
 }
 
 
@@ -64,17 +64,17 @@ bool PSerialChannel::Read(void * buf, PINDEX len)
     return false;
 
   COMMTIMEOUTS cto;
-  PAssertOS(GetCommTimeouts(commsResource, &cto));
+  PAssertOS(GetCommTimeouts(m_commsResource, &cto));
   cto.ReadIntervalTimeout = 0;
   cto.ReadTotalTimeoutMultiplier = 0;
   cto.ReadTotalTimeoutConstant = 0;
   cto.ReadIntervalTimeout = MAXDWORD; // Immediate timeout
-  PAssertOS(SetCommTimeouts(commsResource, &cto));
+  PAssertOS(SetCommTimeouts(m_commsResource, &cto));
 
   DWORD eventMask;
-  PAssertOS(GetCommMask(commsResource, &eventMask));
+  PAssertOS(GetCommMask(m_commsResource, &eventMask));
   if (eventMask != (EV_RXCHAR|EV_TXEMPTY))
-    PAssertOS(SetCommMask(commsResource, EV_RXCHAR|EV_TXEMPTY));
+    PAssertOS(SetCommMask(m_commsResource, EV_RXCHAR|EV_TXEMPTY));
 
   DWORD timeToGo = readTimeout.GetInterval();
   DWORD bytesToGo = len;
@@ -83,10 +83,10 @@ bool PSerialChannel::Read(void * buf, PINDEX len)
   for (;;) {
     PWin32Overlapped overlap;
     DWORD readCount = 0;
-    if (!ReadFile(commsResource, bufferPtr, bytesToGo, &readCount, &overlap)) {
+    if (!ReadFile(m_commsResource, bufferPtr, bytesToGo, &readCount, &overlap)) {
       if (::GetLastError() != ERROR_IO_PENDING)
         return ConvertOSError(-2, LastReadError);
-      if (!::GetOverlappedResult(commsResource, &overlap, &readCount, false))
+      if (!::GetOverlappedResult(m_commsResource, &overlap, &readCount, false))
         return ConvertOSError(-2, LastReadError);
     }
 
@@ -95,13 +95,13 @@ bool PSerialChannel::Read(void * buf, PINDEX len)
     if (SetLastReadCount(GetLastReadCount() + readCount) >= len || timeToGo == 0)
       return GetLastReadCount() > 0;
 
-    if (!::WaitCommEvent(commsResource, &eventMask, &overlap)) {
+    if (!::WaitCommEvent(m_commsResource, &eventMask, &overlap)) {
       if (::GetLastError()!= ERROR_IO_PENDING)
         return ConvertOSError(-2, LastReadError);
       DWORD err = ::WaitForSingleObject(overlap.hEvent, timeToGo);
       if (err == WAIT_TIMEOUT) {
         SetErrorValues(Timeout, ETIMEDOUT, LastReadError);
-        ::CancelIo(commsResource);
+        ::CancelIo(m_commsResource);
         return GetLastReadCount() > 0;
       }
       else if (err == WAIT_FAILED)
@@ -119,7 +119,7 @@ bool PSerialChannel::Write(const void * buf, PINDEX len)
     return false;
 
   COMMTIMEOUTS cto;
-  PAssertOS(GetCommTimeouts(commsResource, &cto));
+  PAssertOS(GetCommTimeouts(m_commsResource, &cto));
   cto.WriteTotalTimeoutMultiplier = 0;
   if (writeTimeout == PMaxTimeInterval)
     cto.WriteTotalTimeoutConstant = 0;
@@ -127,15 +127,15 @@ bool PSerialChannel::Write(const void * buf, PINDEX len)
     cto.WriteTotalTimeoutConstant = 1;
   else
     cto.WriteTotalTimeoutConstant = writeTimeout.GetInterval();
-  PAssertOS(SetCommTimeouts(commsResource, &cto));
+  PAssertOS(SetCommTimeouts(m_commsResource, &cto));
 
   PWin32Overlapped overlap;
   DWORD written;
-  if (WriteFile(commsResource, buf, len, &written, &overlap)) 
+  if (WriteFile(m_commsResource, buf, len, &written, &overlap)) 
     return SetLastWriteCount(written) == len;
 
   if (GetLastError() == ERROR_IO_PENDING)
-    if (GetOverlappedResult(commsResource, &overlap, &written, true)) {
+    if (GetOverlappedResult(m_commsResource, &overlap, &written, true)) {
       return SetLastWriteCount(written) == len;
     }
 
@@ -150,8 +150,8 @@ bool PSerialChannel::Close()
   if (CheckNotOpen())
     return false;
 
-  CloseHandle(commsResource);
-  commsResource = INVALID_HANDLE_VALUE;
+  CloseHandle(m_commsResource);
+  m_commsResource = INVALID_HANDLE_VALUE;
   os_handle = -1;
   return ConvertOSError(-2);
 }
@@ -161,26 +161,26 @@ bool PSerialChannel::SetCommsParam(uint32_t speed, uint8_t data, Parity parity,
                      uint8_t stop, FlowControl inputFlow, FlowControl outputFlow)
 {
   if (speed > 0)
-    deviceControlBlock.BaudRate = speed;
+    m_deviceControlBlock.BaudRate = speed;
 
   if (data > 0)
-    deviceControlBlock.ByteSize = data;
+    m_deviceControlBlock.ByteSize = data;
 
   switch (parity) {
     case NoParity :
-      deviceControlBlock.Parity = NOPARITY;
+      m_deviceControlBlock.Parity = NOPARITY;
       break;
     case OddParity :
-      deviceControlBlock.Parity = ODDPARITY;
+      m_deviceControlBlock.Parity = ODDPARITY;
       break;
     case EvenParity :
-      deviceControlBlock.Parity = EVENPARITY;
+      m_deviceControlBlock.Parity = EVENPARITY;
       break;
     case MarkParity :
-      deviceControlBlock.Parity = MARKPARITY;
+      m_deviceControlBlock.Parity = MARKPARITY;
       break;
     case SpaceParity :
-      deviceControlBlock.Parity = SPACEPARITY;
+      m_deviceControlBlock.Parity = SPACEPARITY;
       break;
     case DefaultParity:
       break;
@@ -188,25 +188,25 @@ bool PSerialChannel::SetCommsParam(uint32_t speed, uint8_t data, Parity parity,
 
   switch (stop) {
     case 1 :
-      deviceControlBlock.StopBits = ONESTOPBIT;
+      m_deviceControlBlock.StopBits = ONESTOPBIT;
       break;
     case 2 :
-      deviceControlBlock.StopBits = TWOSTOPBITS;
+      m_deviceControlBlock.StopBits = TWOSTOPBITS;
       break;
   }
 
   switch (inputFlow) {
     case NoFlowControl :
-      deviceControlBlock.fRtsControl = RTS_CONTROL_DISABLE;
-      deviceControlBlock.fInX = false;
+      m_deviceControlBlock.fRtsControl = RTS_CONTROL_DISABLE;
+      m_deviceControlBlock.fInX = false;
       break;
     case XonXoff :
-      deviceControlBlock.fRtsControl = RTS_CONTROL_DISABLE;
-      deviceControlBlock.fInX = true;
+      m_deviceControlBlock.fRtsControl = RTS_CONTROL_DISABLE;
+      m_deviceControlBlock.fInX = true;
       break;
     case RtsCts :
-      deviceControlBlock.fRtsControl = RTS_CONTROL_HANDSHAKE;
-      deviceControlBlock.fInX = false;
+      m_deviceControlBlock.fRtsControl = RTS_CONTROL_HANDSHAKE;
+      m_deviceControlBlock.fInX = false;
       break;
     case DefaultFlowControl:
       break;
@@ -214,19 +214,19 @@ bool PSerialChannel::SetCommsParam(uint32_t speed, uint8_t data, Parity parity,
 
   switch (outputFlow) {
     case NoFlowControl :
-      deviceControlBlock.fOutxCtsFlow = false;
-      deviceControlBlock.fOutxDsrFlow = false;
-      deviceControlBlock.fOutX = false;
+      m_deviceControlBlock.fOutxCtsFlow = false;
+      m_deviceControlBlock.fOutxDsrFlow = false;
+      m_deviceControlBlock.fOutX = false;
       break;
     case XonXoff :
-      deviceControlBlock.fOutxCtsFlow = false;
-      deviceControlBlock.fOutxDsrFlow = false;
-      deviceControlBlock.fOutX = true;
+      m_deviceControlBlock.fOutxCtsFlow = false;
+      m_deviceControlBlock.fOutxDsrFlow = false;
+      m_deviceControlBlock.fOutX = true;
       break;
     case RtsCts :
-      deviceControlBlock.fOutxCtsFlow = true;
-      deviceControlBlock.fOutxDsrFlow = false;
-      deviceControlBlock.fOutX = false;
+      m_deviceControlBlock.fOutxCtsFlow = true;
+      m_deviceControlBlock.fOutxDsrFlow = false;
+      m_deviceControlBlock.fOutX = false;
       break;
     case DefaultFlowControl:
       break;
@@ -235,7 +235,7 @@ bool PSerialChannel::SetCommsParam(uint32_t speed, uint8_t data, Parity parity,
   if (CheckNotOpen())
     return false;
 
-  return ConvertOSError(SetCommState(commsResource, &deviceControlBlock) ? 0 : -2);
+  return ConvertOSError(SetCommState(m_commsResource, &m_deviceControlBlock) ? 0 : -2);
 }
 
 
@@ -247,25 +247,25 @@ bool PSerialChannel::Open(const PString & port, uint32_t speed, uint8_t data,
   m_portName = port;
   if (m_portName.Find(PDIR_SEPARATOR) == P_MAX_INDEX)
     m_portName = "\\\\.\\" + port;
-  commsResource = CreateFile(m_portName,
+  m_commsResource = CreateFile(m_portName,
                              GENERIC_READ|GENERIC_WRITE,
                              0,
                              NULL,
                              OPEN_EXISTING,
                              FILE_FLAG_OVERLAPPED,
                              NULL);
-  if (commsResource == INVALID_HANDLE_VALUE)
+  if (m_commsResource == INVALID_HANDLE_VALUE)
     return ConvertOSError(-2);
 
   os_handle = 0;
 
-  SetupComm(commsResource, QUEUE_SIZE, QUEUE_SIZE);
+  SetupComm(m_commsResource, QUEUE_SIZE, QUEUE_SIZE);
 
   if (SetCommsParam(speed, data, parity, stop, inputFlow, outputFlow))
     return true;
 
   ConvertOSError(-2);
-  CloseHandle(commsResource);
+  CloseHandle(m_commsResource);
   os_handle = -1;
   return false;
 }
@@ -280,7 +280,7 @@ bool PSerialChannel::SetSpeed(uint32_t speed)
 
 uint32_t PSerialChannel::GetSpeed() const
 {
-  return deviceControlBlock.BaudRate;
+  return m_deviceControlBlock.BaudRate;
 }
 
 
@@ -293,7 +293,7 @@ bool PSerialChannel::SetDataBits(uint8_t data)
 
 uint8_t PSerialChannel::GetDataBits() const
 {
-  return deviceControlBlock.ByteSize;
+  return m_deviceControlBlock.ByteSize;
 }
 
 
@@ -305,7 +305,7 @@ bool PSerialChannel::SetParity(Parity parity)
 
 PSerialChannel::Parity PSerialChannel::GetParity() const
 {
-  switch (deviceControlBlock.Parity) {
+  switch (m_deviceControlBlock.Parity) {
     case ODDPARITY :
       return OddParity;
     case EVENPARITY :
@@ -328,7 +328,7 @@ bool PSerialChannel::SetStopBits(uint8_t stop)
 
 uint8_t PSerialChannel::GetStopBits() const
 {
-  return (uint8_t)(deviceControlBlock.StopBits == ONESTOPBIT ? 1 : 2);
+  return (uint8_t)(m_deviceControlBlock.StopBits == ONESTOPBIT ? 1 : 2);
 }
 
 
@@ -340,9 +340,9 @@ bool PSerialChannel::SetInputFlowControl(FlowControl flowControl)
 
 PSerialChannel::FlowControl PSerialChannel::GetInputFlowControl() const
 {
-  if (deviceControlBlock.fRtsControl == RTS_CONTROL_HANDSHAKE)
+  if (m_deviceControlBlock.fRtsControl == RTS_CONTROL_HANDSHAKE)
     return RtsCts;
-  if (deviceControlBlock.fInX != 0)
+  if (m_deviceControlBlock.fInX != 0)
     return XonXoff;
   return NoFlowControl;
 }
@@ -356,9 +356,9 @@ bool PSerialChannel::SetOutputFlowControl(FlowControl flowControl)
 
 PSerialChannel::FlowControl PSerialChannel::GetOutputFlowControl() const
 {
-  if (deviceControlBlock.fOutxCtsFlow != 0)
+  if (m_deviceControlBlock.fOutxCtsFlow != 0)
     return RtsCts;
-  if (deviceControlBlock.fOutX != 0)
+  if (m_deviceControlBlock.fOutX != 0)
     return XonXoff;
   return NoFlowControl;
 }
@@ -367,7 +367,7 @@ PSerialChannel::FlowControl PSerialChannel::GetOutputFlowControl() const
 void PSerialChannel::SetDTR(bool state)
 {
   if (IsOpen())
-    PAssertOS(EscapeCommFunction(commsResource, state ? SETDTR : CLRDTR));
+    PAssertOS(EscapeCommFunction(m_commsResource, state ? SETDTR : CLRDTR));
   else
     SetErrorValues(NotOpen, EBADF);
 }
@@ -376,7 +376,7 @@ void PSerialChannel::SetDTR(bool state)
 void PSerialChannel::SetRTS(bool state)
 {
   if (IsOpen())
-    PAssertOS(EscapeCommFunction(commsResource, state ? SETRTS : CLRRTS));
+    PAssertOS(EscapeCommFunction(m_commsResource, state ? SETRTS : CLRRTS));
   else
     SetErrorValues(NotOpen, EBADF);
 }
@@ -386,9 +386,9 @@ void PSerialChannel::SetBreak(bool state)
 {
   if (IsOpen())
     if (state)
-      PAssertOS(SetCommBreak(commsResource));
+      PAssertOS(SetCommBreak(m_commsResource));
     else
-      PAssertOS(ClearCommBreak(commsResource));
+      PAssertOS(ClearCommBreak(m_commsResource));
   else
     SetErrorValues(NotOpen, EBADF);
 }
@@ -400,7 +400,7 @@ bool PSerialChannel::GetCTS()
     return false;
 
   DWORD stat;
-  PAssertOS(GetCommModemStatus(commsResource, &stat));
+  PAssertOS(GetCommModemStatus(m_commsResource, &stat));
   return (stat&MS_CTS_ON) != 0;
 }
 
@@ -411,7 +411,7 @@ bool PSerialChannel::GetDSR()
     return false;
 
   DWORD stat;
-  PAssertOS(GetCommModemStatus(commsResource, &stat));
+  PAssertOS(GetCommModemStatus(m_commsResource, &stat));
   return (stat&MS_DSR_ON) != 0;
 }
 
@@ -422,7 +422,7 @@ bool PSerialChannel::GetDCD()
     return false;
 
   DWORD stat;
-  PAssertOS(GetCommModemStatus(commsResource, &stat));
+  PAssertOS(GetCommModemStatus(m_commsResource, &stat));
   return (stat&MS_RLSD_ON) != 0;
 }
 
@@ -433,7 +433,7 @@ bool PSerialChannel::GetRing()
     return false;
 
   DWORD stat;
-  PAssertOS(GetCommModemStatus(commsResource, &stat));
+  PAssertOS(GetCommModemStatus(m_commsResource, &stat));
   return (stat&MS_RING_ON) != 0;
 }
 

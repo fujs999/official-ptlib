@@ -159,9 +159,93 @@ class PServiceProcess : public PProcess
 
 // Include platform dependent part of class
 #ifdef _WIN32
-#include "msos/ptlib/svcproc.h"
+  public:
+    virtual const char * GetServiceDependencies() const;
+    // Get a set of null terminated strings terminated with double null.
+
+    void SetDescription(const PString & description);
+    const PString & GetDescription() const;
+
+  protected:
+    bool m_debugHidden; /// Flag to indicate service is run in simulation mode without showing the control window 
+
+  private:
+    static void __stdcall StaticMainEntry(DWORD argc, LPTSTR * argv);
+    /* Internal function called from the Service Manager. This simply calls the
+    <A>MainEntry()</A> function on the PServiceProcess instance.
+    */
+
+    void MainEntry(uint32_t argc, LPTSTR * argv);
+    /* Internal function function that takes care of actually starting the
+    service, informing the service controller at each step along the way.
+    After launching the worker thread, it waits on the event that the worker
+    thread will signal at its termination.
+    */
+
+    static void StaticThreadEntry(void *);
+    /* Internal function called to begin the work of the service process. This
+    essentially just calls the <A>Main()</A> function on the
+    PServiceProcess instance.
+    */
+
+    void ThreadEntry();
+    /* Internal function function that starts the worker thread for the
+    service.
+    */
+
+    static void __stdcall StaticControlEntry(DWORD code);
+    /* This function is called by the Service Controller whenever someone calls
+    ControlService in reference to our service.
+    */
+
+    void ControlEntry(uint32_t code);
+    /* This function is called by the Service Controller whenever someone calls
+    ControlService in reference to our service.
+    */
+
+    bool ReportStatus(
+      uint32_t dwCurrentState,
+      uint32_t dwWin32ExitCode = NO_ERROR,
+      uint32_t dwCheckPoint = 0,
+      uint32_t dwWaitHint = 0
+    );
+    /* This function is called by the Main() and Control() functions to update the
+    service's status to the service control manager.
+    */
+
+
+    bool ProcessCommand(const char * cmd);
+    // Process command line argument for controlling the service.
+
+    bool CreateControlWindow(bool createDebugWindow);
+    static LPARAM WINAPI StaticWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+    LPARAM WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+    void DebugOutput(const char * out);
+
+    class LogToWindow : public PSystemLogTarget
+    {
+      virtual void Output(PSystemLog::Level level, const char * msg);
+    };
+    friend class LogToWindow;
+
+    SERVICE_STATUS        m_status;
+    SERVICE_STATUS_HANDLE m_statusHandle;
+    HANDLE                m_startedEvent;
+    HANDLE                m_terminationEvent;
+    HWND                  m_controlWindow;
+    HWND                  m_debugWindow;
+
+    PString               m_description;
 #else
-#include "unix/ptlib/svcproc.h"
+  public:
+    ~PServiceProcess();
+    virtual void AddRunTimeSignalHandlers(const int * signals = NULL);
+    virtual void AsynchronousRunTimeSignal(int signal, PProcessIdentifier source);
+    virtual void HandleRunTimeSignal(int signal);
+  protected:
+    int  InitialiseService();
+    PString pidFileToRemove;
+    bool isTerminating;
 #endif
 };
 

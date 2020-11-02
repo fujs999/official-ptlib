@@ -497,11 +497,16 @@ class PDirectory : public PFilePathString
 
 // Include platform dependent part of class
 #ifdef _WIN32
-#include "msos/ptlib/pdirect.h"
+  protected:
+    HANDLE          m_hFindFile;
+    WIN32_FIND_DATA m_fileInfo;
+    bool InternalEntryCheck();
 #else
-#include "unix/ptlib/pdirect.h"
+  protected:
+    DIR           * m_directory;
+    PFileInfo     * m_entryInfo;
+    struct dirent * m_entryBuffer;
 #endif
-
 };
 
 

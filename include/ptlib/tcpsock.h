@@ -178,10 +178,9 @@ class PTCPSocket : public PIPSocket
 
 
 // Include platform dependent part of class
-#ifdef _WIN32
-#include "msos/ptlib/tcpsock.h"
-#else
-#include "unix/ptlib/tcpsock.h"
+#ifndef _WIN32
+  public:
+    virtual bool Read(void * buf, PINDEX len) override;
 #endif
 };
 

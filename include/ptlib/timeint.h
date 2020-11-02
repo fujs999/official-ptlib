@@ -510,14 +510,6 @@ class PTimeInterval : public PObject
 
   private:
     atomic<int64_t> m_nanoseconds;
-
-
-// Include platform dependent part of class
-#ifdef _WIN32
-#include "msos/ptlib/timeint.h"
-#else
-#include "unix/ptlib/timeint.h"
-#endif
 };
 
 
@@ -545,12 +537,12 @@ struct PFrequencyTime : PTimeInterval
 
 namespace std
 {
-    /// Specialisation of numeric_limits for PTimeInterval
+  /// Specialisation of numeric_limits for PTimeInterval
   template<> class numeric_limits<PTimeInterval>
   {
   public:
-    static PTimeInterval min() { return -PMaxTimeInterval; }
-    static PTimeInterval max() { return  PMaxTimeInterval; }
+    static PTimeInterval min() { return PTimeInterval::NanoSeconds(numeric_limits<int64_t>::min()); }
+    static PTimeInterval max() { return PTimeInterval::NanoSeconds(numeric_limits<int64_t>::max()); }
     static PTimeInterval epsilon() { return PTimeInterval::NanoSeconds(1); }
     static PTimeInterval round_error() { return PTimeInterval::NanoSeconds(1); }
     static PTimeInterval denorm_min() { return PTimeInterval::NanoSeconds(numeric_limits<int64_t>::denorm_min()); }
@@ -560,6 +552,7 @@ namespace std
   };
 };
 
+#define PMaxTimeInterval std::numeric_limits<PTimeInterval>::max()
 
 #endif // PTLIB_TIMEINTERVAL_H
 

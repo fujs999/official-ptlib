@@ -180,8 +180,8 @@ PString PTime::GetTimeZoneString(TimeZoneType type)
 
 void PDirectory::Construct()
 {
-  hFindFile = INVALID_HANDLE_VALUE;
-  fileinfo.cFileName[0] = '\0';
+  m_hFindFile = INVALID_HANDLE_VALUE;
+  m_fileInfo.cFileName[0] = '\0';
 }
 
 
@@ -190,8 +190,8 @@ bool PDirectory::Open(PFileInfo::FileTypes newScanMask)
   m_scanMask = newScanMask;
   PVarString wildcard = *this + "*.*";
 
-  hFindFile = FindFirstFile(wildcard, &fileinfo);
-  if (hFindFile == INVALID_HANDLE_VALUE) {
+  m_hFindFile = FindFirstFile(wildcard, &m_fileInfo);
+  if (m_hFindFile == INVALID_HANDLE_VALUE) {
     PTRACE_IF(2, GetLastError() != ERROR_PATH_NOT_FOUND && GetLastError() != ERROR_DIRECTORY,
               "PTLib", "Could not open directory \"" << *this << "\", error=" << GetLastError());
     return false;
@@ -203,11 +203,11 @@ bool PDirectory::Open(PFileInfo::FileTypes newScanMask)
 
 bool PDirectory::Next()
 {
-  if (hFindFile == INVALID_HANDLE_VALUE)
+  if (m_hFindFile == INVALID_HANDLE_VALUE)
     return false;
 
   do {
-    if (!FindNextFile(hFindFile, &fileinfo))
+    if (!FindNextFile(m_hFindFile, &m_fileInfo))
       return false;
   } while (!InternalEntryCheck());
 
@@ -217,13 +217,13 @@ bool PDirectory::Next()
 
 PCaselessString PDirectory::GetEntryName() const
 {
-  return fileinfo.cFileName;
+  return m_fileInfo.cFileName;
 }
 
 
 bool PDirectory::IsSubDir() const
 {
-  return (fileinfo.dwFileAttributes&FILE_ATTRIBUTE_DIRECTORY) != 0;
+  return (m_fileInfo.dwFileAttributes&FILE_ATTRIBUTE_DIRECTORY) != 0;
 }
 
 
@@ -237,9 +237,9 @@ PCaselessString PDirectory::GetVolume() const
 
 void PDirectory::Close()
 {
-  if (hFindFile != INVALID_HANDLE_VALUE) {
-    FindClose(hFindFile);
-    hFindFile = INVALID_HANDLE_VALUE;
+  if (m_hFindFile != INVALID_HANDLE_VALUE) {
+    FindClose(m_hFindFile);
+    m_hFindFile = INVALID_HANDLE_VALUE;
   }
 }
 

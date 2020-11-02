@@ -170,6 +170,7 @@ class PChannel : public PObject, public std::iostream
        standard OS descriptor integer.
      */
     virtual intptr_t GetHandle() const;
+    int GetOSHandleAsInt() const;
 
     /** Re-open the device using the stdio library. This closes the PChannel
 
@@ -758,13 +759,32 @@ class PChannel : public PObject, public std::iostream
       // Flag to abort the transmission of a command in SendCommandString().
 
 
-// Include platform dependent part of class
+  // Include platform dependent part of class
 #ifdef _WIN32
-#include "msos/ptlib/channel.h"
+  protected:
+    virtual HANDLE GetAsyncReadHandle() const;
+    virtual HANDLE GetAsyncWriteHandle() const;
 #else
-#include "unix/ptlib/channel.h"
-#endif
+  public:
+    enum PXBlockType {
+      PXReadBlock,
+      PXWriteBlock,
+      PXAcceptBlock,
+      PXConnectBlock
+    };
 
+  protected:
+    bool PXSetIOBlock(PXBlockType type, const PTimeInterval & timeout);
+    int  PXClose();
+
+    PDECLARE_MUTEX(  px_threadMutex);
+    PXBlockType      px_lastBlockType;
+    PThread        * px_readThread;
+    PThread        * px_writeThread;
+    PDECLARE_MUTEX(  px_writeMutex);
+    PThread        * px_selectThread[3];
+    PCriticalSection px_selectMutex[3];
+#endif
 };
 
 

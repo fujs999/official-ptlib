@@ -485,9 +485,37 @@ class PThread : public PObject
 
     // Include platform dependent part of class
 #ifdef _WIN32
-#include "msos/ptlib/thread.h"
+  protected:
+    PWin32Handle m_threadHandle;
+
+  #if defined(P_WIN_COM)
+    public:
+      bool CoInitialise();
+    private:
+      bool m_comInitialised;
+  #endif
 #else
-#include "unix/ptlib/thread.h"
+  friend class PSocket;
+  public:
+    int PXBlockOnIO(
+      int handle,
+      int type,
+      const PTimeInterval & timeout
+    );
+
+    void PXAbortBlock() const;
+    static bool PlatformKill(PThreadIdentifier tid, PUniqueThreadIdentifier uid, int sig);
+
+  protected:
+    int m_threadUnblockPipe[2];
+
+  #ifndef P_HAS_SEMAPHORES
+  public:
+    void PXSetWaitingSemaphore(PSemaphore * sem);
+  protected:
+    PSemaphore      * m_waitingSemaphore;
+    pthread_mutex_t   m_waitSemMutex;
+  #endif
 #endif
 };
 

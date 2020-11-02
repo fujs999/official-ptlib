@@ -150,11 +150,6 @@ bool PChannel::Close()
   return false;
 }
 
-FILE * PChannel::FDOpen(const char * /*mode*/)
-{
-  return NULL;
-}
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // Directories
@@ -183,9 +178,9 @@ bool PDirectory::Change(const PString & p)
 bool PDirectory::InternalEntryCheck()
 {
 #ifdef UNICODE
-  PString name(fileinfo.cFileName);
+  PString name(m_fileInfo.cFileName);
 #else
-  char * name = fileinfo.cFileName;
+  char * name = m_fileInfo.cFileName;
 #endif // UNICODE
   if (strcmp(name, ".") == 0)
     return m_scanMask & PFileInfo::CurrentDirectory;
@@ -601,14 +596,6 @@ bool PFile::InternalOpen(OpenMode mode, OpenOptions opts, PFileInfo::Permissions
 bool PFile::SetLength(off_t len)
 {
   return ConvertOSError(_chsize(GetOSHandleAsInt(), len));
-}
-
-FILE * PFile::FDOpen(const char * mode)
-{
-  FILE * h = _fdopen((int)os_handle, mode);
-  if (h != NULL)
-    os_handle = -1;
-  return h;
 }
 
 

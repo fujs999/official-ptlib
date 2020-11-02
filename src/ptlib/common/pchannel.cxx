@@ -197,6 +197,15 @@ bool PChannel::IsOpen() const
 }
 
 
+FILE * PChannel::FDOpen(const char * mode)
+{
+  FILE * h = _fdopen(GetOSHandleAsInt(), mode);
+  if (h != NULL)
+    os_handle = -1;
+  return h;
+}
+
+
 PINDEX PChannel::GetLastReadCount() const
 { 
   return sm_status[LastReadError].m_lastCount; 
