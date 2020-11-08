@@ -1047,6 +1047,21 @@ class PBitArray : public PBYTEArray
 };
 
 
+template <class T> class PVector : public PObject, public std::vector<T>
+{
+    PCLASSINFO(PVector, PObject);
+  public:
+    PVector() { }
+
+    virtual void PrintOn(std::ostream & strm) const
+    {
+      strm << PPrintValues(*this);
+    }
+
+    __inline PINDEX GetSize() const { return size(); }
+};
+
+
 #endif // PTLIB_ARRAY_H
 
 

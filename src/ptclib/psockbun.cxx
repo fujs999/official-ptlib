@@ -130,8 +130,7 @@ void PInterfaceMonitor::OnShutdown()
 static bool IsInterfaceInList(const PIPSocket::InterfaceEntry & entry,
                               const PIPSocket::InterfaceTable & list)
 {
-  for (PINDEX i = 0; i < list.GetSize(); ++i) {
-    PIPSocket::InterfaceEntry & listEntry = list[i];
+  for (const auto & listEntry : list) {
     if ((entry.GetName() == listEntry.GetName()) && (entry.GetAddress() == listEntry.GetAddress()))
       return true;
   }
@@ -142,8 +141,7 @@ static bool IsInterfaceInList(const PIPSocket::InterfaceEntry & entry,
 static bool InterfaceListIsSubsetOf(const PIPSocket::InterfaceTable & subset,
                                     const PIPSocket::InterfaceTable & set)
 {
-  for (PINDEX i = 0; i < subset.GetSize(); ++i) {
-    PIPSocket::InterfaceEntry & entry = subset[i];
+  for (const auto & entry : subset) {
     if (!IsInterfaceInList(entry, set))
       return false;
   }
@@ -156,7 +154,7 @@ static bool CompareInterfaceLists(const PIPSocket::InterfaceTable & list1,
                                   const PIPSocket::InterfaceTable & list2)
 {
   // if the sizes are different, then the list has changed. 
-  if (list1.GetSize() != list2.GetSize())
+  if (list1.size() != list2.size())
     return false;
 
   // ensure every element in list1 is in list2
@@ -192,23 +190,18 @@ void PInterfaceMonitor::RefreshInterfaceList()
   // calculate the set of interfaces to add / remove beforehand
   PIPSocket::InterfaceTable interfacesToAdd;
   PIPSocket::InterfaceTable interfacesToRemove;
-  interfacesToAdd.DisallowDeleteObjects();
-  interfacesToRemove.DisallowDeleteObjects();
-  
-  PINDEX i;
+
   // look for interfaces to add that are in new list that are not in the old list
-  for (i = 0; i < newInterfaces.GetSize(); ++i) {
-    PIPSocket::InterfaceEntry & newEntry = newInterfaces[i];
+  for (const auto & newEntry : newInterfaces) {
     PIPSocket::Address addr = newEntry.GetAddress();
     if (addr.IsValid() && !addr.IsLoopback() && !IsInterfaceInList(newEntry, oldInterfaces))
-      interfacesToAdd.Append(&newEntry);
+      interfacesToAdd.push_back(newEntry);
   }
   // look for interfaces to remove that are in old list that are not in the new list
-  for (i = 0; i < oldInterfaces.GetSize(); ++i) {
-    PIPSocket::InterfaceEntry & oldEntry = oldInterfaces[i];
+  for (const auto & oldEntry : oldInterfaces) {
     PIPSocket::Address addr = oldEntry.GetAddress();
     if (addr.IsValid() && !addr.IsLoopback() && !IsInterfaceInList(oldEntry, newInterfaces))
-      interfacesToRemove.Append(&oldEntry);
+      interfacesToRemove.push_back(oldEntry);
   }
 
   PIPSocket::ClearNameCache();
@@ -289,11 +282,10 @@ PStringArray PInterfaceMonitor::GetInterfaces(bool includeLoopBack,
 
   PStringArray names;
 
-  names.SetSize(ifaces.GetSize());
+  names.SetSize(ifaces.size());
   PINDEX count = 0;
 
-  for (PINDEX i = 0; i < ifaces.GetSize(); ++i) {
-    PIPSocket::InterfaceEntry & entry = ifaces[i];
+  for (const auto & entry : ifaces) {
     if (entry.GetAddress().IsValid() && (includeLoopBack || !entry.GetAddress().IsLoopback()))
       names[count++] = MakeInterfaceDescription(entry);
   }
@@ -311,11 +303,9 @@ bool PInterfaceMonitor::IsValidBindingForDestination(const PIPSocket::Address & 
   
   if (m_interfaceFilter == NULL)
     return true;
-  
-  PIPSocket::InterfaceTable ifaces = m_interfaces;
-  ifaces = m_interfaceFilter->FilterInterfaces(destination, ifaces);
-  for (PINDEX i = 0; i < ifaces.GetSize(); i++) {
-    if (ifaces[i].GetAddress() == binding)
+
+  for (const auto & entry : m_interfaceFilter->FilterInterfaces(destination, m_interfaces)) {
+    if (entry.GetAddress() == binding)
       return true;
   }
   return false;
@@ -331,8 +321,7 @@ bool PInterfaceMonitor::GetInterfaceInfo(const PString & iface, PIPSocket::Inter
 
   PWaitAndSignal guard(m_interfacesMutex);
 
-  for (PINDEX i = 0; i < m_interfaces.GetSize(); ++i) {
-    PIPSocket::InterfaceEntry & entry = m_interfaces[i];
+  for (const auto & entry : m_interfaces) {
     if (InterfaceMatches(addr, name, entry)) {
       info = entry;
       return true;
@@ -399,10 +388,10 @@ void PInterfaceMonitor::OnInterfacesChanged(const PIPSocket::InterfaceTable & ad
   PWaitAndSignal guard(m_notifiersMutex);
 
   for (Notifiers::iterator it = m_notifiers.begin(); it != m_notifiers.end(); ++it) {
-    for (PINDEX i = 0; i < addedInterfaces.GetSize(); i++)
-      it->second(*this, InterfaceChange(addedInterfaces[i], true));
-    for (PINDEX i = 0; i < removedInterfaces.GetSize(); i++)
-      it->second(*this, InterfaceChange(removedInterfaces[i], false));
+    for (const auto & entry : addedInterfaces)
+      it->second(*this, InterfaceChange(entry, true));
+    for (const auto & entry : removedInterfaces)
+      it->second(*this, InterfaceChange(entry, false));
   }
 }
 

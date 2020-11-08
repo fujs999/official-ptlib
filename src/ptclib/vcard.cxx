@@ -208,21 +208,20 @@ void PvCard::ParamValues::PrintOn(ostream & strm) const
 
 void PvCard::ParamValues::ReadFrom(istream & strm)
 {
-  PvCard::ParamValue * paramValue = new PvCard::ParamValue;
-  strm >> *paramValue;
+  PvCard::ParamValue paramValue;
+  strm >> paramValue;
   while (strm.peek() == ',') {
     strm.ignore();
-    Append(paramValue);
-    paramValue = new PvCard::ParamValue;
-    strm >> *paramValue;
+    emplace_back(std::move(paramValue));
+    strm >> paramValue;
   }
-  Append(paramValue);
+  emplace_back(std::move(paramValue));
 }
 
 
 void PvCard::TypeValues::PrintOn(ostream & strm) const
 {
-  if (IsEmpty())
+  if (empty())
     return;
 
   strm << Semicolon << Token("TYPE") << Separator('=');
@@ -339,15 +338,14 @@ void PvCard::TextValues::PrintOn(ostream & strm) const
 
 void PvCard::TextValues::ReadFrom(istream & strm)
 {
-  PvCard::TextValue * textValue = new PvCard::TextValue;
-  strm >> *textValue;
+  PvCard::TextValue textValue;
+  strm >> textValue;
   while (strm.peek() == ',') {
     strm.ignore();
-    Append(textValue);
-    textValue = new PvCard::TextValue;
-    strm >> *textValue;
+    emplace_back(std::move(textValue));
+    strm >> textValue;
   }
-  Append(textValue);
+  emplace_back(std::move(textValue));
 }
 
 
@@ -390,11 +388,11 @@ void PvCard::InlineValue::ReadFrom(istream & strm)
   }
 
   ParamMap::const_iterator it = m_params->find("VALUE");
-  if (it != m_params->end() && it->second.GetValuesIndex(ParamValue("uri")) != P_MAX_INDEX)
+  if (it != m_params->end() && std::find(it->second.begin(), it->second.end(), "uri") != it->second.end())
     URIValue::ReadFrom(strm);
   else {
     it = m_params->find("ENCODING");
-    if (it != m_params->end() && it->second.GetValuesIndex(ParamValue("b")) != P_MAX_INDEX) {
+    if (it != m_params->end() && std::find(it->second.begin(), it->second.end(), "b") != it->second.end()) {
       PvCard::TextValue data;
       strm >> data;
       Parse("data:," + data);
@@ -402,7 +400,7 @@ void PvCard::InlineValue::ReadFrom(istream & strm)
   }
 
   it = m_params->find("TYPE");
-  if (it != m_params->end() && !it->second.IsEmpty())
+  if (it != m_params->end() && !it->second.empty())
     SetParamVar("type", "image/" + it->second[0]);
 
   m_params = NULL;
@@ -485,7 +483,7 @@ void PvCard::PrintOn(ostream & strm) const
 
       if (!m_familyName.IsEmpty() ||
           !m_givenName.IsEmpty() ||
-          !m_additionalNames.IsEmpty() ||
+          !m_additionalNames.empty() ||
           !m_honorificPrefixes.IsEmpty() ||
           !m_honorificSuffixes.IsEmpty())
         strm << Token("N") << Colon
@@ -495,7 +493,7 @@ void PvCard::PrintOn(ostream & strm) const
              << m_honorificPrefixes << Semicolon
              << m_honorificSuffixes << EndOfLine;
 
-      if (!m_nickNames.IsEmpty())
+      if (!m_nickNames.empty())
         strm << Token("NICKNAME") << Colon << m_nickNames << EndOfLine;
       if (!m_sortString.IsEmpty())
         strm << Token("SORT-STRING") << Colon << m_sortString << EndOfLine;
@@ -523,7 +521,7 @@ void PvCard::PrintOn(ostream & strm) const
         strm << Token("ORG") << Colon << m_organisationName << Semicolon << m_organisationUnit << EndOfLine;
       if (!m_mailer.IsEmpty())
         strm << Token("MAILER") << Colon << m_mailer << EndOfLine;
-      if (!m_categories.IsEmpty())
+      if (!m_categories.empty())
         strm << Token("CATEGORIES") << Colon << m_categories << EndOfLine;
       if (!m_note.IsEmpty())
         strm << Token("NOTE") << Colon << m_note << EndOfLine;
@@ -672,7 +670,7 @@ void PvCard::ReadFrom(istream & strm)
       if (strm.fail())
         return;
       addr.SetTypes(info.m_parameters);
-      m_addresses.Append(new Address(addr));
+      m_addresses.emplace_back(std::move(addr));
     }
     else  if (name == "LABEL") {
       Address label(true);
@@ -680,7 +678,7 @@ void PvCard::ReadFrom(istream & strm)
       if (strm.fail())
         return;
       label.SetTypes(info.m_parameters);
-      m_labels.Append(new Address(label));
+      m_labels.emplace_back(std::move(label));
     }
     else  if (name == "TEL") {
       Telephone tel;
@@ -688,7 +686,7 @@ void PvCard::ReadFrom(istream & strm)
       if (strm.fail())
         return;
       tel.SetTypes(info.m_parameters);
-      m_telephoneNumbers.Append(new Telephone(tel));
+      m_telephoneNumbers.push_back(tel);
     }
     else  if (name == "EMAIL") {
       EMail email;
@@ -696,7 +694,7 @@ void PvCard::ReadFrom(istream & strm)
       if (strm.fail())
         return;
       email.SetTypes(info.m_parameters);
-      m_emailAddresses.Append(new EMail(email));
+      m_emailAddresses.push_back(email);
     }
     else if (name == "END") {
       strm >> token;

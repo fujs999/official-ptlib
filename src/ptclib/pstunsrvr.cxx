@@ -63,20 +63,19 @@ bool PSTUNServer::Open(uint16_t port)
     return false;
   }
 
-  PINDEX i;
   std::vector<PIPSocket::Address> interfaceAddresses;
 
   // find interfaces
-  for (i = 0; i < interfaces.GetSize(); i++) {
-    if (!interfaces[i].GetAddress().IsLoopback()
+  for (const auto & it : interfaces) {
+    if (!it.GetAddress().IsLoopback()
 #if P_HAS_IPV6
-        && !interfaces[i].GetAddress().IsLinkLocal()
+        && !it.GetAddress().IsLinkLocal()
 #endif
 #ifndef _DEBUG
-        && !interfaces[i].GetAddress().IsPrivate()
+        && !it.GetAddress().IsPrivate()
 #endif
         ) {
-      interfaceAddresses.push_back(interfaces[i].GetAddress());
+      interfaceAddresses.push_back(it.GetAddress());
     }
   }
 

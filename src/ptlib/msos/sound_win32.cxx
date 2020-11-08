@@ -1014,7 +1014,7 @@ bool PSoundChannelWin32::Close()
 
 bool PSoundChannelWin32::SetBuffers(PINDEX size, PINDEX count)
 {
-  if (count == buffers.GetSize() && size == buffers[0].GetSize())
+  if (count == buffers.size() && size == buffers[0].size())
       return true;
 
   Abort();
@@ -1027,17 +1027,7 @@ bool PSoundChannelWin32::SetBuffers(PINDEX size, PINDEX count)
 
   PWaitAndSignal mutex(bufferMutex);
 
-  if (!buffers.SetSize(count))
-    ok = false;
-  else {
-    for (PINDEX i = 0; i < count; i++) {
-      if (buffers.GetAt(i) == NULL)
-        buffers.SetAt(i, new PWaveBuffer(size));
-      if (!buffers[i].SetSize(size))
-        ok = false;
-    }
-  }
-
+  buffers.resize(count, PWaveBuffer(size));
   bufferByteOffset = P_MAX_INDEX;
   bufferIndex = 0;
 
@@ -1049,7 +1039,7 @@ bool PSoundChannelWin32::GetBuffers(PINDEX & size, PINDEX & count)
 {
   PWaitAndSignal mutex(bufferMutex);
 
-  count = buffers.GetSize();
+  count = buffers.size();
 
   if (count == 0)
     size = 0;
@@ -1133,7 +1123,7 @@ bool PSoundChannelWin32::Write(const void * data, PINDEX size)
     if ((osError = waveOutWrite(hWaveOut, &buffer.header, sizeof(WAVEHDR))) != MMSYSERR_NOERROR)
       break;
 
-    bufferIndex = (bufferIndex+1)%buffers.GetSize();
+    bufferIndex = (bufferIndex+1)%buffers.size();
     written += count;
     size -= count;
     ptr += count;
@@ -1174,7 +1164,7 @@ bool PSoundChannelWin32::PlaySound(const PSound & sound, bool wait)
 
     // To avoid lots of copying of sound data, we fake the PSound buffer into
     // the internal buffers and play directly from the PSound object.
-    buffers.SetSize(1);
+    buffers.resize(1);
     PWaveBuffer & buffer = buffers[0];
     buffer = sound;
 
@@ -1203,8 +1193,8 @@ bool PSoundChannelWin32::HasPlayCompleted()
 {
   PWaitAndSignal mutex(bufferMutex);
 
-  for (PINDEX i = 0; i < buffers.GetSize(); i++) {
-    if ((buffers[i].header.dwFlags&WHDR_DONE) == 0)
+  for (auto & it : buffers) {
+    if ((it.header.dwFlags&WHDR_DONE) == 0)
       return false;
   }
 
@@ -1234,8 +1224,7 @@ bool PSoundChannelWin32::StartRecording()
   uint32_t osError;
 
   // Start the first read, queue all the buffers
-  for (PINDEX i = 0; i < buffers.GetSize(); i++) {
-    PWaveBuffer & buffer = buffers[i];
+  for (auto & buffer : buffers) {
     if ((osError = buffer.Prepare(hWaveIn)) != MMSYSERR_NOERROR)
       return false;
     if ((osError = waveInAddBuffer(hWaveIn, &buffer.header, sizeof(WAVEHDR))) != MMSYSERR_NOERROR)
@@ -1283,7 +1272,7 @@ bool PSoundChannelWin32::Read(void * data, PINDEX size)
     if ((osError = waveInAddBuffer(hWaveIn, &buffer.header, sizeof(WAVEHDR))) != MMSYSERR_NOERROR)
       return SetErrorValues(Miscellaneous, osError|PWIN32ErrorFlag, LastReadError);
 
-    bufferIndex = (bufferIndex+1)%buffers.GetSize();
+    bufferIndex = (bufferIndex+1)%buffers.size();
     bufferByteOffset = 0;
   }
 
@@ -1302,22 +1291,21 @@ bool PSoundChannelWin32::RecordSound(PSound & sound)
 
   PWaitAndSignal mutex(bufferMutex);
 
-  if (buffers.GetSize() == 1 &&
+  if (buffers.size() == 1 &&
           (PINDEX)buffers[0].header.dwBytesRecorded == buffers[0].GetSize())
     sound = buffers[0];
   else {
     PINDEX totalSize = 0;
-    PINDEX i;
-    for (i = 0; i < buffers.GetSize(); i++)
-      totalSize += buffers[i].header.dwBytesRecorded;
+    for (auto & it : buffers)
+      totalSize += it.header.dwBytesRecorded;
 
     if (!sound.SetSize(totalSize))
       return SetErrorValues(NoMemory, ENOMEM, LastReadError);
 
     uint8_t * ptr = sound.GetPointer();
-    for (i = 0; i < buffers.GetSize(); i++) {
-      PINDEX sz = buffers[i].header.dwBytesRecorded;
-      memcpy(ptr, buffers[i], sz);
+    for (auto & it : buffers) {
+      PINDEX sz = it.header.dwBytesRecorded;
+      memcpy(ptr, it, sz);
       ptr += sz;
     }
   }
@@ -1334,16 +1322,15 @@ bool PSoundChannelWin32::RecordFile(const PFilePath & filename)
   PWaitAndSignal mutex(bufferMutex);
 
   PINDEX dataSize = 0;
-  PINDEX i;
-  for (i = 0; i < buffers.GetSize(); i++)
-    dataSize += buffers[i].header.dwBytesRecorded;
+  for (auto & it : buffers)
+    dataSize += it.header.dwBytesRecorded;
 
   PMultiMediaFile mmio;
   if (!mmio.CreateWaveFile(filename, waveFormat, dataSize))
     return SetErrorValues(Miscellaneous, mmio.GetLastError()|PWIN32ErrorFlag, LastReadError);
 
-  for (i = 0; i < buffers.GetSize(); i++) {
-    if (!mmio.Write(buffers[i], buffers[i].header.dwBytesRecorded))
+  for (auto & it : buffers) {
+    if (!mmio.Write(it, it.header.dwBytesRecorded))
       return SetErrorValues(Miscellaneous, mmio.GetLastError()|PWIN32ErrorFlag, LastReadError);
   }
 
@@ -1364,9 +1351,9 @@ bool PSoundChannelWin32::AreAllRecordBuffersFull()
 {
   PWaitAndSignal mutex(bufferMutex);
 
-  for (PINDEX i = 0; i < buffers.GetSize(); i++) {
-    if ((buffers[i].header.dwFlags&WHDR_DONE) == 0 ||
-         buffers[i].header.dwBytesRecorded    == 0)
+  for (auto & it : buffers) {
+    if ((it.header.dwFlags&WHDR_DONE) == 0 ||
+         it.header.dwBytesRecorded    == 0)
       return false;
   }
 
@@ -1434,13 +1421,13 @@ bool PSoundChannelWin32::Abort()
     PWaitAndSignal mutex(bufferMutex);
 
     if (hWaveOut != NULL || hWaveIn != NULL) {
-      for (PINDEX i = 0; i < buffers.GetSize(); i++) {
+      for (auto & it : buffers) {
         do {
           if (hWaveOut != NULL)
             waveOutReset(hWaveOut);
           if (hWaveIn != NULL)
             waveInReset(hWaveIn);
-        } while (buffers[i].Release() == WAVERR_STILLPLAYING);
+        } while (it.Release() == WAVERR_STILLPLAYING);
       }
     }
 

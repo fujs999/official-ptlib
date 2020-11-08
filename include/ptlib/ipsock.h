@@ -625,7 +625,7 @@ class PIPSocket : public PSocket
       PCLASSINFO(RouteEntry, PObject);
       public:
         /// Create a route table entry from an IP address.
-        RouteEntry(const Address & addr) : network(addr) { }
+        RouteEntry(const Address & addr = Address(0)) : network(addr) { }
 
         /// Get the network address associated with the route table entry.
         Address GetNetwork() const { return network; }
@@ -655,7 +655,7 @@ class PIPSocket : public PSocket
       friend class PIPSocket;
     };
 
-    typedef PArray<RouteEntry> RouteTable;
+    typedef PVector<RouteEntry> RouteTable;
 
     /**Get the systems route table.
 
@@ -739,7 +739,7 @@ class PIPSocket : public PSocket
       friend class PIPSocket;
     };
 
-    typedef PArray<InterfaceEntry> InterfaceTable;
+    typedef PVector<InterfaceEntry> InterfaceTable;
 
     /**Get a list of all interfaces.
        @return

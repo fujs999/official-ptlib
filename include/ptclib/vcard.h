@@ -109,7 +109,7 @@ class PvCard : public PObject
         virtual void ReadFrom(istream & strm);
     };
     /// Comma separated list of param-value's
-    class ParamValues : public PArray<ParamValue>
+    class ParamValues : public PVector<ParamValue>
     {
       public:
         virtual void PrintOn(ostream & strm) const;
@@ -137,7 +137,7 @@ class PvCard : public PObject
     };
 
     /// Comma separated list of text-value's
-    class TextValues : public PArray<TextValue>
+    class TextValues : public PVector<TextValue>
     {
       public:
         virtual void PrintOn(ostream & strm) const;
@@ -205,7 +205,7 @@ class PvCard : public PObject
 
     struct MultiValue : public PObject {
       MultiValue() { }
-      MultiValue(const PString & type) { m_types.Append(new ParamValue(type)); }
+      MultiValue(const PString & type) { m_types.emplace_back(std::move(type)); }
 
       TypeValues m_types;     // e.g. "home", "work", "pref" etc
       void SetTypes(const ParamMap & params);
@@ -225,8 +225,8 @@ class PvCard : public PObject
       TextValue   m_postCode;
       TextValue   m_country;
     };
-    PArray<Address> m_addresses;
-    PArray<Address> m_labels;
+    PVector<Address> m_addresses;
+    PVector<Address> m_labels;
 
     struct Telephone : public MultiValue {
       Telephone() { }
@@ -238,7 +238,7 @@ class PvCard : public PObject
 
       TextValue m_number;
     };
-    PArray<Telephone> m_telephoneNumbers;
+    PVector<Telephone> m_telephoneNumbers;
 
     struct EMail : public MultiValue {
       EMail() { }
@@ -249,7 +249,7 @@ class PvCard : public PObject
       virtual void PrintOn(ostream & strm) const;
       TextValue   m_address;
     };
-    PArray<EMail> m_emailAddresses;
+    PVector<EMail> m_emailAddresses;
 
     struct ExtendedType {
       ParamMap  m_parameters;

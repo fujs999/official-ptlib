@@ -100,13 +100,14 @@ class PMultiMediaFile
 
 class PWaveBuffer : public PBYTEArray
 {
-  PCLASSINFO(PWaveBuffer, PBYTEArray);
-  private:
+    PCLASSINFO(PWaveBuffer, PBYTEArray);
+  public:
     PWaveBuffer(PINDEX sz = 0);
     ~PWaveBuffer();
 
     PWaveBuffer & operator=(const PSound & sound);
 
+  private:
     uint32_t Prepare(HWAVEOUT hWaveOut, PINDEX & count);
     uint32_t Prepare(HWAVEIN hWaveIn);
     uint32_t Release();
@@ -120,7 +121,7 @@ class PWaveBuffer : public PBYTEArray
   friend class PSoundChannelWin32;
 };
 
-typedef PArray<PWaveBuffer> PWaveBufferArray;
+typedef std::vector<PWaveBuffer> PWaveBufferArray;
 
 
 class PSoundChannelWin32: public PSoundChannel

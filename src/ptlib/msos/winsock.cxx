@@ -1167,11 +1167,12 @@ bool PIPSocket::GetRouteTable(RouteTable & table)
 {
 #if P_HAS_IPV6
   PIPRouteTableIPv6 routes;
-  if (!table.SetSize(routes->NumEntries) || table.IsEmpty())
+  table.resize(routes->NumEntries);
+  if (table.empty())
     return false;
 
   for (ULONG i = 0; i < routes->NumEntries; ++i) {
-    RouteEntry * entry = new RouteEntry(FromSOCKADDR_INET(routes->Table[i].DestinationPrefix.Prefix));
+    RouteEntry entry(FromSOCKADDR_INET(routes->Table[i].DestinationPrefix.Prefix));
     uint8_t mask[128/8];
     PINDEX offset = routes->Table[i].DestinationPrefix.PrefixLength/8;
     memset(mask, 0xff, offset);
@@ -1179,15 +1180,15 @@ bool PIPSocket::GetRouteTable(RouteTable & table)
       memset(mask+offset, 0, sizeof(mask)-offset);
       mask[offset] = (uint8_t)(0xff << (8 - routes->Table[i].DestinationPrefix.PrefixLength%8));
     }
-    entry->net_mask = Address(entry->network.GetSize(), mask);
-    entry->destination = FromSOCKADDR_INET(routes->Table[i].NextHop);
-    entry->metric = routes->Table[i].Metric;
+    entry.net_mask = Address(entry.network.GetSize(), mask);
+    entry.destination = FromSOCKADDR_INET(routes->Table[i].NextHop);
+    entry.metric = routes->Table[i].Metric;
 
     MIB_IFROW info;
     info.dwIndex = routes->Table[i].InterfaceIndex;
     if (GetIfEntry(&info) == NO_ERROR)
-      entry->interfaceName = PString((const char *)info.bDescr, info.dwDescrLen);
-    table.SetAt(i, entry);
+      entry.interfaceName = PString((const char *)info.bDescr, info.dwDescrLen);
+    table[i] = std::move(entry);
   }
 #else
   PIPRouteTable routes;
@@ -1341,10 +1342,7 @@ bool PIPSocket::GetInterfaceTable(InterfaceTable & table, bool includeDown)
 {
   PIPInterfaceAddressTable byAddress;
 
-  if (!table.SetSize(0))
-    return false;
-
-  PINDEX count = 0; // address count
+  table.clear();
 
 #if P_HAS_IPV6 || _WIN32_WINNT_WINXP
   PIPAdaptersAddressTable interfaces;
@@ -1382,7 +1380,7 @@ bool PIPSocket::GetInterfaceTable(InterfaceTable & table, bool includeDown)
           }
         } // find mask for the address
 
-        table.SetAt(count++, new InterfaceEntry(adapter->Description, addr, mask, macAddr));
+        table.emplace_back(adapter->Description, addr, mask, macAddr);
       } // ipv4
 #if P_HAS_IPV6
       else if (unicast->Address.lpSockaddr->sa_family == AF_INET6) {
@@ -1390,7 +1388,7 @@ bool PIPSocket::GetInterfaceTable(InterfaceTable & table, bool includeDown)
         PIPSocket::Address addr(sock6->sin6_addr, sock6->sin6_scope_id);
         if (addr.IsAny() || addr.IsBroadcast())
           addr = GetInvalidAddress();
-        table.SetAt(count++, new InterfaceEntry(adapter->Description, addr, 0L, macAddr));
+        table.emplace_back(adapter->Description, addr, 0L, macAddr);
       }
 #endif
     }
@@ -1419,7 +1417,7 @@ bool PIPSocket::GetInterfaceTable(InterfaceTable & table, bool includeDown)
 
 #endif
 
-  return !table.IsEmpty();
+  return !table.empty();
 }
 
 

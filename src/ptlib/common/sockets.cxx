@@ -1003,8 +1003,8 @@ bool PIPSocket::IsLocalHost(const PString & hostname)
   if (!GetInterfaceTable(table, true))
     return false;
 
-  for (PINDEX i = 0; i < table.GetSize(); ++i) {
-    if (table[i].GetAddress() == addr)
+  for (const auto & entry : table) {
+    if (entry.GetAddress() == addr)
       return true;
   }
 
@@ -1847,9 +1847,9 @@ bool PIPSocket::Address::FromString(const PString & str)
   unsigned interfaceVersion = GetVersion();
   if (interfaceVersion == 0)
     interfaceVersion = 4;
-  for (PINDEX i = 0; i < interfaceTable.GetSize(); i++) {
-    if (interfaceTable[i].GetName().NumCompare(iface) == EqualTo) {
-      Address possibleAddress = interfaceTable[i].GetAddress();
+  for (const auto & it : interfaceTable) {
+    if (it.GetName().NumCompare(iface) == EqualTo) {
+      Address possibleAddress = it.GetAddress();
       if (interfaceVersion == possibleAddress.GetVersion()) {
         *this = possibleAddress;
         return true;
@@ -2098,9 +2098,9 @@ PIPSocket::Address PIPSocket::GetInterfaceAddress(const PString & ifName, unsign
 {
   PIPSocket::InterfaceTable interfaceTable;
   if (PIPSocket::GetInterfaceTable(interfaceTable)) {
-    for (PINDEX i = 0; i < interfaceTable.GetSize(); i++) {
-      if (interfaceTable[i].GetName() == ifName && interfaceTable[i].GetAddress().GetVersion() == version)
-        return interfaceTable[i].GetAddress();
+    for (const auto & it : interfaceTable) {
+      if (it.GetName() == ifName && it.GetAddress().GetVersion() == version)
+        return it.GetAddress();
     }
   }
   return GetInvalidAddress();
@@ -2111,9 +2111,9 @@ PString PIPSocket::GetInterfaceMACAddress(const char * ifName)
 {
   PIPSocket::InterfaceTable interfaceTable;
   if (PIPSocket::GetInterfaceTable(interfaceTable)) {
-    for (PINDEX i = 0; i < interfaceTable.GetSize(); i++) {
-      if ((ifName == NULL || interfaceTable[i].GetName() == ifName)) {
-        PString macAddrStr = interfaceTable[i].GetMACAddress();
+    for (const auto & it : interfaceTable) {
+      if ((ifName == NULL || it.GetName() == ifName)) {
+        PString macAddrStr = it.GetMACAddress();
         if (!macAddrStr.IsEmpty() && macAddrStr != "44-45-53-54-00-00") /* not Win32 PPP device */
           return macAddrStr;
       }
@@ -2127,8 +2127,8 @@ PIPSocket::Address PIPSocket::GetNetworkInterface(unsigned version)
 {
   PIPSocket::InterfaceTable interfaceTable;
   if (PIPSocket::GetInterfaceTable(interfaceTable)) {
-    for (PINDEX i = 0; i < interfaceTable.GetSize(); ++i) {
-      PIPSocket::Address localAddr = interfaceTable[i].GetAddress();
+    for (const auto & it : interfaceTable) {
+      PIPSocket::Address localAddr = it.GetAddress();
       if (localAddr.GetVersion() == version && !localAddr.IsLoopback() && !localAddr.IsPrivate())
         return localAddr;
     }

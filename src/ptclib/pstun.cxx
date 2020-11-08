@@ -1329,8 +1329,8 @@ void PSTUNClient::InternalUpdate(bool externalAddressOnly)
   PList<PSTUNUDPSocket> sockets;
   PIPSocket::InterfaceTable interfaces;
   if (PIPSocket::GetInterfaceTable(interfaces)) {
-    for (PINDEX i =0; i < interfaces.GetSize(); i++) {
-      PIPSocket::Address binding = interfaces[i].GetAddress();
+    for (const auto & it : interfaces) {
+      PIPSocket::Address binding = it.GetAddress();
       if (!binding.IsLoopback() && (binding.GetVersion() == 4)) {
         PSTUNUDPSocket * socket = new PSTUNUDPSocket(eComponent_Unknown);
         if (m_singlePortRange.Listen(*socket, binding))
@@ -1339,7 +1339,7 @@ void PSTUNClient::InternalUpdate(bool externalAddressOnly)
           delete socket;
       }
     }
-    if (interfaces.IsEmpty()) {
+    if (interfaces.empty()) {
       PTRACE(1, "No interfaces available to find STUN server.");
       return;
     }

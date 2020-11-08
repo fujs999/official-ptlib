@@ -600,6 +600,33 @@ class PCollection : public PContainer
 };
 
 
+///////////////////////////////////////////////////////////////////////////////
+// Helper template functions
+
+template <typename T> class PPrintValuesWrapper
+{
+  const T & m_container;
+public:
+  PPrintValuesWrapper(const T & container) : m_container(container) { }
+
+  friend std::ostream& operator<<(std::ostream& strm, const PPrintValuesWrapper & wrap)
+  {
+    auto fill = strm.fill();
+    bool first = true;
+    for (const auto & it : wrap.m_container) {
+      if (fill != ' ' && std::exchange(first, true))
+        strm << fill;
+      strm << it;
+    }
+    return strm;
+  }
+};
+
+template <typename T> PPrintValuesWrapper<T> PPrintValues(const T & container)
+{
+  return PPrintValuesWrapper<T>{container};
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // The abstract array class
