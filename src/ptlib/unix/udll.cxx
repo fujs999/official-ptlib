@@ -46,11 +46,20 @@ PDynaLink::PDynaLink()
 {
 }
 
+
 PDynaLink::PDynaLink(const PString & names)
   : m_dll(NULL)
 {
   Open(names);
 }
+
+
+PDynaLink::PDynaLink(PDynaLink&& other)
+  : m_dll(std::exchange(other.m_dll, nullptr))
+{
+
+}
+
 
 PDynaLink::~PDynaLink()
 {

@@ -60,6 +60,12 @@ class PDynaLink : public PObject
       const PString & name    ///< Name of the dynamically loadable module.
     );
 
+    // std::move ctor
+    PDynaLink(PDynaLink && other);
+
+    PDynaLink(const PDynaLink &) = delete;
+    PDynaLink& operator=(const PDynaLink &) = delete;
+
     /**Destroy the dyna-link, freeing the module.
      */
     ~PDynaLink();

@@ -187,14 +187,14 @@ void PPluginManager::LoadDirectory(const PDirectory & directory)
 
 bool PPluginManager::LoadPlugin(const PString & fileName)
 {
-  PDynaLink *dll = new PDynaLink(fileName);
-  if (!dll->IsLoaded()) {
-    PTRACE(4, "PLUGIN\tFailed to open " << fileName << " error: " << dll->GetLastError());
+  PDynaLink dll(fileName);
+  if (!dll.IsLoaded()) {
+    PTRACE(4, "PLUGIN\tFailed to open " << fileName << " error: " << dll.GetLastError());
   }
 
   else {
     PDynaLink::Function fn;
-    if (!dll->GetFunction("PWLibPlugin_GetAPIVersion", fn))
+    if (!dll.GetFunction("PWLibPlugin_GetAPIVersion", fn))
       PTRACE(2, "PLUGIN\t" << fileName << " is not a PWLib plugin");
 
     else {
@@ -205,7 +205,7 @@ bool PPluginManager::LoadPlugin(const PString & fileName)
         case 0 : // old-style service plugins, and old-style codec plugins
           {
             // call the register function (if present)
-            if (!dll->GetFunction("PWLibPlugin_TriggerRegister", fn)) 
+            if (!dll.GetFunction("PWLibPlugin_TriggerRegister", fn)) 
               PTRACE(2, "PLUGIN\t" << fileName << " has no registration-trigger function");
             else {
               void (*triggerRegister)(PPluginManager *) = (void (*)(PPluginManager *))fn;
@@ -216,13 +216,13 @@ bool PPluginManager::LoadPlugin(const PString & fileName)
           // fall through to new version
 
         case 1 : // factory style plugins
+          // call the notifier
+          CallNotifier(dll, LoadingPlugIn);
+
           // add the plugin to the list of plugins
           m_pluginsMutex.Wait();
-          m_plugins.Append(dll);
+          m_plugins.emplace_back(std::move(dll));
           m_pluginsMutex.Signal();
-
-          // call the notifier
-          CallNotifier(*dll, LoadingPlugIn);
           return true;
 
         default:
@@ -231,10 +231,6 @@ bool PPluginManager::LoadPlugin(const PString & fileName)
       }
     }
   }
-
-  // loading the plugin failed - return error
-  dll->Close();
-  delete dll;
 
   return false;
 }
@@ -422,8 +418,8 @@ void PPluginManager::OnShutdown()
 {
   PWaitAndSignal mutex(m_pluginsMutex);
 
-  for (PINDEX i = 0; i < m_plugins.GetSize(); i++)
-    CallNotifier(m_plugins[i], UnloadingPlugIn);
+  for (auto & it : m_plugins)
+    CallNotifier(it, UnloadingPlugIn);
 
   m_notifiersMutex.Wait();
   m_notifiers.RemoveAll();
@@ -431,7 +427,7 @@ void PPluginManager::OnShutdown()
 
   m_services.clear();
 
-  m_plugins.RemoveAll();
+  m_plugins.clear();
 }
 
 
@@ -443,8 +439,8 @@ void PPluginManager::AddNotifier(const PNotifier & notifyFunction, bool existing
 
   if (existing) {
     PWaitAndSignal mutex(m_pluginsMutex);
-    for (PINDEX i = 0; i < m_plugins.GetSize(); i++) 
-      CallNotifier(m_plugins[i], LoadingPlugIn);
+    for (auto & it : m_plugins)
+      CallNotifier(it, LoadingPlugIn);
   }
 }
 

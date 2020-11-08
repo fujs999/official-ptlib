@@ -156,8 +156,8 @@ class PPluginManager : public PObject
     PList<PDirectory> m_directories;
     PStringList       m_suffixes;
 
-    PDECLARE_MUTEX(   m_pluginsMutex);
-    PArray<PDynaLink> m_plugins;
+    PDECLARE_MUTEX(        m_pluginsMutex);
+    std::vector<PDynaLink> m_plugins;
 
     typedef std::multimap<PCaselessString, const PPluginServiceDescriptor *> ServiceMap;
     ServiceMap     m_services;

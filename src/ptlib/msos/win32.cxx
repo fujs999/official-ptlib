@@ -1493,14 +1493,21 @@ bool PWin32Handle::Duplicate(HANDLE h, uint32_t flags, uint32_t access)
 // PDynaLink
 
 PDynaLink::PDynaLink()
+  : m_hDLL(nullptr)
 {
-  m_hDLL = NULL;
 }
 
 
 PDynaLink::PDynaLink(const PString & name)
+  : m_hDLL(nullptr)
 {
   Open(name);
+}
+
+
+PDynaLink::PDynaLink(PDynaLink&& other)
+  : m_hDLL(std::exchange(other.m_hDLL, nullptr))
+{
 }
 
 
