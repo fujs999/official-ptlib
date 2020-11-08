@@ -35,17 +35,6 @@
 
 #define PTraceModule() "Socket"
 
-#ifdef P_VXWORKS
-// VxWorks variant of inet_ntoa() allocates INET_ADDR_LEN bytes via malloc
-// BUT DOES NOT FREE IT !!!  Use inet_ntoa_b() instead.
-#define INET_ADDR_LEN      18
-extern "C" void inet_ntoa_b(struct in_addr inetAddress, char *pString);
-#endif // P_VXWORKS
-
-#ifdef __NUCLEUS_PLUS__
-#include <ConfigurationClass.h>
-#endif
-
 
 #if !defined(P_MINGW) && !defined(P_CYGWIN)
   #if P_HAS_IPV6 || defined(AI_NUMERICHOST)
@@ -248,7 +237,7 @@ uint16_t PIPSocket::sockaddr_wrapper::GetPort() const
 }
 
 
-#if !defined(P_THREAD_SAFE_LIBC) || defined(__NUCLEUS_PLUS__)
+#if !defined(P_THREAD_SAFE_LIBC)
 #define REENTRANT_BUFFER_LEN 1024
 #endif
 
@@ -536,31 +525,12 @@ PIPCacheData * PHostByName::GetHost(const PString & name)
     int retry = 3;
     struct hostent * host_info;
 
-#ifdef P_AIX
-
-    struct hostent_data ht_data;
-    memset(&ht_data, 0, sizeof(ht_data));
-    struct hostent hostEnt;
-    do {
-      host_info = &hostEnt;
-      ::gethostbyname_r(name,
-                        host_info,
-                        &ht_data);
-      localErrNo = h_errno;
-    } while (localErrNo == TRY_AGAIN && --retry > 0);
-
-#elif defined(P_RTEMS) || defined(P_CYGWIN) || defined(P_MINGW)
+#if defined(P_CYGWIN) || defined(P_MINGW)
 
     host_info = ::gethostbyname(name);
     localErrNo = h_errno;
 
-#elif defined P_VXWORKS
-
-    struct hostent hostEnt;
-    host_info = Vx_gethostbyname((char *)name, &hostEnt);
-    localErrNo = h_errno;
-
-#elif defined P_LINUX || defined(P_GNU_HURD) || defined(P_ANDROID)
+#elif defined P_LINUX || defined(P_ANDROID)
 
     char buffer[REENTRANT_BUFFER_LEN];
     struct hostent hostEnt;
@@ -573,7 +543,7 @@ PIPCacheData * PHostByName::GetHost(const PString & name)
         localErrNo = NETDB_SUCCESS;
     } while (localErrNo == TRY_AGAIN && --retry > 0);
 
-#elif !defined(P_THREAD_SAFE_LIBC) || defined(__NUCLEUS_PLUS__)
+#elif !defined(P_THREAD_SAFE_LIBC)
 
     char buffer[REENTRANT_BUFFER_LEN];
     struct hostent hostEnt;
@@ -663,20 +633,7 @@ PIPCacheData * PHostByAddr::GetHost(const PIPSocket::Address & addr)
     int localErrNo = NETDB_SUCCESS;
     struct hostent * host_info;
 
-#ifdef P_AIX
-
-    struct hostent_data ht_data;
-    struct hostent hostEnt;
-    do {
-      host_info = &hostEnt;
-      ::gethostbyaddr_r((char *)addr.GetPointer(), addr.GetSize(),
-                        PF_INET, 
-                        host_info,
-                        &ht_data);
-      localErrNo = h_errno;
-    } while (localErrNo == TRY_AGAIN && --retry > 0);
-
-#elif defined P_RTEMS || defined P_CYGWIN || defined P_MINGW || defined P_ANDROID
+#if defined P_CYGWIN || defined P_MINGW || defined P_ANDROID
 
     // Mutex here is not perfect, but will be 100% provided application only
     // ever use PTLib do name lookups, no direct calls to gethostbyaddr()
@@ -685,12 +642,7 @@ PIPCacheData * PHostByAddr::GetHost(const PIPSocket::Address & addr)
     localErrNo = h_errno;
     mutex.Signal();
 
-#elif defined P_VXWORKS
-
-    struct hostent hostEnt;
-    host_info = Vx_gethostbyaddr(addr.GetPointer(), &hostEnt);
-
-#elif defined P_LINUX || defined(P_GNU_HURD) || defined(P_FREEBSD)
+#elif defined P_LINUX || defined(P_FREEBSD)
 
     char buffer[REENTRANT_BUFFER_LEN];
     struct hostent hostEnt;
@@ -703,7 +655,7 @@ PIPCacheData * PHostByAddr::GetHost(const PIPSocket::Address & addr)
                       &localErrNo);
     } while (localErrNo == TRY_AGAIN && --retry > 0);
 
-#elif !defined(P_THREAD_SAFE_LIBC) || defined(__NUCLEUS_PLUS__) || defined (_WIN32)
+#elif !defined(P_THREAD_SAFE_LIBC) || defined (_WIN32)
 
 #if defined(P_GETHOSTBYNAME_R)
 
@@ -805,23 +757,16 @@ bool PSocket::Shutdown(ShutdownValue value)
 
 uint16_t PSocket::GetProtocolByName(const PString & name)
 {
-#if !defined(__NUCLEUS_PLUS__) && !defined(P_VXWORKS)
   struct protoent * ent = getprotobyname(name);
-  if (ent != NULL)
-    return ent->p_proto;
-#endif
-
-  return 0;
+  return ent != NULL ? ent->p_proto : 0;
 }
 
 
 PString PSocket::GetNameByProtocol(uint16_t proto)
 {
-#if !defined(__NUCLEUS_PLUS__) && !defined(P_VXWORKS)
   struct protoent * ent = getprotobynumber(proto);
   if (ent != NULL)
     return ent->p_name;
-#endif
 
   return psprintf("%u", proto);
 }
@@ -841,13 +786,6 @@ uint16_t PSocket::GetPortByService(const char * protocol, const PString & servic
   if (service.FindSpan("0123456789") == P_MAX_INDEX)
     return (uint16_t)service.AsUnsigned();
 
-#if defined( __NUCLEUS_PLUS__ )
-  PAssertAlways("PSocket::GetPortByService: problem as no ::getservbyname in Nucleus NET");
-  return 0;
-#elif defined(P_VXWORKS)
-  PAssertAlways("PSocket::GetPortByService: problem as no ::getservbyname in VxWorks");
-  return 0;
-#else
   PINDEX space = service.FindOneOf(" \t\r\n");
   struct servent * serv = ::getservbyname(service(0, space-1), protocol);
   if (serv != NULL)
@@ -865,7 +803,6 @@ uint16_t PSocket::GetPortByService(const char * protocol, const PString & servic
     return 0;
 
   return (uint16_t)portNum;
-#endif
 }
 
 
@@ -877,13 +814,8 @@ PString PSocket::GetServiceByPort(uint16_t port) const
 
 PString PSocket::GetServiceByPort(const char * protocol, uint16_t port)
 {
-#if !defined(__NUCLEUS_PLUS__) && !defined(P_VXWORKS)
   struct servent * serv = ::getservbyport(htons(port), protocol);
-  if (serv != NULL)
-    return PString(serv->s_name);
-  else
-#endif
-    return PString(PString::Unsigned, port);
+  return serv != NULL ? PString(serv->s_name) : PString(PString::Unsigned, port);
 }
 
 
@@ -1713,24 +1645,6 @@ PIPSocket::Address::Address(const int ai_family, const int ai_addrlen, struct so
 }
 
 
-#ifdef __NUCLEUS_NET__
-PIPSocket::Address::Address(const struct id_struct & addr)
-{
-  operator=(addr);
-}
-
-
-PIPSocket::Address & PIPSocket::Address::operator=(const struct id_struct & addr)
-{
-  s_addr = (((unsigned long)addr.is_ip_addrs[0])<<24) +
-           (((unsigned long)addr.is_ip_addrs[1])<<16) +
-           (((unsigned long)addr.is_ip_addrs[2])<<8) +
-           (((unsigned long)addr.is_ip_addrs[3]));
-  return *this;
-}
-#endif
- 
-
 PIPSocket::Address & PIPSocket::Address::operator=(const in_addr & addr)
 {
   m_version = 4;
@@ -1804,11 +1718,6 @@ PString PIPSocket::Address::AsString(bool IPV6_PARAM(bracketIPv6),
   if (!IsValid())
     return InvalidIP;
 
-#if defined(P_VXWORKS)
-  char ipStorage[INET_ADDR_LEN];
-  inet_ntoa_b(v.four, ipStorage);
-  return ipStorage;    
-#else
 # if defined(P_HAS_IPV6)
   if (m_version == 6) {
     if (IsAny())
@@ -1853,7 +1762,6 @@ PString PIPSocket::Address::AsString(bool IPV6_PARAM(bracketIPv6),
   PWaitAndSignal m(x);
   return inet_ntoa(m_v.m_four);
 #endif // P_HAS_INET_NTOP
-#endif // P_VXWORKS
 }
 
 
@@ -2186,26 +2094,6 @@ void PIPSocket::RouteEntry::PrintOn(ostream & strm) const
 }
 
 
-#ifdef __NUCLEUS_NET__
-bool PIPSocket::GetInterfaceTable(InterfaceTable & table)
-{
-    InterfaceEntry *IE;
-    list<IPInterface>::iterator i;
-    for(i=Route4Configuration->Getm_IPInterfaceList().begin();
-            i!=Route4Configuration->Getm_IPInterfaceList().end();
-            i++)
-    {
-        char ma[6];
-        for(int j=0; j<6; j++) ma[j]=(*i).Getm_macaddr(j);
-        IE = new InterfaceEntry((*i).Getm_name().c_str(), (*i).Getm_ipaddr(), ma );
-        if(!IE) return false;
-        table.Append(IE);
-    }
-    return true;
-}
-#endif
-
-
 PIPSocket::Address PIPSocket::GetInterfaceAddress(const PString & ifName, unsigned version)
 {
   PIPSocket::InterfaceTable interfaceTable;
@@ -2370,15 +2258,7 @@ bool PTCPSocket::Accept(PSocket & socket)
 
 bool PTCPSocket::WriteOutOfBand(void const * buf, PINDEX len)
 {
-#ifdef __NUCLEUS_NET__
-  PAssertAlways("WriteOutOfBand unavailable on Nucleus Plus");
-  //int count = NU_Send(os_handle, (char *)buf, len, 0);
-  int count = ::send(os_handle, (const char *)buf, len, 0);
-#elif defined(P_VXWORKS)
-  int count = ::send(os_handle, (char *)buf, len, MSG_OOB);
-#else
   int count = ::send(os_handle, (const char *)buf, len, MSG_OOB);
-#endif
   if (count < 0) {
     SetLastWriteCount(0);
     return ConvertOSError(count, LastWriteError);

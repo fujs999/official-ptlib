@@ -243,11 +243,7 @@ PVideoInputDevice_V4L2::~PVideoInputDevice_V4L2()
 
 static struct {
   const char * colourFormat;
-#ifdef SOLARIS
-  uint32_t code;
-#else
   __u32 code;
-#endif
 } colourFormatTab[] = {
     { "Grey", V4L2_PIX_FMT_GREY },   //Entries in this table correspond
     { "RGB32", V4L2_PIX_FMT_RGB32 }, //(line by line) to those in the 
@@ -462,21 +458,13 @@ bool PVideoInputDevice_V4L2::SetVideoFormat(VideoFormat newFormat)
   }
 
   struct {
-#ifdef SOLARIS
-    uint32_t code;
-#else
     __u32 code;
-#endif
     const char * name;
   } static const fmt[3] = { {V4L2_STD_PAL, "PAL"},
       {V4L2_STD_NTSC, "NTSC"},
       {V4L2_STD_SECAM, "SECAM"} };
 
-#ifdef SOLARIS
-    uint32_t carg;
-#else
     __u32 carg;
-#endif
   carg = V4L2_STD_UNKNOWN;
 
   if (v4l2_ioctl(videoFd, VIDIOC_G_STD, &carg) < 0) {
@@ -885,11 +873,7 @@ void PVideoInputDevice_V4L2::ClearMapping()
     if (v4l2_ioctl(videoFd, VIDIOC_QUERYBUF, &buf) < 0)
       break;
 
-#ifdef SOLARIS
-    ::v4l2_munmap((char*)videoBuffer[buf.index], buf.length);
-#else
     ::v4l2_munmap(videoBuffer[buf.index], buf.length);
-#endif
   }
 
   isMapped = false;

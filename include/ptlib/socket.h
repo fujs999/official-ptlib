@@ -40,10 +40,6 @@
 #include <sys/uio.h>
 #endif
 
-#ifdef __NUCLEUS_PLUS__
-#include <sys/socket.h>
-#endif
-
 
 class PSocket;
 

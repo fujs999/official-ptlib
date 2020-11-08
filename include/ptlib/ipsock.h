@@ -92,11 +92,6 @@ class PIPSocket : public PSocket
         /// sockaddr_in6 or sockaddr_in6_old) structure.
         Address(const int ai_family, const int ai_addrlen,struct sockaddr *ai_addr);
 
-#ifdef __NUCLEUS_NET__
-        Address(const struct id_struct & addr);
-        Address & operator=(const struct id_struct & addr);
-#endif
-
         /// Copy an address from another IP v4 address.
         Address & operator=(const in_addr & addr);
 
@@ -127,14 +122,6 @@ class PIPSocket : public PSocket
         bool operator!=(in_addr & addr) const { return !operator==(addr); }
         bool operator==(uint32_t dw) const;
         bool operator!=(uint32_t dw) const   { return !operator==(dw); }
-#ifdef P_VXWORKS
-        bool operator==(long unsigned int u) const { return  operator==((uint32_t)u); }
-        bool operator!=(long unsigned int u) const { return !operator==((uint32_t)u); }
-#endif
-#ifdef P_RTEMS
-        bool operator==(u_long u) const { return  operator==((uint32_t)u); }
-        bool operator!=(u_long u) const { return !operator==((uint32_t)u); }
-#endif
         bool operator==(int i) const      { return  operator==((uint32_t)i); }
         bool operator!=(int i) const      { return !operator==((uint32_t)i); }
 

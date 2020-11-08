@@ -375,17 +375,6 @@
     return false;
   }
 
-#elif defined(P_VXWORKS)
-
-  static const char ActionMessage[] = "Aborting";
-
-  static bool AssertAction(int c, const char *)
-  {
-    exit(1);
-    kill(taskIdSelf(), SIGABRT);
-    return false;
-  }
-
 #else
 
   static const char ActionMessage[] = "<A>bort, <C>ore dump, "

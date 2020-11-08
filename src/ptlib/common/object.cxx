@@ -43,8 +43,6 @@
 #if defined(_MSC_VER)
 #include <crtdbg.h>
 #endif
-#elif defined(__NUCLEUS_PLUS__)
-#include <ptlib/NucleusDebstrm.h>
 #else
 #include <signal.h>
 #endif

@@ -36,10 +36,6 @@
 #include <codecvt>
 #include <math.h>
 
-#ifdef __NUCLEUS_PLUS__
-extern "C" int vsprintf(char *, const char *, va_list);
-#endif
-
 #if !P_USE_INLINES
 #include "ptlib/contain.inl"
 #endif
@@ -1974,12 +1970,6 @@ PString & PString::sprintf(const char * fmt, ...)
 PString & PString::vsprintf(const char * fmt, va_list arg)
 {
   PINDEX len = GetLength();
-#ifdef P_VXWORKS
-  // The library provided with tornado 2.0 does not have the implementation
-  // for vsnprintf
-  // as workaround, just use a array size of 2000
-  resize(::vsprintf(GetPointerAndSetLength(len+2000), fmt, arg));
-#else
   int providedSpace = 0;
   int requiredSpace;
   do {
@@ -1987,7 +1977,6 @@ PString & PString::vsprintf(const char * fmt, va_list arg)
     requiredSpace = vsprintf_s(GetPointerAndSetLength(providedSpace+len), providedSpace, fmt, arg);
   } while (requiredSpace == -1 || requiredSpace >= providedSpace);
   resize(len + requiredSpace);
-#endif // P_VXWORKS
 
   return *this;
 }

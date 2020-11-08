@@ -93,10 +93,6 @@ static const int SOCKET_ERROR = -1;
 
 int closesocket( Socket fd );
 
-#ifdef P_RTEMS
-typedef int socklen_t;
-#endif
-
 #endif
 
 

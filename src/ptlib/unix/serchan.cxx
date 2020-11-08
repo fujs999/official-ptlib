@@ -36,22 +36,16 @@
 #include <signal.h>
 #include <sys/ioctl.h>
 
-#if defined(P_LINUX) || defined(P_GNU_HURD)
+#if defined(P_LINUX)
 #define  TCSETATTR(f,t)  tcsetattr(f,TCSANOW,t)
 #define  TCGETATTR(f,t)  tcgetattr(f,t)
 
-#elif defined(P_FREEBSD) || defined(P_OPENBSD) || defined (P_NETBSD) || defined(P_MACOSX) || defined(P_IOS) || defined(P_RTEMS)
+#elif defined(P_FREEBSD) || defined(P_OPENBSD) || defined (P_NETBSD) || defined(P_MACOSX) || defined(P_IOS)
 #include <sys/ttycom.h>
 #define TCGETA TIOCGETA
 #define TCSETAW TIOCSETAW
 
-#elif defined(P_SUN4)
-#include <sys/termio.h>
-extern "C" int ioctl(int, int, void *);
-
-#elif defined (P_AIX)
-#include <sys/termio.h>
-#endif
+##endif
 
 
 #ifndef  TCSETATTR
@@ -85,10 +79,6 @@ void PSerialChannel::Construct()
   parityBits = NoParity;
   stopBits   = 1;
 
-#if defined(P_VXWORKS) || defined (__BEOS__)
-  PAssertAlways(PUnimplementedFunction);
-#else
-
   // set input mode: ignore breaks, ignore parity errors, do not strip chars,
   // no CR/NL conversion, no case conversion, no XON/XOFF control,
   // no start/stop
@@ -106,16 +96,10 @@ void PSerialChannel::Construct()
 
   // set line discipline
   Termio.c_lflag = 0;
-
-#endif // P_VXWORKS
 }
 
 bool PSerialChannel::Close()
 {
-#if defined(P_VXWORKS) || defined (__BEOS__)
-  PAssertAlways(PUnimplementedFunction);
-  return false;
-#else
   if (os_handle >= 0) {
 
     // delete the lockfile
@@ -126,7 +110,6 @@ bool PSerialChannel::Close()
   }
 
   return PChannel::Close();
-#endif // P_VXWORKS
 }
 
 
@@ -157,11 +140,6 @@ bool PSerialChannel::Open(const PString & port,
 
   // save the port name
   m_portName = port;
-
-#if defined(P_VXWORKS) || defined (__BEOS__)
-  PAssertAlways(PUnimplementedFunction);
-  return false;
-#else
 
   // construct lock filename 
   PString lockfilename = PString(LOCK_PREFIX) + port;
@@ -228,8 +206,6 @@ bool PSerialChannel::Open(const PString & port,
 
   ::fcntl(os_handle, F_SETFD, 1);
 
-#endif // P_VXWORKS
-
   return true;
 }
 
@@ -240,11 +216,6 @@ bool PSerialChannel::SetSpeed(uint32_t newBaudRate)
 
   if (os_handle < 0)
     return true;
-
-#if defined(P_VXWORKS) || defined (__BEOS__)
-  PAssertAlways(PUnimplementedFunction);
-  return false;
-#else
 
   int baud;
 
@@ -377,9 +348,6 @@ bool PSerialChannel::SetSpeed(uint32_t newBaudRate)
   // The BSD way
   Termio.c_ispeed = baud;
   Termio.c_ospeed = baud;
-#elif defined(P_GNU_HURD)
-  Termio.__ispeed = baud;
-  Termio.__ospeed = baud;
 #else
   // The Linux way
   Termio.c_cflag &= ~CBAUD;
@@ -391,8 +359,6 @@ bool PSerialChannel::SetSpeed(uint32_t newBaudRate)
 
   // initialise the port
   return ConvertOSError(TCSETATTR(os_handle, &Termio));
-
-#endif // P_VXWORKS
 }
 
 
@@ -400,11 +366,6 @@ bool PSerialChannel::SetDataBits(uint8_t data)
 {
   if (data == dataBits)
     return true;
-
-#if defined(P_VXWORKS) || defined (__BEOS__)
-  PAssertAlways(PUnimplementedFunction);
-  return false;
-#else
 
   int flags;
 
@@ -450,19 +411,12 @@ bool PSerialChannel::SetDataBits(uint8_t data)
     return true;
 
   return ConvertOSError(TCSETATTR(os_handle, &Termio));
-
-#endif // P_VXWORKS
 }
 
 bool PSerialChannel::SetParity(Parity parity)
 {
   if (parity == parityBits)
     return true;
-
-#if defined(P_VXWORKS) || defined (__BEOS__)
-  PAssertAlways(PUnimplementedFunction);
-  return false;
-#else
 
   int flags;
 
@@ -501,19 +455,12 @@ bool PSerialChannel::SetParity(Parity parity)
   Termio.c_cflag |= flags;
 
   return ConvertOSError(TCSETATTR(os_handle, &Termio));
-
-#endif // P_VXWORKS
 }
 
 bool PSerialChannel::SetStopBits(uint8_t stop)
 {
   if (stop == stopBits)
     return true;
-
-#if defined(P_VXWORKS) || defined (__BEOS__)
-  PAssertAlways(PUnimplementedFunction);
-  return false;
-#else
 
   int flags;
 
@@ -542,8 +489,6 @@ bool PSerialChannel::SetStopBits(uint8_t stop)
   Termio.c_cflag |= flags;
 
   return ConvertOSError(TCSETATTR(os_handle, &Termio));
-
-#endif // P_VXWORKS
 }
 
 uint32_t PSerialChannel::GetSpeed() const
@@ -592,10 +537,6 @@ PSerialChannel::FlowControl PSerialChannel::GetOutputFlowControl() const
 
 void PSerialChannel::SetDTR(bool mode)
 {
-#if defined(P_VXWORKS) || defined (__BEOS__)
-  PAssertAlways(PUnimplementedFunction);
-#else
-
   int flags = 0;
   ioctl(os_handle,TIOCMGET,&flags);  // get the bits
   flags &= ~TIOCM_DTR;
@@ -611,103 +552,61 @@ void PSerialChannel::SetDTR(bool mode)
   else 
     ioctl(os_handle, TIOCCDTR, 0);
   */
-
-#endif // P_VXWORKS
 }
 
 
 void PSerialChannel::SetRTS(bool mode)
 {
-#if defined(P_VXWORKS) || defined (__BEOS__)
-  PAssertAlways(PUnimplementedFunction);
-#else
-
   int flags = 0;
   ioctl(os_handle,TIOCMGET,&flags);  // get the bits
   flags &= ~TIOCM_RTS;
   if ( mode == true )
     flags |= TIOCM_RTS;
   ioctl(os_handle,TIOCMSET,&flags);  // set back
-
-#endif // P_VXWORKS
 }
 
 
 void PSerialChannel::SetBreak(bool mode)
 {
-#if defined(P_VXWORKS) || defined (__BEOS__)
-  PAssertAlways(PUnimplementedFunction);
-#else
-
   if (mode)
     ioctl(os_handle, TIOCSBRK, 0);
   else 
     ioctl(os_handle, TIOCCBRK, 0);
-
-#endif // P_VXWORKS
 }
 
 
 bool PSerialChannel::GetCTS()
 {
-#if defined(P_VXWORKS) || defined (__BEOS__)
-  PAssertAlways(PUnimplementedFunction);
-  return false;
-#else
-
   int flags = 0;
   ioctl(os_handle,TIOCMGET,&flags);  // get the bits
   return (flags&TIOCM_CTS)?true:false;
-
-#endif // P_VXWORKS
 }
 
 
 bool PSerialChannel::GetDSR()
 {
-#if defined(P_VXWORKS) || defined (__BEOS__)
-  PAssertAlways(PUnimplementedFunction);
-  return false;
-#else
-
   int flags = 0;
 
   ioctl(os_handle,TIOCMGET,&flags);  // get the bits
   return (flags&TIOCM_DSR)?true:false;
-
-#endif // P_VXWORKS
 }
 
 
 bool PSerialChannel::GetDCD()
 {
-#if defined(P_VXWORKS) || defined (__BEOS__)
-  PAssertAlways(PUnimplementedFunction);
-  return false;
-#else
-
   int flags = 0;
 
   ioctl(os_handle,TIOCMGET,&flags);  // get the bits
   return (flags&TIOCM_CD)?true:false;
-
-#endif // P_VXWORKS
 }
 
 
 bool PSerialChannel::GetRing()
 {
-#if defined(P_VXWORKS) || defined (__BEOS__)
-  PAssertAlways(PUnimplementedFunction);
-  return false;
-#else
-
   int flags = 0;
   
   ioctl(os_handle,TIOCMGET,&flags);  // get the bits
   return (flags&TIOCM_RNG)?true:false;
-
-#endif // P_VXWORKS
 }
 
 

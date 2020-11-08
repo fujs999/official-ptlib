@@ -7,14 +7,6 @@
 //#include <ptlib/contain.inl>
 //#endif
 
-#ifdef P_SOLARIS
-#include <sys/soundcard.h>
-#endif
-
-#ifdef P_GNU_HURD
-#include <sys/soundcard.h>
-#endif
-
 #ifdef P_LINUX
 #include <sys/soundcard.h>
 #endif

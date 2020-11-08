@@ -46,39 +46,23 @@
 #include <ptlib/pprocess.h>
 #include <ptclib/pxml.h>
 
-#ifdef P_VXWORKS
-#include <sys/times.h>
-#include <time.h>
-#include <hostLib.h>
-#include <remLib.h>
-#include <taskLib.h>
-#include <intLib.h>
-#else
 #include <sys/time.h>
 #include <pwd.h>
 #include <grp.h>
-#endif // P_VXWORKS
 #include <sys/wait.h>
 #include <errno.h>
 
-#if defined(P_LINUX) || defined(P_GNU_HURD)
+#if defined(P_LINUX)
 #include <sys/cdefs.h>
 #include <sys/types.h>
 #include <sys/mman.h>
 #include <malloc.h>
 #include <fstream>
-#ifndef P_RTEMS
 #include <sys/resource.h>
 #endif
-#endif
 
-#if defined(P_LINUX) || defined(P_SUN4) || defined(P_SOLARIS) || defined(P_FREEBSD) || defined(P_OPENBSD) || defined(P_NETBSD) || defined(P_MACOSX) || defined(P_IOS) || defined (P_AIX) || defined(P_IRIX) || defined(P_QNX) || defined(P_GNU_HURD) || defined(P_ANDROID)
+#if defined(P_LINUX) || defined(P_FREEBSD) || defined(P_OPENBSD) || defined(P_NETBSD) || defined(P_MACOSX) || defined(P_IOS) || defined(P_ANDROID)
 #include <sys/utsname.h>
-#define  HAS_UNAME
-#elif defined(P_RTEMS)
-extern "C" {
-#include <sys/utsname.h>
-}
 #define  HAS_UNAME
 #endif
 
@@ -87,11 +71,7 @@ extern "C" {
 
 PString PProcess::GetOSClass()
 {
-#if defined P_VXWORKS
-  return PString("VxWorks");
-#else
   return PString("Unix");
-#endif
 }
 
 PString PProcess::GetOSName()
@@ -99,13 +79,7 @@ PString PProcess::GetOSName()
 #if defined(HAS_UNAME)
   struct utsname info;
   uname(&info);
-#ifdef P_SOLARIS
-  return PString(info.sysname) & info.release;
-#else
   return PString(info.sysname);
-#endif
-#elif defined(P_VXWORKS)
-  return PString::Empty();
 #else
 #warning No GetOSName specified
   return PString("Unknown");
@@ -118,8 +92,6 @@ PString PProcess::GetOSHardware()
   struct utsname info;
   uname(&info);
   return PString(info.machine);
-#elif defined(P_VXWORKS)
-  return PString(sysModel());
 #else
 #warning No GetOSHardware specified
   return PString("unknown");
@@ -131,13 +103,7 @@ PString PProcess::GetOSVersion()
 #if defined(HAS_UNAME)
   struct utsname info;
   uname(&info);
-#ifdef P_SOLARIS
-  return PString(info.version);
-#else
   return PString(info.release);
-#endif
-#elif defined(P_VXWORKS)
-  return PString(sysBspRev());
 #else
 #warning No GetOSVersion specified
   return PString("?.?");
@@ -150,13 +116,7 @@ bool PProcess::IsOSVersion(unsigned major, unsigned minor, unsigned build)
   struct utsname info;
   uname(&info);
   unsigned maj, min, bld;
-  sscanf(
-#ifdef P_SOLARIS
-         info.version
-#else
-         info.release
-#endif
-         , "%u.%u.%u", &maj, &min, &bld);
+  sscanf(info.release, "%u.%u.%u", &maj, &min, &bld);
   if (maj < major)
     return false;
   if (maj > major)
@@ -168,8 +128,6 @@ bool PProcess::IsOSVersion(unsigned major, unsigned minor, unsigned build)
     return true;
 
   return bld >= build;
-#elif defined(P_VXWORKS)
-  return sysBspRev() >= major;
 #else
   return true;
 #endif
@@ -178,17 +136,11 @@ bool PProcess::IsOSVersion(unsigned major, unsigned minor, unsigned build)
 
 PDirectory PProcess::GetOSConfigDir()
 {
-#ifdef P_VXWORKS
-  return "./";
-#else
   return "/etc";
-#endif // P_VXWORKS
 }
 
 
-#if defined(P_VXWORKS)
-  #undef GETPWUID
-#elif defined(P_GETPWUID_R5)
+#if defined(P_GETPWUID_R5)
   #define GETPWUID(pw) \
     struct passwd pwd; \
     char buffer[1024]; \
@@ -227,10 +179,6 @@ PString PProcess::GetUserName() const
 
 bool PProcess::SetUserName(const PString & username, bool permanent)
 {
-#ifdef P_VXWORKS
-  PAssertAlways("PProcess::SetUserName - not implemented for VxWorks");
-  return false;
-#else
   if (username.IsEmpty())
     return seteuid(getuid()) != -1;
 
@@ -271,7 +219,6 @@ bool PProcess::SetUserName(const PString & username, bool permanent)
     return setuid(uid) != -1;
     
   return seteuid(uid) != -1;
-#endif // P_VXWORKS
 }
 
 
@@ -304,12 +251,6 @@ PDirectory PProcess::GetHomeDirectory() const
 PString PProcess::GetGroupName() const
 
 {
-#ifdef P_VXWORKS
-
-  return PString("VxWorks");
-
-#else
-
 #if !defined(P_THREAD_SAFE_LIBC)
   struct group grp;
   char buffer[1024];
@@ -332,16 +273,11 @@ PString PProcess::GetGroupName() const
     return PString(ptr);
   else
     return PString("group");
-#endif // P_VXWORKS
 }
 
 
 bool PProcess::SetGroupName(const PString & groupname, bool permanent)
 {
-#ifdef P_VXWORKS
-  PAssertAlways("PProcess::SetGroupName - not implemented for VxWorks");
-  return false;
-#else
   if (groupname.IsEmpty())
     return setegid(getgid()) != -1;
 
@@ -383,7 +319,6 @@ bool PProcess::SetGroupName(const PString & groupname, bool permanent)
     return setgid(gid) != -1;
     
   return setegid(gid) != -1;
-#endif // P_VXWORKS
 }
 
 
@@ -492,20 +427,14 @@ POrdinalToString::Initialiser const PProcess::InternalSigNames[] = {
 
 void PProcess::PlatformConstruct()
 {
-#if !defined(P_VXWORKS) && !defined(P_RTEMS)
   // initialise the timezone information
   tzset();
-#endif
 
-#ifndef P_RTEMS
   // get the file descriptor limit
   struct rlimit rl;
   PAssertOS(getrlimit(RLIMIT_NOFILE, &rl) == 0);
   m_maxHandles = rl.rlim_cur;
   PTRACE(4, "PTLib\tMaximum per-process file handles is " << m_maxHandles);
-#else
-  m_maxHandles = 500; // arbitrary value
-#endif
 }
 
 
@@ -516,7 +445,6 @@ void PProcess::PlatformDestruct()
 
 bool PProcess::SetMaxHandles(int newMax)
 {
-#ifndef P_RTEMS
   // get the current process limit
   struct rlimit rl;
   PAssertOS(getrlimit(RLIMIT_NOFILE, &rl) == 0);
@@ -531,7 +459,6 @@ bool PProcess::SetMaxHandles(int newMax)
       return true;
     }
   }
-#endif // !P_RTEMS
 
   PTRACE(1, "PTLib\tCannot set per-process file handle limit to "
          << newMax << " (is " << m_maxHandles << ") - check permissions");
@@ -951,12 +878,7 @@ P_fd_set & P_fd_set::operator-=(intptr_t fd)
 #include <pthread.h>
 #include <sys/resource.h>
 
-#ifdef P_RTEMS
-#define SUSPEND_SIG SIGALRM
-#include <sched.h>
-#else
 #define SUSPEND_SIG SIGVTALRM
-#endif
 
 #if defined(P_MACOSX)
 #include <mach/mach.h>
@@ -1110,11 +1032,7 @@ void PThread::PlatformConstruct()
     PX_waitingSemaphore = NULL;
     PX_WaitSemMutex = MutexInitialiser;
   #endif
-  #ifdef P_RTEMS
-    PAssertOS(socketpair(AF_INET, SOCK_STREAM, 0, m_threadUnblockPipe) == 0);
-  #else
-    PAssertOS(::pipe(m_threadUnblockPipe) == 0);
-  #endif
+  PAssertOS(::pipe(m_threadUnblockPipe) == 0);
 }
 
 

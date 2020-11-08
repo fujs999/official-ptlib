@@ -33,10 +33,6 @@
 #include <ptlib.h>
 #include <sys/ioctl.h>
 
-#if defined(P_SOLARIS)
-  #include <sys/filio.h>
-#endif
-
 #include "../common/pchannel.cxx"
 
 
@@ -404,11 +400,9 @@ bool PChannel::ConvertOSError(intptr_t libcReturnValue, ErrorGroup group)
       lastError = AccessDenied;
       break;
 
-#ifndef __BEOS__
     case ETXTBSY:
       lastError = DeviceInUse;
       break;
-#endif
 
     case EFAULT:
     case ELOOP:

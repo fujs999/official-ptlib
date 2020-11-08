@@ -191,16 +191,7 @@ bool PICMPSocket::ReadPing(PingInfo & info)
 
   // calc round trip time. Be careful, as unaligned "long long" ints
   // can cause problems on some platforms
-#if defined(P_SUN4) || defined(P_SOLARIS)
-  int64_t then;
-  uint8_t * pthen = (uint8_t *)&then;
-  uint8_t * psendtime = (uint8_t *)&icmpPacket->sendtime;
-  memcpy(pthen, psendtime, sizeof(int64_t));
-  info.delay.SetInterval(now - then);
-#else
   info.delay.SetInterval(now - icmpPacket->sendtime);
-#endif
-
   info.sequenceNum = icmpPacket->sequence;
 
   return true;
@@ -209,14 +200,10 @@ bool PICMPSocket::ReadPing(PingInfo & info)
 
 bool PICMPSocket::OpenSocket()
 {
-#if !defined BE_BONELESS && !defined(P_VXWORKS)
   struct protoent * p = ::getprotobyname(GetProtocolName());
   if (p == NULL)
     return ConvertOSError(-1);
   return ConvertOSError(os_handle = os_socket(AF_INET, SOCK_RAW, p->p_proto));
-#else  // Raw sockets not supported in BeOS R4 or VxWorks.
-  return ConvertOSError(os_handle = os_socket(AF_INET, SOCK_DGRAM, IPPROTO_ICMP));
-#endif //!defined BE_BONELESS && !defined(P_VXWORKS)
 }
 
 

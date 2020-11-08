@@ -40,12 +40,8 @@
 #include <fcntl.h>
 #include <signal.h>
 
-#if defined(P_LINUX) || defined(P_SOLARIS)
+#if defined(P_LINUX)
 #include <termio.h>
-#endif
-
-#if defined(P_SOLARIS)
-  #include <sys/filio.h>
 #endif
 
 #include "../common/pipechan.cxx"
@@ -86,9 +82,6 @@ bool PPipeChannel::PlatformOpen(const PString & subProgram,
                                 bool stderrSeparate,
                                 const PStringToString * environment)
 {
-#if defined(P_VXWORKS) || defined(P_RTEMS)
-  PAssertAlways("PPipeChannel::PlatformOpen");
-#else
   subProgName = subProgram;
 
   // setup the pipe to the child
@@ -115,12 +108,7 @@ bool PPipeChannel::PlatformOpen(const PString & subProgram,
   }
 
   // fork to allow us to execute the child
-#if defined(__BEOS__) || defined(P_IRIX)
-  m_childPID = fork();
-#else
   m_childPID = vfork();
-#endif
-
   if (m_childPID < 0) {
     PTRACE(1, "Could not fork process: errno=" << errno);
     return false;
@@ -288,7 +276,6 @@ bool PPipeChannel::PlatformOpen(const PString & subProgram,
 
   // Returned! Error!
   _exit(errno != 0 ? errno : 1);
-#endif // P_VXWORKS || P_RTEMS
 
   return false;
 }

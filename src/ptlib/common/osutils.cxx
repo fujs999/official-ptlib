@@ -115,11 +115,7 @@ class PSimpleThread : public PThread
 #define new PNEW
 
 
-#ifndef __NUCLEUS_PLUS__
 static ostream * PErrorStream = &cerr;
-#else
-static ostream * PErrorStream = NULL;
-#endif
 
 ostream & PGetErrorStream()
 {
@@ -129,11 +125,7 @@ ostream & PGetErrorStream()
 
 void PSetErrorStream(ostream * s)
 {
-#ifndef __NUCLEUS_PLUS__
   PErrorStream = s != NULL ? s : &cerr;
-#else
-  PErrorStream = s;
-#endif
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -200,11 +192,7 @@ public:
     : m_currentLevel(0)
     , m_thresholdLevel(0)
     , m_options(Blocks | DateAndTime | Thread | FileAndLine | HasFilePermissions | (PFileInfo::DefaultPerms << FilePermissionShift))
-#ifdef __NUCLEUS_PLUS__
-    , m_stream(NULL)
-#else
     , m_stream(&cerr)
-#endif
     , m_startTick(PTimer::Tick())
     , m_rolloverPattern(DefaultRollOverPattern)
     , m_lastRotate(0)
@@ -242,10 +230,8 @@ public:
 
   void SetStream(ostream * newStream)
   {
-#ifndef __NUCLEUS_PLUS__
     if (newStream == NULL)
       newStream = &cerr;
-#endif
 
     // Delete the old stream outside the lock to avoid potential deadlock caused by
     // stream flush; the PSystemLog mutex should be locked before the PTraceInfo one
@@ -1167,8 +1153,6 @@ bool PDirectory::Create(const PString & p, int perm, bool recurse)
   
 #if defined(WIN32)
   if (_wmkdir(dir.AsWide()) == 0)
-#elif defined(P_VXWORKS)
-  if (mkdir(dir) == 0)
 #else    
   if (mkdir(dir.Left(dir.GetLength()-1), perm) == 0)
 #endif
@@ -2417,9 +2401,6 @@ PProcess::PProcess(const char * manuf, const char * name,
   uint32_t size = sizeof(path);
   if (_NSGetExecutablePath(path, &size) == 0)
     m_executableFile = path;
-#elif defined(P_RTEMS)
-  cout << "Enter program arguments:\n";
-  arguments.ReadFrom(cin);
 #else
   // Hope for a /proc, certainly works for Linux
   char path[10000];

@@ -373,7 +373,7 @@ class PSystemLogToDebug : public PSystemLogTarget
     );
   //@}
 };
-#elif !defined(P_VXWORKS)
+#else
 #define P_SYSTEMLOG_TO_SYSLOG 1
 /** Log system output to the Posix syslog() function.
   */
@@ -408,7 +408,7 @@ class PSystemLogToSyslog : public PSystemLogTarget
     PString m_ident;
     int     m_priority;
 };
-#endif
+#endif _WIN32
 
 
 /** Log a message to the system log.
