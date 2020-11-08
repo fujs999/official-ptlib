@@ -810,9 +810,16 @@ class PSSLContext : public PObject
     bool AddClientCA(
       const PSSLCertificate & certificate
     );
-    bool AddClientCA(
-      const PList<PSSLCertificate> & certificates
-    );
+    template <class T> bool AddClientCA(
+      const T& certificates
+    )
+    {
+      for (const PSSLCertificate & cert : certificates) {
+        if (!AddClientCA(cert))
+          return false;
+      }
+      return true;
+    }
 
     /**Use the certificate specified.
       */
@@ -946,9 +953,16 @@ class PSSLChannel : public PIndirectChannel
     bool AddClientCA(
       const PSSLCertificate & certificate
     );
-    bool AddClientCA(
-      const PList<PSSLCertificate> & certificates
-    );
+    template <class T> bool AddClientCA(
+      const T& certificates
+    )
+    {
+      for (const PSSLCertificate & cert : certificates) {
+        if (!AddClientCA(cert))
+          return false;
+      }
+      return true;
+    }
 
     /**Use the certificate specified.
       */

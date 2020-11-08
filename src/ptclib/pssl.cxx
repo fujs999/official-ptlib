@@ -2335,20 +2335,6 @@ bool PSSLContext::AddClientCA(const PSSLCertificate & certificate)
 }
 
 
-bool PSSLContext::AddClientCA(const PList<PSSLCertificate> & certificates)
-{
-  if (PAssertNULL(m_context) == NULL)
-    return false;
-
-  for (PList<PSSLCertificate>::const_iterator it = certificates.begin(); it != certificates.end(); ++it) {
-    if (!it->IsValid() || !SSL_CTX_add_client_CA(m_context, *it))
-      return false;
-  }
-
-  return true;
-}
-
-
 bool PSSLContext::UseCertificate(const PSSLCertificate & certificate)
 {
   if (PAssertNULL(m_context) == NULL)
@@ -2877,20 +2863,6 @@ bool PSSLChannel::InternalConnect()
 bool PSSLChannel::AddClientCA(const PSSLCertificate & certificate)
 {
   return PAssertNULL(m_ssl) != NULL && SSL_add_client_CA(m_ssl, certificate);
-}
-
-
-bool PSSLChannel::AddClientCA(const PList<PSSLCertificate> & certificates)
-{
-  if (PAssertNULL(m_ssl) == NULL)
-    return false;
-
-  for (PList<PSSLCertificate>::const_iterator it = certificates.begin(); it != certificates.end(); ++it) {
-    if (!SSL_add_client_CA(m_ssl, *it))
-      return false;
-  }
-
-  return true;
 }
 
 

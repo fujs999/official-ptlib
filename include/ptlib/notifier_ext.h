@@ -276,6 +276,9 @@ class PNotifierListTemplate : public PObject
     /// Indicate the number of notifiers in list.
     PINDEX GetSize() const { return this->m_list.size(); }
 
+    // Remove all the notifiers
+    void RemoveAll() { this->m_list.clear(); }
+
     /// Add a notifier to the list
     bool Add(const Notifier & handler)
     {

@@ -111,8 +111,8 @@ bool PPluginDeviceDescriptor::GetDeviceCapabilities(const PString & /*deviceName
 
 PPluginManager::PPluginManager()
 {
-  m_suffixes.AppendString(PTPLUGIN_SUFFIX);
-  m_suffixes.AppendString(PWPLUGIN_SUFFIX);
+  m_suffixes.push_back(PTPLUGIN_SUFFIX);
+  m_suffixes.push_back(PWPLUGIN_SUFFIX);
 }
 
 
@@ -131,9 +131,8 @@ void PPluginManager::SetDirectories(const PString & dirs)
 
 void PPluginManager::SetDirectories(const PStringArray & dirs)
 {
-  m_directories.RemoveAll();
-
-  for (PINDEX i = 0; i < dirs.GetSize(); ++i)
+  m_directories.clear();
+  for (size_t i = 0; i < dirs.size(); ++i)
     AddDirectory(dirs[i]);
 }
 
@@ -141,16 +140,17 @@ void PPluginManager::SetDirectories(const PStringArray & dirs)
 void PPluginManager::AddDirectory(const PDirectory & dir)
 {
   PTRACE(4, "PLUGIN\tAdding directory \"" << dir << '"');
-  if (m_directories.GetValuesIndex(dir) == P_MAX_INDEX)
-    m_directories.Append(new PDirectory(dir));
+  if (std::find(m_directories.begin(), m_directories.end(), dir) == m_directories.end())
+    m_directories.emplace_back(std::move(dir));
 }
 
 
 void PPluginManager::LoadDirectories()
 {
-  PTRACE(4, "PLUGIN\tEnumerating plugin directories " << setfill(PPATH_SEPARATOR) << m_directories);
-  for (PList<PDirectory>::iterator it = m_directories.begin(); it != m_directories.end(); ++it)
-    LoadDirectory(*it);
+  PTRACE(4, "PLUGIN\tEnumerating plugin directories "
+         << setfill(PPATH_SEPARATOR) << PPrintValues(m_directories));
+  for (const auto & it : m_directories)
+    LoadDirectory(it);
 }
 
 
@@ -174,8 +174,7 @@ void PPluginManager::LoadDirectory(const PDirectory & directory)
     }
     else {
       PFilePath fn(entry);
-      for (PStringList::iterator it = m_suffixes.begin(); it != m_suffixes.end(); ++it) {
-        PString suffix = *it;
+      for (const PString & suffix : m_suffixes) {
         PTRACE(5, "PLUGIN\tChecking " << fn << " against suffix " << suffix);
         if ((fn.GetType() *= PDynaLink::GetExtension()) && (fn.GetTitle().Right(strlen(suffix)) *= suffix)) 
           LoadPlugin(entry);
@@ -434,7 +433,7 @@ void PPluginManager::OnShutdown()
 void PPluginManager::AddNotifier(const PNotifier & notifyFunction, bool existing)
 {
   m_notifiersMutex.Wait();
-  m_notifiers.Append(new PNotifier(notifyFunction));
+  m_notifiers.Add(notifyFunction);
   m_notifiersMutex.Signal();
 
   if (existing) {
@@ -447,22 +446,16 @@ void PPluginManager::AddNotifier(const PNotifier & notifyFunction, bool existing
 
 void PPluginManager::RemoveNotifier(const PNotifier & notifyFunction)
 {
-  PWaitAndSignal mutex(m_notifiersMutex);
-  PList<PNotifier>::iterator it = m_notifiers.begin();
-  while (it != m_notifiers.end()) {
-    if (*it != notifyFunction)
-      ++it;
-    else
-      m_notifiers.erase(it++);
-  }
+  m_notifiersMutex.Wait();
+  m_notifiers.Remove(notifyFunction);
+  m_notifiersMutex.Signal();
 }
 
 
 void PPluginManager::CallNotifier(PDynaLink & dll, NotificationCode code)
 {
   PWaitAndSignal mutex(m_notifiersMutex);
-  for (PList<PNotifier>::iterator it = m_notifiers.begin(); it != m_notifiers.end(); ++it)
-    (*it)(dll, code);
+  m_notifiers(dll, code);
 }
 
 
@@ -505,7 +498,7 @@ void PPluginModuleManager::OnLoadModule(PDynaLink & dll, intptr_t code)
 void PluginLoaderStartup::OnStartup()
 {
   PPluginManager & pluginMgr = PPluginManager::GetPluginManager();
-  if (pluginMgr.GetDirectories().IsEmpty()) {
+  if (pluginMgr.GetDirectories().empty()) {
     PString env = PConfig::GetEnv(P_PTLIB_PLUGIN_DIR_ENV_VAR);
     if (env.IsEmpty())
       env = PConfig::GetEnv(P_PWLIB_PLUGIN_DIR_ENV_VAR);
@@ -519,17 +512,15 @@ void PluginLoaderStartup::OnStartup()
   }
 
   // load the plugin module managers
-  PFactory<PPluginModuleManager>::KeyList_T keyList = PFactory<PPluginModuleManager>::GetKeyList();
-  for (PFactory<PPluginModuleManager>::KeyList_T::const_iterator it = keyList.begin(); it != keyList.end(); ++it)
-    PFactory<PPluginModuleManager>::CreateInstance(*it)->OnStartup();
+  for (const auto & it : PFactory<PPluginModuleManager>::GetKeyList())
+    PFactory<PPluginModuleManager>::CreateInstance(it)->OnStartup();
 
   // load the actual DLLs, which will also load the system plugins
   pluginMgr.LoadDirectories();
 
   // load the static plug in services/devices
-  PPluginFactory::KeyList_T keys = PPluginFactory::GetKeyList();
-  for (PPluginFactory::KeyList_T::iterator it = keys.begin(); it != keys.end(); ++it)
-    pluginMgr.RegisterService(it->c_str());
+  for (const auto & it : PPluginFactory::GetKeyList())
+    pluginMgr.RegisterService(it.c_str());
 }
 
 
@@ -538,10 +529,8 @@ void PluginLoaderStartup::OnShutdown()
   PPluginManager::GetPluginManager().OnShutdown();
 
   // load the plugin module managers, and construct the list of suffixes
-  PFactory<PPluginModuleManager>::KeyList_T keyList = PFactory<PPluginModuleManager>::GetKeyList();
-  PFactory<PPluginModuleManager>::KeyList_T::const_iterator it;
-  for (it = keyList.begin(); it != keyList.end(); ++it)
-    PFactory<PPluginModuleManager>::CreateInstance(*it)->OnShutdown();
+  for (const auto & it : PFactory<PPluginModuleManager>::GetKeyList())
+    PFactory<PPluginModuleManager>::CreateInstance(it)->OnShutdown();
 }
 
 PFACTORY_CREATE(PProcessStartupFactory, PluginLoaderStartup, PLUGIN_LOADER_STARTUP_NAME, true);

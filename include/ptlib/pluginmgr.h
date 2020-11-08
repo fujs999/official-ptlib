@@ -12,6 +12,7 @@
 #define PTLIB_PLUGINMGR_H
 
 #include <ptlib/plugin.h>
+#include <ptlib/notifier_ext.h>
 #include <ptlib_config.h>
 
 #if P_PLUGINMGR
@@ -43,7 +44,7 @@ class PPluginManager : public PObject
     void SetDirectories(const PStringArray & dirs);
 
     /// Get the list of plugin directories.
-    const PList<PDirectory> & GetDirectories() const { return m_directories; }
+    const std::vector<PDirectory> & GetDirectories() const { return m_directories; }
 
     /// Load the plugins in the directories.
     void LoadDirectories();
@@ -153,8 +154,8 @@ class PPluginManager : public PObject
 
     void CallNotifier(PDynaLink & dll, NotificationCode code);
 
-    PList<PDirectory> m_directories;
-    PStringList       m_suffixes;
+    std::vector<PDirectory> m_directories;
+    std::vector<PFilePathString> m_suffixes;
 
     PDECLARE_MUTEX(        m_pluginsMutex);
     std::vector<PDynaLink> m_plugins;
@@ -163,8 +164,8 @@ class PPluginManager : public PObject
     ServiceMap     m_services;
     PDECLARE_MUTEX(m_servicesMutex);
 
-    PDECLARE_MUTEX(  m_notifiersMutex);
-    PList<PNotifier> m_notifiers;
+    PDECLARE_MUTEX(m_notifiersMutex);
+    PNotifierList  m_notifiers;
 };
 
 //////////////////////////////////////////////////////
