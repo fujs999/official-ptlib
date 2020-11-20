@@ -207,7 +207,7 @@ class PSafeWorkArg3 : public PSafeWork
 };
 
 
-#endif // PTLIB_THREADPOOL_H
+#endif // PTLIB_SAFETHREADPOOL_H
 
 
 // End Of File ///////////////////////////////////////////////////////////////
