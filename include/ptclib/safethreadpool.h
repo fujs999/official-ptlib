@@ -36,7 +36,7 @@
 #endif
 
 
-#include <ptlib/threadpool.h>
+#include <ptclib/threadpool.h>
 #include <ptlib/safecoll.h>
 
 
