@@ -54,8 +54,8 @@ enum PSSLFileTypes {
 };
 
 
-typedef PNotifierTemplate<bool> PSSLPasswordNotifier;
-#define PDECLARE_SSLPasswordNotifier(cls, fn) PDECLARE_NOTIFIER2(PString, cls, fn, bool)
+typedef PNotifierTemplate<bool, PString> PSSLPasswordNotifier;
+#define PDECLARE_SSLPasswordNotifier(cls, fn) PDECLARE_NOTIFIER_FUNCTION(cls, fn, PString, bool)
 
 
 /**Private key for SSL.
@@ -989,9 +989,9 @@ class PSSLChannel : public PIndirectChannel
       PSSLCertificate m_peerCertificate;
       int m_errorCode;
     };
-    typedef PNotifierTemplate<VerifyInfo &> VerifyNotifier;
-    #define PDECLARE_SSLVerifyNotifier(cls, fn) PDECLARE_NOTIFIER2(PSSLChannel, cls, fn, PSSLChannel::VerifyInfo &)
-    #define PCREATE_SSLVerifyNotifier(fn) PCREATE_NOTIFIER2(fn, PSSLChannel::VerifyInfo &)
+    using VerifyNotifier = PNotifierTemplate<VerifyInfo &, PSSLChannel>;
+    #define PDECLARE_SSLVerifyNotifier(cls, fn) PDECLARE_NOTIFIER_FUNCTION(cls, fn, PSSLChannel, PSSLChannel::VerifyInfo &)
+    #define PCREATE_SSLVerifyNotifier(fn) PCREATE_NOTIFIER(fn, PSSLChannel::VerifyInfo &)
 
     /**Set certificate verification mode for connection.
       */

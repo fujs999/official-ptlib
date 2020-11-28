@@ -824,8 +824,8 @@ class PHTTPClientPool : public PObject
       PString           m_body;
     };
 
-    typedef PNotifierTemplate<Response> Notifier;
-    #define PDECLARE_HttpPoolNotifier(cls, fn) PDECLARE_NOTIFIER2(PHTTPClientPool, cls, fn, PHTTPClientPool::Response)
+    using Notifier = PNotifierTemplate<Response, PHTTPClientPool>;
+    #define PDECLARE_HttpPoolNotifier(cls, fn) PDECLARE_NOTIFIER_FUNCTION(cls, fn, PHTTPClientPool, PHTTPClientPool::Response)
 
     struct Request
     {

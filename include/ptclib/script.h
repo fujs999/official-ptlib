@@ -239,8 +239,8 @@ class PScriptLanguage : public PObject
       Signature & signature ///< Signature of arguments following
     ) = 0;
 
-    typedef PNotifierTemplate<Signature &>  FunctionNotifier;
-    #define PDECLARE_ScriptFunctionNotifier(cls, fn) PDECLARE_NOTIFIER2(PScriptLanguage, cls, fn, PScriptLanguage::Signature &)
+    using FunctionNotifier = PNotifierTemplate<Signature &, PScriptLanguage>;
+    #define PDECLARE_ScriptFunctionNotifier(cls, fn) PDECLARE_NOTIFIER_FUNCTION(cls, fn, PScriptLanguage, PScriptLanguage::Signature &)
 
     /**Set a notifier as a script callable function.
        See class description for how \p name is parsed.

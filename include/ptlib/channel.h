@@ -483,9 +483,9 @@ class PChannel : public PObject, public std::iostream
   /**@name Asynchronous I/O functions */
   //@{
     class AsyncContext;
-    typedef PNotifierTemplate<PChannel::AsyncContext &> AsyncNotifier;
-    #define PDECLARE_AsyncNotifier(cls, fn) PDECLARE_NOTIFIER2(PChannel, cls, fn, PChannel::AsyncContext &)
-    #define PCREATE_AsyncNotifier(fn) PCREATE_NOTIFIER2(fn, PChannel::AsyncContext &)
+    using AsyncNotifier = PNotifierTemplate<PChannel::AsyncContext &, PChannel>;
+    #define PDECLARE_AsyncNotifier(cls, fn) PDECLARE_NOTIFIER_FUNCTION(cls, fn, PChannel, PChannel::AsyncContext &)
+    #define PCREATE_AsyncNotifier(fn) PCREATE_NOTIFIER(fn)
 
     /** Parameters for asynchronous I/O operation.
       */

@@ -434,7 +434,7 @@ class PGstBus : public PGstObject
     typedef PNotifierTemplate<PGstMessage> Notifier;
     #define PDECLARE_GstBusNotifier(cls, fn) PDECLARE_NOTIFIER2(PGstBus, cls, fn, PGstMessage)
     #define PDECLARE_ASYNC_GstBusNotifier(cls, fn) PDECLARE_ASYNC_NOTIFIER2(PGstBus, cls, fn, PGstMessage)
-    #define PCREATE_GstBusNotifier(fn) PCREATE_NOTIFIER2(fn, PGstMessage)
+    #define PCREATE_GstBusNotifier(fn) PCREATE_NOTIFIER(fn)
 
     bool SetNotifier(
       Notifier & notifier

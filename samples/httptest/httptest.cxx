@@ -68,10 +68,11 @@ class HTTPTest : public PProcess
   PCLASSINFO(HTTPTest, PProcess)
   PSyncPoint m_done;
 public:
+  P_DISABLE_MSVC_WARNINGS(4100, 
   PDECLARE_HttpPoolNotifier(HTTPTest, OnPoolDone)
   {
     m_done.Signal();
-  }
+  })
 
   void ClientPool(PHTTP::Commands cmd, const PArgList & args)
   {

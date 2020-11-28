@@ -381,8 +381,8 @@ class PEthSocketThread : public PObject
 {
     PCLASSINFO(PEthSocketThread, PObject);
   public:
-    #define PDECLARE_EthFrameNotifier(cls, fn) PDECLARE_NOTIFIER2(PEthSocket, cls, fn, PEthSocket::Frame &)
-    typedef PNotifierTemplate<PEthSocket::Frame &> FrameNotifier;
+    using FrameNotifier = PNotifierTemplate<PEthSocket::Frame &, PEthSocket>;
+    #define PDECLARE_EthFrameNotifier(cls, fn) PDECLARE_NOTIFIER_FUNCTION(cls, fn, PEthSocket, PEthSocket::Frame &)
 
     PEthSocketThread(const FrameNotifier & notifier = NULL);
     ~PEthSocketThread() { Stop(); }

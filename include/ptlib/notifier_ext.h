@@ -32,25 +32,32 @@
 #endif
 
 #include <list>
+#include <ptlib/notifier.h>
+
+
+class PTimeInterval;
 
 
 ///////////////////////////////////////////////////////////////////////
 
 /** Declare a safe notifier object class.
-    See PDECLARE_NOTIFIER2 for more information.
+    See PDECLARE_NOTIFIER_EXT for more information.
   */
-#define PDECLARE_SAFE_NOTIFIER_EXT(notifierType, notifierArg, notifiee, func, ParamType, ParamArg) \
-             PDECLARE_NOTIFIER_EXT(notifierType, notifierArg, notifiee, func, ParamType, ParamArg, PNotifierTemplate<ParamType, PSafeObject, PSafePtr<PSafeObject>>)
+#define PDECLARE_SAFE_NOTIFIER_EXT(NotifierType, notifierArg, TargetType, func, ParamType, paramArg) \
+        using func##Notifier = PNotifierTemplate<ParamType, PSafeObject, PSafePtr<PSafeObject>>; \
+        PDECLARE_NOTIFIER_INTERNAL(NotifierType, notifierArg, TargetType, func, ParamType, paramArg, func##Notifier)
 
 /** Declare a safe notifier object class.
-    See PDECLARE_NOTIFIER2 for more information.
+    See PDECLARE_SAFE_NOTIFIER2 for more information.
   */
-#define PDECLARE_SAFE_NOTIFIER2(notifierType,   notifiee, func, ParamType  ) \
-     PDECLARE_SAFE_NOTIFIER_EXT(notifierType, , notifiee, func, ParamType, )
+#define PDECLARE_SAFE_NOTIFIER2(   NotifierType,   TargetType, func, ParamType  ) \
+        PDECLARE_SAFE_NOTIFIER_EXT(NotifierType, , TargetType, func, ParamType, )
 
-/// Declare safe PNotifier derived class with P_INT_PTR parameter. Uses PDECLARE_SAFE_NOTIFIER2 macro.
-#define PDECLARE_SAFE_NOTIFIER(notifierType, notifiee, func) \
-       PDECLARE_SAFE_NOTIFIER2(notifierType, notifiee, func, P_INT_PTR)
+/** Declare safe PNotifier derived class with intptr_t parameter.
+    Uses PDECLARE_SAFE_NOTIFIER2 macro.
+  */
+#define PDECLARE_SAFE_NOTIFIER( NotifierType, TargetType, func) \
+        PDECLARE_SAFE_NOTIFIER2(NotifierType, TargetType, func, intptr_t)
 
 
 ///////////////////////////////////////////////////////////////////////
@@ -87,7 +94,7 @@ class PValidatedNotifierTarget
   private:
     PNotifierIdentifer m_validatedNotifierId;
 
-    template <typename ParamType, class NotifierType, class TargetType>
+    template <typename ParamType, typename NotifierType, typename TargetType>
     friend class PValidatedNotifier;
 };
 
@@ -99,7 +106,7 @@ class PValidatedNotifierTarget
 
    See PNotifierFunctionTemplate for more information.
   */
-template <typename ParamType, class NotifierType = PObject, class TargetType = PObject*>
+template <typename ParamType, typename NotifierType = PObject, typename TargetType = void *>
 class PValidatedNotifier : public PNotifierTemplate<ParamType, NotifierType, TargetType>
 {
     typedef PNotifierTemplate<ParamType, NotifierType, TargetType> Parent;
@@ -127,20 +134,22 @@ class PValidatedNotifier : public PNotifierTemplate<ParamType, NotifierType, Tar
 
 
 /** Declare a validated notifier object class.
-    See PDECLARE_NOTIFIER2 for more information.
+    See PDECLARE_NOTIFIER_EXT for more information.
   */
 #define PDECLARE_VALIDATED_NOTIFIER_EXT(NotifierType, notifierArg, TargetType, func, ParamType, paramArg) \
-            PDECLARE_NOTIFIER_EXT(NotifierType, notifierArg, TargetType, func, ParamType, paramArg, PValidatedNotifier<ParamType>, target)
+        PDECLARE_NOTIFIER_INTERNAL(     NotifierType, notifierArg, TargetType, func, ParamType, paramArg, PValidatedNotifier<ParamType>, target)
 
 /** Declare a validated notifier object class.
-    See PDECLARE_NOTIFIER2 for more information.
+    Uses PDECLARE_VALIDATED_NOTIFIER_EXT macro.
   */
-#define PDECLARE_VALIDATED_NOTIFIER2(NotifierType,   TargetType, func, ParamType  ) \
-     PDECLARE_VALIDATED_NOTIFIER_EXT(NotifierType, , TargetType, func, ParamType, )
+#define PDECLARE_VALIDATED_NOTIFIER2(   NotifierType,   TargetType, func, ParamType  ) \
+        PDECLARE_VALIDATED_NOTIFIER_EXT(NotifierType, , TargetType, func, ParamType, )
 
-/// Declare validated PNotifier derived class with intptr_t parameter. Uses PDECLARE_VALIDATED_NOTIFIER2 macro.
-#define PDECLARE_VALIDATED_NOTIFIER(NotifierType, TargetType, func) \
-       PDECLARE_VALIDATED_NOTIFIER2(NotifierType, TargetType, func, intptr_t)
+/** Declare validated PNotifier derived class with intptr_t parameter.
+    Uses PDECLARE_VALIDATED_NOTIFIER2 macro.
+ */
+#define PDECLARE_VALIDATED_NOTIFIER( NotifierType, TargetType, func) \
+        PDECLARE_VALIDATED_NOTIFIER2(NotifierType, TargetType, func, intptr_t)
 
 
 ///////////////////////////////////////////////////////////////////////
@@ -196,7 +205,8 @@ class PAsyncNotifierTarget
   private:
     PNotifierIdentifer m_asyncNotifierId;
 
-  template <typename ParmType> friend class PAsyncNotifierFunction;
+  template <typename ParmType, typename NotifierType, typename TargetType>
+  friend class PAsyncNotifier;
 };
 
 
@@ -212,30 +222,38 @@ class PAsyncNotifierTarget
    function is called. It is usually easier to simply make sure the data is
    passed by value and never pointer or reference.
   */
-template <typename ParamType, class NotifierType = PObject, class TargetType = PObject*>
+template <typename ParamType, typename NotifierType = PObject, typename TargetType = void*>
 class PAsyncNotifier : public PNotifierTemplate<ParamType, NotifierType, TargetType>, PAsyncNotifierCallback
 {
     typedef PNotifierTemplate<ParamType, NotifierType, TargetType> Parent;
     PCLASSINFO(PAsyncNotifier, Parent);
   protected:
-    NotifierType * m_notifier;
-    ParamType      m_param;
+    PNotifierIdentifer m_asyncNotifierId;
+    NotifierType     * m_notifier;
+    ParamType          m_param;
   public:
     PAsyncNotifier(typename Parent::Function fn, TargetType target, PAsyncNotifierTarget & notifierTarget)
       : Parent(std::move(fn), target)
+      , m_asyncNotifierId(notifierTarget.m_asyncNotifierId)
       , m_notifier(nullptr)
     { }
     PAsyncNotifier(typename Parent::Function fn, TargetType target, PAsyncNotifierTarget * notifierTarget)
       : Parent(std::move(fn), target)
+      , m_asyncNotifierId(notifierTarget->m_asyncNotifierId)
       , m_notifier(nullptr)
     { }
 
     void operator()(NotifierType & notifier, ParamType param)
     {
-      Queue(this);
+      if (PAssert(m_notifier == nullptr || m_notifier == &notifier, "Cannot execute PAsyncNotifier from different sources")) {
+        m_notifier = &notifier;
+        m_param = param;
+        Queue(this);
+      }
     }
 
-    virtual void Call()
+  protected:
+    virtual void Call() override
     {
       Parent:: operator()(*m_notifier, m_param);
     }
@@ -246,30 +264,32 @@ class PAsyncNotifier : public PNotifierTemplate<ParamType, NotifierType, TargetT
     See PDECLARE_NOTIFIER_EXT for more information.
   */
 #define PDECLARE_ASYNC_NOTIFIER_EXT(NotifierType, notifierArg, TargetType, func, ParamType, paramArg) \
-       PDECLARE_NOTIFIER_EXT(NotifierType, notifierArg, TargetType, func, ParamType, paramArg, PAsyncNotifier<ParamType>, target)
+        PDECLARE_NOTIFIER_INTERNAL( NotifierType, notifierArg, TargetType, func, ParamType, paramArg, PAsyncNotifier<ParamType>, target)
 
 /** Declare an asynchronous notifier object class.
-    See PDECLARE_NOTIFIER_EXT for more information.
+    Uses PDECLARE_ASYNC_NOTIFIER_EXT macro.
   */
-#define PDECLARE_ASYNC_NOTIFIER2(NotifierType, TargetType, func, ParamType) \
-       PDECLARE_ASYNC_NOTIFIER_EXT(NotifierType, , TargetType, func, ParamType, )
+#define PDECLARE_ASYNC_NOTIFIER2(   NotifierType,   TargetType, func, ParamType) \
+        PDECLARE_ASYNC_NOTIFIER_EXT(NotifierType, , TargetType, func, ParamType, )
 
-/// Declare an asynchronous PNotifier derived class with intptr_t parameter. Uses PDECLARE_NOTIFIER_EXT macro.
-#define PDECLARE_ASYNC_NOTIFIER(NotifierType, TargetType, func) \
-       PDECLARE_ASYNC_NOTIFIER2(NotifierType, TargetType, func, intptr_t)
+/** Declare an asynchronous PNotifier derived class with intptr_t parameter.
+    Uses PDECLARE_ASYNC_NOTIFIER2 macro.
+  */
+#define PDECLARE_ASYNC_NOTIFIER( NotifierType, TargetType, func) \
+        PDECLARE_ASYNC_NOTIFIER2(NotifierType, TargetType, func, intptr_t)
 
 
 ///////////////////////////////////////////////////////////////////////
 
 /**Maintain a list of notifiers to be called all at once.
   */
-template <typename ParamType>
+template <typename ParamType, typename NotifierType = PObject, typename TargetType = void*>
 class PNotifierListTemplate : public PObject
 {
-  PCLASSINFO(PNotifierListTemplate, PObject);
+    PCLASSINFO(PNotifierListTemplate, PObject);
   private:
-    typedef PNotifierTemplate<ParamType> Notifier;
-    typedef std::list<Notifier> List;
+    using Notifier = PNotifierTemplate<ParamType, NotifierType, TargetType>;
+    using List = std::list<Notifier>;
     List m_list;
 
   public:
@@ -311,18 +331,18 @@ class PNotifierListTemplate : public PObject
     }
 
     /// Remove all notifiers that use the specified target object.
-    void RemoveTarget(PObject * obj)
+    void RemoveTarget(void * const target)
     {
-      this->m_list.remove_if([obj](Notifier & test) { return obj == test.GetTarget(); });
+      this->m_list.remove_if([target](const Notifier & test) { return test.GetTarget() == target; });
     }
 
     /// Execute all notifiers in the list.
-    bool operator()(PObject & obj, ParamType param)
+    bool operator()(NotifierType & obj, ParamType param)
     {
       if (this->m_list.empty())
         return false;
-      for (typename List::iterator it = this->m_list.begin(); it != this->m_list.end() ; ++it)
-        (*it)(obj, param);
+      for (auto it : this->m_list)
+        it(obj, param);
       return true;
     }
 };

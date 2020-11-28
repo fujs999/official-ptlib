@@ -150,13 +150,13 @@ class PInterfaceMonitor : public PProcessStartup
     };
 
     /// Type for disposition notifiers
-    typedef PNotifierTemplate<InterfaceChange> Notifier;
+    using Notifier = PNotifierTemplate<InterfaceChange, PInterfaceMonitor>;
 
     /// Macro to declare correctly typed interface notifier
-    #define PDECLARE_InterfaceNotifier(cls, fn) PDECLARE_NOTIFIER2(PInterfaceMonitor, cls, fn, PInterfaceMonitor::InterfaceChange)
+    #define PDECLARE_InterfaceNotifier(cls, fn) PDECLARE_NOTIFIER_FUNCTION(cls, fn, PInterfaceMonitor, PInterfaceMonitor::InterfaceChange)
 
     /// Macro to create correctly typed interface notifier
-    #define PCREATE_InterfaceNotifier(fn) PCREATE_NOTIFIER2(fn, PInterfaceMonitor::InterfaceChange)
+    #define PCREATE_InterfaceNotifier(fn) PCREATE_NOTIFIER(fn)
 
     enum {
       DefaultPriority = 50,

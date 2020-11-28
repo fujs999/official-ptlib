@@ -252,7 +252,7 @@ class PLua : public PScriptLanguage
     );
 
 
-    #define PDECLARE_LuaFunctionNotifier(cls, fn) PDECLARE_NOTIFIER2(PLua, cls, fn, PScriptLanguage::Signature &)
+    #define PDECLARE_LuaFunctionNotifier(cls, fn) PDECLARE_ScriptFunctionNotifier(cls, fn)
 
     /**Set a notifier as a Lua callable function.
        See class description for how \p name is parsed.
