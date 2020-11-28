@@ -2473,21 +2473,21 @@ typedef PIntSameOrder<uint16_t> PUInt16b;
 #endif
 
 #if PBYTE_ORDER==PLITTLE_ENDIAN
-typedef PIntSameOrder<int32_t> int32_tl;
+typedef PIntSameOrder<int32_t> PInt32l;
 #elif PBYTE_ORDER==PBIG_ENDIAN
-typedef PIntReversedOrder<int32_t> int32_tl;
+typedef PIntReversedOrder<int32_t> PInt32l;
 #endif
 
 #if PBYTE_ORDER==PLITTLE_ENDIAN
-typedef PIntReversedOrder<int32_t> int32_tb;
+typedef PIntReversedOrder<int32_t> PInt32b;
 #elif PBYTE_ORDER==PBIG_ENDIAN
-typedef PIntSameOrder<int32_t> int32_tb;
+typedef PIntSameOrder<int32_t> PInt32b;
 #endif
 
 #if PBYTE_ORDER==PLITTLE_ENDIAN
-typedef PIntSameOrder<uint32_t> uint32_tl;
+typedef PIntSameOrder<uint32_t> PUInt32l;
 #elif PBYTE_ORDER==PBIG_ENDIAN
-typedef PIntReversedOrder<uint32_t> uint32_tl;
+typedef PIntReversedOrder<uint32_t> PUInt32l;
 #endif
 
 #if PBYTE_ORDER==PLITTLE_ENDIAN

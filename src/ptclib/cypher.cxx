@@ -682,7 +682,7 @@ void PMessageDigest5::Transform(const uint8_t * block)
 
   uint32_t x[16];
   for (PINDEX i = 0; i < 16; i++)
-    x[i] = ((uint32_tl*)block)[i];
+    x[i] = ((PUInt32l*)block)[i];
 
   /* Round 1 */
   FF(a, b, c, d, x[ 0], S11, 0xd76aa478); /* 1 */
@@ -825,7 +825,7 @@ void PMessageDigest5::InternalCompleteDigest(Result & result)
   Process(&countBytes, sizeof(countBytes));
 
   // Store state in digest
-  uint32_tl * valuep = (uint32_tl *)result.GetPointer(4 * sizeof(uint32_tl));
+  PUInt32l * valuep = (PUInt32l *)result.GetPointer(4 * sizeof(PUInt32l));
   for (PINDEX i = 0; i < PARRAYSIZE(state); i++)
     valuep[i] = state[i];
 
@@ -1154,10 +1154,10 @@ static const uint32_t TEADelta = 0x9e3779b9;    // Magic number for key schedule
 
 void PTEACypher::Initialise(bool)
 {
-  k0 = ((const uint32_tl *)(const uint8_t *)key)[0];
-  k1 = ((const uint32_tl *)(const uint8_t *)key)[1];
-  k2 = ((const uint32_tl *)(const uint8_t *)key)[2];
-  k3 = ((const uint32_tl *)(const uint8_t *)key)[3];
+  k0 = ((const PUInt32l *)(const uint8_t *)key)[0];
+  k1 = ((const PUInt32l *)(const uint8_t *)key)[1];
+  k2 = ((const PUInt32l *)(const uint8_t *)key)[2];
+  k3 = ((const PUInt32l *)(const uint8_t *)key)[3];
 }
 
 

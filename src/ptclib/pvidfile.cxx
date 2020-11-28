@@ -486,10 +486,10 @@ class PBMPFile : public PStillImageVideoFile
     #pragma pack(1)
       struct {
         PUInt16l m_FileType;     /* File type, always 4D42h ("BM") */
-        uint32_tl m_FileSize;     /* Size of the file in bytes */
+        PUInt32l m_FileSize;     /* Size of the file in bytes */
         PUInt16l m_Reserved1;    /* Always 0 */
         PUInt16l m_Reserved2;    /* Always 0 */
-        uint32_tl m_BitmapOffset; /* Starting position of image data in bytes */
+        PUInt32l m_BitmapOffset; /* Starting position of image data in bytes */
       } fileHeader;
     #pragma pack()
 
@@ -501,17 +501,17 @@ class PBMPFile : public PStillImageVideoFile
 
     #pragma pack(1)
       struct {
-        uint32_tl m_Size;            /* Size of this header in bytes */
-        int32_tl  m_Width;           /* Image width in pixels */
-        int32_tl  m_Height;          /* Image height in pixels */
+        PUInt32l m_Size;            /* Size of this header in bytes */
+        PInt32l  m_Width;           /* Image width in pixels */
+        PInt32l  m_Height;          /* Image height in pixels */
         PUInt16l m_Planes;          /* Number of color planes */
         PUInt16l m_BitsPerPixel;    /* Number of bits per pixel */
-        uint32_tl m_Compression;     /* Compression methods used */
-        uint32_tl m_SizeOfBitmap;    /* Size of bitmap in bytes */
-        int32_tl  m_HorzResolution;  /* Horizontal resolution in pixels per meter */
-        int32_tl  m_VertResolution;  /* Vertical resolution in pixels per meter */
-        uint32_tl m_ColorsUsed;      /* Number of colors in the image */
-        uint32_tl m_ColorsImportant; /* Minimum number of important colors */
+        PUInt32l m_Compression;     /* Compression methods used */
+        PUInt32l m_SizeOfBitmap;    /* Size of bitmap in bytes */
+        PInt32l  m_HorzResolution;  /* Horizontal resolution in pixels per meter */
+        PInt32l  m_VertResolution;  /* Vertical resolution in pixels per meter */
+        PUInt32l m_ColorsUsed;      /* Number of colors in the image */
+        PUInt32l m_ColorsImportant; /* Minimum number of important colors */
       } bitmapHeader;
     #pragma pack()
 

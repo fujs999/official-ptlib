@@ -685,13 +685,13 @@ bool PWAVFile::UpdateHeader()
   m_dataLength = PFile::GetLength() - m_headerLength;
 
   // rewrite the length in the RIFF chunk
-  int32_tl riffChunkLen = (m_headerLength - 8) + m_dataLength; // size does not include first 8 bytes
+  PInt32l riffChunkLen = (m_headerLength - 8) + m_dataLength; // size does not include first 8 bytes
   PFile::SetPosition(4);
   if (!PFile::Write(&riffChunkLen, sizeof(riffChunkLen)))
     return false;
 
   // rewrite the data length field in the data chunk
-  int32_tl dataChunkLen = m_dataLength;
+  PInt32l dataChunkLen = m_dataLength;
   PFile::SetPosition(m_headerLength - 4);
   if (!PFile::Write(&dataChunkLen, sizeof(dataChunkLen)))
     return false;
