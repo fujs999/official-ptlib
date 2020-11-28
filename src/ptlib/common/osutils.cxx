@@ -2305,8 +2305,10 @@ PString PConfigArgs::CharToString(char letter) const
 PProcess * PProcessInstance = NULL;
 
 
-int PProcess::InternalMain(void *)
+int PProcess::InternalMain(int argc, char * argv[], void *)
 {
+  PreInitialise(argc, argv);
+
   setlocale(LC_CTYPE, "UTF-8"); // A PString is documented as UTF-8, so all conversions go there
 
 #if P_SDL && defined(P_MACOSX)
@@ -2337,8 +2339,10 @@ void PProcess::PreInitialise(int c, char ** v)
   if (m_productName.IsEmpty())
     m_productName = m_executableFile.GetTitle().ToLower();
 
-  m_arguments.SetArgs(c-1, v+1);
-  m_arguments.SetCommandName(m_executableFile.GetTitle());
+  if (c > 0) {
+    m_arguments.SetArgs(c - 1, v + 1);
+    m_arguments.SetCommandName(m_executableFile.GetTitle());
+  }
 }
 
 

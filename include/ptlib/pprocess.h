@@ -48,13 +48,7 @@
  */
 #define PCREATE_PROCESS(cls) \
   int main(int argc, char * argv[]) \
-    { \
-      cls *pInstance = new cls(); \
-      pInstance->PreInitialise(argc, argv); \
-      int terminationValue = pInstance->InternalMain(); \
-      delete pInstance; \
-      return terminationValue; \
-    }
+    { return std::make_unique<cls>()->InternalMain(argc, argv, nullptr); }
 
 /*$MACRO PDECLARE_PROCESS(cls,ancestor,manuf,name,major,minor,status,build)
    This macro is used to declare the components necessary for a user PWLib
@@ -567,7 +561,7 @@ class PProcess : public PThread
     );
 
     /// Main function for process, called from real main after initialisation
-    virtual int InternalMain(void * arg = NULL);
+    virtual int InternalMain(int argc, char * argv[], void * hInstance);
 
   //@{
     /// Add all the C run-time signal handlers

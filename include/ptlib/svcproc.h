@@ -144,11 +144,9 @@ class PServiceProcess : public PProcess
     /* Internal initialisation function called directly from
        <code>main()</code>. The user should never call this function.
      */
-    virtual int InternalMain(void * arg = NULL);
-
+    virtual int InternalMain(int argc, char * argv[], void * hInstance);
 
     virtual bool IsServiceProcess() const;
-
 
   protected:
   // Member variables
@@ -159,6 +157,11 @@ class PServiceProcess : public PProcess
 
 // Include platform dependent part of class
 #ifdef _WIN32
+    #undef PCREATE_PROCESS
+    #define PCREATE_PROCESS(cls) \
+      extern "C" int PASCAL WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int) \
+        { return std::make_unique<cls>()->InternalMain(__argc, __argv, hInstance); }
+
   public:
     virtual const char * GetServiceDependencies() const;
     // Get a set of null terminated strings terminated with double null.

@@ -497,8 +497,10 @@ int PServiceProcess::InitialiseService()
   return -1;
 }
 
-int PServiceProcess::InternalMain(void *)
+int PServiceProcess::InternalMain(int argc, char * argv[], void *)
 {
+  PreInitialise(argc, argv);
+
   SetTerminationValue(InitialiseService());
   if (GetTerminationValue() < 0) {
     // Make sure housekeeping thread is going so signals are handled.
@@ -508,7 +510,7 @@ int PServiceProcess::InternalMain(void *)
 
     if (OnStart()) {
       SetTerminationValue(0);
-      PProcess::InternalMain(NULL);
+      PProcess::InternalMain(0, nullptr, nullptr);
     }
   }
 

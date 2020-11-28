@@ -196,15 +196,6 @@ class RegistryKey
     HKEY m_hKey;
 };
 
-#define PDEFINE_WINMAIN(hInstance, hPrevInstance, lpCmdLine, nCmdShow) \
-    int PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
-extern "C" PDEFINE_WINMAIN(hInstance, hPrevInstance, lpCmdLine, nCmdShow);
-
-#if defined(_MSC_VER) && !defined(_WIN32)
-  extern "C" int __argc;
-  extern "C" char ** __argv;
-#endif
-
 #undef Yield
 
 #define P_HAS_UNIQUE_THREAD_ID_FMT 0

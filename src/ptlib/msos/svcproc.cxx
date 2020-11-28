@@ -57,7 +57,7 @@
 #define ICON_RESID 1
 #define SYSTRAY_ICON_ID 1
 
-static HINSTANCE hInstance;
+static HINSTANCE s_hInstance;
 
 #define DATE_WIDTH    72
 #define THREAD_WIDTH  80
@@ -300,8 +300,11 @@ static bool IsServiceRunning(PServiceProcess * svc)
 }
 
 
-int PServiceProcess::InternalMain(void * arg)
+int PServiceProcess::InternalMain(int argc, char * argv[], void * hInstance)
 {
+  s_hInstance = (HINSTANCE)hInstance;
+  PreInitialise(argc, argv);
+
   {
     PMEMORY_IGNORE_ALLOCATIONS_FOR_SCOPE;
 
@@ -318,9 +321,6 @@ int PServiceProcess::InternalMain(void * arg)
     PTrace::SetLevel(GetLogLevel());
 #endif
   }
-
-  hInstance = (HINSTANCE)arg;
-
   
   if (!PProcess::IsOSVersion(5,1,0)) {
     PError << "Unsupported Win32 platform type!" << endl;
@@ -500,8 +500,8 @@ bool PServiceProcess::CreateControlWindow(bool createDebugWindow)
   wclass.lpfnWndProc = (WNDPROC)StaticWndProc;
   wclass.cbClsExtra = 0;
   wclass.cbWndExtra = 0;
-  wclass.hInstance = hInstance;
-  wclass.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(ICON_RESID));
+  wclass.hInstance = s_hInstance;
+  wclass.hIcon = LoadIcon(s_hInstance, MAKEINTRESOURCE(ICON_RESID));
   wclass.hCursor = NULL;
   wclass.hbrBackground = (HBRUSH)(COLOR_WINDOW+1);
   wclass.lpszMenuName = NULL;
@@ -564,7 +564,7 @@ bool PServiceProcess::CreateControlWindow(bool createDebugWindow)
                    CW_USEDEFAULT, CW_USEDEFAULT, 
                    NULL,
                    menubar,
-                   hInstance,
+                   s_hInstance,
                    NULL) == NULL)
     return false;
 
@@ -580,14 +580,14 @@ bool PServiceProcess::CreateControlWindow(bool createDebugWindow)
 #endif // P_CONFIG_FILE
 
     m_debugWindow = CreateWindow("edit",
-                               "",
-                               WS_CHILD|WS_HSCROLL|WS_VSCROLL|WS_VISIBLE|WS_BORDER|
-                                      ES_MULTILINE|ES_READONLY,
-                               0, 0, 0, 0,
-                               m_controlWindow,
-                               (HMENU)10,
-                               hInstance,
-                               NULL);
+                                 "",
+                                 WS_CHILD|WS_HSCROLL|WS_VSCROLL|WS_VISIBLE|WS_BORDER|
+                                        ES_MULTILINE|ES_READONLY,
+                                 0, 0, 0, 0,
+                                 m_controlWindow,
+                                 (HMENU)10,
+                                 s_hInstance,
+                                 NULL);
     SendMessage(m_debugWindow, EM_SETLIMITTEXT, 128000, 0);
     uint32_t TabStops[] = {
       DATE_WIDTH,
@@ -773,7 +773,7 @@ LPARAM PServiceProcess::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPara
             memset(&fileDlgInfo, 0, sizeof(fileDlgInfo));
             fileDlgInfo.lStructSize = sizeof(fileDlgInfo);
             fileDlgInfo.hwndOwner = hWnd;
-            fileDlgInfo.hInstance = hInstance;
+            fileDlgInfo.hInstance = s_hInstance;
             fileBuffer[0] = '\0';
             fileDlgInfo.lpstrFile = fileBuffer;
             char customFilter[100] = "All Files";
@@ -1448,7 +1448,7 @@ bool PServiceProcess::ProcessCommand(const char * cmd)
     case SvcCmdTray :
       if (CreateControlWindow(false)) {
         PNotifyIconData nid(m_controlWindow, NIF_MESSAGE|NIF_ICON, GetName());
-        nid.hIcon = (HICON)LoadImage(hInstance, MAKEINTRESOURCE(ICON_RESID), IMAGE_ICON, // 16x16 icon
+        nid.hIcon = (HICON)LoadImage(s_hInstance, MAKEINTRESOURCE(ICON_RESID), IMAGE_ICON, // 16x16 icon
                                GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), 0);
         nid.uCallbackMessage = UWM_SYSTRAY; // message sent to nid.hWnd
         nid.Add();    // This adds the icon
