@@ -2685,15 +2685,6 @@ PRegularExpression::PRegularExpression(const char * pattern, CompileOptions opti
 }
 
 
-PRegularExpression::PRegularExpression(const PRegularExpression & from)
-  : std::regex(from)
-  , m_pattern(from.m_pattern)
-  , m_lastErrorCode(from.m_lastErrorCode)
-  , m_lastErrorType(from.m_lastErrorType)
-{
-}
-
-
 void PRegularExpression::PrintOn(ostream &strm) const
 {
   strm << m_pattern;

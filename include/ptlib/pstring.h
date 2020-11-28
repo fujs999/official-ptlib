@@ -3193,20 +3193,6 @@ class PRegularExpression : public PObject, public std::regex
       const char * cpattern,  ///< Pattern to compile
       flag_type flags         ///< Pattern match options
     );
-    /**
-    * Copy a regular expression
-    */
-    PRegularExpression(
-      const PRegularExpression &
-    );
-
-    /**
-    * Assign a regular expression
-    */
-    PRegularExpression & operator =(
-      const PRegularExpression &
-      );
-
     //@}
 
 
