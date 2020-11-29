@@ -400,9 +400,10 @@ int PServiceProcess::InternalMain(int argc, char * argv[], void * hInstance)
   m_terminationEvent = CreateEvent(NULL, true, false, GetName());
   PAssertOS(m_terminationEvent != NULL);
 
-  m_threadHandle.Detach();
-  m_threadHandle = (HANDLE)_beginthread(StaticThreadEntry, 0, this);
-  PAssertOS(m_threadHandle.IsValid());
+  std::thread fakeMainThread(std::bind(&PServiceProcess::ThreadEntry, this));
+  m_threadId = fakeMainThread.get_id();
+  m_nativeHandle = fakeMainThread.native_handle();
+  fakeMainThread.detach();
 
   SetTerminationValue(0);
 
@@ -441,7 +442,7 @@ int PServiceProcess::InternalMain(int argc, char * argv[], void * hInstance)
 
   OnStop();
 
-  if (!m_threadHandle.Wait(10000)) {
+  if (!m_threadRunning.try_lock_for(std::chrono::seconds(10))) {
     PTRACE(1, "Timeout waiting for service Main() to exit.");
   }
 
@@ -450,8 +451,7 @@ int PServiceProcess::InternalMain(int argc, char * argv[], void * hInstance)
   m_activeThreads.erase(m_threadId);
   m_threadId = std::this_thread::get_id();
   m_uniqueId = ::GetCurrentThreadId();
-  m_threadHandle.Detach();
-  m_threadHandle = GetCurrentThread();
+  m_nativeHandle = GetCurrentThread();
   m_activeThreads[m_threadId] = this;
   m_threadMutex.Signal();
 
@@ -997,26 +997,21 @@ void PServiceProcess::MainEntry(uint32_t argc, LPTSTR * argv)
   GetArguments().SetArgs(argc, argv);
 
   // start the thread that performs the work of the service.
-  m_threadHandle.Detach();
-  m_threadHandle = (HANDLE)_beginthread(StaticThreadEntry, 0, this);
-  if (m_threadHandle.IsValid()) {
-    while (WaitForSingleObject(m_startedEvent, 10000) == WAIT_TIMEOUT) {
-      if (!ReportStatus(SERVICE_START_PENDING, NO_ERROR, 1, 20000))
-        return;
-    }
-    // Wait here for the end
-    WaitForSingleObject(m_terminationEvent, INFINITE);
+  std::thread fakeMainThread(std::bind(&PServiceProcess::ThreadEntry, this));
+  m_threadId = fakeMainThread.get_id();
+  m_nativeHandle = fakeMainThread.native_handle();
+  fakeMainThread.detach();
+
+  while (WaitForSingleObject(m_startedEvent, 10000) == WAIT_TIMEOUT) {
+    if (!ReportStatus(SERVICE_START_PENDING, NO_ERROR, 1, 20000))
+      return;
   }
+  // Wait here for the end
+  WaitForSingleObject(m_terminationEvent, INFINITE);
 
   CloseHandle(m_startedEvent);
   CloseHandle(m_terminationEvent);
   ReportStatus(SERVICE_STOPPED, GetTerminationValue());
-}
-
-
-void PServiceProcess::StaticThreadEntry(void * arg)
-{
-  ((PServiceProcess *)arg)->ThreadEntry();
 }
 
 
@@ -1138,14 +1133,14 @@ void PServiceProcess::OnStop()
 
 bool PServiceProcess::OnPause()
 {
-  SuspendThread(m_threadHandle);
+  SuspendThread(m_nativeHandle);
   return true;
 }
 
 
 void PServiceProcess::OnContinue()
 {
-  ResumeThread(m_threadHandle);
+  ResumeThread(m_nativeHandle);
 }
 
 

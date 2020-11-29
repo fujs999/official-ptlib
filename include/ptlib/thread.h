@@ -475,7 +475,7 @@ class PThread : public PObject
     PString                         m_threadName; // Give the thread a name for debugging purposes.
     mutable std::mutex              m_threadNameMutex;
     mutable std::timed_mutex        m_threadRunning;
-    std::thread::native_handle_type m_nativeHandle;
+    std::atomic<std::thread::native_handle_type> m_nativeHandle;
     std::atomic<PThreadIdentifier>  m_threadId;
     PUniqueThreadIdentifier         m_uniqueId;
     PTime                           m_threadStartTime;
@@ -485,9 +485,6 @@ class PThread : public PObject
 
     // Include platform dependent part of class
 #ifdef _WIN32
-  protected:
-    PWin32Handle m_threadHandle;
-
   #if defined(P_WIN_COM)
     public:
       bool CoInitialise();

@@ -3064,11 +3064,8 @@ void PThread::InternalThreadStarted()
   sm_currentThread = this;
   m_threadStartTime.SetCurrentTime();
   m_threadId = std::this_thread::get_id();
+  m_nativeHandle = GetCurrentThread();
   m_uniqueId = GetCurrentUniqueIdentifier();
-
-  #if _WIN32
-    m_threadHandle.Duplicate(::GetCurrentThread());
-  #endif
 
   SetThreadName(GetThreadName());
 
