@@ -1059,48 +1059,51 @@ class PHTTPServer;
 class PHTTPConnectionInfo : public PObject
 {
   PCLASSINFO(PHTTPConnectionInfo, PObject)
+  private:
+    void operator=(const PHTTPConnectionInfo &) { }
   public:
     PHTTPConnectionInfo();
+    PHTTPConnectionInfo(const PHTTPConnectionInfo &);
 
-    PHTTP::Commands GetCommandCode() const { return commandCode; }
-    const PString & GetCommandName() const { return commandName; }
+    PHTTP::Commands GetCommandCode() const { return m_commandCode; }
+    const PString & GetCommandName() const { return m_commandName; }
 
-    const PURL & GetURL() const       { return url; }
+    const PURL & GetURL() const       { return m_url; }
 
-    const PMIMEInfo & GetMIME() const { return mimeInfo; }
+    const PMIMEInfo & GetMIME() const { return m_mimeInfo; }
     void SetMIME(const PString & tag, const PString & value);
 
     PBoolean IsCompatible(int major, int minor) const;
 
-    bool IsPersistent() const         { return isPersistent; }
-    bool WasPersistent() const        { return wasPersistent; }
-    bool IsProxyConnection() const    { return isProxyConnection; }
-    int  GetMajorVersion() const      { return majorVersion; }
-    int  GetMinorVersion() const      { return minorVersion; }
+    bool IsPersistent() const         { return m_isPersistent; }
+    bool WasPersistent() const        { return m_wasPersistent; }
+    bool IsProxyConnection() const    { return m_isProxyConnection; }
+    int  GetMajorVersion() const      { return m_majorVersion; }
+    int  GetMinorVersion() const      { return m_minorVersion; }
 
-    long GetEntityBodyLength() const  { return entityBodyLength; }
+    long GetEntityBodyLength() const  { return m_entityBodyLength; }
 
     /**Do not persist.
       */
-    void DisablePersistence() { isPersistent = false; }
+    void DisablePersistence() { m_isPersistent = false; }
 
     /**Get the maximum time a persistent connection may persist.
       */
-    PTimeInterval GetPersistenceTimeout() const { return PTimeInterval(0,persistenceSeconds); }
+    PTimeInterval GetPersistenceTimeout() const { return m_persistenceTimeout; }
 
     /**Set the maximum time a persistent connection may persist.
       */
-    void SetPersistenceTimeout(const PTimeInterval & t) { persistenceSeconds = t.GetSeconds(); }
+    void SetPersistenceTimeout(const PTimeInterval & t) { m_persistenceTimeout = t; }
 
     /**Get the maximum number of transations (GET/POST etc) for persistent connection.
        If this is zero then there is no maximum.
       */
-    unsigned GetPersistenceMaximumTransations() const { return persistenceMaximum; }
+    unsigned GetPersistenceMaximumTransations() const { return m_persistenceMaximum; }
 
     /**Set the maximum number of transations (GET/POST etc) for persistent connection.
        If this is zero then there is no maximum.
       */
-    void SetPersistenceMaximumTransations(unsigned m) { persistenceMaximum = m; }
+    void SetPersistenceMaximumTransations(unsigned m) { m_persistenceMaximum = m; }
 
     const PMultiPartList & GetMultipartFormInfo() const
       { return m_multipartFormInfo; }
@@ -1108,29 +1111,29 @@ class PHTTPConnectionInfo : public PObject
     void ResetMultipartFormInfo()
       { m_multipartFormInfo.RemoveAll(); }
 
-    PString GetEntityBody() const   { return entityBody; }
+    PString GetEntityBody() const   { return m_entityBody; }
 
     bool IsWebSocket() const { return m_isWebSocket; }
     void ClearWebSocket() { m_isWebSocket = false; }
 
   protected:
     PBoolean Initialise(PHTTPServer & server, PString & args);
-    bool DecodeMultipartFormInfo() { return mimeInfo.DecodeMultiPartList(m_multipartFormInfo, entityBody); }
+    bool DecodeMultipartFormInfo() { return m_mimeInfo.DecodeMultiPartList(m_multipartFormInfo, m_entityBody); }
 
-    PHTTP::Commands commandCode;
-    PString         commandName;
+    PHTTP::Commands m_commandCode;
+    PString         m_commandName;
     PURL            m_url;
-    PMIMEInfo       mimeInfo;
-    bool            isPersistent;
-    bool            wasPersistent;
-    bool            isProxyConnection;
+    PMIMEInfo       m_mimeInfo;
+    bool            m_isPersistent;
+    bool            m_wasPersistent;
+    bool            m_isProxyConnection;
     bool            m_isWebSocket;
-    int             majorVersion;
-    int             minorVersion;
-    PString         entityBody;        // original entity body (POST only)
-    long            entityBodyLength;
-    unsigned        persistenceSeconds;
-    unsigned        persistenceMaximum;
+    int             m_majorVersion;
+    int             m_minorVersion;
+    PString         m_entityBody;        // original entity body (POST only)
+    long            m_entityBodyLength;
+    PTimeInterval   m_persistenceTimeout;
+    unsigned        m_persistenceMaximum;
     PMultiPartList  m_multipartFormInfo;
 
   public:
