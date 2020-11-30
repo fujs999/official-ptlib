@@ -68,12 +68,18 @@ class PNotifierTemplate : public PObject, public std::function<FunctionType>
 using PNotifier = PNotifierTemplate<intptr_t>;
 
 
-#define PDECLARE_NOTIFIER_INTERNAL(NotifierType, notifierArg, TargetType, func, ParamType, paramArg, FunctionType, ...) \
-  static auto func##CreateNotifier(TargetType * target) { return FunctionType(std::bind(&TargetType::func##CallWithCast,  target, std::placeholders::_1, std::placeholders::_2),  target, ##__VA_ARGS__); } \
-  static auto func##CreateNotifier(TargetType & target) { return FunctionType(std::bind(&TargetType::func##CallWithCast, &target, std::placeholders::_1, std::placeholders::_2), &target, ##__VA_ARGS__); } \
-  void func##CallWithCast(PObject & n, ParamType p) { func(dynamic_cast<NotifierType &>(n), p); } \
-  virtual void func(NotifierType & notifierArg, ParamType paramArg)
+#define PDECLARE_NOTIFIER_INTERNAL_EXT(NotifierType, notifierArg, TargetType, func, caller, ParamType, paramArg, FunctionType, ...) \
+    static FunctionType func##CreateNotifier(TargetType * target) \
+      { return FunctionType(std::bind(&TargetType::caller,  target, std::placeholders::_1, std::placeholders::_2),  target, ##__VA_ARGS__); } \
+    static FunctionType func##CreateNotifier(TargetType & target) \
+      { return FunctionType(std::bind(&TargetType::caller, &target, std::placeholders::_1, std::placeholders::_2), &target, ##__VA_ARGS__); } \
+    P_PUSH_MSVC_WARNINGS(4100) \
+    virtual void func(NotifierType & notifierArg, ParamType paramArg) \
+    P_POP_MSVC_WARNINGS()
 
+#define PDECLARE_NOTIFIER_INTERNAL(NotifierType, notifierArg, TargetType, func, ParamType, paramArg, FunctionType, ...) \
+        void func##CallWithCast(PObject & n, ParamType p) { func(dynamic_cast<NotifierType &>(n), p); } \
+        PDECLARE_NOTIFIER_INTERNAL_EXT(NotifierType, notifierArg, TargetType, func, func##CallWithCast, ParamType, paramArg, FunctionType, ##__VA_ARGS__)
 
 /** Declare PNotifier derived class with arbitrary type as second parameter and function definition.
     This can be used when you wish a notifier with an inline implmentation.
@@ -95,9 +101,8 @@ using PNotifier = PNotifierTemplate<intptr_t>;
 
 /// Declare notifier with better compile time checks. Not derived from PNotifier.
 #define PDECLARE_NOTIFIER_FUNCTION(TargetType, func, NotifierType, ParamType) \
-  static auto func##CreateNotifier(TargetType * target) { return PNotifierTemplate<ParamType, NotifierType>(std::bind(&TargetType::func,  target, std::placeholders::_1, std::placeholders::_2),  target); } \
-  static auto func##CreateNotifier(TargetType & target) { return PNotifierTemplate<ParamType, NotifierType>(std::bind(&TargetType::func, &target, std::placeholders::_1, std::placeholders::_2), &target); } \
-  virtual void func(NotifierType & notifierArg, ParamType paramArg)
+  using func##NotifierClass = PNotifierTemplate<ParamType, NotifierType>; \
+  PDECLARE_NOTIFIER_INTERNAL_EXT(NotifierType, notifierArg, TargetType, func, func, ParamType, paramArg, func##NotifierClass)
 
 
 /** Create a PNotifier object instance.

@@ -639,7 +639,7 @@ public:
   struct NotifierInfo {
     PJavaScript    & m_owner;
     PString          m_key;
-    PNotifierListTemplate<Signature &> m_notifiers;
+    PNotifierListTemplate<Signature &, PScriptLanguage> m_notifiers;
     NotifierInfo(PJavaScript & owner, const PString & key)
       : m_owner(owner)
       , m_key(key)
