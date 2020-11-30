@@ -1543,10 +1543,7 @@ PObject::Comparison PString::NumCompare(const PString & str, PINDEX count, PINDE
     return LessThan;
 #endif
 
-  PINDEX len = str.GetLength();
-  if (count > len)
-    count = len;
-  return InternalCompare(offset, count, str);
+  return InternalCompare(std::min(offset, GetLength()), std::min(count, str.GetLength()), str);
 }
 
 
@@ -1557,10 +1554,7 @@ PObject::Comparison PString::NumCompare(const char * cstr, PINDEX count, PINDEX 
     return LessThan;
 #endif
 
-  PINDEX len = ::strlen(cstr);
-  if (count > len)
-    count = len;
-  return InternalCompare(offset, count, cstr);
+  return InternalCompare(std::min(offset, GetLength()), std::min(count, PINDEX(::strlen(cstr))), cstr);
 }
 
 
