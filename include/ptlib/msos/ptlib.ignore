@@ -126,3 +126,4 @@ EXPORTS
     _wmemset
     _wmemmove
     _yyparse
+    _atomic_thread_fence
