@@ -1014,7 +1014,7 @@ bool PSoundChannelWin32::Close()
 
 bool PSoundChannelWin32::SetBuffers(PINDEX size, PINDEX count)
 {
-  if (count == buffers.size() && size == buffers[0].size())
+  if (size_t(count) == buffers.size() && size_t(size) == buffers[0].size())
       return true;
 
   Abort();
