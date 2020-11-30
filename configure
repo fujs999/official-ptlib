@@ -23129,6 +23129,15 @@ fi
 
    $as_echo ""
 
+   if ${CPLUSPLUS_STD+:} false; then :
+  $as_echo "                     Advanced C++ : ${CPLUSPLUS_STD}"
+else
+  $as_echo "                     Advanced C++ : no"
+
+fi
+
+
+
    if ${CPPFLAGS+:} false; then :
   $as_echo "                         CPPFLAGS : ${CPPFLAGS}"
 else
