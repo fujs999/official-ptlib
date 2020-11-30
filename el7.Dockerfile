@@ -23,6 +23,9 @@ COPY mcu-el7.repo /etc/yum.repos.d/
 FROM base AS depsolver
 ARG SPECFILE
 COPY ${SPECFILE} .
+# Temporary fix for broken centos repo
+RUN sed --in-place 's/centos\/7\//centos\/7.8.2003\//'            /etc/yum.repos.d/CentOS-SCLo-scl-rh.repo && \
+    sed --in-place 's/centos\/\$releasever\//centos\/7.8.2003\//' /etc/yum.repos.d/CentOS-Sources.repo
 # Install standard dependencies referenced by the spec file
 RUN mkdir /tmp/std-deps \
     && touch /tmp/std-deps/placeholder \
