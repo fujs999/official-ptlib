@@ -249,7 +249,7 @@ bool PHTTPServer::ProcessCommand()
   PTRACE_IF(5, m_lastCommandTime.IsValid(), "Time since last command: " << now - m_lastCommandTime);
   m_lastCommandTime = now;
 
-  m_connectInfo.commandCode = (Commands)cmd;
+  m_connectInfo.m_commandCode = (Commands)cmd;
   if (cmd >= NumCommands) {
     PTRACE(4, "Unknown command.");
     OnError(BadRequest, args.ToLiteral(), m_connectInfo);
@@ -258,7 +258,7 @@ bool PHTTPServer::ProcessCommand()
 
   // if no tokens, error
   if (args.IsEmpty()) {
-    PTRACE(4, "No arguments on command line for " << m_connectInfo.commandName);
+    PTRACE(4, "No arguments on command line for " << m_connectInfo.GetCommandName());
     OnError(BadRequest, args, m_connectInfo);
     return false;
   }
@@ -314,7 +314,7 @@ bool PHTTPServer::ProcessCommand()
         (!url.GetHostName().IsEmpty() && !PIPSocket::IsLocalHost(url.GetHostName())))
       persist = OnProxy(m_connectInfo);
     else {
-      m_connectInfo.entityBody = ReadEntityBody();
+      m_connectInfo.m_entityBody = ReadEntityBody();
       persist = OnCommand(cmd, url, args, m_connectInfo);
     }
   }
@@ -637,31 +637,31 @@ bool PHTTPServer::StartResponse(StatusCode code,
                                 PMIMEInfo & headers,
                                 long bodySize)
 {
-  if (m_connectInfo.majorVersion < 1) 
+  if (m_connectInfo.m_majorVersion < 1) 
     return false;
   
   httpStatusCodeStruct dummyInfo;
   const httpStatusCodeStruct * statusInfo;
-  if (m_connectInfo.commandCode < NumCommands)
+  if (m_connectInfo.m_commandCode < NumCommands)
     statusInfo = GetStatusCodeStruct(code);
   else {
     dummyInfo.text = "";
     dummyInfo.code = code;
     dummyInfo.allowedBody = true;
-    dummyInfo.majorVersion = m_connectInfo.majorVersion;
-    dummyInfo.minorVersion = m_connectInfo.minorVersion;
+    dummyInfo.majorVersion = m_connectInfo.m_majorVersion;
+    dummyInfo.minorVersion = m_connectInfo.m_minorVersion;
     statusInfo = &dummyInfo;
   }
 
   // output the command line
-  *this << "HTTP/" << m_connectInfo.majorVersion << '.' << m_connectInfo.minorVersion
+  *this << "HTTP/" << m_connectInfo.m_majorVersion << '.' << m_connectInfo.m_minorVersion
         << ' ' << statusInfo->code << ' ' << statusInfo->text << "\r\n";
 
   bool chunked = false;
 
   // If do not have user set content length, decide if we should add one
   if (!headers.Contains(ContentLengthTag())) {
-    if (m_connectInfo.minorVersion < 1) {
+    if (m_connectInfo.m_minorVersion < 1) {
       // v1.0 client, don't put in ContentLength if the bodySize is zero because
       // that can be confused by some browsers as meaning there is no body length.
       if (bodySize > 0)
@@ -1574,25 +1574,44 @@ bool PWebSocket::WriteHeader(OpCodes  opCode,
 // PHTTPConnectionInfo
 
 PHTTPConnectionInfo::PHTTPConnectionInfo()
-  : persistenceSeconds(DEFAULT_PERSIST_TIMEOUT) // maximum lifetime (in seconds) of persistent connections
+  : m_commandCode(PHTTP::NumCommands)
+  , m_isPersistent(false)
+  , m_wasPersistent(false)
+  , m_isProxyConnection(false)
+  , m_isWebSocket(false)
+  , m_majorVersion(0)
+  , m_minorVersion(9)
+  , m_entityBodyLength(-1)
+  , m_persistenceTimeout(0, DEFAULT_PERSIST_TIMEOUT) // maximum lifetime (in seconds) of persistent connections
+  , m_persistenceMaximum(DEFAULT_PERSIST_TRANSATIONS) // maximum lifetime (in transactions) of persistent connections
   , url(m_url)
-  , inMIME(mimeInfo)
+  , inMIME(m_mimeInfo)
   , multipartFormInfo(m_multipartFormInfo)
 {
-  // maximum lifetime (in transactions) of persistent connections
-  persistenceMaximum = DEFAULT_PERSIST_TRANSATIONS;
+}
 
-  commandCode       = PHTTP::NumCommands;
 
-  majorVersion      = 0;
-  minorVersion      = 9;
+PHTTPConnectionInfo::PHTTPConnectionInfo(const PHTTPConnectionInfo & other)
+  : m_commandCode(other.m_commandCode)
+  , m_commandName(other.m_commandName)
+  , m_url(other.m_url)
+  , m_mimeInfo(other.m_mimeInfo)
+  , m_isPersistent(other.m_isPersistent)
+  , m_wasPersistent(other.m_wasPersistent)
+  , m_isProxyConnection(other.m_isProxyConnection)
+  , m_isWebSocket(other.m_isWebSocket)
+  , m_majorVersion(other.m_majorVersion)
+  , m_minorVersion(other.m_minorVersion)
+  , m_entityBody(other.m_entityBody)
+  , m_entityBodyLength(other.m_entityBodyLength)
+  , m_persistenceTimeout(other.m_persistenceTimeout)
+  , m_persistenceMaximum(other.m_persistenceMaximum)
+  , m_multipartFormInfo(other.m_multipartFormInfo)
+  , url(m_url)
+  , inMIME(m_mimeInfo)
+  , multipartFormInfo(m_multipartFormInfo)
+{
 
-  isPersistent      = false;
-  wasPersistent     = false;
-  isProxyConnection = false;
-  m_isWebSocket     = false;
-
-  entityBodyLength  = -1;
 }
 
 
@@ -1601,8 +1620,8 @@ bool PHTTPConnectionInfo::Initialise(PHTTPServer & server, PString & args)
   // if only one argument, then it must be a version 0.9 simple request
   PINDEX lastSpacePos = args.FindLast(' ');
   if (lastSpacePos == P_MAX_INDEX || strncasecmp(&args[lastSpacePos+1], "HTTP/", 5) != 0) {
-    majorVersion = 0;
-    minorVersion = 9;
+    m_majorVersion = 0;
+    m_minorVersion = 9;
     return true;
   }
 
@@ -1617,25 +1636,25 @@ bool PHTTPConnectionInfo::Initialise(PHTTPServer & server, PString & args)
   // should actually check if the text contains only digits, but the
   // chances of matching everything else and it not being a valid number
   // are pretty small, so don't bother
-  majorVersion = atoi(&args[lastSpacePos+6]);
-  minorVersion = atoi(&args[dotPos+1]);
+  m_majorVersion = atoi(&args[lastSpacePos+6]);
+  m_minorVersion = atoi(&args[dotPos+1]);
   args.Delete(lastSpacePos, P_MAX_INDEX);
 
   // build our connection info reading MIME info until an empty line is
   // received, or EOF
-  if (!mimeInfo.Read(server)) {
+  if (!m_mimeInfo.Read(server)) {
     PTRACE(4, "Failed to read MIME: " << server.GetErrorText());
     return false;
   }
 
-  wasPersistent = isPersistent;
-  isPersistent = false;
+  m_wasPersistent = m_isPersistent;
+  m_isPersistent = false;
 
   // check for Proxy-Connection and Connection strings
-  PString str = mimeInfo(PHTTP::ProxyConnectionTag());
-  isProxyConnection = !str.IsEmpty();
-  if (!isProxyConnection)
-    str = mimeInfo(PHTTP::ConnectionTag());
+  PString str = m_mimeInfo(PHTTP::ProxyConnectionTag());
+  m_isProxyConnection = !str.IsEmpty();
+  if (!m_isProxyConnection)
+    str = m_mimeInfo(PHTTP::ConnectionTag());
 
   // get any connection options
   if (!str.IsEmpty()) {
@@ -1643,15 +1662,15 @@ bool PHTTPConnectionInfo::Initialise(PHTTPServer & server, PString & args)
     for (PINDEX i = 0; i < tokens.GetSize(); i++) {
       PCaselessString token(tokens[i]);
       if (token == PHTTP::KeepAliveTag())
-        isPersistent = true;
+        m_isPersistent = true;
       else if (token == PHTTP::UpgradeTag()) {
-        PCaselessString protocol = mimeInfo(PHTTP::UpgradeTag());
+        PCaselessString protocol = m_mimeInfo(PHTTP::UpgradeTag());
         if (protocol != PHTTP::WebSocketTag()) {
           PTRACE(4, "Cannot upgrade to protocol \"" << protocol << '"');
           return server.OnError(PHTTP::MethodNotAllowed, "Can only upgrade to \"websocket\" protocol", *this);
         }
 
-        int wsVer = mimeInfo.GetInteger(PHTTP::WebSocketVersionTag());
+        int wsVer = m_mimeInfo.GetInteger(PHTTP::WebSocketVersionTag());
         if (wsVer < 13) {
           PTRACE(4, "WebSocket version " << wsVer << " is not supported.");
           return server.OnError(PHTTP::MethodNotAllowed, "Can only upgrade to websocket version 13 or later", *this);
@@ -1674,14 +1693,14 @@ bool PHTTPConnectionInfo::Initialise(PHTTPServer & server, PString & args)
   // but Netscape hangs if this is done.
   // If the client didn't specify a persistent connection, then use the
   // ContentLength if there is one or read until end of file if there isn't
-  if (!isPersistent)
-    entityBodyLength = mimeInfo.GetInteger(PHTTP::ContentLengthTag, (commandCode == PHTTP::POST) ? -2 : 0);
+  if (!m_isPersistent)
+    m_entityBodyLength = m_mimeInfo.GetInteger(PHTTP::ContentLengthTag, (m_commandCode == PHTTP::POST) ? -2 : 0);
   else {
-    entityBodyLength = mimeInfo.GetInteger(PHTTP::ContentLengthTag, -1);
-    if (entityBodyLength < 0) {
+    m_entityBodyLength = m_mimeInfo.GetInteger(PHTTP::ContentLengthTag, -1);
+    if (m_entityBodyLength < 0) {
       PTRACE(5, "Persistent connection has no content length");
-      entityBodyLength = 0;
-      mimeInfo.SetAt(PHTTP::ContentLengthTag, "0");
+      m_entityBodyLength = 0;
+      m_mimeInfo.SetAt(PHTTP::ContentLengthTag, "0");
     }
   }
 
@@ -1691,8 +1710,8 @@ bool PHTTPConnectionInfo::Initialise(PHTTPServer & server, PString & args)
 
 void PHTTPConnectionInfo::SetMIME(const PString & tag, const PString & value)
 {
-  mimeInfo.MakeUnique();
-  mimeInfo.SetAt(tag, value);
+  m_mimeInfo.MakeUnique();
+  m_mimeInfo.SetAt(tag, value);
 }
 
 
@@ -1701,8 +1720,8 @@ bool PHTTPConnectionInfo::IsCompatible(int major, int minor) const
   if (minor == 0 && major == 0)
     return true;
   else
-    return (majorVersion > major) ||
-           ((majorVersion == major) && (minorVersion >= minor));
+    return (m_majorVersion > major) ||
+           ((m_majorVersion == major) && (m_minorVersion >= minor));
 }
 
 

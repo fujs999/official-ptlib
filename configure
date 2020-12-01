@@ -7362,7 +7362,7 @@ fi
 
 
 if test "x$prefix" != "x" && test "x$prefix" != "xNONE" ; then
-   if test "$prefix" = `pwd`; then
+   if test `cd $prefix ; pwd` = `pwd`; then
       INTERNAL_PTLIBDIR="$prefix"
    fi
 else
@@ -22387,6 +22387,15 @@ fi
 
 
    $as_echo ""
+
+   if ${CPLUSPLUS_STD+:} false; then :
+  $as_echo "                     Advanced C++ : ${CPLUSPLUS_STD}"
+else
+  $as_echo "                     Advanced C++ : no"
+
+fi
+
+
 
    if ${CPPFLAGS+:} false; then :
   $as_echo "                         CPPFLAGS : ${CPPFLAGS}"

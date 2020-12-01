@@ -361,6 +361,7 @@ AC_DEFUN([MY_OUTPUT_SUMMARY],[
    AS_ECHO("")
    m4_map_args_pair([INTERNAL_OUTPUT_SUMMARY], [AS_ECHO], $@)
    AS_ECHO("")
+   INTERNAL_OUTPUT_SUMMARY([                     Advanced C++], [CPLUSPLUS_STD])
    INTERNAL_OUTPUT_SUMMARY([                         CPPFLAGS], [CPPFLAGS])
    INTERNAL_OUTPUT_SUMMARY([                           CFLAGS], [CFLAGS])
    INTERNAL_OUTPUT_SUMMARY([                         CXXFLAGS], [CXXFLAGS])

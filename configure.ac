@@ -192,7 +192,7 @@ fi
 dnl ########################################################################
 dnl Check for non-installed "environment variable" mode
 if test "x$prefix" != "x" && test "x$prefix" != "xNONE" ; then
-   if test "$prefix" = `pwd`; then
+   if test `cd $prefix ; pwd` = `pwd`; then
       INTERNAL_PTLIBDIR="$prefix"
    fi
 else
