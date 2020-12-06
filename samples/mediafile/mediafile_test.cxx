@@ -70,7 +70,7 @@ void Test::Main()
 
 void Test::DoRead(const PFilePath & filename, bool native)
 {
-  PSmartPtr<PMediaFile> file = PMediaFile::Create(filename);
+  auto file = PMediaFile::Create(filename);
   if (file == NULL) {
     cerr << "Could not create Media File for " << filename << endl;
     return;
@@ -168,7 +168,7 @@ void Test::DoRead(const PFilePath & filename, bool native)
 
 void Test::DoWrite(const PFilePath & filename, const PStringArray & trackInfo, bool variableFPS)
 {
-  PSmartPtr<PMediaFile> file = PMediaFile::Create(filename);
+  auto file = PMediaFile::Create(filename);
   if (file == NULL) {
     cerr << "Could not create Media File for " << filename << endl;
     return;

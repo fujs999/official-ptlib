@@ -86,15 +86,15 @@ class NamedNumber : public PObject
     bool autonumber;
 };
 
-PLIST(NamedNumberList, NamedNumber);
+using NamedNumberList = PList<NamedNumber>;
 
 
 // Types
 
 class TypeBase;
 
-PLIST(TypesList, TypeBase);
-PSORTED_LIST(SortedTypesList, TypeBase);
+using TypesList = PList<TypeBase>;
+using SortedTypesList = PSortedList<TypeBase>;
 
 class Tag : public PObject
 {
@@ -154,7 +154,7 @@ class Tag : public PObject
 
 class ConstraintElementBase;
 
-PLIST(ConstraintElementList, ConstraintElementBase);
+using ConstraintElementList = PList<ConstraintElementBase>;
 
 
 class Constraint : public PObject
@@ -176,7 +176,7 @@ class Constraint : public PObject
     ConstraintElementList extensions;
 };
 
-PLIST(ConstraintList, Constraint);
+using ConstraintList = PList<Constraint>;
 
 
 class ConstraintElementBase : public PObject
@@ -900,7 +900,7 @@ class ValueBase : public PObject
     PString valueName;
 };
 
-PLIST(ValuesList, ValueBase);
+using ValuesList = PList<ValueBase>;
 
 
 class DefinedValue : public ValueBase
@@ -1067,7 +1067,7 @@ class MibBase : public PObject
     ValueBase * value;
 };
 
-PLIST(MibList, MibBase);
+using MibList = PList<MibBase>;
 
 
 class MibObject : public MibBase
@@ -1133,7 +1133,7 @@ class ImportModule : public PObject
     TypesList symbols;
 };
 
-PLIST(ImportsList, ImportModule);
+using ImportsList = PList<ImportModule>;
 
 
 class ModuleDefinition : public PObject

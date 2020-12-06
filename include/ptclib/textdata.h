@@ -30,13 +30,12 @@
 
 
 #include <ptlib/textfile.h>
-#include <ptlib/smartptr.h>
 #include <ptclib/vartype.h>
 
 
-class PTextDataFormat : public PSmartObject
+class PTextDataFormat : public PObject
 {
-    PCLASSINFO(PTextDataFormat, PSmartObject);
+    PCLASSINFO(PTextDataFormat, PObject);
   public:
     PTextDataFormat();
     PTextDataFormat(const PStringArray & headings);
@@ -56,7 +55,7 @@ class PTextDataFormat : public PSmartObject
     PStringArray m_headings;
 };
 
-typedef PSmartPtr<PTextDataFormat> PTextDataFormatPtr;
+typedef std::shared_ptr<PTextDataFormat> PTextDataFormatPtr;
 
 
 class PCommaSeparatedVariableFormat : public PTextDataFormat

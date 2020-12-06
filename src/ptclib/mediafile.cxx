@@ -357,7 +357,7 @@ bool PMediaFile::VideoInputDevice::Open(const PString & devName, bool)
   }
 
   if (!m_mediaFile)
-    m_mediaFile = PMediaFile::Factory::CreateInstance(filePath.GetType());
+    m_mediaFile = PMediaFile::Create(filePath);
   if (m_mediaFile) {
     PTRACE(1, "Cannot open file of type \"" << filePath.GetType() << "\" as video input device");
     return false;

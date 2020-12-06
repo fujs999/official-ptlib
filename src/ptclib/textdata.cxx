@@ -342,9 +342,9 @@ bool PTextDataFile::InternalOpen(OpenMode mode, OpenOptions opts, PFileInfo::Per
 
   if (!m_format) {
     if (GetFilePath().GetType() == ".csv")
-      m_format = new PCommaSeparatedVariableFormat();
+      m_format = std::make_shared<PCommaSeparatedVariableFormat>();
     else if (GetFilePath().GetType() == ".txt" || GetFilePath().GetType() == ".tsv")
-      m_format = new PTabDelimitedFormat();
+      m_format = std::make_shared<PTabDelimitedFormat>();
     else
       return false;
   }
@@ -370,7 +370,7 @@ bool PTextDataFile::InternalOpen(OpenMode mode, OpenOptions opts, PFileInfo::Per
 
       if (c == '\t') {
         SetPosition(0);
-        m_format = new PTabDelimitedFormat;
+        m_format = std::make_shared<PTabDelimitedFormat>();
         break;
       }
 
@@ -386,7 +386,7 @@ bool PTextDataFile::InternalOpen(OpenMode mode, OpenOptions opts, PFileInfo::Per
     if (!m_format) {
       if (!hadComma)
         return false;
-      m_format = new PCommaSeparatedVariableFormat();
+      m_format = std::make_shared<PCommaSeparatedVariableFormat>();
     }
   }
   else

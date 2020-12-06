@@ -36,7 +36,6 @@
 #if P_MEDIAFILE
 
 #include <ptlib/pfactory.h>
-#include <ptlib/smartptr.h>
 #include <ptlib/sound.h>
 #include <ptlib/videoio.h>
 #include <ptclib/delaychan.h>
@@ -44,9 +43,9 @@
 
 /**Abstract class for a file containing a audio/visual media.
   */
-class PMediaFile : public PSmartObject
+class PMediaFile : public PObject
 {
-    PCLASSINFO(PMediaFile, PSmartObject);
+    PCLASSINFO(PMediaFile, PObject);
   protected:
     /** Create the media file abstraction.
       */
@@ -68,14 +67,14 @@ class PMediaFile : public PSmartObject
 
     typedef PFactory<PMediaFile, PFilePathString> Factory;
 
-    typedef PSmartPtr<PMediaFile> Ptr;
+    typedef std::shared_ptr<PMediaFile> Ptr;
 
     /** Create a concreate class for the media file, given it's file extension.
         Returns: NULL if the file type is not supported.
       */
-    static PMediaFile * Create(
+    static Ptr Create(
       const PFilePath & file      ///< File to create and instance from.
-    ) { return Factory::CreateInstance(file.GetType()); }
+    ) { return Ptr(Factory::CreateInstance(file.GetType())); }
 
     /** Get all of the supported file types across all concrete classes in factory.
       */
