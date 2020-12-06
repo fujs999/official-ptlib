@@ -34,7 +34,7 @@ using std::atomic;
 // For backward compatibility
 #define PAtomicEnum std::atomic
 
-class PAtomicInteger : public atomic<long>
+class [[deprecated("Use std::atomic<long>")]] PAtomicInteger : public atomic<long>
 {
   public:
     typedef long IntegerType;
@@ -45,7 +45,7 @@ class PAtomicInteger : public atomic<long>
 };
 
 // For backward compatibility
-class PAtomicBoolean : public atomic<bool>
+class [[deprecated("Use std::atomic<bool>")]] PAtomicBoolean : public atomic<bool>
 {
   public:
     typedef long IntegerType;

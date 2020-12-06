@@ -242,7 +242,7 @@ protected:
   PDECLARE_NOTIFIER(PThread, PTimerTest, RestartThirdTimerMain);
 
   /**The integer that is set, to indicate activity of the RestartTimer thread */
-  PAtomicInteger restartActivity;
+  std::atomic<unsigned> m_restartActivity;
 };
 
 class MyTimerTester : public PTimer
@@ -576,10 +576,8 @@ void PTimerTest::RunRestartTest()
   PTimeInterval quietPeriod(4000);
 
   for (;;) {
-    if (restartActivity > 0) {
-        restartActive.SetCurrentTime();
-        restartActivity.SetValue(0);
-    }
+    if (m_restartActivity.exchange(0) > 0)
+      restartActive.SetCurrentTime();
     if ((restartActive + quietPeriod) < PTime()) {
       cerr << "No activity for " << quietPeriod << " seconds.Timers Locked up." << endl;
       exit(0);
@@ -602,7 +600,7 @@ void PTimerTest::RestartFirstTimerMain(PThread &, intptr_t)
 {
   for (;;) {
     firstTimer.Reset();
-    ++restartActivity;
+    ++m_restartActivity;
     PThread::Sleep(PRandom::Number(1, 100));
   }
 }
@@ -611,7 +609,7 @@ void PTimerTest::RestartSecondTimerMain(PThread &, intptr_t)
 {
   for (;;) {
     secondTimer.Reset();
-    ++restartActivity;
+    ++m_restartActivity;
     PThread::Sleep(PRandom::Number(1, 100));
   }
 }
@@ -634,7 +632,7 @@ void PTimerTest::RestartThirdTimerMain(PThread &, intptr_t)
     {
       thirdTimer->SetInterval(PRandom::Number(0, 9) * 500);
     }
-    ++restartActivity;
+    ++m_restartActivity;
     PThread::Sleep(PRandom::Number(10, 100));
   }
 }
@@ -644,7 +642,7 @@ class TimerTestThread : public PThread
   PCLASSINFO(TimerTestThread, PThread);
   int64_t m_iteration;
 public:
-  static PAtomicInteger m_counter;
+  static std::atomic<unsigned> m_counter;
   typedef std::pair<PTimer, PMutex> TimerPair;
   static std::vector<TimerPair> s_timers;
 public:
@@ -693,7 +691,7 @@ public:
 };
 
 std::vector<TimerTestThread::TimerPair> TimerTestThread::s_timers;
-PAtomicInteger TimerTestThread::m_counter;
+std::atomic<unsigned> TimerTestThread::m_counter;
 
 void PTimerTest::StressTest()
 {
@@ -720,12 +718,12 @@ void PTimerTest::StressTest()
 
 class MultiTimer : public PTimer
 {
-  PAtomicInteger & m_runningCount;
+  std::atomic<unsigned> & m_runningCount;
   public:
     PTime m_start;
     PTime m_end;
 
-    MultiTimer(PAtomicInteger & runningCount, int seconds)
+    MultiTimer(std::atomic<unsigned> & runningCount, int seconds)
       : PTimer(0, seconds)
       , m_runningCount(runningCount)
       , m_end(0)
@@ -745,7 +743,7 @@ void PTimerTest::MultiTimerTest()
   const int TotalTimers = 10000;
   cout << "Create " << TotalTimers << " timers, calculate delay on expected timeouts.\n"
           "This can take quite some time." << endl;
-  PAtomicInteger runningCount(TotalTimers);
+  std::atomic<unsigned> runningCount(TotalTimers);
 
   std::list<MultiTimer*> timers;
   for (int i = 0; i < TotalTimers; ++i) {

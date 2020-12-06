@@ -42,9 +42,9 @@ class AsyncTest : public PProcess
     unsigned m_concurrent;
     PIPSocket::Address m_binding;
 
-    PAtomicInteger m_testsExecuted;
-    PAtomicInteger m_testersRunning;
-    PSyncPoint     m_finishedTest;
+    std::atomic<unsigned> m_testsExecuted;
+    std::atomic<unsigned> m_testersRunning;
+    PSyncPoint            m_finishedTest;
 
     PArray<PUDPSocket> m_readSockets;
     PArray<PUDPSocket> m_writeSockets;
