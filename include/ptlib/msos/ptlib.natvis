@@ -26,9 +26,9 @@
   </Type>
 
   <Type Name="PURL">
-    <DisplayString Condition="urlString.theArray==0">NULL</DisplayString>
-    <DisplayString>{{len={urlString.m_length} {urlString.theArray,s8}}}</DisplayString>
-    <StringView>urlString.theArray,s8</StringView>
+    <DisplayString Condition="m_urlString.theArray==0">NULL</DisplayString>
+    <DisplayString>{{{m_urlString.theArray,s8}}}</DisplayString>
+    <StringView>m_urlString.theArray,s8</StringView>
   </Type>
 
   <Type Name="PContainer">
