@@ -104,7 +104,9 @@ public:
 
 
 
-PDECLARE_CLASS(MergeSym, PProcess)
+class MergeSym : public PProcess
+{
+  PCLASSINFO(MergeSym, PProcess);
   public:
     MergeSym();
     void Main();

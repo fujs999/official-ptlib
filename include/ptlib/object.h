@@ -2053,11 +2053,7 @@ class PSafeSingleton : public PSingleton<Type, atomic<unsigned>, Creator>
 /** Declare all the standard PTLib class information.
 This macro is used to provide the basic run-time typing capability needed
 by the library. All descendent classes from the <code>PObject</code> class require
-these functions for correct operation. Either use this macro or the
-<code>#PDECLARE_CLASS</code> macro.
-
-The use of the <code>#PDECLARE_CLASS</code> macro is no longer recommended for reasons
-of compatibility with documentation systems.
+these functions for correct operation.
 */
 
 #define PCLASSINFO(cls, par) PCLASSINFO_ALIGNED(cls, (par), 0)
@@ -2079,19 +2075,6 @@ template<class BaseClass> inline BaseClass * PAssertCast(BaseClass * obj, const 
 #define PDownCast(cls, ptr) (dynamic_cast<cls*>(ptr))
 #endif
 
-
-/** Declare a class with PWLib class information.
-This macro is used to declare a new class with a single public ancestor. It
-starts the class declaration and then uses the <code>#PCLASSINFO</code> macro to
-get all the run-time type functions.
-
-The use of this macro is no longer recommended for reasons of compatibility
-with documentation systems.
-*/
-#define PDECLARE_CLASS(cls, par) class cls : public par { PCLASSINFO(cls, par)
-#ifdef DOC_PLUS_PLUS
-} Match previous opening brace in doc++
-#endif
 
 ///////////////////////////////////////////////////////////////////////////////
 // The root of all evil ... umm classes
