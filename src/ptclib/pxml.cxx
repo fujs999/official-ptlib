@@ -1706,7 +1706,7 @@ void PXMLStreamParser::EndElement(const char * name)
   if (i == P_MAX_INDEX)
     return;
 
-  messages.Enqueue(element);
+  messages.push(element);
   m_document.GetRootElement()->RemoveSubObject(i, false);
 }
 
@@ -1718,8 +1718,11 @@ PXMLElement * PXMLStreamParser::Read(PChannel * channel)
   channel->SetReadTimeout(1000);
 
   while (m_parsing) {
-    if (messages.GetSize() != 0)
-      return messages.Dequeue();
+    if (!messages.empty()) {
+      auto msg = messages.front();
+      messages.pop();
+      return msg;
+    }
 
     if (!channel->Read(buf, sizeof(buf) - 1) || !channel->IsOpen())
       return 0;

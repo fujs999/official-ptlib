@@ -748,7 +748,7 @@ class PVXMLChannel : public PDelayChannel
     { return QueuePlayable("Command", cmd, repeat, delay, true); }
 
     virtual void FlushQueue();
-    virtual bool IsPlaying() const { return m_currentPlayItem != NULL || m_playQueue.GetSize() > 0; }
+    virtual bool IsPlaying() const { return m_currentPlayItem != NULL || !m_playQueue.empty(); }
 
     void SetPause(bool pause) { m_paused = pause; }
     void SetSilence(unsigned msecs);

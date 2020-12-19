@@ -3696,7 +3696,8 @@ bool PVXMLChannel::Read(void * buffer, PINDEX amount)
 
     for (;;) {
       // check the queue for the next action, if none, send silence
-      m_currentPlayItem = m_playQueue.Dequeue();
+      m_currentPlayItem = m_playQueue.front();
+      m_playQueue.pop();
       if (m_currentPlayItem == NULL) {
         if (wasPlaying)
           m_vxmlSession->Trigger(); // notify about the end of queue
@@ -3763,7 +3764,7 @@ bool PVXMLChannel::QueuePlayable(PVXMLPlayable * newItem)
   }
 
   m_playQueueMutex.Wait();
-  m_playQueue.Enqueue(newItem);
+  m_playQueue.push(newItem);
   m_playQueueMutex.Signal();
   return true;
 }
@@ -3806,8 +3807,9 @@ void PVXMLChannel::FlushQueue()
 
   PWaitAndSignal mutex(m_playQueueMutex);
 
-  PVXMLPlayable * qItem;
-  while ((qItem = m_playQueue.Dequeue()) != NULL) {
+  while (!m_playQueue.empty()) {
+    auto qItem = m_playQueue.front();
+    m_playQueue.pop();
     qItem->OnStop();
     delete qItem;
   }

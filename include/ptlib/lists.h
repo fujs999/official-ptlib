@@ -35,6 +35,10 @@
 #endif
 
 
+#include <queue>
+#include <stack>
+
+
 ///////////////////////////////////////////////////////////////////////////////
 // PList container class
 
@@ -430,141 +434,45 @@ template <class T> class PList : public PAbstractList
 };
 
 
-/**This template class maps the PAbstractList to a specific object type, and
-   adds functionality that allows the list to be used as a first in first out
-   queue. The functions in this class primarily do all the appropriate casting
-   of types.
-
-   By default, objects placed into the set will <b>T</b> be deleted when
-   removed or when all references to the set are destroyed. This is different
-   from the default on most collection classes.
-
-   Note that if templates are not used the <code>PDECLARE_QUEUE</code> macro will
-   simulate the template instantiation.
+/**This is a wrapper around std::queue<> to be derieved from PObject.
  */
-template <class T> class PQueue : public PAbstractList
+template <class T> class PQueue : public PObject, public std::queue<T *>
 {
-  PCLASSINFO(PQueue, PAbstractList);
-
+    PCLASSINFO(PQueue, PObject);
   public:
-  /**@name Construction */
-  //@{
-    /**Create a new, empty, queue.
-
-       Note that by default, objects placed into the queue will <b>not</b> be
-       deleted when removed or when all references to the queue are destroyed.
-       This is different from the default on most collection classes.
-     */
-    PQueue()
-      : PAbstractList() { DisallowDeleteObjects(); }
-  //@}
-
-  /**@name Overrides from class PObject */
-  //@{
-    /**Make a complete duplicate of the list. Note that all objects in the
-       array are also cloned, so this will make a complete copy of the list.
-     */
+    /* Cloning a queue does not make sense */
     virtual PObject * Clone() const
-      { return PNEW PQueue(0, this); }
-  //@}
+    {
+      PAssertAlways(PUnsupportedFeature);
+      return PNEW PQueue();
+    }
 
-  /**@name New functions for class */
-  //@{
-    /**Add a new object to the queue. This places a new link at the "tail" of
-       the list, which is the "in" side of the queue.
-     */
-    virtual void Enqueue(
-      T * obj   ///< Object to add to the queue.
-    ) { PAbstractList::Append(obj); }
-    /**Remove an object that was added to the queue.
-
-       @return
-       first object added to the queue or NULL if queue empty.
-     */
-    virtual T * Dequeue()
-      { return dynamic_cast<T *>(PAbstractList::RemoveHead()); }
-  //@}
-
-  protected:
-    PQueue(int dummy, const PQueue * c)
-      : PAbstractList(dummy, c)
-      { reference->deleteObjects = c->reference->deleteObjects; }
+    P_DEPRECATED virtual void Enqueue(T * obj) { push(obj); }
+    P_DEPRECATED virtual T * Dequeue() { T* p = front(); pop(); return p; }
+    P_DEPRECATED virtual bool IsEmpty() const { return empty(); }
+    P_DEPRECATED virtual PINDEX GetSize() const { return size(); }
 };
 
 
-/**This template class maps the PAbstractList to a specific object type, and
-   adds functionality that allows the list to be used as a last in first out
-   stack. The functions in this class primarily do all the appropriate casting
-   of types.
-
-   By default, objects placed into the set will <b>not</b> be deleted when
-   removed or when all references to the set are destroyed. This is different
-   from the default on most collection classes.
-
-   Note that if templates are not used the <code>PDECLARE_STACK</code> macro will
-   simulate the template instantiation.
+/**This is a wrapper around std::stack<> to be derieved from PObject.
  */
-template <class T> class PStack : public PAbstractList
+template <class T> class PStack : public PObject, public std::stack<T *>
 {
-  PCLASSINFO(PStack, PAbstractList);
+  PCLASSINFO(PStack, PObject);
 
   public:
-  /**@name Construction */
-  //@{
-    /**Create a new, empty, stack.
-
-       Note that by default, objects placed into the stack will <b>not</b> be
-       deleted when removed or when all references to the stack are destroyed.
-       This is different from the default on most collection classes.
-     */
-    PStack()
-      : PAbstractList() { DisallowDeleteObjects(); }
-  //@}
-
-  /**@name Overrides from class PObject */
-  //@{
-    /**Make a complete duplicate of the stack. Note that all objects in the
-       array are also cloned, so this will make a complete copy of the stack.
-     */
+    /* Cloning a queue does not make sense */
     virtual PObject * Clone() const
-      { return PNEW PStack(0, this); }
-  //@}
+    {
+      PAssertAlways(PUnsupportedFeature);
+      return PNEW PStack();
+    }
 
-  /**@name New functions for class */
-  //@{
-    /**Add an object to the stack. This object will be on "top" of the stack
-       and will be the object returned by the <code>Pop()</code>
-       function.
-     */
-    virtual void Push(
-      T * obj    ///< Object to add to the stack.
-    ) { PAbstractList::Prepend(obj); }
-    __inline void push(T * obj) { Push(obj); }
-
-    /**Remove the last object pushed onto the stack.
-
-       @return
-       object on top of the stack.
-     */
-    virtual T * Pop()
-      { return dynamic_cast<T *>(PAbstractList::RemoveHead()); }
-    __inline void pop() { Pop(); }
-
-    /**Get the element that is currently on top of the stack without removing
-       it.
-
-       @return
-       reference to object on top of the stack.
-     */
-    virtual T & Top()
-      { PAssert(this->GetSize() > 0, PStackEmpty); return dynamic_cast<T &>(*this->m_info->head->data); }
-    __inline T & front() { Top(); }
-  //@}
-
-  protected:
-    PStack(int dummy, const PStack * c)
-      : PAbstractList(dummy, c)
-      { this->reference->deleteObjects = c->reference->deleteObjects; }
+    P_DEPRECATED virtual void Push(T * obj) { push(obj); }
+    P_DEPRECATED virtual T * Pop() { T* p = front(); pop(); return p; }
+    P_DEPRECATED virtual T & Top() { return front(); }
+    P_DEPRECATED virtual bool IsEmpty() const { return empty(); }
+    P_DEPRECATED virtual PINDEX GetSize() const { return size(); }
 };
 
 
