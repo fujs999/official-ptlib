@@ -2030,16 +2030,7 @@ class PSafeSingleton : public PSingleton<Type, atomic<unsigned>, Creator>
 
 
 ///////////////////////////////////////////////////////////////////////////////
-// Memory pool allocators
-
-#define PDECLARE_POOL_ALLOCATOR(cls) \
-  virtual ~cls() { } \
-  __inline static const char * Class() { return typeid(cls).name(); } \
-  PNEW_AND_DELETE_FUNCTIONS(0)
-
-#define PDEFINE_POOL_ALLOCATOR(cls)
-
-
+// Memory
 #define PCLASSINFO_ALIGNED(cls, par, align) \
   public: \
     typedef cls P_thisClass; \

@@ -166,8 +166,6 @@ struct PHashTableElement
     PHashTableElement * m_next;
     PHashTableElement * m_prev;
     PINDEX              m_bucket;
-
-    PDECLARE_POOL_ALLOCATOR(PHashTableElement);
 };
 
 struct PHashTableList
