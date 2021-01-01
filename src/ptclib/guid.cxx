@@ -68,6 +68,7 @@ PGloballyUniqueID::PGloballyUniqueID()
                                  - 3);             // Allow for 1700, 1800, 1900 not leap years
   int64_t timestamp = (PTime() + delta).GetTimestamp()*10;
 
+  BYTE* theArray = GetPointer(Size);
   theArray[0] = (BYTE)(timestamp&0xff);
   theArray[1] = (BYTE)((timestamp>>8)&0xff);
   theArray[2] = (BYTE)((timestamp>>16)&0xff);
@@ -122,7 +123,7 @@ PGloballyUniqueID::PGloballyUniqueID(const PString & str)
 PGloballyUniqueID::PGloballyUniqueID(const void * data, PINDEX size)
   : PBYTEArray(Size)
 {
-  memcpy(theArray, PAssertNULL(data), PMIN(size, GetSize()));
+  memcpy(GetPointer(), PAssertNULL(data), PMIN(size, GetSize()));
 }
 
 
@@ -158,10 +159,10 @@ PINDEX PGloballyUniqueID::HashFunction() const
   static PINDEX NumBuckets = 53; // Should be prime number
 
 #if P_64BIT
-  uint64_t * qwords = (uint64_t *)theArray;
+  uint64_t * qwords = (uint64_t *)GetPointer();
   return (qwords[0] ^ qwords[1]) % NumBuckets;
 #else
-  uint32_t * dwords = (uint32_t *)theArray;
+  uint32_t * dwords = (uint32_t *)GetPointer();
   return (dwords[0] ^ dwords[1] ^ dwords[2] ^ dwords[3]) % NumBuckets;
 #endif
 }
@@ -171,6 +172,7 @@ void PGloballyUniqueID::PrintOn(ostream & strm) const
 {
   PAssert(GetSize() == Size, "PGloballyUniqueID is invalid size");
 
+  const BYTE* theArray = GetPointer();
   char fillchar = strm.fill();
   strm << hex << setfill('0')
        << setw(2) << (unsigned)(BYTE)theArray[0]
@@ -201,6 +203,7 @@ void PGloballyUniqueID::ReadFrom(istream & strm)
   strm >> ws;
 
   PINDEX count = 0;
+  BYTE* theArray = GetPointer(Size);
 
   while (count < 2*Size) {
     if (isxdigit(strm.peek())) {
@@ -242,8 +245,8 @@ PString PGloballyUniqueID::AsString() const
 PBoolean PGloballyUniqueID::IsNULL() const
 {
   PAssert(GetSize() == Size, "PGloballyUniqueID is invalid size");
-
-  return memcmp(theArray, "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0", Size) == 0;
+  static BYTE const zeros[Size] = {};
+  return memcmp(GetPointer(), zeros, Size) == 0;
 }
 
 

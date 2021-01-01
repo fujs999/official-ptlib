@@ -2355,13 +2355,13 @@ void PASN_Stream::PrintOn(ostream & strm) const
     PINDEX j;
     for (j = 0; j < 16; j++)
       if (i+j < GetSize())
-        strm << setw(2) << (unsigned)(BYTE)theArray[i+j] << ' ';
+        strm << setw(2) << (unsigned)GetAt(i+j) << ' ';
       else
         strm << "   ";
     strm << "  ";
     for (j = 0; j < 16; j++) {
       if (i+j < GetSize()) {
-        BYTE c = theArray[i+j];
+        BYTE c = GetAt(i+j);
         if (c < 128 && isprint(c))
           strm << c;
         else
@@ -2422,7 +2422,7 @@ BYTE PASN_Stream::ByteDecode()
     return 0;
 
   bitOffset = 8;
-  return theArray[byteOffset++];
+  return GetAt(byteOffset++);
 }
 
 
@@ -2437,7 +2437,7 @@ void PASN_Stream::ByteEncode(unsigned value)
   }
   if (byteOffset >= GetSize())
     SetSize(byteOffset+10);
-  theArray[byteOffset++] = (BYTE)value;
+  SetAt(byteOffset++, (BYTE)value);
 }
 
 
@@ -2454,7 +2454,7 @@ unsigned PASN_Stream::BlockDecode(BYTE * bufptr, unsigned nBytes)
       return 0;
   }
 
-  memcpy(bufptr, &theArray[byteOffset], nBytes);
+  memcpy(bufptr, GetPointer() + byteOffset, nBytes);
   byteOffset += nBytes;
   return nBytes;
 }
@@ -2473,7 +2473,7 @@ void PASN_Stream::BlockEncode(const BYTE * bufptr, PINDEX nBytes)
   if (byteOffset+nBytes >= GetSize())
     SetSize(byteOffset+nBytes+10);
 
-  memcpy(theArray+byteOffset, bufptr, nBytes);
+  memcpy(GetPointer() + byteOffset, bufptr, nBytes);
   byteOffset += nBytes;
 }
 

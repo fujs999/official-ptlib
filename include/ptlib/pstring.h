@@ -1852,7 +1852,7 @@ class PString : public PCharArray
     /** Cast the PString to a std::string
       */
     operator std::string () const
-    { return std::string(theArray); }
+    { return std::string(c_str()); }
 
     /**Get a pointer to the buffer and set the length of the string.
        Note the caller may require the actual length to be less than the len
@@ -1895,6 +1895,8 @@ class PString : public PCharArray
     __inline void clear() { MakeEmpty();  }
     __inline const char * c_str() const { return GetPointer(); }
     __inline char * data() { return PCharArray::GetPointer(); }
+    __inline char & at(size_t idx) { return *(PCharArray::GetPointer(idx+1)+idx); }
+    __inline char   at(size_t idx) const { return GetAt(idx); }
     __inline void push_back(char ch) { *this += ch;  }
     __inline PString & append(std::string::size_type count, char ch) { while (--count > 0) *this += ch; return *this; }
     __inline PString & append(const char * s) { return *this += s; }
@@ -1918,7 +1920,6 @@ class PString : public PCharArray
     __inline std::string::size_type find_first_not_of(const std::string & s, std::string::size_type pos = 0) const { return StdStringPos(FindSpan(s.c_str(), pos)); }
     private:
       __inline static std::string::size_type StdStringPos(PINDEX p) { return p != P_MAX_INDEX ? (std::string::size_type)p : std::string::npos; }
-    public:
     //@}
 
   protected:
@@ -2147,14 +2148,14 @@ class PConstantString : public ParentString
       : ParentString(m_staticReference, init != NULL ? strlen(init) : 0)
       , P_DISABLE_MSVC_WARNINGS(4267 4355, m_staticReference(this->m_length+1, true))
     {
-      this->theArray = (char *)(init != NULL ? init : "");
+      this->m_theArray = (char *)(init != NULL ? init : "");
     }
 
     PConstantString(const PConstantString & other)
       : ParentString(m_staticReference, other.m_length)
       , m_staticReference(other.m_length + 1, true)
     {
-      this->theArray = other.theArray;
+      this->m_theArray = other.m_theArray;
     }
 
     ~PConstantString()
