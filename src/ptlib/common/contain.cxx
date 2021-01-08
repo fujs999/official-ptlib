@@ -2203,7 +2203,7 @@ void PString::InternalFromWChar(const wchar_t * wstr, PINDEX len)
   }
 
   static const char BadChar[] = { '\xef', '\xbf', '\xbd' }; // 0xFFFD
-  PCharsetConverter cvt("WCHAR_T", "UTF-8", wstr, len*sizeof(wchar_t), theArray, GetSize());
+  PCharsetConverter cvt("WCHAR_T", "UTF-8", wstr, len*sizeof(wchar_t), GetPointerAndSetLength(0), GetSize());
   for (;;) {
     int err = cvt.Convert();
     switch (err) {
