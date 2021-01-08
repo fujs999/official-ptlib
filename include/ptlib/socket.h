@@ -407,49 +407,41 @@ class PSocket : public PChannel
   //@{
     /** Structure that defines a "slice" of memory to be written to
      */
+    struct Slice
 #if _WIN32
-    struct Slice : public WSABUF 
+      : public WSABUF 
     {
-      Slice()
-      { buf = (char *)0; len = 0; }
-
-      Slice(void * v, const size_t len)
-      { SetBase(v); SetLength(len); }
-
-      Slice(const void * v, const size_t len)
-      { SetBase(v); SetLength(len); }
-
-      void SetBase(const void * v)   { buf = (char *)v; }
-      void SetBase(void * v)         { buf = (char *)v; }
-      void * GetBase() const         { return buf; }
-
-      void SetLength(size_t v)  { len = (ULONG)v; }
+      void SetBase(void * p)    { buf = (char *)p; }
+      void * GetBase() const    { return buf; }
+      void SetLength(size_t l)  { len = (ULONG)l; }
       size_t GetLength() const  { return len; }
-    };
-#else
+#else // _WIN32
 #if P_HAS_RECVMSG
-    struct Slice : public iovec
+      : public iovec
     {
 #else
-    struct Slice 
     {
       protected:
         void * iov_base;
         size_t iov_len;
       public:
-#endif
+#endif // P_HAS_RECVMSG
+      void SetBase(void * v)    { iov_base = v; }
+      void * GetBase() const    { return iov_base; }
+      void SetLength(size_t l)  { iov_len = l; }
+      size_t GetLength() const  { return iov_len; }
+#endif // _WIN32
+
       Slice()
       { SetBase(NULL); SetLength(0); }
 
-      Slice(void * v, size_t len)
-      { SetBase(v); SetLength(len); }
+      Slice(void * p, size_t l)
+      { SetBase(p); SetLength(l); }
 
-      void SetBase(void * v) { iov_base = v; }
-      void * GetBase() const   { return iov_base; }
-      void SetLength(size_t v) { iov_len = v; }
-      size_t GetLength() const  { return iov_len; }
+      Slice(const void * p, size_t l)
+      { SetBase(const_cast<void *>(p)); SetLength(l); }
     };
-#endif
+
 
     /** Low level scattered read from the channel. This is identical to Read except 
         that the data will be read into a series of scattered memory slices. By default,
