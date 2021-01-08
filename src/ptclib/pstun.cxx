@@ -624,7 +624,7 @@ PSTUNAttribute * PSTUNMessage::AddAttribute(const PSTUNAttribute & attribute)
   int newLength = oldLength + paddedLength;
   ((PSTUNMessageHeader *)GetPointer())->msgLength = (WORD)newLength;
 
-  // theArray pointer may be invalidated by next statement
+  // internal array pointer may be invalidated by next statement
   SetMinSize(sizeof(PSTUNMessageHeader) + newLength);
 
   void * newAttr = GetPointer() + sizeof(PSTUNMessageHeader) + oldLength;

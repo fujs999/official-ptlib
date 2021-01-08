@@ -1984,10 +1984,9 @@ PString PString::Trim() const
 PString PString::ToLower() const
 {
   PString newStr;
-  for (char* cpos = newStr.GetPointerAndSetLength(m_length); *cpos != '\0'; cpos++) {
-    if (isupper(*cpos & 0xff))
-      *cpos = (char)tolower(*cpos & 0xff);
-  }
+  newStr.SetSize(length()+1);
+  for (size_t i = 0; i < length(); ++i)
+    newStr[i] = (char)tolower(at(i) & 0xff);
   return newStr;
 }
 
@@ -1995,10 +1994,9 @@ PString PString::ToLower() const
 PString PString::ToUpper() const
 {
   PString newStr;
-  for (char* cpos = newStr.GetPointerAndSetLength(m_length); *cpos != '\0'; cpos++) {
-    if (islower(*cpos & 0xff))
-      *cpos = (char)toupper(*cpos & 0xff);
-  }
+  newStr.SetSize(length()+1);
+  for (size_t i = 0; i < length(); ++i)
+    newStr[i] = (char)toupper(at(i) & 0xff);
   return newStr;
 }
 
@@ -2203,7 +2201,7 @@ void PString::InternalFromWChar(const wchar_t * wstr, PINDEX len)
   }
 
   static const char BadChar[] = { '\xef', '\xbf', '\xbd' }; // 0xFFFD
-  PCharsetConverter cvt("WCHAR_T", "UTF-8", wstr, len*sizeof(wchar_t), theArray, GetSize());
+  PCharsetConverter cvt("WCHAR_T", "UTF-8", wstr, len*sizeof(wchar_t), GetPointerAndSetLength(0), GetSize());
   for (;;) {
     int err = cvt.Convert();
     switch (err) {
