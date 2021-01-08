@@ -519,7 +519,7 @@ PBoolean PBER_Stream::Read(PChannel & chan)
 PBoolean PBER_Stream::Write(PChannel & chan)
 {
   CompleteEncoding();
-  return chan.Write(theArray, GetSize());
+  return chan.Write(GetPointer(), GetSize());
 }
 
 

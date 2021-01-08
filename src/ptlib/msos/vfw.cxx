@@ -268,14 +268,14 @@ class PVideoDeviceBitmap : PBYTEArray
     PBoolean ApplyFormat(HWND hWnd, const FormatTableEntry & formatTableEntry);
 
     BITMAPINFO * operator->() const 
-    { return (BITMAPINFO *)theArray; }
+    { return (BITMAPINFO *)GetPointer(); }
 };
 
 PVideoDeviceBitmap::PVideoDeviceBitmap(HWND hCaptureWindow)
 {
   PINDEX sz = capGetVideoFormatSize(hCaptureWindow);
   SetSize(sz);
-  if (!capGetVideoFormat(hCaptureWindow, theArray, sz)) { 
+  if (!capGetVideoFormat(hCaptureWindow, GetPointer(), sz)) { 
     PTRACE(1, "capGetVideoFormat(hCaptureWindow) failed - " << ::GetLastError());
     SetSize(0);
     return;
@@ -286,26 +286,27 @@ PVideoDeviceBitmap::PVideoDeviceBitmap(HWND hCaptureWindow, WORD bpp)
 {
   PINDEX sz = capGetVideoFormatSize(hCaptureWindow);
   SetSize(sz);
-  if (!capGetVideoFormat(hCaptureWindow, theArray, sz)) { 
+  if (!capGetVideoFormat(hCaptureWindow, GetPointer(), sz)) { 
     PTRACE(1, "capGetVideoFormat(hCaptureWindow) failed - " << ::GetLastError());
     SetSize(0);
     return;
   }
 
-  if (8 == bpp && bpp != ((BITMAPINFO*)theArray)->bmiHeader.biBitCount) {
+  BITMAPINFO & bmi = *(BITMAPINFO*)GetPointer();
+  if (8 == bpp && bpp != bmi.bmiHeader.biBitCount) {
     SetSize(sizeof(BITMAPINFOHEADER)+sizeof(RGBQUAD)*256);
-    RGBQUAD * bmiColors = ((BITMAPINFO*)theArray)->bmiColors;
+    RGBQUAD * bmiColors = bmi.bmiColors;
     for (int i = 0; i < 256; i++)
       bmiColors[i].rgbBlue  = bmiColors[i].rgbGreen = bmiColors[i].rgbRed = (BYTE)i;
   }
-  ((BITMAPINFO*)theArray)->bmiHeader.biBitCount = bpp;
+  bmi.bmiHeader.biBitCount = bpp;
 }
 
 PBoolean PVideoDeviceBitmap::ApplyFormat(HWND hWnd, const FormatTableEntry & formatTableEntry)
 {
   // NB it is necessary to set the biSizeImage value appropriate to frame size
   // assume bmiHeader.biBitCount has already been set appropriatly for format
-  BITMAPINFO & bmi = *(BITMAPINFO*)theArray;
+  BITMAPINFO & bmi = *(BITMAPINFO*)GetPointer();
   bmi.bmiHeader.biPlanes = 1;
 
   int height = bmi.bmiHeader.biHeight<0 ? -bmi.bmiHeader.biHeight : bmi.bmiHeader.biHeight;
@@ -319,7 +320,7 @@ PBoolean PVideoDeviceBitmap::ApplyFormat(HWND hWnd, const FormatTableEntry & for
   PTimeInterval startTime = PTimer::Tick();
 #endif
 
-  if (capSetVideoFormat(hWnd, theArray, GetSize())) {
+  if (capSetVideoFormat(hWnd, GetPointer(), GetSize())) {
     PTRACE(3, "capSetVideoFormat succeeded: "
             << PString(formatTableEntry.colourFormat) << ' '
             << bmi.bmiHeader.biWidth << "x" << bmi.bmiHeader.biHeight
@@ -329,7 +330,7 @@ PBoolean PVideoDeviceBitmap::ApplyFormat(HWND hWnd, const FormatTableEntry & for
 
   if (formatTableEntry.negHeight) {
     bmi.bmiHeader.biHeight = height; 
-    if (capSetVideoFormat(hWnd, theArray, GetSize())) {
+    if (capSetVideoFormat(hWnd, GetPointer(), GetSize())) {
       PTRACE(3, "capSetVideoFormat succeeded: "
               << PString(formatTableEntry.colourFormat) << ' '
               << bmi.bmiHeader.biWidth << "x" << bmi.bmiHeader.biHeight
