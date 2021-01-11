@@ -1873,7 +1873,7 @@ PINDEX PSSLDiffieHellman::GetNumBits() const
     return 0;
 
 #if (OPENSSL_VERSION_NUMBER < 0x10100000L)
-  return BN_num_bits(dh->p);
+  return BN_num_bits(m_dh->p);
 #else
   return DH_size(m_dh)*8;
 #endif
