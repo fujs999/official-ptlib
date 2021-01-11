@@ -1699,6 +1699,7 @@ dnl MSWIN_DISPLAY    openssl,Open SSL (32 bit)
 dnl MSWIN_CHECK_FILE openssl,inc32\openssl\ssl.h,P_SSL_WIN32=1
 dnl MSWIN_CHECK_FILE openssl,include\openssl\ssl.h,P_SSL_WIN32=2
 dnl MSWIN_FIND_FILE  openssl,P_SSL_AES32,aes.h,...
+dnl MSWIN_FIND_FILE  openssl,P_SSL_LIBEAY32,libeay32MD.lib,...
 dnl MSWIN_DEFINE     openssl,P_SSL_SRTP
 dnl MSWIN_DIR_SYMBOL openssl,SSL_WIN32_DIR
 dnl MSWIN_CHECK_DIR  openssl,%OPENSSL32DIR%\
@@ -1718,6 +1719,7 @@ dnl MSWIN_CHECK_DIR  openssl,\OpenSSL-Win32
 dnl MSWIN_DISPLAY    openssl64,Open SSL (64 bit)
 dnl MSWIN_CHECK_FILE openssl64,include\openssl\ssl.h,P_SSL_WIN64=1
 dnl MSWIN_FIND_FILE  openssl64,P_SSL_AES64,aes.h,...
+dnl MSWIN_FIND_FILE  openssl64,P_SSL_LIBEAY64,libeay32MD.lib,...
 dnl MSWIN_DIR_SYMBOL openssl64,SSL_WIN64_DIR
 dnl MSWIN_DEFINE     openssl64,P_SSL_SRTP
 dnl MSWIN_CHECK_DIR  openssl64,%OPENSSL64DIR%\

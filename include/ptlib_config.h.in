@@ -423,16 +423,27 @@
     #define P_SSL_USE_CONST 1
 
     #undef P_SSL_AES64
-  #define P_SSL_AES P_SSL_AES64
+    #define P_SSL_AES P_SSL_AES64
 
     #define P_SSL_INCLUDE(inc) include_alias(<inc>, <@SSL_WIN64_DIR@/include/inc>)
 
-    #ifdef _DEBUG
-      #define P_SSL_LIB1 "@SSL_WIN64_DIR@/lib/VC/libeay32MDd.lib"
-      #define P_SSL_LIB2 "@SSL_WIN64_DIR@/lib/VC/ssleay32MDd.lib"
+    #undef P_SSL_LIBEAY64
+    #ifdef P_SSL_LIBEAY64
+      #ifdef _DEBUG
+        #define P_SSL_LIB1 "@SSL_WIN64_DIR@/lib/VC/libeay32MDd.lib"
+        #define P_SSL_LIB2 "@SSL_WIN64_DIR@/lib/VC/ssleay32MDd.lib"
+      #else
+        #define P_SSL_LIB1 "@SSL_WIN64_DIR@/lib/VC/libeay32MD.lib"
+        #define P_SSL_LIB2 "@SSL_WIN64_DIR@/lib/VC/ssleay32MD.lib"
+      #endif
     #else
-      #define P_SSL_LIB1 "@SSL_WIN64_DIR@/lib/VC/libeay32MD.lib"
-      #define P_SSL_LIB2 "@SSL_WIN64_DIR@/lib/VC/ssleay32MD.lib"
+      #ifdef _DEBUG
+        #define P_SSL_LIB1 "@SSL_WIN64_DIR@/lib/VC/libcrypto64MDd.lib"
+        #define P_SSL_LIB2 "@SSL_WIN64_DIR@/lib/VC/libssl64MDd.lib"
+      #else
+        #define P_SSL_LIB1 "@SSL_WIN64_DIR@/lib/VC/libcrypto64MD.lib"
+        #define P_SSL_LIB2 "@SSL_WIN64_DIR@/lib/VC/libssl64MD.lib"
+      #endif
     #endif
 
   #elif P_SSL_WIN32==2
@@ -440,16 +451,27 @@
     #define P_SSL_USE_CONST 1
 
     #undef P_SSL_AES32
-  #define P_SSL_AES P_SSL_AES32
+    #define P_SSL_AES P_SSL_AES32
 
     #define P_SSL_INCLUDE(inc) include_alias(<inc>, <@SSL_WIN32_DIR@/include/inc>)
 
-    #ifdef _DEBUG
-      #define P_SSL_LIB1 "@SSL_WIN32_DIR@/lib/VC/libeay32MTd.lib"
-      #define P_SSL_LIB2 "@SSL_WIN32_DIR@/lib/VC/ssleay32MTd.lib"
+    #undef P_SSL_LIBEAY32
+    #ifdef P_SSL_LIBEAY32
+      #ifdef _DEBUG
+        #define P_SSL_LIB1 "@SSL_WIN32_DIR@/lib/VC/libeay32MTd.lib"
+        #define P_SSL_LIB2 "@SSL_WIN32_DIR@/lib/VC/ssleay32MTd.lib"
+      #else
+        #define P_SSL_LIB1 "@SSL_WIN32_DIR@/lib/VC/libeay32MT.lib"
+        #define P_SSL_LIB2 "@SSL_WIN32_DIR@/lib/VC/ssleay32MT.lib"
+      #endif
     #else
-      #define P_SSL_LIB1 "@SSL_WIN32_DIR@/lib/VC/libeay32MT.lib"
-      #define P_SSL_LIB2 "@SSL_WIN32_DIR@/lib/VC/ssleay32MT.lib"
+      #ifdef _DEBUG
+        #define P_SSL_LIB1 "@SSL_WIN32_DIR@/lib/VC/libcrypto32MTd.lib"
+        #define P_SSL_LIB2 "@SSL_WIN32_DIR@/lib/VC/libssl32MTd.lib"
+      #else
+        #define P_SSL_LIB1 "@SSL_WIN32_DIR@/lib/VC/libcrypto32MT.lib"
+        #define P_SSL_LIB2 "@SSL_WIN32_DIR@/lib/VC/libssl32MD.lib"
+      #endif
     #endif
 
   #else
