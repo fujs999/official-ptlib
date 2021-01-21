@@ -196,11 +196,11 @@ PAbstractArray::PAbstractArray(PINDEX elementSizeInBytes, PINDEX initialSize)
   PAssert(elementSize != 0, PInvalidParameter);
 
   if (GetSize() == 0)
-    theArray = NULL;
+    m_theArray = NULL;
   else {
-    theArray = PAbstractArrayAllocate(GetSize() * elementSize);
-    PAssert(theArray != NULL, POutOfMemory);
-    memset(theArray, 0, GetSize() * elementSize);
+    m_theArray = PAbstractArrayAllocate(GetSize() * elementSize);
+    if (PAssert(m_theArray != NULL, POutOfMemory))
+      memset(m_theArray, 0, GetSize() * elementSize);
   }
 
   allocatedDynamically = true;
@@ -219,22 +219,22 @@ PAbstractArray::PAbstractArray(PINDEX elementSizeInBytes,
   allocatedDynamically = dynamicAllocation;
 
   if (GetSize() == 0)
-    theArray = NULL;
+    m_theArray = NULL;
   else if (dynamicAllocation) {
     PINDEX sizebytes = elementSize*GetSize();
-    theArray = PAbstractArrayAllocate(sizebytes);
-    PAssert(theArray != NULL, POutOfMemory);
-    memcpy(theArray, PAssertNULL(buffer), sizebytes);
+    m_theArray = PAbstractArrayAllocate(sizebytes);
+    if (PAssert(m_theArray != NULL, POutOfMemory))
+      memcpy(m_theArray, PAssertNULL(buffer), sizebytes);
   }
   else
-    theArray = (char *)buffer;
+    m_theArray = (char *)buffer;
 }
 
 
 PAbstractArray::PAbstractArray(PContainerReference & reference, PINDEX elementSizeInBytes)
   : PContainer(reference)
   , elementSize(elementSizeInBytes)
-  , theArray(NULL)
+  , m_theArray(NULL)
   , allocatedDynamically(false)
 {
 }
@@ -242,10 +242,10 @@ PAbstractArray::PAbstractArray(PContainerReference & reference, PINDEX elementSi
 
 void PAbstractArray::DestroyContents()
 {
-  if (theArray != NULL) {
+  if (m_theArray != NULL) {
     if (allocatedDynamically)
-      PAbstractArrayDeallocate(theArray);
-    theArray = NULL;
+      PAbstractArrayDeallocate(m_theArray);
+    m_theArray = NULL;
   }
 }
 
@@ -253,7 +253,7 @@ void PAbstractArray::DestroyContents()
 void PAbstractArray::CopyContents(const PAbstractArray & array)
 {
   elementSize = array.elementSize;
-  theArray = array.theArray;
+  m_theArray = array.m_theArray;
   allocatedDynamically = array.allocatedDynamically;
 
   if (reference->constObject)
@@ -269,8 +269,8 @@ void PAbstractArray::CloneContents(const PAbstractArray * array)
   if (newArray == NULL)
     reference->size = 0;
   else
-    memcpy(newArray, array->theArray, sizebytes);
-  theArray = newArray;
+    memcpy(newArray, array->m_theArray, sizebytes);
+  m_theArray = newArray;
   allocatedDynamically = true;
 }
 
@@ -307,8 +307,8 @@ PObject::Comparison PAbstractArray::Compare(const PObject & obj) const
   PAssert(PIsDescendant(&obj, PAbstractArray), PInvalidCast);
   const PAbstractArray & other = (const PAbstractArray &)obj;
 
-  char * otherArray = other.theArray;
-  if (theArray == otherArray)
+  char * otherArray = other.m_theArray;
+  if (m_theArray == otherArray)
     return EqualTo;
 
   if (elementSize < other.elementSize)
@@ -329,7 +329,7 @@ PObject::Comparison PAbstractArray::Compare(const PObject & obj) const
   if (thisSize == 0)
     return EqualTo;
 
-  int retval = memcmp(theArray, otherArray, elementSize*thisSize);
+  int retval = memcmp(m_theArray, otherArray, elementSize*thisSize);
   if (retval < 0)
     return LessThan;
   if (retval > 0)
@@ -369,8 +369,8 @@ PBoolean PAbstractArray::InternalSetSize(PINDEX newSize, PBoolean force)
   
       allocatedDynamically = true;
 
-      if (theArray != NULL)
-        memcpy(newArray, theArray, PMIN(oldsizebytes, newsizebytes));
+      if (m_theArray != NULL)
+        memcpy(newArray, m_theArray, PMIN(oldsizebytes, newsizebytes));
     }
 
     --reference->count;
@@ -378,18 +378,18 @@ PBoolean PAbstractArray::InternalSetSize(PINDEX newSize, PBoolean force)
 
   } else {
 
-    if (theArray != NULL) {
+    if (m_theArray != NULL) {
       if (newsizebytes == 0) {
         if (allocatedDynamically)
-          PAbstractArrayDeallocate(theArray);
+          PAbstractArrayDeallocate(m_theArray);
         newArray = NULL;
       }
       else {
         if ((newArray = PAbstractArrayAllocate(newsizebytes)) == NULL)
           return false;
-        memcpy(newArray, theArray, PMIN(newsizebytes, oldsizebytes));
+        memcpy(newArray, m_theArray, PMIN(newsizebytes, oldsizebytes));
         if (allocatedDynamically)
-          PAbstractArrayDeallocate(theArray);
+          PAbstractArrayDeallocate(m_theArray);
         allocatedDynamically = true;
       }
     }
@@ -406,16 +406,16 @@ PBoolean PAbstractArray::InternalSetSize(PINDEX newSize, PBoolean force)
   if (newsizebytes > oldsizebytes)
     memset(newArray+oldsizebytes, 0, newsizebytes-oldsizebytes);
 
-  theArray = newArray;
+  m_theArray = newArray;
   return true;
 }
 
 void PAbstractArray::Attach(const void *buffer, PINDEX bufferSize)
 {
-  if (allocatedDynamically && theArray != NULL)
-    PAbstractArrayDeallocate(theArray);
+  if (allocatedDynamically && m_theArray != NULL)
+    PAbstractArrayDeallocate(m_theArray);
 
-  theArray = (char *)buffer;
+  m_theArray = (char *)buffer;
   reference->size = bufferSize;
   allocatedDynamically = false;
 }
@@ -424,7 +424,7 @@ void PAbstractArray::Attach(const void *buffer, PINDEX bufferSize)
 void * PAbstractArray::GetPointer(PINDEX minSize)
 {
   PAssert(SetMinSize(minSize), POutOfMemory);
-  return theArray;
+  return m_theArray;
 }
 
 
@@ -445,7 +445,7 @@ PBoolean PAbstractArray::Concatenate(const PAbstractArray & array)
   if (!SetSize(oldLen + addLen))
     return false;
 
-  memcpy(theArray+oldLen*elementSize, array.theArray, addLen*elementSize);
+  memcpy(m_theArray+oldLen*elementSize, array.m_theArray, addLen*elementSize);
   return true;
 }
 
@@ -472,13 +472,13 @@ void PCharArray::PrintOn(ostream & strm) const
 
   PBoolean left = (strm.flags()&ios::adjustfield) == ios::left;
   if (left)
-    strm.write(theArray, GetSize());
+    strm.write(GetPointer(), GetSize());
 
   while (width-- > 0)
     strm << (char)strm.fill();
 
   if (!left)
-    strm.write(theArray, GetSize());
+    strm.write(GetPointer(), GetSize());
 }
 
 
@@ -487,10 +487,11 @@ void PCharArray::ReadFrom(istream &strm)
   PINDEX size = 0;
   SetSize(size+100);
 
+  char* ptr = GetPointer();
   while (strm.good()) {
-    strm >> theArray[size++];
+    strm >> ptr[size++];
     if (size >= GetSize())
-      SetSize(size+100);
+      ptr = GetPointer(size + 100);
   }
 
   SetSize(size);
@@ -523,7 +524,7 @@ void PBYTEArray::PrintOn(ostream & strm) const
       if (indent >= 0 && j == line_width/2)
         strm << ' ';
       if (i+j < GetSize())
-        strm << setw(val_width) << (theArray[i+j]&0xff);
+        strm << setw(val_width) << (GetAt(i+j)&0xff);
       else {
         for (int k = 0; k < val_width; k++)
           strm << ' ';
@@ -535,7 +536,7 @@ void PBYTEArray::PrintOn(ostream & strm) const
       strm << "  ";
       for (j = 0; j < line_width; j++) {
         if (i+j < GetSize()) {
-          unsigned val = theArray[i+j]&0xff;
+          unsigned val = GetAt(i+j)&0xff;
           if (isprint(val))
             strm << (char)val;
           else
@@ -558,7 +559,7 @@ void PBYTEArray::ReadFrom(istream &strm)
   while (strm.good()) {
     unsigned v;
     strm >> v;
-    theArray[size] = (BYTE)v;
+    SetAt(size, (BYTE)v);
     if (!strm.fail()) {
       size++;
       if (size >= GetSize())
@@ -587,81 +588,6 @@ void PHexDump::PrintOn(ostream & strm) const
   strm.flags(oldFlags);
   strm.precision(oldPrec);
   strm.fill(oldFill);
-}
-
-
-///////////////////////////////////////////////////////////////////////////////
-
-PBitArray::PBitArray(PINDEX initialSize)
-  : PBYTEArray((initialSize+7)>>3)
-{
-}
-
-
-PBitArray::PBitArray(const void * buffer,
-                     PINDEX length,
-                     PBoolean dynamic)
-  : PBYTEArray((const BYTE *)buffer, (length+7)>>3, dynamic)
-{
-}
-
-
-PObject * PBitArray::Clone() const
-{
-  return new PBitArray(*this);
-}
-
-
-PINDEX PBitArray::GetSize() const
-{
-  return PBYTEArray::GetSize()<<3;
-}
-
-
-PBoolean PBitArray::SetSize(PINDEX newSize)
-{
-  return PBYTEArray::SetSize((newSize+7)>>3);
-}
-
-
-PBoolean PBitArray::SetAt(PINDEX index, PBoolean val)
-{
-  if (!SetMinSize(index+1))
-    return false;
-
-  if (val)
-    theArray[index>>3] |= (1 << (index&7));
-  else
-    theArray[index>>3] &= ~(1 << (index&7));
-  return true;
-}
-
-
-PBoolean PBitArray::GetAt(PINDEX index) const
-{
-  PASSERTINDEX(index);
-  if (index >= GetSize())
-    return false;
-
-  return (theArray[index>>3]&(1 << (index&7))) != 0;
-}
-
-
-void PBitArray::Attach(const void * buffer, PINDEX bufferSize)
-{
-  PBYTEArray::Attach((const BYTE *)buffer, (bufferSize+7)>>3);
-}
-
-
-BYTE * PBitArray::GetPointer(PINDEX minSize)
-{
-  return PBYTEArray::GetPointer((minSize+7)>>3);
-}
-
-
-PBoolean PBitArray::Concatenate(const PBitArray & array)
-{
-  return PAbstractArray::Concatenate(array);
 }
 
 
@@ -718,7 +644,7 @@ PString::PString(char c)
   : PCharArray(2)
   , m_length(1)
 {
-  *theArray = c;
+  SetAt(0, c);
 }
 
 
@@ -737,8 +663,8 @@ PString::PString(const char * cstr)
   if (cstr == NULL)
     MakeEmpty();
   else {
-    m_length = (PINDEX)strlen(cstr);
-    if (SetSize(m_length+1) && m_length > 0)
+    char* theArray = GetPointerAndSetLength(strlen(cstr));
+    if (m_length > 0 && theArray != NULL)
       memcpy(theArray, cstr, m_length);
   }
 }
@@ -774,7 +700,7 @@ PString::PString(const char * cstr, PINDEX len)
   , m_length(len)
 {
   if (len > 0)
-    memcpy(theArray, PAssertNULL(cstr), len);
+    memcpy(PCharArray::GetPointer(), PAssertNULL(cstr), len);
 }
 
 
@@ -840,26 +766,29 @@ PString::PString(ConversionType type, const char * str, ...)
   switch (type) {
     case Pascal :
       if (*str != '\0') {
-        m_length = *str & 0xff;
-        PAssert(SetSize(m_length+1), POutOfMemory);
-        memcpy(theArray, str+1, m_length);
+        char * theArray = GetPointerAndSetLength(*str & 0xff);
+        if (theArray != NULL)
+          memcpy(theArray, str+1, m_length);
       }
       break;
 
     case Basic :
       if (str[0] != '\0' && str[1] != '\0') {
-        m_length = (str[0] & 0xff) | ((str[1] & 0xff) << 8);
-        PAssert(SetSize(m_length+1), POutOfMemory);
-        memcpy(theArray, str+2, m_length);
+        char * theArray = GetPointerAndSetLength((str[0] & 0xff) | ((str[1] & 0xff) << 8));
+        if (theArray != NULL)
+          memcpy(theArray, str+2, m_length);
       }
       break;
 
     case Literal :
-      PAssert(SetSize(strlen(str)+1), POutOfMemory);
-      TranslateEscapes(str, theArray);
-      m_length = strlen(theArray);
+    {
+      char* theArray = GetPointerAndSetLength(strlen(str) + 1);
+      if (theArray != NULL) {
+        TranslateEscapes(str, theArray);
+        MakeMinimumSize();
+      }
       break;
-
+    }
     case Printf : {
       va_list args;
       va_start(args, str);
@@ -895,42 +824,42 @@ template <typename S, typename U> PINDEX p_signed2string(S value, unsigned base,
 
 PString::PString(short n)
   : PCharArray(sizeof(short)*3+2)
-  , m_length(p_signed2string<signed int, unsigned>(n, 10, theArray))
+  , m_length(p_signed2string<signed int, unsigned>(n, 10, PCharArray::GetPointer()))
 {
 }
 
 
 PString::PString(unsigned short n)
   : PCharArray(sizeof(unsigned short)*3+1)
-  , m_length(p_unsigned2string<unsigned int>(n, 10, theArray))
+  , m_length(p_unsigned2string<unsigned int>(n, 10, PCharArray::GetPointer()))
 {
 }
 
 
 PString::PString(int n)
   : PCharArray(sizeof(int)*3+2)
-  , m_length(p_signed2string<signed int, unsigned>(n, 10, theArray))
+  , m_length(p_signed2string<signed int, unsigned>(n, 10, PCharArray::GetPointer()))
 {
 }
 
 
 PString::PString(unsigned int n)
   : PCharArray(sizeof(unsigned int)*3+1)
-  , m_length(p_unsigned2string<unsigned int>(n, 10, theArray))
+  , m_length(p_unsigned2string<unsigned int>(n, 10, PCharArray::GetPointer()))
 {
 }
 
 
 PString::PString(long n)
   : PCharArray(sizeof(long)*3+2)
-  , m_length(p_signed2string<signed long, unsigned long>(n, 10, theArray))
+  , m_length(p_signed2string<signed long, unsigned long>(n, 10, PCharArray::GetPointer()))
 {
 }
 
 
 PString::PString(unsigned long n)
   : PCharArray(sizeof(unsigned long)*3+1)
-  , m_length(p_unsigned2string<unsigned long>(n, 10, theArray))
+  , m_length(p_unsigned2string<unsigned long>(n, 10, PCharArray::GetPointer()))
 {
 }
 
@@ -938,7 +867,7 @@ PString::PString(unsigned long n)
 #ifdef HAVE_LONG_LONG_INT
 PString::PString(long long n)
   : PCharArray(sizeof(long long)*3+2)
-  , m_length(p_signed2string<signed long long, unsigned long long>(n, 10, theArray))
+  , m_length(p_signed2string<signed long long, unsigned long long>(n, 10, PCharArray::GetPointer()))
 {
 }
 #endif
@@ -947,7 +876,7 @@ PString::PString(long long n)
 #ifdef HAVE_UNSIGNED_LONG_LONG_INT
 PString::PString(unsigned long long n)
   : PCharArray(sizeof(unsigned long long)*3+1)
-  , m_length(p_unsigned2string<unsigned long long>(n, 10, theArray))
+  , m_length(p_unsigned2string<unsigned long long>(n, 10, PCharArray::GetPointer()))
 {
 }
 #endif
@@ -1023,7 +952,7 @@ template <typename S, typename U>
 PString::PString(ConversionType type, paramType value, unsigned param) \
   : PCharArray(sizeof(paramType)*3+1) \
 { \
-  m_length = p_convert<signedType, unsignedType>(type, value, param, theArray); \
+  m_length = p_convert<signedType, unsignedType>(type, value, param, PCharArray::GetPointer()); \
 }
 
 PSTRING_CONV_CTOR(unsigned char,  char,   unsigned char);
@@ -1089,7 +1018,7 @@ PString::PString(ConversionType type, double value, unsigned places)
 PString & PString::operator=(short n)
 {
   SetMinSize(sizeof(short)*3+1);
-  m_length = p_signed2string<signed int, unsigned int>(n, 10, theArray);
+  m_length = p_signed2string<signed int, unsigned int>(n, 10, PCharArray::GetPointer());
   return *this;
 }
 
@@ -1097,7 +1026,7 @@ PString & PString::operator=(short n)
 PString & PString::operator=(unsigned short n)
 {
   SetMinSize(sizeof(unsigned short)*3+1);
-  m_length = p_unsigned2string<unsigned int>(n, 10, theArray);
+  m_length = p_unsigned2string<unsigned int>(n, 10, PCharArray::GetPointer());
   return *this;
 }
 
@@ -1105,7 +1034,7 @@ PString & PString::operator=(unsigned short n)
 PString & PString::operator=(int n)
 {
   SetMinSize(sizeof(int)*3+1);
-  m_length = p_signed2string<signed int, unsigned int>(n, 10, theArray);
+  m_length = p_signed2string<signed int, unsigned int>(n, 10, PCharArray::GetPointer());
   return *this;
 }
 
@@ -1113,7 +1042,7 @@ PString & PString::operator=(int n)
 PString & PString::operator=(unsigned int n)
 {
   SetMinSize(sizeof(unsigned int)*3+1);
-  m_length = p_unsigned2string<unsigned int>(n, 10, theArray);
+  m_length = p_unsigned2string<unsigned int>(n, 10, PCharArray::GetPointer());
   return *this;
 }
 
@@ -1121,7 +1050,7 @@ PString & PString::operator=(unsigned int n)
 PString & PString::operator=(long n)
 {
   SetMinSize(sizeof(long)*3+1);
-  m_length = p_signed2string<signed long,  unsigned long>(n, 10, theArray);
+  m_length = p_signed2string<signed long,  unsigned long>(n, 10, PCharArray::GetPointer());
   return *this;
 }
 
@@ -1129,7 +1058,7 @@ PString & PString::operator=(long n)
 PString & PString::operator=(unsigned long n)
 {
   SetMinSize(sizeof(unsigned long)*3+1);
-  m_length = p_unsigned2string<unsigned long>(n, 10, theArray);
+  m_length = p_unsigned2string<unsigned long>(n, 10, PCharArray::GetPointer());
   return *this;
 }
 
@@ -1138,7 +1067,7 @@ PString & PString::operator=(unsigned long n)
 PString & PString::operator=(long long n)
 {
   SetMinSize(sizeof(long long)*3+1);
-  m_length = p_signed2string<signed long long, unsigned long long>(n, 10, theArray);
+  m_length = p_signed2string<signed long long, unsigned long long>(n, 10, PCharArray::GetPointer());
   return *this;
 }
 #endif
@@ -1148,7 +1077,7 @@ PString & PString::operator=(long long n)
 PString & PString::operator=(unsigned long long n)
 {
   SetMinSize(sizeof(unsigned long long)*3+1);
-  m_length = p_unsigned2string<unsigned long long>(n, 10, theArray);
+  m_length = p_unsigned2string<unsigned long long>(n, 10, PCharArray::GetPointer());
   return *this;
 }
 #endif
@@ -1176,7 +1105,7 @@ PObject * PString::Clone() const
 
 void PString::PrintOn(ostream &strm) const
 {
-  strm << theArray;
+  strm << c_str();
 }
 
 
@@ -1191,15 +1120,15 @@ void PString::ReadFrom(istream &strm)
     }
 
     strm.clear();
-    strm.getline(theArray + m_length, GetSize() - m_length);
+    strm.getline(PCharArray::GetPointer() + m_length, GetSize() - m_length);
     m_length += (PINDEX)strm.gcount();
   } while (strm.fail() && !strm.eof());
 
   if (m_length > 0 && !strm.eof())
     --m_length; // Allow for extracted '\n'
 
-  if (m_length > 0 && theArray[m_length-1] == '\r')
-    theArray[--m_length] = '\0';
+  if (m_length > 0 && at(m_length-1) == '\r')
+    at(--m_length) = '\0';
 
   if (GetSize() > m_length*2)
     PAssert(MakeMinimumSize(m_length), POutOfMemory);
@@ -1209,7 +1138,7 @@ void PString::ReadFrom(istream &strm)
 PObject::Comparison PString::Compare(const PObject & obj) const
 {
   PAssert(PIsDescendant(&obj, PString), PInvalidCast);
-  return InternalCompare(0, P_MAX_INDEX, ((const PString &)obj).theArray);
+  return InternalCompare(0, P_MAX_INDEX, ((const PString &)obj).c_str());
 }
 
 
@@ -1223,13 +1152,14 @@ PINDEX PString::HashFunction() const
     case 0:
       return 0;
     case 1:
-      return tolower(theArray[0] & 0xff) % 127;
+      return tolower(at(0) & 0xff) % 127;
   }
 
   static const PINDEX MaxCount = 18; // Make sure big enough to cover whole PGloballyUniqueID::AsString()
   PINDEX count = std::min(m_length / 2, MaxCount);
   unsigned hash = 0;
   PINDEX i;
+  const char* theArray = c_str();
   for (i = 0; i < count; i++)
     hash = (hash << 5) ^ tolower(theArray[i] & 0xff) ^ hash;
   for (i = m_length - count - 1; i < m_length; i++)
@@ -1240,7 +1170,7 @@ PINDEX PString::HashFunction() const
 
 PBoolean PString::IsEmpty() const
 {
-  return (theArray == NULL) || (*theArray == '\0');
+  return (GetPointer() == NULL) || (at(0) == '\0');
 }
 
 
@@ -1254,7 +1184,7 @@ PBoolean PString::SetSize(PINDEX newSize)
 
   if (GetLength() >= newSize) {
     m_length = newSize-1;
-    theArray[m_length] = '\0';
+    at(m_length) = '\0';
   }
 
   return true;
@@ -1279,10 +1209,11 @@ PString PString::operator+(const char * cstr) const
   PINDEX olen = GetLength();
   PINDEX alen = strlen(cstr);
   PString str;
-  str.m_length = olen + alen;
-  str.SetSize(str.m_length+1);
-  memmove(str.theArray, theArray, olen);
-  memcpy(str.theArray+olen, cstr, alen+1);
+  char * theArray = str.GetPointerAndSetLength(olen + alen);
+  if (!theArray)
+    return PString::Empty();
+  memmove(theArray, GetPointer(), olen);
+  memcpy(theArray+olen, cstr, alen+1);
   return str;
 }
 
@@ -1291,11 +1222,12 @@ PString PString::operator+(char c) const
 {
   PINDEX olen = GetLength();
   PString str;
-  str.m_length = olen + 1;
-  str.SetSize(str.m_length+1);
-  memmove(str.theArray, theArray, olen);
-  str.theArray[olen++] = c;
-  str.theArray[olen] = '\0';
+  char * theArray = str.GetPointerAndSetLength(olen + 1);
+  if (!theArray)
+    return PString::Empty();
+  memmove(theArray, GetPointer(), olen);
+  theArray[olen++] = c;
+  theArray[olen] = '\0';
   return str;
 }
 
@@ -1307,9 +1239,9 @@ PString & PString::operator+=(const char * cstr)
 
   PINDEX olen = GetLength();
   PINDEX alen = strlen(cstr);
-  m_length = olen + alen;
-  SetMinSize(m_length+1);
-  memcpy(theArray+olen, cstr, alen+1);
+  char* theArray = GetPointerAndSetLength(olen + alen);
+  if (theArray)
+    memcpy(theArray+olen, cstr, alen+1);
   return *this;
 }
 
@@ -1317,8 +1249,10 @@ PString & PString::operator+=(const char * cstr)
 PString & PString::operator+=(char ch)
 {
   PINDEX olen = GetLength();
-  m_length = olen + 1;
-  SetMinSize(m_length+1);
+  char* theArray = GetPointerAndSetLength(olen + 1);
+  if (!theArray)
+    return *this;
+
   theArray[olen] = ch;
   theArray[m_length] = '\0';
   return *this;
@@ -1335,14 +1269,17 @@ PString PString::operator&(const char * cstr) const
     return *this;
 
   PINDEX olen = GetLength();
+  PINDEX space = olen > 0 && GetAt(olen-1)!=' ' && *cstr!=' ' ? 1 : 0;
+
   PString str;
-  PINDEX space = olen > 0 && theArray[olen-1]!=' ' && *cstr!=' ' ? 1 : 0;
-  str.m_length = olen + space + alen;
-  str.SetSize(str.m_length+1);
-  memmove(str.theArray, theArray, olen);
+  char* theArray = str.GetPointerAndSetLength(olen + space + alen);
+  if (!theArray)
+    return PString::Empty();
+
+  memmove(theArray, GetPointer(), olen);
   if (space != 0)
-    str.theArray[olen] = ' ';
-  memcpy(str.theArray+olen+space, cstr, alen+1);
+    str[olen] = ' ';
+  memcpy(theArray+olen+space, cstr, alen+1);
   return str;
 }
 
@@ -1350,15 +1287,18 @@ PString PString::operator&(const char * cstr) const
 PString PString::operator&(char c) const
 {
   PINDEX olen = GetLength();
+  PINDEX space = olen > 0 && GetAt(olen-1) != ' ' && c != ' ' ? 1 : 0;
+
   PString str;
-  PINDEX space = olen > 0 && theArray[olen-1] != ' ' && c != ' ' ? 1 : 0;
-  str.m_length = olen + space + 1;
-  str.SetSize(str.m_length+1);
-  memmove(str.theArray, theArray, olen);
+  char* theArray = str.GetPointerAndSetLength(olen + space + 1);
+  if (!theArray)
+    return PString::Empty();
+
+  memmove(theArray, GetPointer(), olen);
   if (space != 0)
-    str.theArray[olen] = ' ';
-  str.theArray[olen+space] = c;
-  str.theArray[str.m_length] = '\0';
+    theArray[olen] = ' ';
+  theArray[olen+space] = c;
+  theArray[str.m_length] = '\0';
   return str;
 }
 
@@ -1373,9 +1313,12 @@ PString & PString::operator&=(const char * cstr)
     return *this;
 
   PINDEX olen = GetLength();
-  PINDEX space = olen > 0 && theArray[olen-1]!=' ' && *cstr!=' ' ? 1 : 0;
-  m_length = olen + space + alen;
-  SetMinSize(m_length+1);
+  PINDEX space = olen > 0 && GetAt(olen-1)!=' ' && *cstr!=' ' ? 1 : 0;
+
+  char* theArray = GetPointerAndSetLength(olen + space + alen);
+  if (!theArray)
+    return *this;
+
   if (space != 0)
     theArray[olen] = ' ';
   memcpy(theArray+olen+space, cstr, alen+1);
@@ -1386,9 +1329,12 @@ PString & PString::operator&=(const char * cstr)
 PString & PString::operator&=(char ch)
 {
   PINDEX olen = GetLength();
-  PINDEX space = olen > 0 && theArray[olen-1] != ' ' && ch != ' ' ? 1 : 0;
-  m_length = olen + space + 1;
-  SetMinSize(m_length+1);
+  PINDEX space = olen > 0 && GetAt(olen-1) != ' ' && ch != ' ' ? 1 : 0;
+
+  char* theArray = GetPointerAndSetLength(olen + space + 1);
+  if (!theArray)
+    return *this;
+
   if (space != 0)
     theArray[olen] = ' ';
   theArray[olen+space] = ch;
@@ -1413,10 +1359,11 @@ PString & PString::Delete(PINDEX start, PINDEX len)
     return *this;
 
   if (len >= slen - start) {
-    theArray[start] = '\0';
+    at(start) = '\0';
     m_length = start;
   }
   else {
+    char* theArray = PCharArray::GetPointer();
     memmove(theArray+start, theArray+start+len, m_length-start-len+1);
     m_length -= len;
   }
@@ -1447,7 +1394,7 @@ PString PString::operator()(PINDEX start, PINDEX end) const
     end = len-1;
   }
 
-  return PString(theArray+start, end - start + 1);
+  return PString(GetPointer()+start, end - start + 1);
 }
 
 
@@ -1459,7 +1406,7 @@ PString PString::Left(PINDEX len) const
   if (len >= GetLength())
     return *this;
 
-  return PString(theArray, len);
+  return PString(GetPointer(), len);
 }
 
 
@@ -1472,7 +1419,7 @@ PString PString::Right(PINDEX len) const
   if (len >= srclen)
     return *this;
 
-  return PString(theArray+srclen-len, len);
+  return PString(GetPointer()+srclen-len, len);
 }
 
 
@@ -1525,7 +1472,7 @@ bool PString::operator*=(const char * cstr) const
   if (cstr == NULL)
     return IsEmpty() != false;
 
-  const char * pstr = theArray;
+  const char * pstr = GetPointer();
   while (*pstr != '\0' && *cstr != '\0') {
     if (toupper(*pstr & 0xff) != toupper(*cstr & 0xff))
       return false;
@@ -1565,10 +1512,10 @@ PObject::Comparison PString::InternalCompare(PINDEX offset, PINDEX length, const
     return LessThan;
 #endif
 
-  if (offset == 0 && theArray == cstr)
+  if (offset == 0 && GetPointer() == cstr)
     return EqualTo;
 
-  const char * s1 = theArray+offset;
+  const char * s1 = GetPointer()+offset;
   const char * s2 = cstr != NULL ? cstr : "";
   return Compare2(length != P_MAX_INDEX ? internal_strncmp(s1, s2, length) : internal_strcmp(s1, s2), 0);
 }
@@ -1629,6 +1576,8 @@ PINDEX PString::Find(const char * cstr, PINDEX offset) const
     }
     return P_MAX_INDEX;
   }
+
+  const char* theArray = GetPointer();
 
   int strSum = 0;
   int cstrSum = 0;
@@ -1691,6 +1640,8 @@ PINDEX PString::FindLast(const char * cstr, PINDEX offset) const
 
   if (offset > len - clen)
     offset = len - clen;
+
+  const char* theArray = GetPointer();
 
   int strSum = 0;
   int cstrSum = 0;
@@ -1795,7 +1746,7 @@ PBoolean PString::FindRegEx(const PRegularExpression & regex,
       return false;
   }
   else {
-    if (!regex.Execute(&theArray[offset], pos, len))
+    if (!regex.Execute(c_str() + offset, pos, len))
       return false;
   }
 
@@ -1811,7 +1762,7 @@ PBoolean PString::MatchesRegEx(const PRegularExpression & regex) const
   PINDEX pos = 0;
   PINDEX len = 0;
 
-  if (!regex.Execute(theArray, pos, len))
+  if (!regex.Execute(c_str(), pos, len))
     return false;
 
   return (pos == 0) && (len == GetLength());
@@ -1859,6 +1810,7 @@ PString & PString::Splice(const char * cstr, PINDEX pos, PINDEX len)
   PINDEX newlen = slen-len+clen;
   if (clen > len)
     SetMinSize(newlen+1);
+  char* theArray = PCharArray::GetPointer();
   if (pos+len < slen)
     memmove(theArray+pos+clen, theArray+pos+len, slen-pos-len+1);
   if (clen > 0)
@@ -1951,7 +1903,9 @@ PStringArray PString::Lines() const
   
   if (IsEmpty())
     return lines;
-    
+
+  const char* theArray = GetPointer();
+
   PINDEX line = 0;
   PINDEX p1 = 0;
   PINDEX p2;
@@ -1972,7 +1926,7 @@ PString PString::LeftTrim() const
   if (IsEmpty())
     return PString::Empty();
 
-  const char * lpos = theArray;
+  const char * lpos = GetPointer();
   while (std::isspace(*lpos, std::locale("C")))
     lpos++;
   return PString(lpos);
@@ -1984,7 +1938,8 @@ PString PString::RightTrim() const
   if (IsEmpty())
     return PString::Empty();
 
-  char * rpos = theArray+GetLength()-1;
+  const char* theArray = GetPointer();
+  const char * rpos = theArray+GetLength()-1;
   if (!std::isspace(*rpos, std::locale("C")))
     return *this;
 
@@ -2005,6 +1960,7 @@ PString PString::Trim() const
   if (IsEmpty())
     return PString::Empty();
 
+  const char* theArray = GetPointer();
   const char * lpos = theArray;
   while (std::isspace(*lpos, std::locale("C")))
     lpos++;
@@ -2027,22 +1983,20 @@ PString PString::Trim() const
 
 PString PString::ToLower() const
 {
-  PString newStr(theArray);
-  for (char *cpos = newStr.theArray; *cpos != '\0'; cpos++) {
-    if (isupper(*cpos & 0xff))
-      *cpos = (char)tolower(*cpos & 0xff);
-  }
+  PString newStr;
+  newStr.SetSize(length()+1);
+  for (size_t i = 0; i < length(); ++i)
+    newStr[i] = (char)tolower(at(i) & 0xff);
   return newStr;
 }
 
 
 PString PString::ToUpper() const
 {
-  PString newStr(theArray);
-  for (char *cpos = newStr.theArray; *cpos != '\0'; cpos++) {
-    if (islower(*cpos & 0xff))
-      *cpos = (char)toupper(*cpos & 0xff);
-  }
+  PString newStr;
+  newStr.SetSize(length()+1);
+  for (size_t i = 0; i < length(); ++i)
+    newStr[i] = (char)toupper(at(i) & 0xff);
   return newStr;
 }
 
@@ -2051,7 +2005,7 @@ long PString::AsInteger(unsigned base) const
 {
   PAssert(base != 1 && base <= 36, PInvalidParameter);
   char * dummy;
-  return strtol(theArray, &dummy, base);
+  return strtol(c_str(), &dummy, base);
 }
 
 
@@ -2059,7 +2013,7 @@ DWORD PString::AsUnsigned(unsigned base) const
 {
   PAssert(base != 1 && base <= 36, PInvalidParameter);
   char * dummy;
-  return strtoul(theArray, &dummy, base);
+  return strtoul(c_str(), &dummy, base);
 }
 
 
@@ -2067,7 +2021,7 @@ int64_t PString::AsInteger64(unsigned base) const
 {
   PAssert(base != 1 && base <= 36, PInvalidParameter);
   char * dummy;
-  return strtoll(theArray, &dummy, base);
+  return strtoll(c_str(), &dummy, base);
 }
 
 
@@ -2075,7 +2029,7 @@ uint64_t PString::AsUnsigned64(unsigned base) const
 {
   PAssert(base != 1 && base <= 36, PInvalidParameter);
   char * dummy;
-  return strtoull(theArray, &dummy, base);
+  return strtoull(c_str(), &dummy, base);
 }
 
 
@@ -2083,7 +2037,7 @@ double PString::AsReal() const
 {
 #ifndef __HAS_NO_FLOAT
   char * dummy;
-  return strtod(theArray, &dummy);
+  return strtod(c_str(), &dummy);
 #else
   return 0.0;
 #endif
@@ -2184,10 +2138,10 @@ PWCharArray PString::AsWide() const
 
 #elif defined(_WIN32)
 
-  PINDEX len = MultiByteToWideChar(CP_UTF8, 0, theArray, GetLength(), NULL, 0);
+  PINDEX len = MultiByteToWideChar(CP_UTF8, 0, c_str(), GetLength(), NULL, 0);
   if (PAssert(len > 0, PSTRSTRM("MultiByteToWideChar failed with error " << ::GetLastError())) &&
       PAssert(wide.SetSize(len+1), POutOfMemory))
-    MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, theArray, GetLength(), wide.GetPointer(), wide.GetSize());
+    MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, c_str(), GetLength(), wide.GetPointer(), wide.GetSize());
 
 #else // _WIN32 || _POSIX_VERSION
 
@@ -2247,7 +2201,7 @@ void PString::InternalFromWChar(const wchar_t * wstr, PINDEX len)
   }
 
   static const char BadChar[] = { '\xef', '\xbf', '\xbd' }; // 0xFFFD
-  PCharsetConverter cvt("WCHAR_T", "UTF-8", wstr, len*sizeof(wchar_t), theArray, GetSize());
+  PCharsetConverter cvt("WCHAR_T", "UTF-8", wstr, len*sizeof(wchar_t), GetPointerAndSetLength(0), GetSize());
   for (;;) {
     int err = cvt.Convert();
     switch (err) {
@@ -2356,7 +2310,7 @@ PBYTEArray PString::ToPascal() const
   PAssert(m_length < 256, "Cannot convert to PASCAL string");
   BYTE buf[256];
   buf[0] = (BYTE)m_length;
-  memcpy(&buf[1], theArray, m_length);
+  memcpy(&buf[1], c_str(), m_length);
   return PBYTEArray(buf, m_length);
 }
 
@@ -2365,7 +2319,7 @@ PString PString::ToLiteral(bool ascii) const
 {
   PStringStream strm;
   strm << '"';
-  for (char * p = theArray; *p != '\0'; p++) {
+  for (const char * p = c_str(); *p != '\0'; p++) {
     if (*p == '"')
       strm << "\\\"";
     else if (*p == '\\')
@@ -2395,9 +2349,9 @@ PString PString::FromLiteral(PINDEX & offset) const
     return PString::Empty();
 
   PString str;
-  str.SetSize(GetLength()-offset);
-  const char * cstr = theArray+offset;
-  TranslateEscapes(cstr, str.theArray);
+  char * theArray = str.GetPointerAndSetLength(GetLength()-offset);
+  const char * cstr = c_str()+offset;
+  TranslateEscapes(cstr, theArray);
   str.MakeMinimumSize();
   offset = cstr - theArray;
 
@@ -2418,7 +2372,7 @@ PString & PString::sprintf(const char * fmt, ...)
 
 PString & PString::vsprintf(const char * fmt, va_list arg)
 {
-  PINDEX len = theArray != NULL ? GetLength() : 0;
+  PINDEX len = GetLength();
 #ifdef P_VXWORKS
   // The library provided with tornado 2.0 does not have the implementation
   // for vsnprintf
@@ -2427,10 +2381,12 @@ PString & PString::vsprintf(const char * fmt, va_list arg)
   m_length = ::vsprintf(theArray+len, fmt, arg);
 #else
   int providedSpace = 0;
-  int requiredSpace;
+  int requiredSpace = -1;
   do {
     providedSpace += 1000;
-    PAssert(SetSize(providedSpace+len), POutOfMemory);
+    char* theArray = PCharArray::GetPointer(providedSpace+len);
+    if (!theArray)
+      break;
     requiredSpace = _vsnprintf(theArray+len, providedSpace, fmt, arg);
   } while (requiredSpace == -1 || requiredSpace >= providedSpace);
   m_length += requiredSpace;
@@ -2460,20 +2416,18 @@ PString pvsprintf(const char * fmt, va_list arg)
 
 PBoolean PString::MakeMinimumSize(PINDEX newLength)
 {
-  if (newLength == 0 && theArray != NULL)
-    newLength = strlen(theArray);
-  GetPointerAndSetLength(newLength);
+  GetPointerAndSetLength(newLength == 0 ? strlen(c_str()) : newLength);
   return SetSize(m_length+1);
 }
 
 
 char * PString::GetPointerAndSetLength(PINDEX len)
 {
-  if (!SetMinSize(len+1))
-    return NULL;
-
-  m_length = len;
-  theArray[len] = '\0';
+  char * theArray = PCharArray::GetPointer(len+1);
+  if (theArray != NULL) {
+    m_length = len;
+    theArray[len] = '\0';
+  }
   return theArray;
 }
 
@@ -2652,7 +2606,6 @@ PStringStream::~PStringStream()
 
 PString & PStringStream::MakeEmpty()
 {
-  memset(theArray, 0, GetSize());
   m_length = 0;
   clear();
   flush();
@@ -2662,8 +2615,8 @@ PString & PStringStream::MakeEmpty()
 
 PINDEX PStringStream::GetLength() const
 {
-  if (m_length == 0 || theArray[m_length] != '\0')
-    m_length = strlen(theArray);
+  if (m_length == 0 || at(m_length) != '\0')
+    m_length = strlen(c_str());
   return m_length;
 }
 

@@ -1042,7 +1042,7 @@ PBoolean PPER_Stream::Write(PChannel & chan)
   tpkt[2] = (BYTE)(len >> 8);
   tpkt[3] = (BYTE)len;
 
-  return chan.Write(tpkt, sizeof(tpkt)) && chan.Write(theArray, size);
+  return chan.Write(tpkt, sizeof(tpkt)) && chan.Write(GetPointer(), size);
 }
 
 
@@ -1053,7 +1053,7 @@ PBoolean PPER_Stream::SingleBitDecode()
 
   bitOffset--;
 
-  PBoolean value = (theArray[byteOffset] & (1 << bitOffset)) != 0;
+  bool value = (GetAt(byteOffset) & (1 << bitOffset)) != 0;
 
   if (bitOffset == 0) {
     bitOffset = 8;
@@ -1075,7 +1075,7 @@ void PPER_Stream::SingleBitEncode(PBoolean value)
   bitOffset--;
 
   if (value)
-    theArray[byteOffset] |= 1 << bitOffset;
+    (*this)[byteOffset] |= 1 << bitOffset;
 
   if (bitOffset == 0)
     ByteAlign();
@@ -1101,24 +1101,24 @@ PBoolean PPER_Stream::MultiBitDecode(unsigned nBits, unsigned & value)
 
   if (nBits < bitOffset) {
     bitOffset -= nBits;
-    value = (theArray[byteOffset] >> bitOffset) & ((1 << nBits) - 1);
+    value = (GetAt(byteOffset) >> bitOffset) & ((1 << nBits) - 1);
     return true;
   }
 
-  value = theArray[byteOffset] & ((1 << bitOffset) - 1);
+  value = GetAt(byteOffset) & ((1 << bitOffset) - 1);
   nBits -= bitOffset;
   bitOffset = 8;
   byteOffset++;
 
   while (nBits >= 8) {
-    value = (value << 8) | (BYTE)theArray[byteOffset];
+    value = (value << 8) | GetAt(byteOffset);
     byteOffset++;
     nBits -= 8;
   }
 
   if (nBits > 0) {
     bitOffset = 8 - nBits;
-    value = (value << nBits) | ((BYTE)theArray[byteOffset] >> bitOffset);
+    value = (value << nBits) | (GetAt(byteOffset) >> bitOffset);
   }
 
   return true;
@@ -1144,24 +1144,24 @@ void PPER_Stream::MultiBitEncode(unsigned value, unsigned nBits)
 
   if (nBits < bitOffset) {
     bitOffset -= nBits;
-    theArray[byteOffset] |= value << bitOffset;
+    (*this)[byteOffset] |= value << bitOffset;
     return;
   }
 
   nBits -= bitOffset;
-  theArray[byteOffset] |= (BYTE)(value >> nBits);
+  (*this)[byteOffset] |= (BYTE)(value >> nBits);
   bitOffset = 8;
   byteOffset++;
 
   while (nBits >= 8) {
     nBits -= 8;
-    theArray[byteOffset] = (BYTE)(value >> nBits);
+    (*this)[byteOffset] = (BYTE)(value >> nBits);
     byteOffset++;
   }
 
   if (nBits > 0) {
     bitOffset = 8 - nBits;
-    theArray[byteOffset] |= (BYTE)((value & ((1 << nBits)-1)) << bitOffset);
+    (*this)[byteOffset] |= (BYTE)((value & ((1 << nBits)-1)) << bitOffset);
   }
 }
 

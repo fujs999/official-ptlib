@@ -2,9 +2,9 @@
 <AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
 
   <Type Name="PString">
-    <DisplayString Condition="theArray==0">(null)</DisplayString>
-    <DisplayString>{theArray,s8}</DisplayString>
-    <StringView>theArray,s8</StringView>
+    <DisplayString Condition="m_theArray==0">(null)</DisplayString>
+    <DisplayString>{m_theArray,s8}</DisplayString>
+    <StringView>m_theArray,s8</StringView>
   </Type>
 
   <Type Name="PIPSocket::Address">
@@ -26,9 +26,9 @@
   </Type>
 
   <Type Name="PURL">
-    <DisplayString Condition="m_urlString.theArray==0">NULL</DisplayString>
-    <DisplayString>{{{m_urlString.theArray,s8}}}</DisplayString>
-    <StringView>m_urlString.theArray,s8</StringView>
+    <DisplayString Condition="m_urlString.m_theArray==0">NULL</DisplayString>
+    <DisplayString>{{{m_urlString.m_theArray,s8}}}</DisplayString>
+    <StringView>m_urlString.m_theArray,s8</StringView>
   </Type>
 
   <Type Name="PContainer">

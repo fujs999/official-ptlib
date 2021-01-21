@@ -421,7 +421,7 @@ bool PDirectory::Open(PFileInfo::FileTypes ScanMask)
 
   m_scanMask = ScanMask;
 
-  if ((directory = opendir(theArray)) == NULL)
+  if ((directory = opendir(c_str())) == NULL)
     return false;
 
   entryBuffer = (struct dirent *)malloc(sizeof(struct dirent) + P_MAX_PATH);

@@ -165,7 +165,7 @@ PINLINE PStringArray PString::Tokenise(const PString & separators, PBoolean oneP
   { return Tokenise((const char *)separators, onePerSeparator); }
 
 PINLINE PString::operator const unsigned char *() const
-  { return (const unsigned char *)theArray; }
+  { return (const unsigned char *)GetPointer(); }
 
 PINLINE PString & PString::vsprintf(const PString & fmt, va_list args)
   { return vsprintf((const char *)fmt, args); }
