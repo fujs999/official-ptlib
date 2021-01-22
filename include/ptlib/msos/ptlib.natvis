@@ -20,8 +20,8 @@
   </Type>
 
   <Type Name="PURL">
-    <DisplayString>{{urlString}}}</DisplayString>
-    <StringView>urlString</StringView>
+    <DisplayString>{{m_urlString}}}</DisplayString>
+    <StringView>m_urlString</StringView>
   </Type>
 
   <Type Name="PContainer">

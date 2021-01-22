@@ -1745,26 +1745,20 @@ bool PSSLDiffieHellman::Construct(const uint8_t * pData, PINDEX pSize,
 
   DH_set0_pqg(m_dh, BN_bin2bn(pData, pSize, NULL), NULL, BN_bin2bn(gData, gSize, NULL));
 
+#if PTRACING
   int err = -1;
-  if (DH_check(m_dh, &err)) {
-    switch (err) {
-      case DH_CHECK_P_NOT_PRIME:
-        PTRACE(2, "The p value is not prime");
-        break;
-      case DH_CHECK_P_NOT_SAFE_PRIME:
-        PTRACE(2, "The p value is not a safe prime");
-        break;
-      case DH_UNABLE_TO_CHECK_GENERATOR:
-        PTRACE(2, "Unable to check the generator value");
-        break;
-      case DH_NOT_SUITABLE_GENERATOR:
-        PTRACE(4, "The g value is not a suitable generator");
-        break;
-      default :
-        PTRACE(1, "Diffie-Hellman check failed: code=" << err);
-        return false;
-    }
+  if (DH_check(m_dh, &err) == 0 || err == -1)
+    PTRACE(2, "Unable to check DH values");
+  else if (err != 0) {
+    PTRACE_IF(2, err&DH_CHECK_P_NOT_PRIME,         "The p value is not prime");
+    PTRACE_IF(2, err&DH_CHECK_P_NOT_SAFE_PRIME,    "The p value is not a safe prime");
+    PTRACE_IF(2, err&DH_UNABLE_TO_CHECK_GENERATOR, "Unable to check the generator value");
+    PTRACE_IF(3, err&DH_NOT_SUITABLE_GENERATOR,    "The g value is not a suitable generator");
+    PTRACE_IF(2, err&DH_CHECK_Q_NOT_PRIME,         "The q value is not prime");
+    PTRACE_IF(2, err&DH_CHECK_INVALID_Q_VALUE,     "Invalid q value");
+    PTRACE_IF(2, err&DH_CHECK_INVALID_J_VALUE,     "Invalid j value");
   }
+#endif // PTRACING
 
   if (kData == NULL) {
     if (DH_generate_key(m_dh))
@@ -1878,21 +1872,25 @@ PINDEX PSSLDiffieHellman::GetNumBits() const
   if (m_dh == NULL)
     return 0;
 
-  const BIGNUM * p;
-  DH_get0_pqg(m_dh, &p, NULL, NULL);
-  return BN_num_bits(p);
+#if (OPENSSL_VERSION_NUMBER < 0x10100000L)
+  return BN_num_bits(m_dh->p);
+#else
+  return DH_size(m_dh)*8;
+#endif
 }
 
 
-static PBYTEArray GetBigNum(const BIGNUM * bn)
+static PBYTEArray GetBigNum(const BIGNUM * bn, PINDEX size)
 {
   PBYTEArray bytes;
 
-  if (bn == NULL)
+  if (bn == NULL || size == 0)
     return bytes;
 
-  PINDEX numBytes = BN_num_bits(bn)/8;
-  if (BN_bn2bin(bn, bytes.GetPointer(numBytes) + numBytes - BN_num_bytes(bn)) > 0)
+  PINDEX numBytes = BN_num_bytes(bn);
+  if (size < numBytes)
+    size = numBytes;
+  if (BN_bn2bin(bn, bytes.GetPointer(size) + size - numBytes) > 0)
     return bytes;
 
   bytes.SetSize(0);
@@ -1907,7 +1905,7 @@ PBYTEArray PSSLDiffieHellman::GetModulus() const
 
   const BIGNUM * p;
   DH_get0_pqg(m_dh, &p, NULL, NULL);
-  return GetBigNum(p);
+  return GetBigNum(p, DH_size(m_dh));
 }
 
 
@@ -1918,7 +1916,7 @@ PBYTEArray PSSLDiffieHellman::GetGenerator() const
 
   const BIGNUM * g;
   DH_get0_pqg(m_dh, NULL, NULL, &g);
-  return GetBigNum(g);
+  return GetBigNum(g, DH_size(m_dh));
 }
 
 
@@ -1929,7 +1927,7 @@ PBYTEArray PSSLDiffieHellman::GetHalfKey() const
 
   const BIGNUM * k;
   DH_get0_key(m_dh, &k, NULL);
-  return GetBigNum(k);
+  return GetBigNum(k, DH_size(m_dh));
 }
 
 

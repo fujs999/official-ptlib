@@ -476,8 +476,8 @@ void PSTUNMessage::SetType(MsgType newType, const uint8_t * id)
   if (!SetMinSize(sizeof(PSTUNMessageHeader)))
     return;
 
-  PSTUNMessageHeader * hdr = (PSTUNMessageHeader *)theArray;
-  hdr->msgType = (uint16_t)newType;
+  PSTUNMessageHeader * hdr = (PSTUNMessageHeader *)GetPointer();
+  hdr->msgType = (WORD)newType;
 
   if (id != NULL)
     memcpy(hdr->transactionId, id, sizeof(hdr->transactionId));
@@ -519,7 +519,7 @@ bool PSTUNMessage::IsRFC5389() const
 
 PBYTEArray PSTUNMessage::GetTransactionID() const
 {
-  PSTUNMessageHeader * hdr = (PSTUNMessageHeader *)theArray;
+  PSTUNMessageHeader * hdr = (PSTUNMessageHeader *)GetPointer();
   return PBYTEArray(hdr->transactionId, sizeof(hdr->transactionId), false);
 }
 
@@ -530,24 +530,24 @@ static int CalcPaddedAttributeLength(int len)
 
 PSTUNAttribute * PSTUNMessage::GetFirstAttribute() const
 { 
-  if ((theArray == NULL) || GetSize() < (int)sizeof(PSTUNMessageHeader))
+  if (GetSize() < (int)sizeof(PSTUNMessageHeader))
     return NULL;
 
-  int length = ((PSTUNMessageHeader *)theArray)->msgLength;
+  int length = ((PSTUNMessageHeader *)GetPointer())->msgLength;
   if (length < (int)sizeof(PSTUNAttribute))
     return NULL;
 
   if (GetSize() < (PINDEX)(sizeof(PSTUNMessageHeader) + length))
     return NULL;
 
-  PSTUNAttribute * attr = (PSTUNAttribute *)(theArray+sizeof(PSTUNMessageHeader)); 
+  PSTUNAttribute * attr = (PSTUNAttribute *)(GetPointer()+sizeof(PSTUNMessageHeader)); 
   PSTUNAttribute * ptr  = attr;
 
   if ((CalcPaddedAttributeLength(attr->length) > (int)GetSize()))
     return NULL;
 
   while (ptr && 
-         ((uint8_t*)ptr < (uint8_t*)(theArray+GetSize())) && 
+         ((BYTE*)ptr < (BYTE*)(GetPointer()+GetSize())) && 
          (length >= CalcPaddedAttributeLength(ptr->length))) {
     length -= CalcPaddedAttributeLength(ptr->length);
     ptr = ptr->GetNext();
@@ -567,10 +567,10 @@ PSTUNAttribute * PSTUNAttribute::GetNext() const
 
 bool PSTUNMessage::IsValid() const
 {
-  PSTUNMessageHeader * header = (PSTUNMessageHeader *)theArray;
+  PSTUNMessageHeader * header = (PSTUNMessageHeader *)GetPointer();
 
   // sanity check the length
-  if ((theArray == NULL) || (GetSize() < (int) sizeof(PSTUNMessageHeader)))
+  if (GetSize() < (PINDEX)sizeof(PSTUNMessageHeader))
     return false;
 
   int length = header->msgLength;
@@ -614,20 +614,20 @@ bool PSTUNMessage::IsValidFor(const PSTUNMessage & request) const
 
 PSTUNAttribute * PSTUNMessage::AddAttribute(const PSTUNAttribute & attribute)
 {
-  if (theArray == NULL)
+  if (IsEmpty())
     return NULL;
 
   int length       = sizeof(PSTUNAttribute) + attribute.length;
   int paddedLength = CalcPaddedAttributeLength(attribute.length); 
 
-  int oldLength = ((PSTUNMessageHeader *)theArray)->msgLength;
+  int oldLength = ((PSTUNMessageHeader *)GetPointer())->msgLength;
   int newLength = oldLength + paddedLength;
-  ((PSTUNMessageHeader *)theArray)->msgLength = (uint16_t)newLength;
+  ((PSTUNMessageHeader *)GetPointer())->msgLength = (WORD)newLength;
 
-  // theArray pointer may be invalidated by next statement
+  // internal array pointer may be invalidated by next statement
   SetMinSize(sizeof(PSTUNMessageHeader) + newLength);
 
-  void * newAttr = theArray + sizeof(PSTUNMessageHeader) + oldLength;
+  void * newAttr = GetPointer() + sizeof(PSTUNMessageHeader) + oldLength;
   memcpy(newAttr, &attribute, length);
 
   return (PSTUNAttribute *)newAttr;
@@ -635,10 +635,10 @@ PSTUNAttribute * PSTUNMessage::AddAttribute(const PSTUNAttribute & attribute)
 
 PSTUNAttribute * PSTUNMessage::SetAttribute(const PSTUNAttribute & attribute)
 {
-  if (theArray == NULL)
+  if (IsEmpty())
     return NULL;
 
-  int length = ((PSTUNMessageHeader *)theArray)->msgLength;
+  int length = ((PSTUNMessageHeader *)GetPointer())->msgLength;
   PSTUNAttribute * attrib = GetFirstAttribute();
   while (length > 0) {
     if (attrib->type == attribute.type) {
@@ -658,10 +658,10 @@ PSTUNAttribute * PSTUNMessage::SetAttribute(const PSTUNAttribute & attribute)
 
 PSTUNAttribute * PSTUNMessage::FindAttribute(PSTUNAttribute::Types type) const
 {
-  if (theArray == NULL)
+  if (IsEmpty())
     return NULL;
 
-  int length = ((PSTUNMessageHeader *)theArray)->msgLength;
+  int length = ((PSTUNMessageHeader *)GetPointer())->msgLength;
   PSTUNAttribute * attrib = GetFirstAttribute();
   while (attrib != NULL && length > 0) {
     // RFC5389/15.4 don't look beyonf MESSAGE-INTEGRITY attribute, except for FINGERPRINT and itself
@@ -709,8 +709,8 @@ bool PSTUNMessage::Write(PUDPSocket & socket) const
 
 bool PSTUNMessage::Write(PUDPSocket & socket, const PIPSocketAddressAndPort & ap) const
 {
-  int len = sizeof(PSTUNMessageHeader) + ((PSTUNMessageHeader *)theArray)->msgLength;
-  PUDPSocket::Slice slice(theArray, len);
+  int len = sizeof(PSTUNMessageHeader) + ((PSTUNMessageHeader *)GetPointer())->msgLength;
+  PUDPSocket::Slice slice(GetPointer(), len);
   if (socket.PUDPSocket::InternalWriteTo(&slice, 1, ap)) {
     PTRACE(5, "Writing " << *this << " to " << ap << " on " << socket);
     return true;
@@ -777,15 +777,15 @@ void PSTUNMessage::CalculateMessageIntegrity(const uint8_t * credentialsHashPtr,
   // calculate hash up to, but not including, MESSAGE_INTEGRITY attribute itself
   // Note the value used for msgLength is prior to things like FINGERPRINT, so need to
   // change it back temporarily.
-  uint16_t checkLength = (uint16_t)((char *)mi - theArray);
-  PSTUNMessageHeader * hdr = (PSTUNMessageHeader *)theArray;
-  uint16_t oldLength = hdr->msgLength;
+  WORD checkLength = (WORD)((const BYTE *)mi - GetPointer());
+  PSTUNMessageHeader * hdr = (PSTUNMessageHeader *)GetPointer();
+  WORD oldLength = hdr->msgLength;
   hdr->msgLength = checkLength - sizeof(PSTUNMessageHeader) + sizeof(PSTUNMessageIntegrity);
 
   PHMAC_SHA1 hmac;
   hmac.SetKey(credentialsHashPtr, credentialsHashLen);
   PHMAC_SHA1::Result result;
-  hmac.Process((uint8_t *)theArray, checkLength, result);
+  hmac.Process(GetPointer(), checkLength, result);
 
   hdr->msgLength = oldLength;
 
@@ -829,9 +829,9 @@ uint32_t PSTUNMessage::CalculateFingerprint(PSTUNFingerprint * fp) const
   }
 
   // calculate hash up to, but not including, FINGERPRINT attribute
-  uint32_t c = 0xFFFFFFFF;
-  const uint8_t * ptr = (uint8_t *)theArray;
-  while (ptr < (uint8_t *)fp)
+  DWORD c = 0xFFFFFFFF;
+  const BYTE * ptr = GetPointer();
+  while (ptr < (BYTE *)fp)
     c = Crc32Table[(c ^ *ptr++) & 0xFF] ^ (c >> 8);
 
   return c ^ 0xffffffff ^ 0x5354554e;

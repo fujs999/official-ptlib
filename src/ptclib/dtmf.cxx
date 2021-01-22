@@ -627,7 +627,7 @@ void PTones::AddSample(int sample, unsigned volume)
   sample *= volume;
   sample *= m_masterVolume;
   sample /= SineScale*100*100/SHRT_MAX;
-  ((short *)theArray)[m_addPosition++] = (short)sample;
+  SetAt(m_addPosition++, (short)sample);
 }
 
 

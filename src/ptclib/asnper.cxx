@@ -1041,7 +1041,7 @@ bool PPER_Stream::Write(PChannel & chan)
   tpkt[2] = (uint8_t)(len >> 8);
   tpkt[3] = (uint8_t)len;
 
-  return chan.Write(tpkt, sizeof(tpkt)) && chan.Write(theArray, size);
+  return chan.Write(tpkt, sizeof(tpkt)) && chan.Write(GetPointer(), size);
 }
 
 
@@ -1052,7 +1052,7 @@ bool PPER_Stream::SingleBitDecode()
 
   bitOffset--;
 
-  bool value = (theArray[byteOffset] & (1 << bitOffset)) != 0;
+  bool value = (GetAt(byteOffset) & (1 << bitOffset)) != 0;
 
   if (bitOffset == 0) {
     bitOffset = 8;
@@ -1074,7 +1074,7 @@ void PPER_Stream::SingleBitEncode(bool value)
   bitOffset--;
 
   if (value)
-    theArray[byteOffset] |= 1 << bitOffset;
+    (*this)[byteOffset] |= 1 << bitOffset;
 
   if (bitOffset == 0)
     ByteAlign();
@@ -1100,24 +1100,24 @@ bool PPER_Stream::MultiBitDecode(unsigned nBits, unsigned & value)
 
   if (nBits < bitOffset) {
     bitOffset -= nBits;
-    value = (theArray[byteOffset] >> bitOffset) & ((1 << nBits) - 1);
+    value = (GetAt(byteOffset) >> bitOffset) & ((1 << nBits) - 1);
     return true;
   }
 
-  value = theArray[byteOffset] & ((1 << bitOffset) - 1);
+  value = GetAt(byteOffset) & ((1 << bitOffset) - 1);
   nBits -= bitOffset;
   bitOffset = 8;
   byteOffset++;
 
   while (nBits >= 8) {
-    value = (value << 8) | (uint8_t)theArray[byteOffset];
+    value = (value << 8) | GetAt(byteOffset);
     byteOffset++;
     nBits -= 8;
   }
 
   if (nBits > 0) {
     bitOffset = 8 - nBits;
-    value = (value << nBits) | ((uint8_t)theArray[byteOffset] >> bitOffset);
+    value = (value << nBits) | (GetAt(byteOffset) >> bitOffset);
   }
 
   return true;
@@ -1143,24 +1143,24 @@ void PPER_Stream::MultiBitEncode(unsigned value, unsigned nBits)
 
   if (nBits < bitOffset) {
     bitOffset -= nBits;
-    theArray[byteOffset] |= value << bitOffset;
+    (*this)[byteOffset] |= value << bitOffset;
     return;
   }
 
   nBits -= bitOffset;
-  theArray[byteOffset] |= (uint8_t)(value >> nBits);
+  (*this)[byteOffset] |= (BYTE)(value >> nBits);
   bitOffset = 8;
   byteOffset++;
 
   while (nBits >= 8) {
     nBits -= 8;
-    theArray[byteOffset] = (uint8_t)(value >> nBits);
+    (*this)[byteOffset] = (BYTE)(value >> nBits);
     byteOffset++;
   }
 
   if (nBits > 0) {
     bitOffset = 8 - nBits;
-    theArray[byteOffset] |= (uint8_t)((value & ((1 << nBits)-1)) << bitOffset);
+    (*this)[byteOffset] |= (BYTE)((value & ((1 << nBits)-1)) << bitOffset);
   }
 }
 

@@ -181,7 +181,7 @@ class PAbstractArray : public PContainer
     void * GetPointer(
       PINDEX minSize = 1  ///< Minimum size the array must be.
     );
-    const void * GetPointer() const { return theArray; }
+    const void * GetPointer() const { return m_theArray; }
 
     /// Retrun the length in bytes for the array
     virtual PINDEX GetLength() const;
@@ -224,7 +224,7 @@ class PAbstractArray : public PContainer
     PINDEX elementSize;
 
     /// Pointer to the allocated block of memory.
-    char * theArray;
+    char * m_theArray;
 
     /// Flag indicating the array was allocated on the heap.
     bool allocatedDynamically;
@@ -296,7 +296,10 @@ template <class T> class PBaseArray : public PAbstractArray
       PINDEX index,   ///< Position in the array to set the new value.
       T val           ///< Value to set in the array.
     ) {
-      return SetMinSize(index+1) && val==(((T *)theArray)[index] = val);
+      if (!SetMinSize(index + 1))
+        return false;
+      GetPointer()[index] = val;
+      return true;
     }
 
     /**Get a value from the array. If the \p index is beyond the end
@@ -309,7 +312,7 @@ template <class T> class PBaseArray : public PAbstractArray
       PINDEX index  ///< Position on the array to get value from.
     ) const {
       PASSERTINDEX(index);
-      return index < GetSize() ? (reinterpret_cast<T *>(theArray))[index] : T();
+      return index < GetSize() ? GetPointer()[index] : T();
     }
 
     /**Attach a pointer to a static block to the base array type. The pointer
@@ -345,6 +348,9 @@ template <class T> class PBaseArray : public PAbstractArray
     ) {
       return (T *)PAbstractArray::GetPointer(minSize);
     }
+    const T * GetPointer() const {
+      return (const T *)PAbstractArray::GetPointer();
+    }
   //@}
 
   /**@name New functions for class */
@@ -378,8 +384,7 @@ template <class T> class PBaseArray : public PAbstractArray
       PINDEX index  ///< Position on the array to get value from.
     ) {
       PASSERTINDEX(index);
-      PAssert(SetMinSize(index+1), POutOfMemory);
-      return ((T *)theArray)[index];
+      return GetPointer(index+1)[index];
     }
 
     /**Get a pointer to the internal array. The user may not modify the
@@ -396,7 +401,7 @@ template <class T> class PBaseArray : public PAbstractArray
        Constant pointer to the array memory.
      */
     operator T const *() const {
-      return (T const *)theArray;
+      return GetPointer();
     }
 
     /**Concatenate one array to the end of this array.
@@ -578,10 +583,20 @@ class PBYTEArray : public PBaseArray<uint8_t>
 
     /**Function to cast block of memory in PBYTEArray to another structure.
       */
-    template <typename T> const T & GetAs(PINDEX offset = 0)
+    template <typename T> const T & GetAs(PINDEX offset = 0) const
     {
       PAssert(offset+(PINDEX)sizeof(T) <= GetSize(), PInvalidParameter);
-      return *(const T *)(theArray+offset);
+      return *(const T *)(GetPointer()+offset);
+    }
+    template <typename T> void SetAs(const T & value) const
+    {
+      if (PAssert((PINDEX)sizeof(T) <= GetSize(), PInvalidParameter))
+        *(T *)GetPointer() = value;
+    }
+    template <typename T> void SetAs(PINDEX offset, const T & value) const
+    {
+      if (PAssert(offset+(PINDEX)sizeof(T) <= GetSize(), PInvalidParameter))
+        *(T *)(GetPointer()+offset) = value;
     }
 };
 
@@ -888,162 +903,6 @@ template <class T> class PArray : public PArrayObjects
 
   protected:
     PArray(int dummy, const PArray * c) : PArrayObjects(dummy, c) { }
-};
-
-
-/**This class represents a dynamic bit array.
- */
-class PBitArray : public PBYTEArray
-{
-  PCLASSINFO(PBitArray, PBYTEArray);
-
-  public:
-  /**@name Construction */
-  //@{
-    /**Construct a new dynamic array of bits.
-     */
-    PBitArray(
-      PINDEX initialSize = 0  ///< Initial number of bits in the array.
-    );
-
-    /**Construct a new dynamic array of elements of the specified type.
-     */
-    PBitArray(
-      const void * buffer,   ///< Pointer to an array of the elements of type \b T.
-      PINDEX length,         ///< Number of bits (not bytes!) pointed to by \p buffer.
-      bool dynamic = true    ///< Buffer is copied and dynamically allocated.
-    );
-  //@}
-
-  /**@name Overrides from class PObject */
-  //@{
-    /**Clone the object.
-     */
-    virtual PObject * Clone() const;
-  //@}
-
-  /**@name Overrides from class <code>PContainer</code> */
-  //@{
-    /**Get the current size of the container.
-       This represents the number of things the container contains. For some
-       types of containers this will always return 1.
-
-       @return Number of objects in container.
-     */
-    virtual PINDEX GetSize() const;
-
-    /**Set the size of the array in bits. A new array may be allocated to
-       accomodate the new number of bits. If the array increases in size
-       then the new bytes are initialised to zero. If the array is made smaller
-       then the data beyond the new size is lost.
-
-       @return
-       true if the memory for the array was allocated successfully.
-     */
-    virtual bool SetSize(
-      PINDEX newSize  ///< New size of the array in bits, not bytes.
-    );
-
-    /**Set the specific bit in the array. The array will automatically
-       expand, if necessary, to fit the new element in.
-
-       @return
-       true if new memory for the array was successfully allocated.
-     */
-    bool SetAt(
-      PINDEX index,   ///< Position in the array to set the new value.
-      bool val           ///< Value to set in the array.
-    );
-
-    /**Get a bit from the array. If \p index is beyond the end
-       of the allocated array then <code>false</code> is returned.
-
-       @return
-       Value at the array position.
-     */
-    bool GetAt(
-      PINDEX index  ///< Position on the array to get value from.
-    ) const;
-
-    /**Attach a pointer to a static block to the bit array type. The pointer
-       is used directly and will not be copied to a dynamically allocated
-       buffer. If the <code>SetSize()</code> function is used to change the size of the
-       buffer, the object will be converted to a dynamic form with the
-       contents of the static buffer copied to the allocated buffer.
-
-       Any dynamically allocated buffer will be freed.
-     */
-    void Attach(
-      const void * buffer,   ///< Pointer to an array of elements.
-      PINDEX bufferSize      ///< Number of bits (not bytes!) pointed to by buffer.
-    );
-
-    /**Get a pointer to the internal array and assure that it is of at least
-       the specified size. This is useful when the array contents are being
-       set by some external or system function eg file read.
-
-       It is unsafe to assume that the pointer is valid for very long after
-       return from this function. The array may be resized or otherwise
-       changed and the pointer returned invalidated. It should be used for
-       simple calls to atomic functions, or very careful examination of the
-       program logic must be performed.
-
-       @return
-       Pointer to the array memory.
-     */
-    uint8_t * GetPointer(
-      PINDEX minSize = 0    ///< Minimum size in bits (not bytes!) for returned buffer pointer.
-    );
-  //@}
-
-  /**@name New functions for class */
-  //@{
-    /**Get a value from the array. If the <code>index</code> is beyond the end
-       of the allocated array then a zero value is returned.
-
-       This is functionally identical to the <code>PContainer::GetAt()</code>
-       function.
-
-       @return
-       Value at the array position.
-     */
-    bool operator[](
-      PINDEX index  ///< Position on the array to get value from.
-    ) const { return GetAt(index); }
-
-    /**Set a bit to the array.
-
-       This is functionally identical to the PContainer::SetAt(index, true)
-       function.
-     */
-    PBitArray & operator+=(
-      PINDEX index  ///< Position on the array to get value from.
-    ) { SetAt(index, true); return *this; }
-
-    /**Set a bit to the array.
-
-       This is functionally identical to the PContainer::SetAt(index, true)
-       function.
-     */
-    PBitArray & operator-=(
-      PINDEX index  ///< Position on the array to get value from.
-    ) { SetAt(index, false); return *this; }
-
-    /**Concatenate one array to the end of this array.
-       This function will allocate a new array large enough for the existing
-       contents and the contents of the parameter. The paramters contents is then
-       copied to the end of the existing array.
-
-       Note this does nothing and returns false if the target array is not
-       dynamically allocated.
-
-       @return
-       <code>true</code> if the memory allocation succeeded.
-     */
-    bool Concatenate(
-      const PBitArray & array  ///< Other array to concatenate
-    );
-  //@}
 };
 
 

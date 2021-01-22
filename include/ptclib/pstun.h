@@ -511,7 +511,7 @@ class PSTUNMessage : public PBYTEArray
 
     bool IsRFC5389() const;
 
-    const PSTUNMessageHeader * operator->() const { return (const PSTUNMessageHeader *)theArray; }
+    const PSTUNMessageHeader * operator->() const { return (const PSTUNMessageHeader *)GetPointer(); }
 
     MsgType GetType() const;
     void SetType(MsgType newType, const uint8_t * id = NULL);
