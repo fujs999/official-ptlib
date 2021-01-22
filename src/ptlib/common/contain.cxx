@@ -542,7 +542,7 @@ void PBYTEArray::ReadFrom(istream &strm)
   while (strm.good()) {
     unsigned v;
     strm >> v;
-    SetAt(size, (BYTE)v);
+    SetAt(size, (uint8_t)v);
     if (!strm.fail()) {
       size++;
       if (size >= GetSize())
@@ -739,7 +739,7 @@ PString::PString(ConversionType type, const char * str, ...)
       TranslateEscapes(str, const_cast<char *>(data()));
       MakeMinimumSize();
       break;
-    }
+
     case Printf : {
       va_list args;
       va_start(args, str);
@@ -1065,7 +1065,6 @@ PINDEX PString::HashFunction() const
   PINDEX count = std::min(length / 2, MaxCount);
   unsigned hash = 0;
   PINDEX i;
-  const char* theArray = c_str();
   for (i = 0; i < count; i++)
     hash = (hash << 5) ^ tolower(at(i) & 0xff) ^ hash;
   for (i = length - count - 1; i < length; i++)
@@ -1356,8 +1355,6 @@ PINDEX PString::Find(const char * cstr, PINDEX offset) const
     return P_MAX_INDEX;
   }
 
-  const char* theArray = GetPointer();
-
   int strSum = 0;
   int cstrSum = 0;
   for (PINDEX i = 0; i < clen; i++) {
@@ -1419,8 +1416,6 @@ PINDEX PString::FindLast(const char * cstr, PINDEX offset) const
 
   if (offset > len - clen)
     offset = len - clen;
-
-  const char* theArray = GetPointer();
 
   int strSum = 0;
   int cstrSum = 0;
@@ -1667,8 +1662,6 @@ PStringArray PString::Lines() const
   if (IsEmpty())
     return lines;
 
-  const char* theArray = GetPointer();
-
   PINDEX line = 0;
   PINDEX p1 = 0;
   PINDEX p2;
@@ -1895,7 +1888,7 @@ PString & PString::vsprintf(const char * fmt, va_list arg)
 {
   PINDEX len = GetLength();
   int providedSpace = 0;
-  int requiredSpace = -1;
+  int requiredSpace;
   do {
     providedSpace += 1000;
     requiredSpace = vsprintf_s(GetPointerAndSetLength(providedSpace+len), providedSpace, fmt, arg);
