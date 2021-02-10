@@ -1035,7 +1035,7 @@ PSemaphore::~PSemaphore()
     if (m_namedSemaphore.ptr != NULL) {
       PAssertWithRetry(sem_close, m_namedSemaphore.ptr);
     }
-    else
+    else if (m_name.IsEmpty())
   #endif
       PAssertWithRetry(sem_destroy, &m_semaphore);
 #else
@@ -1068,17 +1068,17 @@ void PSemaphore::Reset(unsigned initial, unsigned maximum)
       static pthread_mutex_t semCreationMutex = PTHREAD_MUTEX_INITIALIZER;
       PAssertWithRetry(pthread_mutex_lock, &semCreationMutex);
 
-      if (!m_name.IsEmpty())
-        m_namedSemaphore.ptr = sem_open(m_name, (O_CREAT | O_EXCL), 700, m_initial);
-      else {
-        PStringStream generatedName;
+      if (m_name.IsEmpty()) {
+        // sem_init didn't work, so try a named sem
+        std::stringstream generatedName;
         generatedName << "/ptlib/" << getpid() << '/' << this;
-        sem_unlink(generatedName);
-        m_namedSemaphore.ptr = sem_open(generatedName, (O_CREAT | O_EXCL), 700, m_initial);
+        m_name = generatedName.str();
+        sem_unlink(m_name);
       }
   
       PAssertWithRetry(pthread_mutex_unlock, &semCreationMutex);
   
+      m_namedSemaphore.ptr = sem_open(m_name, (O_CREAT | O_EXCL), 700, m_initial);
       if (!PAssert(m_namedSemaphore.ptr != SEM_FAILED, "Couldn't create named semaphore"))
         m_namedSemaphore.ptr = NULL;
     }
@@ -1478,5 +1478,3 @@ void PSyncPoint::Signal()
   PAssertWithRetry(pthread_cond_signal, &condVar);
   PAssertWithRetry(pthread_mutex_unlock, &mutex);
 }
-
-
