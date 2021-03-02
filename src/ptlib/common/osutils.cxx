@@ -36,6 +36,7 @@
 #include <ctype.h>
 #include <ptlib/pfactory.h>
 #include <ptlib/id_generator.h>
+#include <ptlib/ipsock.h>
 #include <ptlib/pprocess.h>
 #include <ptlib/svcproc.h>
 #include <ptlib/pluginmgr.h>
