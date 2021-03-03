@@ -1507,11 +1507,11 @@ void PVXMLSession::InternalThreadMain()
         m_scriptContext->SetFunction(SIGN_LANGUAGE_PREVIEW_SCRIPT_FUNCTION, PCREATE_NOTIFIER(SignLanguagePreviewFunction));
         m_scriptContext->SetFunction(SIGN_LANGUAGE_CONTROL_SCRIPT_FUNCTION, PCREATE_NOTIFIER(SignLanguageControlFunction));
       #endif
+
+      for (PStringToString::iterator it = m_variables.begin(); it != m_variables.end(); ++it)
+        SetScriptVariableRecursive(*m_scriptContext, it->first, it->second);
     }
 #endif
-
-    for (PStringToString::iterator it = m_variables.begin(); it != m_variables.end(); ++it)
-      SetScriptVariableRecursive(*m_scriptContext, it->first, it->second);
 
     PTime now;
     m_variableScope = SessionScope;
