@@ -606,7 +606,7 @@ PBoolean PWAVFile::ProcessHeader()
       trace << 's';
     if (m_autoConverter != NULL)
       trace << ", converted from type " << (WORD)m_wavFmtChunk.format;
-    trace << ", " << PString(PString::ScaleSI, m_dataLength, 4) << "bytes."
+    trace << ", " << PScaleSI(m_dataLength, 4, "bytes.")
           << PTrace::End;
   }
 #endif
@@ -720,7 +720,7 @@ PBoolean PWAVFile::UpdateHeader()
       trace << 's';
     if (m_autoConverter != NULL)
       trace << ", converted to type " << (WORD)m_wavFmtChunk.format;
-    trace << ", " << PString(PString::ScaleSI, m_dataLength, 4) << "bytes."
+    trace << ", " << PScaleSI(m_dataLength, 4) << "bytes."
           << PTrace::End;
   }
 #endif
