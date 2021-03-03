@@ -3487,7 +3487,7 @@ PString PVXMLChannel::GetMediaFileSuffix() const
       default:
         suffix << '_' << GetChannels() << 'x';
     }
-    suffix << PString(PString::ScaleSI, GetSampleRate(), 1) + "Hz";
+    suffix << PScaleSI(GetSampleRate(), 1, "Hz");
   }
 
   return suffix;
