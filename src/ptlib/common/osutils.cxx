@@ -4992,9 +4992,9 @@ bool PFile::RotateInfo::Rotate(PFile & file, bool force, const PTime & now)
       while (!rotatedFiles.empty() && dir.GetVolumeSpace(total, free, cluster)) {
         int64_t limit = m_freeDisk > 0 ? m_freeDisk : (total * -m_freeDisk / 100);
         PTRACE(4, &file, "Disk:"
-               " total=" << PString(PString::ScaleSI, total, 4) << "b,"
-               " free="  << PString(PString::ScaleSI, free,  4) << "b,"
-               " limit=" << PString(PString::ScaleSI, limit, 4) << 'b');
+               " total=" << PScaleSI(total, 4, "B") << ","
+               " free="  << PScaleSI(free,  4, "B") << ","
+               " limit=" << PScaleSI(limit, 4, "B"));
         if (free > limit)
           break;
         DeleteOne(*this, rotatedFiles, "low disk space");

@@ -2187,6 +2187,28 @@ __inline PWideString & PWideString::operator=(const char        * str) { PWCharA
 #endif
 
 
+class PScaleSI : public PString
+{
+    PCLASSINFO(PScaleSI, PString)
+  public:
+#ifdef HAVE_LONG_LONG_INT
+    PScaleSI(long long          value, unsigned decimals = 3, const char * units = NULL) : PString(ScaleSI, value, decimals) { operator+=(units); }
+#endif
+#ifdef HAVE_UNSIGNED_LONG_LONG_INT
+    PScaleSI(unsigned long long value, unsigned decimals = 3, const char * units = NULL) : PString(ScaleSI, value, decimals) { operator+=(units); }
+#endif
+    PScaleSI(unsigned long      value, unsigned decimals = 3, const char * units = NULL) : PString(ScaleSI, value, decimals) { operator+=(units); }
+    PScaleSI(  signed long      value, unsigned decimals = 3, const char * units = NULL) : PString(ScaleSI, value, decimals) { operator+=(units); }
+    PScaleSI(unsigned int       value, unsigned decimals = 3, const char * units = NULL) : PString(ScaleSI, value, decimals) { operator+=(units); }
+    PScaleSI(  signed int       value, unsigned decimals = 3, const char * units = NULL) : PString(ScaleSI, value, decimals) { operator+=(units); }
+    PScaleSI(unsigned short     value, unsigned decimals = 3, const char * units = NULL) : PString(ScaleSI, value, decimals) { operator+=(units); }
+    PScaleSI(  signed short     value, unsigned decimals = 3, const char * units = NULL) : PString(ScaleSI, value, decimals) { operator+=(units); }
+    PScaleSI(unsigned char      value, unsigned decimals = 3, const char * units = NULL) : PString(ScaleSI, value, decimals) { operator+=(units); }
+    PScaleSI(  signed char      value, unsigned decimals = 3, const char * units = NULL) : PString(ScaleSI, value, decimals) { operator+=(units); }
+    PScaleSI(double             value, unsigned decimals = 3, const char * units = NULL) : PString(ScaleSI, value, decimals) { operator+=(units); }
+};
+
+
 //////////////////////////////////////////////////////////////////////////////
 
 /**This class is a standard C++ stream class descendent for reading or writing
