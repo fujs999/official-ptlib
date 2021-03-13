@@ -194,7 +194,7 @@ class PInstrumentedWaitAndSignal
 #else // P_TRACING
 #define P_INSTRUMENTED_WAIT_AND_SIGNAL2(var, mutex) PWaitAndSignal var(mutex)
 #endif // P_TRACING
-#define P_INSTRUMENTED_WAIT_AND_SIGNAL(mutex) P_INSTRUMENTED_WAIT_AND_SIGNAL2(lock,mutex)
+#define P_INSTRUMENTED_WAIT_AND_SIGNAL(mutex) P_INSTRUMENTED_WAIT_AND_SIGNAL2(lock##__LINE__,mutex)
 
 
 #endif // PTLIB_SYNC_H
