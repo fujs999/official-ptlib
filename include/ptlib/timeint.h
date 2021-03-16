@@ -502,6 +502,12 @@ class PTimeInterval : public PObject
 };
 
 
+inline PString PScaleSI(const PTimeInterval & value, unsigned significantFigures = 3, const char * units = "s" )
+{
+  return value.AsString(significantFigures, PTimeInterval::SecondsSI) + units;
+}
+
+
 /// Class wrapper of PTimeInterval to initialise to nanoseconds.
 struct PNanoSeconds : PTimeInterval
 {
