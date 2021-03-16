@@ -2252,13 +2252,13 @@ namespace PProfiling
         trace << m_location.m_extra << '(' << ptr << "):"
                   " since=" << m_lastOutputTime.AsString(PTime::TodayFormat, PTrace::GetTimeZone()) << ","
               << setprecision(3) << scientific << showbase << m_mma << noshowbase
-              << " thresh=" << m_thresholdTime.AsString(3, PTimeInterval::SecondsSI) << "s;" << m_thresholdPercent << "%,"
+              << " thresh=" << PScaleSI(m_thresholdTime) << ';' << m_thresholdPercent << "%,"
                    " slow=" << m_countTimesOverThreshold << '/' << m_mma.GetCount() << ' ' << percentOver << '%';
         if (location)
           location->PrintOn(trace, " where=");
         for (list<History>::iterator it = m_history.begin(); it != m_history.end(); ++it) {
           trace << "\n    when=" << it->m_when.AsString(PTime::TodayFormat, PTrace::GetTimeZone()) << ","
-                   " duration=" << it->m_duration.AsString(3, PTimeInterval::SecondsSI) << 's';
+                   " duration=" << PScaleSI(it->m_duration);
           it->m_location.PrintOn(trace, "where=");
         }
         trace << PTrace::End;
