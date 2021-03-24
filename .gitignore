@@ -6,13 +6,12 @@ ptlib.pc
 ptlib_cfg.dxy
 revision.h
 aclocal.m4
-/html/
-/lib_*/
 obj/
 obj_*/
 ipch/
-bin/
 .vs/
+.libs/
+.deps/
 *.sdf
 *.opensdf
 *.suo
@@ -21,6 +20,9 @@ bin/
 *.user
 xcuserdata/
 private/
+/html/
+/lib*/
+/bin/
 /make/ptlib_config.mak
 /include/ptlib_config.h
 /src/ptlib/common/getdate.c
