@@ -14,9 +14,9 @@
     <JPEG32DIR Condition="'$(JPEG32DIR)' == ''">$(EXTERNALDIR)\libjpeg-turbo</JPEG32DIR>
     <JPEG64DIR Condition="'$(JPEG64DIR)' == ''">$(EXTERNALDIR)\libjpeg-turbo64</JPEG64DIR>
     <WXDIR Condition="'$(WXDIR)' == ''">$(EXTERNALDIR)\wxWidgets</WXDIR>
+    <LIB32PATH>$(LUA32DIR);$(OPENSSL32DIR)\bin;$(FFMPEG32DIR)\bin;$(wxLibOrDllDir);$(ProjectDir)..\..\Lib</LIB32PATH>
+    <LIB64PATH>$(LUA64DIR);$(OPENSSL64DIR)\bin;$(FFMPEG64DIR)\bin;$(wxLibOrDllDir);$(ProjectDir)..\..\Lib</LIB64PATH>
     <LocalDebuggerEnvironment>PATH=$(PATH);$(LIB64PATH)</LocalDebuggerEnvironment>
-    <LIB64PATH>$(FFMPEG64DIR)\bin;$(LUA64DIR);$(OPENSSL64DIR)\bin;$(ProjectDir)..\..\Lib</LIB64PATH>
-    <LIB32PATH>$(FFMPEG32DIR)\bin;$(LUA32DIR);$(OPENSSL32DIR)\bin;$(ProjectDir)..\..\Lib</LIB32PATH>
   </PropertyGroup>
   <PropertyGroup />
   <ItemDefinitionGroup />
@@ -69,14 +69,14 @@
       <Value>$(WXDIR)</Value>
       <EnvironmentVariable>true</EnvironmentVariable>
     </BuildMacro>
-    <BuildMacro Include="LocalDebuggerEnvironment">
-      <Value>$(LocalDebuggerEnvironment)</Value>
+    <BuildMacro Include="LIB32PATH">
+      <Value>$(LIB32PATH)</Value>
     </BuildMacro>
     <BuildMacro Include="LIB64PATH">
       <Value>$(LIB64PATH)</Value>
     </BuildMacro>
-    <BuildMacro Include="LIB32PATH">
-      <Value>$(LIB32PATH)</Value>
+    <BuildMacro Include="LocalDebuggerEnvironment">
+      <Value>$(LocalDebuggerEnvironment)</Value>
     </BuildMacro>
   </ItemGroup>
 </Project>
