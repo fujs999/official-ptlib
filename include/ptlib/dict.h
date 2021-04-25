@@ -654,7 +654,7 @@ template <class T> class PSet : public PAbstractSet
 
       public:
         bool operator==(const iterator_base & it) const { return this->element == it.element; }
-        bool operator!=(const iterator_base & it) const { return this->element != it.element; }
+        bool operator!=(const iterator_base & it) const { return !operator==(it); }
     };
 
     class iterator : public iterator_base  {
@@ -1174,7 +1174,7 @@ template <class K, class D> class PDictionary : public PAbstractDictionary
 
       public:
         bool operator==(const iterator_base & it) const { return this->m_element == it.m_element; }
-        bool operator!=(const iterator_base & it) const { return this->m_element != it.m_element; }
+        bool operator!=(const iterator_base & it) const { return !operator==(it); }
     };
 
     template<class CK, class CD>
@@ -1187,7 +1187,7 @@ template <class K, class D> class PDictionary : public PAbstractDictionary
         iterator_pair() : first(reinterpret_cast<CK&>(0)), second(reinterpret_cast<CD&>(0)) { }
     };
 
-    class iterator : public iterator_base, public std::iterator<std::forward_iterator_tag, iterator_pair<K,D> > {
+    class iterator : public iterator_base, public std::iterator<std::bidirectional_iterator_tag, iterator_pair<K,D> > {
       protected:
         iterator(dict_type * dict) : iterator_base(dict) { }
         iterator(dict_type * dict, const K & key) : iterator_base(dict, key) { }
