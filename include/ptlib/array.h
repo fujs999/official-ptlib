@@ -967,29 +967,28 @@ template <class T> class PArray : public PArrayObjects
   //@{
     typedef T value_type;
 
-    template <typename T> class iterator_base : public std::iterator<std::bidirectional_iterator_tag, value_type> {
+    class iterator_base {
       protected:
-        typedef T array_ptr;
-        array_ptr m_array;
-        PINDEX    m_position;
+        const PArray * m_array;
+        PINDEX         m_position;
 
-        iterator_base(array_ptr a, PINDEX p) : m_array(a), m_position(p) { }
+        explicit iterator_base(const PArray * a = NULL, PINDEX p = P_MAX_INDEX) : m_array(a), m_position(p) { }
 
         void Next() { if (this->m_position < m_array->GetSize()) ++this->m_position; }
         void Prev() { if (this->m_position > 0) --this->m_position; }
+        value_type * Ptr() const { return &(*this->m_array)[this->m_position]; }
 
       public:
         bool operator==(const iterator_base & it) const { return this->m_array == it.m_array && this->m_position == it.m_position; }
         bool operator!=(const iterator_base & it) const { return !operator==(it); }
     };
 
-    class iterator : public iterator_base<PArray *> {
+    class iterator : public iterator_base, public std::iterator<std::bidirectional_iterator_tag, value_type> {
       protected:
-        iterator(array_ptr a, PINDEX p) : iterator_base(a, p) { }
-        value_type * Ptr() const { return &(*this->m_array)[this->m_position]; }
+        iterator(const PArray * a, PINDEX p) : iterator_base(a, p) { }
 
       public:
-        iterator() : iterator_base(NULL, P_MAX_INDEX) { }
+        iterator() { }
 
         iterator operator++()    {                      this->Next(); return *this; }
         iterator operator--()    {                      this->Prev(); return *this; }
@@ -1009,13 +1008,13 @@ template <class T> class PArray : public PArrayObjects
     void insert(const iterator & it, value_type * obj) { this->InsertAt(it.m_position, obj); }
     void insert(const iterator & it, const value_type & obj) { this->InsertAt(it.m_position, obj.Clone()); }
 
-    class const_iterator : public iterator_base<PArray const *> {
+    class const_iterator : public iterator_base, public std::iterator<std::bidirectional_iterator_tag, const value_type> {
       protected:
-        const_iterator(array_ptr a, PINDEX p) : iterator_base(a, p) { }
-        const value_type * Ptr() const { return &(*this->m_array)[this->m_position]; }
+        const_iterator(const PArray * a, PINDEX p) : iterator_base(a, p) { }
 
       public:
-        const_iterator() : iterator_base(NULL, P_MAX_INDEX) { }
+        const_iterator() { }
+        const_iterator(const PArray::iterator & it) : iterator_base(it) { }
 
         const_iterator operator++()    {                            this->Next(); return *this; }
         const_iterator operator--()    {                            this->Prev(); return *this; }
