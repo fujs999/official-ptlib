@@ -1038,7 +1038,7 @@ template <class Collection> class PSafeColl : public PSafeCollection
         value_type * operator->() const { return &*this->m_iterator; }
         value_type & operator* () const { return  *this->m_iterator; }
 
-        bool operator==(const iterator_base & it) const { return this->m_collection == it.m_collection && this->m_iterator == it.m_iterator; }
+        bool operator==(const iterator_base & it) const { return &this->m_collection == &it.m_collection && this->m_iterator == it.m_iterator; }
         bool operator!=(const iterator_base & it) const { return !operator==(it); }
     };
 
@@ -1277,61 +1277,61 @@ template <class K, class D> class PSafeDictionary : public PSafeCollection
         const key_type * m_internal_first;  // Must be first two members
         ptr_type       * m_internal_second;
 
-        const PSafeDictionary * m_owner;
+        PSafeDictionary m_collection;
         typename dict_type::iterator m_iterator;
         ptr_type m_pointer;
 
         iterator_base()
           : m_internal_first(NULL)
           , m_internal_second(&m_pointer)
-          , m_owner(NULL)
         {
         }
 
         iterator_base(const iterator_base & iter)
-          : m_internal_first(iter.m_internal_first)
-          , m_internal_second(&m_pointer)
-          , m_owner(iter.m_owner)
-        {
-        }
-
-        iterator_base(const PSafeDictionary * owner)
           : m_internal_first(NULL)
           , m_internal_second(&m_pointer)
-          , m_owner(owner)
+          , m_collection(iter.m_collection)
         {
-          SetIterator(m_owner->GetDictionaryPtr()->begin());
+          typename dict_type::iterator it = m_collection.GetDictionaryPtr()->begin();
+          std::advance(it, std::distance(iter.m_iterator, iter.m_collection.GetDictionaryPtr()->begin()));
+          SetIterator(it);
         }
 
-        iterator_base(const PSafeDictionary * owner, const key_type & key)
+        iterator_base(const PSafeDictionary & coll)
           : m_internal_first(NULL)
           , m_internal_second(&m_pointer)
-          , m_owner(owner)
+          , m_collection(coll)
         {
-          SetIterator(m_owner->GetDictionaryPtr()->find(key));
+          SetIterator(m_collection.GetDictionaryPtr()->begin());
+        }
+
+        iterator_base(const PSafeDictionary & coll, const key_type & key)
+          : m_internal_first(NULL)
+          , m_internal_second(&m_pointer)
+          , m_collection(coll)
+        {
+          SetIterator(m_collection.GetDictionaryPtr()->find(key));
         }
 
         void SetIterator(const typename dict_type::iterator& it)
         {
-          if (this->m_owner != NULL) {
-            this->m_iterator = it;
-            while (this->m_iterator != this->m_owner->GetDictionaryPtr()->end()) {
-              if (!this->m_iterator->second.IsSafelyBeingRemoved()) {
-                this->m_internal_first = &this->m_iterator->first;
-                this->m_pointer = const_cast<data_type *>(&this->m_iterator->second);
-                return;
-              }
-              ++this->m_iterator;
+          this->m_iterator = it;
+          while (this->m_iterator != this->m_collection.GetDictionaryPtr()->end()) {
+            if (!this->m_iterator->second.IsSafelyBeingRemoved()) {
+              this->m_internal_first = &this->m_iterator->first;
+              this->m_pointer = const_cast<data_type *>(&this->m_iterator->second);
+              return;
             }
-            this->m_internal_first = NULL;
-            this->m_pointer.SetNULL();
+            ++this->m_iterator;
           }
+          this->m_internal_first = NULL;
+          this->m_pointer.SetNULL();
         }
 
         void Next() { this->SetIterator(++this->m_iterator); }
 
       public:
-        bool operator==(const iterator_base & it) const { return this->m_owner == it.m_owner && this->m_iterator == it.m_iterator; }
+        bool operator==(const iterator_base & it) const { return &this->m_collection == &it.m_collection && this->m_iterator == it.m_iterator; }
         bool operator!=(const iterator_base & it) const { return !operator==(it); }
     };
 
@@ -1346,8 +1346,8 @@ template <class K, class D> class PSafeDictionary : public PSafeCollection
 
     class iterator : public iterator_base, public std::iterator<std::forward_iterator_tag, iterator_pair> {
       protected:
-        iterator(const PSafeDictionary * owner) : iterator_base(owner) { }
-        iterator(const PSafeDictionary * owner, const key_type & key) : iterator_base(owner, key) { }
+        iterator(const PSafeDictionary & owner) : iterator_base(owner) { }
+        iterator(const PSafeDictionary & owner, const key_type & key) : iterator_base(owner, key) { }
 
       public:
         iterator() { }
@@ -1361,15 +1361,15 @@ template <class K, class D> class PSafeDictionary : public PSafeCollection
         friend class PSafeDictionary;
     };
 
-    iterator begin()             { return iterator(this); }
+    iterator begin()             { return iterator(*this); }
     iterator end()               { return iterator(); }
-    iterator find(const K & key) { return iterator(this, key); }
+    iterator find(const K & key) { return iterator(*this, key); }
 
 
     class const_iterator : public iterator_base, public std::iterator<std::forward_iterator_tag, iterator_pair> {
       protected:
-        const_iterator(const PSafeDictionary * owner) : iterator_base(owner) { }
-        const_iterator(const PSafeDictionary * owner, const key_type & key) : iterator_base(owner, key) { }
+        const_iterator(const PSafeDictionary & owner) : iterator_base(owner) { }
+        const_iterator(const PSafeDictionary & owner, const key_type & key) : iterator_base(owner, key) { }
 
       public:
         const_iterator() { }
@@ -1384,9 +1384,9 @@ template <class K, class D> class PSafeDictionary : public PSafeCollection
         friend class PSafeDictionary;
     };
 
-    const_iterator begin()                    const { return const_iterator(this); }
+    const_iterator begin()                    const { return const_iterator(*this); }
     const_iterator end()                      const { return const_iterator(); }
-    const_iterator find(const key_type & key) const { return const_iterator(this, key); }
+    const_iterator find(const key_type & key) const { return const_iterator(*this, key); }
 
     void erase(const       iterator & it) { this->RemoveAt(it->first); }
     void erase(const const_iterator & it) { this->RemoveAt(it->first); }
