@@ -3426,7 +3426,7 @@ bool PRegularExpression::Execute(const char * cstr, PINDEX & start, PINDEX & len
     return false;
   }
 
-  switch (GetLastError()) {
+  switch (GetErrorCode()) {
     case NoError:
     case NoMatch:
       break;
