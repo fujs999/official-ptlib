@@ -82,20 +82,18 @@ void PCollection::RemoveAll()
 
 void PArrayObjects::CopyContents(const PArrayObjects & array)
 {
-  theArray = array.theArray;
+  m_objectArray = array.m_objectArray;
 }
 
 
 void PArrayObjects::DestroyContents()
 {
-  if (reference->deleteObjects && theArray != NULL) {
-    for (PINDEX i = 0; i < theArray->GetSize(); i++) {
-      if ((*theArray)[i] != NULL)
-        delete (*theArray)[i];
-    }
+  if (reference->deleteObjects && m_objectArray != NULL) {
+    for (PINDEX i = 0; i < m_objectArray->GetSize(); i++)
+      delete m_objectArray->GetAt(i);
   }
-  delete theArray;
-  theArray = NULL;
+  delete m_objectArray;
+  m_objectArray = NULL;
 }
 
 
@@ -107,8 +105,8 @@ void PArrayObjects::RemoveAll()
 
 void PArrayObjects::CloneContents(const PArrayObjects * array)
 {
-  PBaseArray<PObject *> & oldArray = *array->theArray;
-  theArray = new PBaseArray<PObject *>(oldArray.GetSize());
+  PBaseArray<PObject *> & oldArray = *array->m_objectArray;
+  m_objectArray = new PBaseArray<PObject *>(oldArray.GetSize());
   for (PINDEX i = 0; i < GetSize(); i++) {
     PObject * ptr = oldArray[i];
     if (ptr != NULL)
@@ -123,10 +121,11 @@ PObject::Comparison PArrayObjects::Compare(const PObject & obj) const
   const PArrayObjects & other = (const PArrayObjects &)obj;
   PINDEX i;
   for (i = 0; i < GetSize(); i++) {
-    if (i >= other.GetSize() || *(*theArray)[i] < *(*other.theArray)[i])
+    if (i >= other.GetSize())
       return LessThan;
-    if (*(*theArray)[i] > *(*other.theArray)[i])
-      return GreaterThan;
+    Comparison c = m_objectArray->GetAt(i)->Compare(*other.m_objectArray->GetAt(i));
+    if (c != EqualTo)
+      return c;
   }
   return i < other.GetSize() ? GreaterThan : EqualTo;
 }
@@ -134,21 +133,18 @@ PObject::Comparison PArrayObjects::Compare(const PObject & obj) const
 
 PINDEX PArrayObjects::GetSize() const
 {
-  return theArray->GetSize();
+  return m_objectArray->GetSize();
 }
 
 
 PBoolean PArrayObjects::SetSize(PINDEX newSize)
 {
-  PINDEX sz = theArray->GetSize();
+  PINDEX sz = m_objectArray->GetSize();
   if (reference->deleteObjects && sz > 0) {
-    for (PINDEX i = sz; i > newSize; i--) {
-      PObject * obj = theArray->GetAt(i-1);
-      if (obj != NULL)
-        delete obj;
-    }
+    for (PINDEX i = sz; i > newSize; i--)
+      delete m_objectArray->GetAt(i-1);
   }
-  return theArray->SetSize(newSize);
+  return m_objectArray->SetSize(newSize);
 }
 
 
@@ -180,19 +176,19 @@ PBoolean PArrayObjects::Remove(const PObject * obj)
 
 PObject * PArrayObjects::GetAt(PINDEX index) const
 {
-  return (*theArray)[index];
+  return m_objectArray->GetAt(index);
 }
 
 
 PBoolean PArrayObjects::SetAt(PINDEX index, PObject * obj)
 {
-  if (!theArray->SetMinSize(index+1))
+  if (!m_objectArray->SetMinSize(index+1))
     return false;
-  PObject * oldObj = theArray->GetAt(index);
+  PObject * oldObj = m_objectArray->GetAt(index);
   if (oldObj != obj) {
     if (oldObj != NULL && reference->deleteObjects)
       delete oldObj;
-    (*theArray)[index] = obj;
+    m_objectArray->SetAt(index, obj);
   }
   return true;
 }
@@ -203,21 +199,21 @@ PINDEX PArrayObjects::InsertAt(PINDEX index, PObject * obj)
   PINDEX i = GetSize();
   SetSize(i+1);
   for (; i > index; i--)
-    (*theArray)[i] = (*theArray)[i-1];
-  (*theArray)[index] = obj;
+    m_objectArray->SetAt(i, m_objectArray->GetAt(i-1));
+  m_objectArray->SetAt(index, obj);
   return index;
 }
 
 
 PObject * PArrayObjects::RemoveAt(PINDEX index)
 {
-  PObject * obj = (*theArray)[index];
+  PObject * obj = m_objectArray->GetAt(index);
 
   PINDEX size = GetSize()-1;
   PINDEX i;
   for (i = index; i < size; i++)
-    (*theArray)[i] = (*theArray)[i+1];
-  (*theArray)[i] = NULL;
+    m_objectArray->SetAt(i, m_objectArray->GetAt(i+1));
+  m_objectArray->SetAt(i, NULL);
 
   SetSize(size);
 
@@ -233,7 +229,7 @@ PObject * PArrayObjects::RemoveAt(PINDEX index)
 PINDEX PArrayObjects::GetObjectsIndex(const PObject * obj) const
 {
   for (PINDEX i = 0; i < GetSize(); i++) {
-    if ((*theArray)[i] == obj)
+    if (m_objectArray->GetAt(i) == obj)
       return i;
   }
   return P_MAX_INDEX;
@@ -243,7 +239,7 @@ PINDEX PArrayObjects::GetObjectsIndex(const PObject * obj) const
 PINDEX PArrayObjects::GetValuesIndex(const PObject & obj) const
 {
   for (PINDEX i = 0; i < GetSize(); i++) {
-    PObject * elmt = (*theArray)[i];
+    PObject * elmt = m_objectArray->GetAt(i);
     if (elmt != NULL && *elmt == obj)
       return i;
   }
