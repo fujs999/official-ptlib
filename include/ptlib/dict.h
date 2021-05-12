@@ -665,10 +665,10 @@ template <class T> class PSet : public PAbstractSet
       public:
         iterator() { }
 
-        iterator operator++()    {                      this->Next(); return *this; }
-        iterator operator--()    {                      this->Prev(); return *this; }
-        iterator operator++(int) { iterator it = *this; this->Next(); return it;    }
-        iterator operator--(int) { iterator it = *this; this->Prev(); return it;    }
+        iterator & operator++()    {                      this->Next(); return *this; }
+        iterator & operator--()    {                      this->Prev(); return *this; }
+        iterator   operator++(int) { iterator it = *this; this->Next(); return it;    }
+        iterator   operator--(int) { iterator it = *this; this->Prev(); return it;    }
 
         T * operator->() const { return  this->Ptr(); }
         T & operator* () const { return *this->Ptr(); }
@@ -689,10 +689,10 @@ template <class T> class PSet : public PAbstractSet
       public:
         const_iterator() { }
 
-        const_iterator operator++()    {                            this->Next(); return *this; }
-        const_iterator operator--()    {                            this->Prev(); return *this; }
-        const_iterator operator++(int) { const_iterator it = *this; this->Next(); return it;    }
-        const_iterator operator--(int) { const_iterator it = *this; this->Prev(); return it;    }
+        const_iterator & operator++()    {                            this->Next(); return *this; }
+        const_iterator & operator--()    {                            this->Prev(); return *this; }
+        const_iterator   operator++(int) { const_iterator it = *this; this->Next(); return it;    }
+        const_iterator   operator--(int) { const_iterator it = *this; this->Prev(); return it;    }
 
         const T * operator->() const { return  this->Ptr(); }
         const T & operator* () const { return *this->Ptr(); }
@@ -1195,10 +1195,10 @@ template <class K, class D> class PDictionary : public PAbstractDictionary
       public:
         iterator() { }
 
-        iterator operator++()    {                      this->Next(); return *this; }
-        iterator operator--()    {                      this->Prev(); return *this; }
-        iterator operator++(int) { iterator it = *this; this->Next(); return it;    }
-        iterator operator--(int) { iterator it = *this; this->Prev(); return it;    }
+        iterator & operator++()    {                      this->Next(); return *this; }
+        iterator & operator--()    {                      this->Prev(); return *this; }
+        iterator   operator++(int) { iterator it = *this; this->Next(); return it;    }
+        iterator   operator--(int) { iterator it = *this; this->Prev(); return it;    }
 
         typedef iterator_pair<K,D> pair;
         const pair * operator->() const { return  reinterpret_cast<const pair *>(this); }

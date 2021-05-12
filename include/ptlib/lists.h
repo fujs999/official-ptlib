@@ -368,10 +368,10 @@ template <class T> class PList : public PAbstractList
       public:
         iterator(PListElement * e = NULL) : iterator_base(e) { }
 
-        iterator operator++()    {                      this->Next(); return *this; }
-        iterator operator--()    {                      this->Prev(); return *this; }
-        iterator operator++(int) { iterator it = *this; this->Next(); return it;    }
-        iterator operator--(int) { iterator it = *this; this->Prev(); return it;    }
+        iterator & operator++()    {                      this->Next(); return *this; }
+        iterator & operator--()    {                      this->Prev(); return *this; }
+        iterator   operator++(int) { iterator it = *this; this->Next(); return it;    }
+        iterator   operator--(int) { iterator it = *this; this->Prev(); return it;    }
 
         value_type * operator->() const { return  this->Ptr(); }
         value_type & operator* () const { return *this->Ptr(); }
@@ -389,10 +389,10 @@ template <class T> class PList : public PAbstractList
       public:
         const_iterator(PListElement * e = NULL) : iterator_base(e) { }
 
-        const_iterator operator++()    {                            this->Next(); return *this; }
-        const_iterator operator--()    {                            this->Prev(); return *this; }
-        const_iterator operator++(int) { const_iterator it = *this; this->Next(); return it;    }
-        const_iterator operator--(int) { const_iterator it = *this; this->Prev(); return it;    }
+        const_iterator & operator++()    {                            this->Next(); return *this; }
+        const_iterator & operator--()    {                            this->Prev(); return *this; }
+        const_iterator   operator++(int) { const_iterator it = *this; this->Next(); return it;    }
+        const_iterator   operator--(int) { const_iterator it = *this; this->Prev(); return it;    }
 
         const value_type * operator->() const { return  this->Ptr(); }
         const value_type & operator* () const { return *this->Ptr(); }
@@ -1046,10 +1046,10 @@ template <class T> class PSortedList : public PAbstractSortedList
         iterator() : iterator_base(NULL, NULL) { }
         iterator(PSortedList<T> * l, PSortedListElement * e) : iterator_base(l, e) { }
 
-        iterator operator++()    {                      this->Next(); return *this; }
-        iterator operator--()    {                      this->Prev(); return *this; }
-        iterator operator++(int) { iterator it = *this; this->Next(); return it;    }
-        iterator operator--(int) { iterator it = *this; this->Prev(); return it;    }
+        iterator & operator++()    {                      this->Next(); return *this; }
+        iterator & operator--()    {                      this->Prev(); return *this; }
+        iterator   operator++(int) { iterator it = *this; this->Next(); return it;    }
+        iterator   operator--(int) { iterator it = *this; this->Prev(); return it;    }
 
         value_type * operator->() const { return  this->Ptr(); }
         value_type & operator* () const { return *this->Ptr(); }
@@ -1065,10 +1065,10 @@ template <class T> class PSortedList : public PAbstractSortedList
         const_iterator() : iterator_base(NULL, NULL) { }
         const_iterator(const PSortedList<T> * l, PSortedListElement * e) : iterator_base(l, e) { }
 
-        const_iterator operator++()    {                            this->Next(); return *this; }
-        const_iterator operator--()    {                            this->Prev(); return *this; }
-        const_iterator operator++(int) { const_iterator it = *this; this->Next(); return it;    }
-        const_iterator operator--(int) { const_iterator it = *this; this->Prev(); return it;    }
+        const_iterator & operator++()    {                            this->Next(); return *this; }
+        const_iterator & operator--()    {                            this->Prev(); return *this; }
+        const_iterator   operator++(int) { const_iterator it = *this; this->Next(); return it;    }
+        const_iterator   operator--(int) { const_iterator it = *this; this->Prev(); return it;    }
 
         const value_type * operator->() const { return  this->Ptr(); }
         const value_type & operator* () const { return *this->Ptr(); }

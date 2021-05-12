@@ -256,7 +256,10 @@ class PSafeObject : public PObject
        Note this returns the value outside of any mutexes, so it could change
        at any moment. Care must be exercised in its use.
       */
-    unsigned IsSafelyBeingRemoved() const { return m_safelyBeingRemoved; }
+    unsigned IsSafelyBeingRemoved() const
+    {
+      return m_safelyBeingRemoved;
+    }
 
     /**Determine if the object can be safely deleted.
        This determines if the object has been flagged for deletion and all
@@ -403,9 +406,9 @@ class PSafeLockReadWrite : public PSafeLockBase
   See the PSafeObject class for more details. Especially in regard to
   enumeration of collections.
  */
-class PSafeCollection : public PObject
+class PSafeCollection : public PSmartObject
 {
-    PCLASSINFO(PSafeCollection, PObject);
+    PCLASSINFO(PSafeCollection, PSmartObject);
   public:
   /**@name Construction */
   //@{
@@ -530,7 +533,7 @@ class PSafeCollection : public PObject
 #endif
 
   private:
-    PSafeCollection(const PSafeCollection & other) : PObject(other) { }
+    PSafeCollection(const PSafeCollection & other) : PSmartObject(other) { }
     void operator=(const PSafeCollection &) { }
 
   friend class PSafePtrBase;
@@ -898,6 +901,7 @@ template <class Collection> class PSafeColl : public PSafeCollection
     PCLASSINFO_WITH_CLONE(PSafeColl, PSafeCollection);
   public:
     typedef Collection coll_type;
+    typedef typename coll_type::iterator coll_iter;
     typedef typename coll_type::value_type value_type;
     typedef PSafePtr<value_type> ptr_type;
 
@@ -988,8 +992,13 @@ template <class Collection> class PSafeColl : public PSafeCollection
       PINDEX idx,
       PSafetyMode mode = PSafeReadWrite
     ) const {
+        ptr_type ptr;
         this->m_collectionMutex.Wait();
-        ptr_type ptr(&(*this->GetCollectionPtr())[idx], PSafeReference);
+        if (idx < this->GetCollectionPtr()->GetSize()) {
+          coll_iter it = this->GetCollectionPtr()->begin();
+          std::advance(it, idx);
+          ptr = ptr_type(&*it, PSafeReference);
+        }
         this->m_collectionMutex.Signal();
         ptr.SetSafetyMode(mode);
         return ptr;
@@ -1005,7 +1014,8 @@ template <class Collection> class PSafeColl : public PSafeCollection
       PSafetyMode mode = PSafeReadWrite
     ) const {
         this->m_collectionMutex.Wait();
-        ptr_type ptr(&(*this->GetCollectionPtr())[this->GetCollectionPtr()->GetValuesIndex(value)], PSafeReference);
+        coll_iter it = std::find(this->GetCollectionPtr()->begin(), this->GetCollectionPtr()->end(), value);
+        ptr_type ptr(it != this->GetCollectionPtr()->end() ? &*it : NULL, PSafeReference);
         this->m_collectionMutex.Signal();
         ptr.SetSafetyMode(mode);
         return ptr;
@@ -1014,19 +1024,22 @@ template <class Collection> class PSafeColl : public PSafeCollection
 
     class iterator_base {
       protected:
-        PSafeColl                    m_collection;
-        typename coll_type::iterator m_iterator;
+        PSmartPtr<PSafeColl> m_collection;
+        coll_iter            m_iterator;
+        ptr_type             m_pointer;
 
         iterator_base(const PSafeColl & coll)
-          : m_collection(coll)
-          , m_iterator(m_collection.GetCollectionPtr()->begin())
+          : m_collection(new PSafeColl(coll))
+          , m_iterator(m_collection->GetCollectionPtr()->begin())
+          , m_pointer(m_iterator != m_collection->GetCollectionPtr()->end() ? &*m_iterator : NULL, PSafeReference)
         {
         }
 
         void Next()
         {
-          while (++this->m_iterator != this->m_collection.GetCollectionPtr()->end()) {
-            if (!this->m_iterator->IsSafelyBeingRemoved())
+          while (++this->m_iterator != this->m_collection->GetCollectionPtr()->end()) {
+            m_pointer = ptr_type(&*m_iterator, PSafeReference);
+            if (m_pointer != NULL)
               return;
           }
           *this = iterator();
@@ -1035,18 +1048,20 @@ template <class Collection> class PSafeColl : public PSafeCollection
       public:
         iterator_base() { }
 
-        value_type * operator->() const { return &*this->m_iterator; }
-        value_type & operator* () const { return  *this->m_iterator; }
+        value_type * operator->() const { return &*this->m_pointer; }
+        value_type & operator* () const { return  *this->m_pointer; }
 
-        bool operator==(const iterator_base & it) const { return &this->m_collection == &it.m_collection && this->m_iterator == it.m_iterator; }
+        bool operator==(const iterator_base & it) const { return this->m_iterator == it.m_iterator; }
         bool operator!=(const iterator_base & it) const { return !operator==(it); }
+
+        bool operator==(const value_type * ptr) const { return this->m_iterator != this->m_collection->GetCollectionPtr()->end() ? &*this->m_iterator == ptr : (ptr == NULL); }
+        bool operator!=(const value_type * ptr) const { return !operator==(ptr); }
+
+        bool SetSafetyMode(PSafetyMode mode) { return this->m_pointer.SetSafetyMode(mode); }
     };
 
     class iterator : public iterator_base, public std::iterator<std::forward_iterator_tag, value_type> {
       protected:
-        PSafeColl                    m_collection;
-        typename coll_type::iterator m_iterator;
-
         iterator(const PSafeColl & coll)
           : iterator_base(coll)
         { }
@@ -1054,15 +1069,15 @@ template <class Collection> class PSafeColl : public PSafeCollection
       public:
         iterator() { }
 
-        iterator operator++()    {                      this->Next(); return *this; }
-        iterator operator++(int) { iterator it = *this; this->Next(); return it;    }
+        iterator & operator++()    {                      this->Next(); return *this; }
+        iterator   operator++(int) { iterator it = *this; this->Next(); return it;    }
 
         friend class PSafeColl;
     };
 
     iterator begin() { return iterator(*this); }
     iterator end()   { return iterator(); }
-    void erase(const iterator& it) { this->GetCollectionPtr()->erase(it.m_iterator); }
+    void erase(const iterator& it) { if (PAssert(it != end(), PLogicError)) this->SafeRemove(&*it.m_iterator); }
 
     class const_iterator : public iterator_base, public std::iterator<std::forward_iterator_tag, const value_type> {
       protected:
@@ -1074,8 +1089,8 @@ template <class Collection> class PSafeColl : public PSafeCollection
         const_iterator() { }
         const_iterator(const PSafeColl::iterator & it) : iterator_base(it) { }
 
-        const_iterator operator++()    {                      this->Next(); return *this; }
-        const_iterator operator++(int) { iterator it = *this; this->Next(); return it;    }
+        const_iterator & operator++()    {                      this->Next(); return *this; }
+        const_iterator   operator++(int) { iterator it = *this; this->Next(); return it;    }
 
         friend class PSafeColl;
     };
@@ -1138,6 +1153,7 @@ template <class K, class D> class PSafeDictionary : public PSafeCollection
     typedef K key_type;
     typedef D data_type;
     typedef PDictionary<K, D> dict_type;
+    typedef typename dict_type::iterator dict_iter;
     typedef PSafePtr<D> ptr_type;
 
   /**@name Construction */
@@ -1197,7 +1213,7 @@ template <class K, class D> class PSafeDictionary : public PSafeCollection
     virtual PBoolean RemoveAt(
       const key_type & key   ///< Key to find object to delete
     ) {
-        PWaitAndSignal mutex(this->m_collectionMutex);
+        PWaitAndSignal lock(this->m_collectionMutex);
         return SafeRemove(this->GetDictionaryPtr()->GetAt(key));
       }
 
@@ -1277,9 +1293,9 @@ template <class K, class D> class PSafeDictionary : public PSafeCollection
         const key_type * m_internal_first;  // Must be first two members
         ptr_type       * m_internal_second;
 
-        PSafeDictionary m_collection;
-        typename dict_type::iterator m_iterator;
-        ptr_type m_pointer;
+        PSmartPtr<PSafeDictionary> m_collection;
+        dict_iter                  m_iterator;
+        ptr_type                   m_pointer;
 
         iterator_base()
           : m_internal_first(NULL)
@@ -1292,46 +1308,53 @@ template <class K, class D> class PSafeDictionary : public PSafeCollection
           , m_internal_second(&m_pointer)
           , m_collection(iter.m_collection)
         {
-          typename dict_type::iterator it = m_collection.GetDictionaryPtr()->begin();
-          std::advance(it, std::distance(iter.m_iterator, iter.m_collection.GetDictionaryPtr()->begin()));
-          SetIterator(it);
+          if (iter.m_iterator != iter.m_collection->GetDictionaryPtr()->end()) {
+            dict_iter it = m_collection->GetDictionaryPtr()->begin();
+            std::advance(it, std::distance(iter.m_iterator, iter.m_collection->GetDictionaryPtr()->begin()));
+            SetIterator(it);
+          }
         }
 
         iterator_base(const PSafeDictionary & coll)
           : m_internal_first(NULL)
           , m_internal_second(&m_pointer)
-          , m_collection(coll)
+          , m_collection(new PSafeDictionary(coll))
         {
-          SetIterator(m_collection.GetDictionaryPtr()->begin());
+          dict_iter it = this->m_collection->GetDictionaryPtr()->begin();
+          while (this->SetIterator(it))
+            ++it;
         }
 
         iterator_base(const PSafeDictionary & coll, const key_type & key)
           : m_internal_first(NULL)
           , m_internal_second(&m_pointer)
-          , m_collection(coll)
+          , m_collection(new PSafeDictionary(coll))
         {
-          SetIterator(m_collection.GetDictionaryPtr()->find(key));
+          this->SetIterator(this->m_collection->GetDictionaryPtr()->find(key));
         }
 
-        void SetIterator(const typename dict_type::iterator& it)
+        bool SetIterator(const dict_iter & it)
         {
-          this->m_iterator = it;
-          while (this->m_iterator != this->m_collection.GetDictionaryPtr()->end()) {
-            if (!this->m_iterator->second.IsSafelyBeingRemoved()) {
-              this->m_internal_first = &this->m_iterator->first;
-              this->m_pointer = const_cast<data_type *>(&this->m_iterator->second);
-              return;
-            }
-            ++this->m_iterator;
-          }
           this->m_internal_first = NULL;
           this->m_pointer.SetNULL();
+          this->m_iterator = it;
+          if (it == this->m_collection->GetDictionaryPtr()->end())
+            return false;
+          if (it->second.IsSafelyBeingRemoved())
+            return true;
+          this->m_internal_first = &this->m_iterator->first;
+          this->m_pointer = const_cast<data_type *>(&this->m_iterator->second);
+          return false;
         }
 
-        void Next() { this->SetIterator(++this->m_iterator); }
+        void Next()
+        {
+          dict_iter it = this->m_iterator;
+          do ++it; while (this->SetIterator(it));
+        }
 
       public:
-        bool operator==(const iterator_base & it) const { return &this->m_collection == &it.m_collection && this->m_iterator == it.m_iterator; }
+        bool operator==(const iterator_base & it) const { return this->m_iterator == it.m_iterator; }
         bool operator!=(const iterator_base & it) const { return !operator==(it); }
     };
 
@@ -1352,8 +1375,8 @@ template <class K, class D> class PSafeDictionary : public PSafeCollection
       public:
         iterator() { }
 
-        iterator operator++()    {                      this->Next(); return *this; }
-        iterator operator++(int) { iterator it = *this; this->Next(); return it;    }
+        iterator & operator++()    {                      this->Next(); return *this; }
+        iterator   operator++(int) { iterator it = *this; this->Next(); return it;    }
 
         const iterator_pair * operator->() const { return  reinterpret_cast<const iterator_pair *>(this); }
         const iterator_pair & operator* () const { return *reinterpret_cast<const iterator_pair *>(this); }
@@ -1375,8 +1398,8 @@ template <class K, class D> class PSafeDictionary : public PSafeCollection
         const_iterator() { }
         const_iterator(const PSafeDictionary::iterator & iter) : iterator_base(iter) { }
 
-        const_iterator operator++()    {                            this->Next(); return *this; }
-        const_iterator operator++(int) { const_iterator it = *this; this->Next(); return it;    }
+        const_iterator & operator++()    {                            this->Next(); return *this; }
+        const_iterator   operator++(int) { const_iterator it = *this; this->Next(); return it;    }
 
         const iterator_pair * operator->() const { return  reinterpret_cast<const iterator_pair *>(this); }
         const iterator_pair & operator* () const { return *reinterpret_cast<const iterator_pair *>(this); }

@@ -974,8 +974,18 @@ template <class T> class PArray : public PArrayObjects
 
         explicit iterator_base(const PArray * a = NULL, PINDEX p = P_MAX_INDEX) : m_array(a), m_position(p) { }
 
-        void Next() { if (this->m_position < m_array->GetSize()) ++this->m_position; }
-        void Prev() { if (this->m_position > 0) --this->m_position; }
+        void Next()
+        {
+          if (m_array != NULL && ++this->m_position >= m_array->GetSize())
+            *this = iterator_base();
+        }
+
+        void Prev()
+        {
+          if (m_array != NULL && this->m_position-- == 0)
+            *this = iterator_base();
+        }
+
         value_type * Ptr() const { return &(*this->m_array)[this->m_position]; }
 
       public:
@@ -990,10 +1000,10 @@ template <class T> class PArray : public PArrayObjects
       public:
         iterator() { }
 
-        iterator operator++()    {                      this->Next(); return *this; }
-        iterator operator--()    {                      this->Prev(); return *this; }
-        iterator operator++(int) { iterator it = *this; this->Next(); return it;    }
-        iterator operator--(int) { iterator it = *this; this->Prev(); return it;    }
+        iterator & operator++()    {                      this->Next(); return *this; }
+        iterator & operator--()    {                      this->Prev(); return *this; }
+        iterator   operator++(int) { iterator it = *this; this->Next(); return it;    }
+        iterator   operator--(int) { iterator it = *this; this->Prev(); return it;    }
 
         value_type * operator->() const { return  this->Ptr(); }
         value_type & operator* () const { return *this->Ptr(); }
@@ -1001,10 +1011,10 @@ template <class T> class PArray : public PArrayObjects
       friend PArray;
     };
 
-    iterator begin()  { return iterator(this, 0); }
-    iterator end()    { return iterator(this, P_MAX_INDEX); }
-    iterator rbegin() { return iterator(this, this->GetSize()-1); }
-    iterator rend()   { return iterator(this, P_MAX_INDEX); }
+    iterator begin()  { return empty() ? end() : iterator(this, 0); }
+    iterator end()    { return iterator(NULL, P_MAX_INDEX); }
+    iterator rbegin() { return empty() ? end() : iterator(this, this->GetSize()-1); }
+    iterator rend()   { return iterator(NULL, P_MAX_INDEX); }
     void insert(const iterator & it, value_type * obj) { this->InsertAt(it.m_position, obj); }
     void insert(const iterator & it, const value_type & obj) { this->InsertAt(it.m_position, obj.Clone()); }
 
@@ -1016,10 +1026,10 @@ template <class T> class PArray : public PArrayObjects
         const_iterator() { }
         const_iterator(const PArray::iterator & it) : iterator_base(it) { }
 
-        const_iterator operator++()    {                            this->Next(); return *this; }
-        const_iterator operator--()    {                            this->Prev(); return *this; }
-        const_iterator operator++(int) { const_iterator it = *this; this->Next(); return it;    }
-        const_iterator operator--(int) { const_iterator it = *this; this->Prev(); return it;    }
+        const_iterator & operator++()    {                            this->Next(); return *this; }
+        const_iterator & operator--()    {                            this->Prev(); return *this; }
+        const_iterator   operator++(int) { const_iterator it = *this; this->Next(); return it;    }
+        const_iterator   operator--(int) { const_iterator it = *this; this->Prev(); return it;    }
 
         const value_type * operator->() const { return  this->Ptr(); }
         const value_type & operator* () const { return *this->Ptr(); }
@@ -1027,10 +1037,10 @@ template <class T> class PArray : public PArrayObjects
       friend PArray;
     };
 
-    const_iterator begin()  const { return const_iterator(this, 0); }
-    const_iterator end()    const { return const_iterator(this, P_MAX_INDEX); }
-    const_iterator rbegin() const { return const_iterator(this, this->GetSize()-1); }
-    const_iterator rend()   const { return const_iterator(this, P_MAX_INDEX); }
+    const_iterator begin()  const { return empty() ? end() : const_iterator(this, 0); }
+    const_iterator end()    const { return const_iterator(NULL, P_MAX_INDEX); }
+    const_iterator rbegin() const { return empty() ? end() : const_iterator(this, this->GetSize()-1); }
+    const_iterator rend()   const { return const_iterator(NULL, P_MAX_INDEX); }
 
     value_type & front() const { return this->GetAt(0); }
     value_type & back() const { return this->GetAt(GetSize()-1); }
