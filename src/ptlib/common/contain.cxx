@@ -2659,15 +2659,13 @@ PStringArray::PStringArray(PINDEX count, char const * const * strarr, PBoolean c
 
 PStringArray::PStringArray(const PString & str)
 {
-  SetSize(1);
-  (*theArray)[0] = str.CloneAs<PString>();
+  m_objectArray->SetAt(0, str.CloneAs<PString>());
 }
 
 
 PStringArray::PStringArray(const char * cstr)
 {
-  SetSize(1);
-  (*theArray)[0] = new PString(cstr);
+  m_objectArray->SetAt(0, new PString(cstr));
 }
 
 
@@ -2676,7 +2674,7 @@ PStringArray::PStringArray(const PStringList & list)
   SetSize(list.GetSize());
   PINDEX count = 0;
   for (PStringList::const_iterator it = list.begin(); it != list.end(); ++it)
-    (*theArray)[count++] = it->CloneAs<PString>();
+    m_objectArray->SetAt(count++, it->CloneAs<PString>());
 }
 
 
@@ -2684,7 +2682,7 @@ PStringArray::PStringArray(const PSortedStringList & list)
 {
   SetSize(list.GetSize());
   for (PINDEX i = 0; i < list.GetSize(); i++)
-    (*theArray)[i] = list[i].CloneAs<PString>();
+    m_objectArray->SetAt(i, list[i].CloneAs<PString>());
 }
 
 
@@ -2693,7 +2691,7 @@ PStringArray::PStringArray(const PStringSet & set)
   SetSize(set.GetSize());
   PINDEX count = 0;
   for (PStringSet::const_iterator it = set.begin(); it != set.end(); ++it)
-    (*theArray)[count++] = it->CloneAs<PString>();
+    m_objectArray->SetAt(count++, it->CloneAs<PString>());
 }
 
 
@@ -2720,8 +2718,8 @@ void PStringArray::ReadFrom(istream & strm)
 PString PStringArray::operator[](PINDEX index) const
 {
   PASSERTINDEX(index);
-  if (index < GetSize() && (*theArray)[index] != NULL)
-    return *(PString *)(*theArray)[index];
+  if (index < GetSize() && m_objectArray->GetAt(index) != NULL)
+    return *(PString *)m_objectArray->GetAt(index);
   return PString::Empty();
 }
 
@@ -2730,9 +2728,9 @@ PString & PStringArray::operator[](PINDEX index)
 {
   PASSERTINDEX(index);
   PAssert(SetMinSize(index+1), POutOfMemory);
-  if ((*theArray)[index] == NULL)
-    (*theArray)[index] = new PString;
-  return *(PString *)(*theArray)[index];
+  if (m_objectArray->GetAt(index) == NULL)
+    m_objectArray->SetAt(index, new PString);
+  return *(PString *)m_objectArray->GetAt(index);
 }
 
 
