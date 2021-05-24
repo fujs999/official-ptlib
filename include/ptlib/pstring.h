@@ -3557,7 +3557,7 @@ class PRegularExpression : public PObject
        @return
        Error code.
      */
-    ErrorCodes GetErrorCode() const { return m_lastError; }
+    ErrorCodes GetErrorCode() const;
 
     /**Get the text description for the error of the last Compile() or
        Execute() operation.
@@ -3701,7 +3701,6 @@ class PRegularExpression : public PObject
     PString            m_pattern;
     CompileOptions     m_compileOptions;
     void             * m_compiledRegex;
-    mutable ErrorCodes m_lastError;
 };
 
 
