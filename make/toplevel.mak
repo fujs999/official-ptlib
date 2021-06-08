@@ -523,7 +523,7 @@ $(OBJDIR)/getdate.o: $(GETDATE_SOURCE)
 	$(Q_CC)$(CC) $(CPPFLAGS) -Wno-write-strings $(CFLAGS) -c $< -o $@
 
 $(DEPDIR)/getdate.dep: $(GETDATE_SOURCE)
-	$(Q_CC)$(CC) $(CPPFLAGS) -M $< >> $@
+	$(Q_CC)$(CC) $(CPPFLAGS) -M $< > $@
 
 GETDATE_TAB_C := $(COMMON_SRC_DIR)/getdate.tab.c
 
