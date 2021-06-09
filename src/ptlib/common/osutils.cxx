@@ -3692,12 +3692,7 @@ void PThread::LocalStorageBase::ThreadDestroyed(PThread & thread)
 
 void * PThread::LocalStorageBase::GetStorage() const
 {
-#if defined(P_LINUX) && (__cplusplus >= 201103L)
-  // Cache the unique ID in TLS to avoid frequent syscalls
-  thread_local PUniqueThreadIdentifier uniqueId = PThread::GetCurrentUniqueIdentifier();
-#else
   PUniqueThreadIdentifier uniqueId = PThread::GetCurrentUniqueIdentifier();
-#endif
   PWaitAndSignal lock(m_mutex);
   DataMap::iterator it = m_data.find(uniqueId);
   if (it == m_data.end())
@@ -4032,13 +4027,7 @@ void PTimedMutex::InternalWaitComplete(uint64_t startWaitCycle, const PDebugLoca
     AcquiredLock(startWaitCycle, false, location);
     m_startHeldSamplePoint = PProfiling::GetCycles();
     m_lastLockerId = m_lockerId = PThread::GetCurrentThreadId();
-#if defined(P_LINUX) && (__cplusplus >= 201103L)
-    // Cache the unique ID in TLS to avoid frequent syscalls
-    thread_local PUniqueThreadIdentifier uniqueId = PThread::GetCurrentUniqueIdentifier();
-    m_lastUniqueId = uniqueId;
-#else
     m_lastUniqueId = PThread::GetCurrentUniqueIdentifier();
-#endif
   }
 }
 
