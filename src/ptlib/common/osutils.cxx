@@ -3692,11 +3692,11 @@ void PThread::LocalStorageBase::ThreadDestroyed(PThread & thread)
 
 void * PThread::LocalStorageBase::GetStorage() const
 {
-  PUniqueThreadIdentifier uinqueId = PThread::GetCurrentUniqueIdentifier();
+  PUniqueThreadIdentifier uniqueId = PThread::GetCurrentUniqueIdentifier();
   PWaitAndSignal lock(m_mutex);
-  DataMap::iterator it = m_data.find(uinqueId);
+  DataMap::iterator it = m_data.find(uniqueId);
   if (it == m_data.end())
-    it = m_data.insert(make_pair(uinqueId, Allocate())).first;
+    it = m_data.insert(make_pair(uniqueId, Allocate())).first;
   return it->second;
 }
 
