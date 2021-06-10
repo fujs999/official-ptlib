@@ -912,7 +912,7 @@ PBoolean PThread::WaitForTermination(const PTimeInterval & maxWait) const
 
 
 
-PUniqueThreadIdentifier PThread::GetCurrentUniqueIdentifier()
+static PUniqueThreadIdentifier GetCurrentUniqueIdentifier()
 {
 #if defined(P_LINUX)
   return syscall(SYS_gettid);
@@ -921,6 +921,18 @@ PUniqueThreadIdentifier PThread::GetCurrentUniqueIdentifier()
   return pthread_threadid_np(::pthread_self(), &id) == 0 ? id : 0;
 #else
   return (PUniqueThreadIdentifier)GetCurrentThreadId();
+#endif
+}
+
+
+PUniqueThreadIdentifier PThread::GetCurrentUniqueIdentifier()
+{
+#if (__cplusplus >= 201103L)
+  // Cache the unique ID in TLS to avoid frequent syscalls
+  thread_local PUniqueThreadIdentifier uniqueId = ::GetCurrentUniqueIdentifier();
+  return uniqueId;
+#else
+  return ::GetCurrentUniqueIdentifier();
 #endif
 }
 
