@@ -404,8 +404,10 @@ template <class T> class PList : public PAbstractList
     const_iterator rend()   const { return const_iterator(); }
     const_iterator find(const value_type & obj) const { return this->FindElement(obj, NULL); }
 
+    P_PUSH_MSVC_WARNINGS(6011)
     value_type & front() const { return dynamic_cast<value_type &>(*PAssertNULL(this->m_info->head)->data); }
     value_type & back() const { return dynamic_cast<value_type &>(*PAssertNULL(this->m_info->tail)->data); }
+    P_POP_MSVC_WARNINGS()
     __inline void erase(const iterator & it) { this->RemoveElement(it.element); }
     __inline void erase(const const_iterator & it) { this->RemoveElement(it.element); }
     __inline void push_front(const value_type & value) { this->InsertAt(0, new value_type(value)); }
