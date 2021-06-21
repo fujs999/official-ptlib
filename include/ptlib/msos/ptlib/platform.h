@@ -219,7 +219,7 @@ class PWin32Handle
     bool Duplicate(HANDLE h, DWORD flags = DUPLICATE_SAME_ACCESS, DWORD access = 0);
 
   private:
-    PWin32Handle(const PWin32Handle &) { }
+    PWin32Handle(const PWin32Handle &) : m_handle() { }
     void operator=(const PWin32Handle &) { }
 };
 
@@ -253,8 +253,11 @@ class RegistryKey
 };
 
 #define PDEFINE_WINMAIN(hInstance, hPrevInstance, lpCmdLine, nCmdShow) \
-    int PASCAL WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
+    int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
+#pragma warning(push)
+#pragma warning(disable:28251)
 extern "C" PDEFINE_WINMAIN(hInstance, hPrevInstance, lpCmdLine, nCmdShow);
+#pragma warning(pop)
 
 #if defined(_MSC_VER) && !defined(_WIN32)
   extern "C" int __argc;
