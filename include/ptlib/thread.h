@@ -510,7 +510,16 @@ class PThread : public PObject
     friend class PExternalThread;
     // So a PProcess can get at PThread() constructor but nothing else.
 
-    PThread(const PThread &) : PObject () { }
+    PThread(const PThread &)
+      : PObject ()
+      , m_type()
+      , m_originalStackSize()
+      , m_threadId()
+      , m_uniqueId()
+#ifdef _WIN32
+      , m_comInitialised()
+#endif
+    { }
     // Empty constructor to prevent copying of thread instances.
 
     PThread & operator=(const PThread &) { return *this; }

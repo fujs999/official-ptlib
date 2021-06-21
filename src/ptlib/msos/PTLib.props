@@ -19,7 +19,11 @@
     <LocalDebuggerEnvironment>PATH=$(PATH);$(LIB64PATH)</LocalDebuggerEnvironment>
   </PropertyGroup>
   <PropertyGroup />
-  <ItemDefinitionGroup />
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <DisableSpecificWarnings>26812</DisableSpecificWarnings>
+    </ClCompile>
+  </ItemDefinitionGroup>
   <ItemGroup>
     <BuildMacro Include="PTLibGitRootDir">
       <Value>$(PTLibGitRootDir)</Value>

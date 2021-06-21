@@ -533,7 +533,12 @@ class PSafeCollection : public PSmartObject
 #endif
 
   private:
-    PSafeCollection(const PSafeCollection & other) : PSmartObject(other) { }
+    PSafeCollection(const PSafeCollection & other)
+      : PSafeObject(other)
+      , m_collection()
+      , m_deleteObjects()
+      , m_deleteObjectsTimer()
+    { }
     void operator=(const PSafeCollection &) { }
 
   friend class PSafePtrBase;
