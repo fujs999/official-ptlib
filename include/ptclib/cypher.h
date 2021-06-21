@@ -511,7 +511,7 @@ class PMessageDigestSHA : public PMessageDigest
     } m_state;
 
   private:
-    PMessageDigestSHA(const PMessageDigestSHA &) { }
+    PMessageDigestSHA(const PMessageDigestSHA &) : m_context(), m_state() { }
     void operator=(const PMessageDigestSHA &) { }
 };
 
