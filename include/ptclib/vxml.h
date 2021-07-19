@@ -405,9 +405,12 @@ class PVXMLSession : public PIndirectChannel
 
     PURL NormaliseResourceName(const PString & src);
 
+    bool LoadResource(const PURL & url, PBYTEArray & data);
+
     PDECLARE_MUTEX(m_sessionMutex);
 
     PURL             m_rootURL;
+    PHTTPCookies     m_cookies;
 
     PTextToSpeech  * m_textToSpeech;
     PVXMLCache     * m_ttsCache;
