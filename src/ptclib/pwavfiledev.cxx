@@ -158,14 +158,8 @@ PBoolean PSoundChannel_WAVFile::IsOpen() const
 
 PBoolean PSoundChannel_WAVFile::Close()
 {
-  if (CheckNotOpen())
-    return false;
-
-  if (m_bufferPos > 0)
-    m_WAVFile.Write(m_buffer, m_bufferPos);
-  m_WAVFile.Close();
-  os_handle = -1;
-  return true;
+  bool closed = PSoundChannelEmulation::Close();  // Flushes buffer
+  return m_WAVFile.Close() && closed;             // Then we can close file
 }
 
 
