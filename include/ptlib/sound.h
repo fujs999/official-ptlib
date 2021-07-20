@@ -765,8 +765,9 @@ class PSoundChannelEmulation : public PSoundChannel
   public:
     PSoundChannelEmulation();
 
-    PBoolean Write(const void * buf, PINDEX len);
-    PBoolean Read(void * buf, PINDEX len);
+    virtual PBoolean Close();
+    virtual PBoolean Write(const void * buf, PINDEX len);
+    virtual PBoolean Read(void * buf, PINDEX len);
 
     virtual PBoolean SetFormat(unsigned numChannels, unsigned sampleRate, unsigned bitsPerSample);
     virtual unsigned GetChannels() const;
@@ -804,6 +805,7 @@ class PSoundChannelEmulation : public PSoundChannel
     bool           m_autoRepeat;
     PAdaptiveDelay m_Pacing;
     bool           m_muted;
+    PDECLARE_MUTEX(m_writeMutex);
 };
 
 
