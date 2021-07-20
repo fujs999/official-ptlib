@@ -847,6 +847,19 @@ PSoundChannelEmulation::PSoundChannelEmulation()
 }
 
 
+PBoolean PSoundChannelEmulation::Close()
+{
+  if (CheckNotOpen())
+    return false;
+
+  PWaitAndSignal lock(m_writeMutex);
+
+  InternalFlush();
+  os_handle = -1;
+  return true;
+}
+
+
 bool PSoundChannelEmulation::RawWrite(const void * /*data*/, PINDEX /*size*/)
 {
   return false;
@@ -867,6 +880,8 @@ bool PSoundChannelEmulation::Rewind()
 
 bool PSoundChannelEmulation::InternalFlush()
 {
+  // m_writeMutex already held
+
   if (m_bufferPos == 0)
     return true;
 
@@ -881,35 +896,40 @@ bool PSoundChannelEmulation::InternalFlush()
 
 PBoolean PSoundChannelEmulation::Write(const void * data, PINDEX size)
 {
-  if (m_muted) {
-    if (!InternalFlush())
-      return false;
+  {
+    PWaitAndSignal lock(m_writeMutex);
 
-    memset(m_buffer.GetPointer(size), 0, size);
-    if (!RawWrite(m_buffer.GetPointer(), size))
-      return false;
-  }
-  else if (m_bufferPos + size < m_buffer.GetSize()) {
-    memcpy(m_buffer.GetPointer() + m_bufferPos, data, size);
-    m_bufferPos += size;
-    SetLastWriteCount(size);
-  }
-  else {
-    if (!InternalFlush())
-      return false;
+    if (m_muted) {
+      if (!InternalFlush())
+        return false;
 
-    if (size < m_buffer.GetSize()) {
-      memcpy(m_buffer.GetPointer(), data, size);
-      m_bufferPos = size;
+      memset(m_buffer.GetPointer(size), 0, size);
+      if (!RawWrite(m_buffer.GetPointer(), size))
+        return false;
+    }
+    else if (m_bufferPos + size <= m_buffer.GetSize()) {
+      memcpy(m_buffer.GetPointer() + m_bufferPos, data, size);
+      m_bufferPos += size;
       SetLastWriteCount(size);
     }
     else {
-      if (!RawWrite(data, size))
+      if (!InternalFlush())
         return false;
-      m_bufferPos = 0;
+
+      if (size < m_buffer.GetSize()) {
+        memcpy(m_buffer.GetPointer(), data, size);
+        m_bufferPos = size;
+        SetLastWriteCount(size);
+      }
+      else {
+        if (!RawWrite(data, size))
+          return false;
+        m_bufferPos = 0;
+      }
     }
   }
 
+  // Pacing delay outside of mutex
   m_Pacing.Delay(1000LL*GetLastWriteCount()/m_sampleRate/m_bytesPerSample);
   return true;
 }
@@ -982,6 +1002,8 @@ unsigned PSoundChannelEmulation::GetSampleSize() const
 
 PBoolean PSoundChannelEmulation::SetBuffers(PINDEX size, PINDEX count)
 {
+  PWaitAndSignal lock(m_writeMutex);
+
   m_bufferSize = size;
   m_bufferCount = count;
   if (!PAssert(m_buffer.SetSize(size*count), POutOfMemory))
@@ -995,6 +1017,8 @@ PBoolean PSoundChannelEmulation::SetBuffers(PINDEX size, PINDEX count)
 
 PBoolean PSoundChannelEmulation::GetBuffers(PINDEX & size, PINDEX & count)
 {
+  PWaitAndSignal lock(m_writeMutex);
+
   size = m_bufferSize;
   count = m_bufferCount;
   return true;
