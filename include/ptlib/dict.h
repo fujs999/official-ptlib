@@ -81,7 +81,7 @@ class PKey : public PObject
      */
     virtual Comparison Compare(const PObject & obj) const
     {
-      return Compare2(*this, dynamic_cast<const my_type &>(obj));
+      return Compare2(this->m_key, dynamic_cast<const my_type &>(obj).m_key);
     }
 
     /**This function calculates a hash table index value for the implementation

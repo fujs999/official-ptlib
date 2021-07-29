@@ -1065,8 +1065,10 @@ template <class T> class PArray : public PArrayObjects
       PINDEX index  ///< Index position in the collection of the object.
     ) const {
       PObject * obj = this->GetAt(index);
-      PAssert(obj != NULL, PInvalidArrayElement);
-      return dynamic_cast<T &>(*obj);
+      if (obj != NULL)
+        return dynamic_cast<T &>(*obj);
+      PAssertAlways(PInvalidArrayElement);
+      std::abort();
     }
   //@}
 

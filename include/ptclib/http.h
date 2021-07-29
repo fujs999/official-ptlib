@@ -283,6 +283,45 @@ class PHTTP : public PInternetProtocol
 };
 
 
+/** Represent cookies recieved via HTTP as per RFC6265
+ */
+class PHTTPCookies
+{
+  public:
+    PHTTPCookies() { }
+
+    bool Parse(const PString & cookies, const PURL & url, const PTime & now = PTime());
+    bool Parse(const PMIMEInfo & mime, const PURL & url, const PTime & now = PTime());
+
+    PString GetCookie(const PURL & url, const PTime & now = PTime()) const;
+    void AddCookie(PMIMEInfo & mime, const PURL & url, const PTime & now = PTime()) const;
+
+    PString AsString() const;
+
+    void Clear() { m_cookies.clear(); }
+
+  protected:
+    // as per RFC6265
+    struct Info
+    {
+      Info();
+      bool operator<(const Info & other) const;
+      PString m_name;
+      PString m_value;
+      PTime   m_expiryTime;
+      PString m_domain;
+      PString m_path;
+      bool    m_peristent;
+      bool    m_hostOnly;
+      bool    m_secureOnly;
+      bool    m_httpOnly;
+      PTime   m_creationTime;
+      mutable PTime m_lastAccessTime;
+    };
+    std::set<Info> m_cookies;
+};
+
+
 class PHTTPContentProcessor
 {
 public:
