@@ -1929,8 +1929,10 @@ inline void * operator new[](size_t nSize, const char * file, int line)
   { return PMemoryHeap::Allocate(nSize, file, line, NULL); }
 
 #ifndef __GNUC__
+P_PUSH_MSVC_WARNINGS(28251)
 void * operator new(size_t nSize);
 void * operator new[](size_t nSize);
+P_POP_MSVC_WARNINGS()
 
 void operator delete(void * ptr);
 void operator delete[](void * ptr);

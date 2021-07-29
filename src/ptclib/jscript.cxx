@@ -510,7 +510,11 @@ public:
     }
 
     if (value->IsBoolean()) {
+#if V8_MAJOR_VERSION > 8
+      var = PVarType(value->BooleanValue(m_isolate));
+#else
       var = ToVarType(BooleanValue, false);
+#endif
       PTRACE(5, "Got Boolean \"" << key << "\" = " << var);
       return true;
     }
@@ -769,7 +773,11 @@ public:
     // compile the source 
     v8::Local<v8::Script> script;
 #if V8_MAJOR_VERSION > 3
-    v8::Script::Compile(context, source).ToLocal(&script);
+    if (!v8::Script::Compile(context, source).ToLocal(&script)) {
+      PTRACE(3, "Could not compile source " << text.Left(100).ToLiteral());
+      m_owner.OnError(120, "Compile ToLocal failed");
+      return false;
+    }
 #else
     script = v8::Script::Compile(source);
 #endif
@@ -782,7 +790,11 @@ public:
     // run the code
     v8::Local<v8::Value> result;
 #if V8_MAJOR_VERSION > 3
-    script->Run(context).ToLocal(&result);
+    if (!script->Run(context).ToLocal(&result)) {
+      PTRACE(3, "Could not run source " << text.Left(100).ToLiteral());
+      m_owner.OnError(120, "Run ToLocal failed");
+      return false;
+    }
 #else
     result = script->Run();
 #endif

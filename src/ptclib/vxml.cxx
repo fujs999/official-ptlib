@@ -1213,16 +1213,32 @@ PBoolean PVXMLSession::LoadFile(const PFilePath & filename, const PString & firs
 }
 
 
+bool PVXMLSession::LoadResource(const PURL & url, PBYTEArray & data)
+{
+  if (url.GetScheme().NumCompare("http") != EqualTo)
+    return url.LoadResource(data);
+
+  PHTTPClient http;
+  PMIMEInfo outMIME, replyMIME;
+  m_cookies.AddCookie(outMIME, url);
+  if (!http.GetDocument(url, outMIME, replyMIME))
+    return false;
+
+  m_cookies.Parse(replyMIME, url);
+  SetVar("document.cookie", m_cookies.AsString());
+  return http.ReadContentBody(replyMIME, data);
+}
+
+
 PBoolean PVXMLSession::LoadURL(const PURL & url)
 {
   PTRACE(4, "Loading URL " << url);
 
   // retreive the document (may be a HTTP get)
-
-  PString xmlStr;
-  if (url.LoadResource(xmlStr)) {
+  PBYTEArray xmlData;
+  if (LoadResource(url, xmlData)) {
     m_rootURL = url;
-    return InternalLoadVXML(xmlStr, url.GetFragment());
+    return InternalLoadVXML(PString(xmlData), url.GetFragment());
   }
 
   PTRACE(1, "Cannot load document " << url);
@@ -2196,7 +2212,7 @@ PBoolean PVXMLSession::PlayElement(PXMLElement & element)
   }
 
   PBYTEArray data;
-  if (!url.LoadResource(data)) {
+  if (!LoadResource(url, data)) {
     PTRACE(2, "Cannot load resource " << url);
     return false;
   }

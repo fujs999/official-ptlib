@@ -812,7 +812,7 @@ protected:
   fd_set * set;
 
 private:
-  P_fd_set(const P_fd_set &) { }
+  P_fd_set(const P_fd_set &) : max_fd(), set() { }
   void operator=(const P_fd_set &) { }
 };
 

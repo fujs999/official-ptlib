@@ -81,17 +81,7 @@ class PKey : public PObject
      */
     virtual Comparison Compare(const PObject & obj) const
     {
-      const my_type * other = dynamic_cast<const my_type *>(&obj);
-      if (!PAssert(other != NULL, PInvalidCast))
-        return GreaterThan;
-
-      if (this->m_key < other->m_key)
-        return LessThan;
-
-      if (this->m_key > other->m_key)
-        return GreaterThan;
-
-      return EqualTo;
+      return Compare2(this->m_key, dynamic_cast<const my_type &>(obj).m_key);
     }
 
     /**This function calculates a hash table index value for the implementation
@@ -170,15 +160,23 @@ struct PHashTableElement
     PDECLARE_POOL_ALLOCATOR(PHashTableElement);
 };
 
+P_PUSH_MSVC_WARNINGS(26495)
 struct PHashTableList
 {
-  PHashTableList() : m_head(NULL), m_tail(NULL) { }
+  PHashTableList()
+    : m_head(NULL)
+    , m_tail(NULL)
+#if PTRACING
+    , m_size(0)
+#endif
+  { }
   PHashTableElement * m_head;
   PHashTableElement * m_tail;
 #if PTRACING
   PINDEX              m_size;
 #endif
 };
+P_POP_MSVC_WARNINGS()
 __inline std::ostream & operator<<(std::ostream & strm, const PHashTableList & hash) { return strm << (void *)hash.m_head; }
 
 class PHashTable;
@@ -190,9 +188,9 @@ class PHashTableInfo : public PBaseArray<PHashTableList>
     PCLASSINFO(PCharArray, ParentClass);
   public:
     PHashTableInfo(PINDEX initialSize = 0)
-      : ParentClass(initialSize) { }
+      : ParentClass(initialSize), deleteKeys(true) { }
     PHashTableInfo(PHashTableList const * buffer, PINDEX length, PBoolean dynamic = true)
-      : ParentClass(buffer, length, dynamic) { }
+      : ParentClass(buffer, length, dynamic), deleteKeys(true) { }
     virtual PObject * Clone() const { return PNEW PHashTableInfo(*this, GetSize()); }
     virtual ~PHashTableInfo() { Destruct(); }
     virtual void DestroyContents();
@@ -1169,8 +1167,10 @@ template <class K, class D> class PDictionary : public PAbstractDictionary
           }
         }
 
+        P_PUSH_MSVC_WARNINGS(6011)
         void Next() { this->SetElement(PAssertNULL(this->m_table)->NextElement(this->m_element)); }
         void Prev() { this->SetElement(PAssertNULL(this->m_table)->PrevElement(this->m_element)); }
+        P_POP_MSVC_WARNINGS()
 
       public:
         bool operator==(const iterator_base & it) const { return this->m_element == it.m_element; }

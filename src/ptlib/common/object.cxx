@@ -249,7 +249,7 @@ bool PAssertFunc(const PDebugLocation & location, PStandardAssertMessage msg)
     "Invalid or closed operating system window"
   };
 
-  if (msg < PMaxStandardAssertMessage)
+  if (msg >= 0 && msg < PMaxStandardAssertMessage)
     InternalAssertFunc(location, textmsg[msg]);
   else {
     char msgbuf[21];
