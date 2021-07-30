@@ -387,6 +387,8 @@ class PVXMLSession : public PIndirectChannel
     static bool SetSignLanguageAnalyser(const PString & dllName);
 #endif // P_VXML_VIDEO
 
+    PHTTPCookies GetCookies() const { PWaitAndSignal lock(m_cookieMutex);  return m_cookies; }
+
   protected:
     virtual bool InternalLoadVXML(const PString & xml, const PString & firstForm);
     virtual void InternalStartThread();
@@ -411,6 +413,7 @@ class PVXMLSession : public PIndirectChannel
 
     PURL             m_rootURL;
     PHTTPCookies     m_cookies;
+    PDECLARE_MUTEX(m_cookieMutex);
 
     PTextToSpeech  * m_textToSpeech;
     PVXMLCache     * m_ttsCache;
@@ -602,9 +605,9 @@ class PVXMLPlayableStop : public PVXMLPlayable
 
 //////////////////////////////////////////////////////////////////
 
-class PVXMLPlayableURL : public PVXMLPlayable
+class PVXMLPlayableHTTP : public PVXMLPlayable
 {
-  PCLASSINFO(PVXMLPlayableURL, PVXMLPlayable);
+  PCLASSINFO(PVXMLPlayableHTTP, PVXMLPlayable);
   public:
     virtual PBoolean Open(PVXMLChannel & chan, const PString & arg, PINDEX delay, PINDEX repeat, PBoolean autoDelete);
     virtual bool OnStart();
@@ -737,8 +740,6 @@ class PVXMLChannel : public PDelayChannel
     virtual PINDEX CreateSilenceFrame(void * buffer, PINDEX amount) = 0;
     virtual void GetBeepData(PBYTEArray &, unsigned) { }
 
-    virtual PBoolean QueueResource(const PURL & url, PINDEX repeat= 1, PINDEX delay = 0);
-
     virtual PBoolean QueuePlayable(const PString & type, const PString & str, PINDEX repeat = 1, PINDEX delay = 0, PBoolean autoDelete = false);
     virtual PBoolean QueuePlayable(PVXMLPlayable * newItem);
     virtual PBoolean QueueData(const PBYTEArray & data, PINDEX repeat = 1, PINDEX delay = 0);
@@ -754,6 +755,8 @@ class PVXMLChannel : public PDelayChannel
 
     void SetPause(PBoolean pause) { m_paused = pause; }
     void SetSilence(unsigned msecs);
+
+    PVXMLSession & GetSession() const { return *PAssertNULL(m_vxmlSession); }
 
   protected:
     PVXMLSession * m_vxmlSession;

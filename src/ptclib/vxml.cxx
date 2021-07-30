@@ -684,7 +684,7 @@ void PVXMLPlayableFile::OnStop()
 }
 
 
-PFACTORY_CREATE(PFactory<PVXMLPlayable>, PVXMLPlayableFile, "File");
+PFACTORY_CREATE(PFactory<PVXMLPlayable>, PVXMLPlayableFile, "file");
 
 
 ///////////////////////////////////////////////////////////////
@@ -876,7 +876,7 @@ PFACTORY_CREATE(PFactory<PVXMLPlayable>, PVXMLPlayableTone, "Tone");
 
 ///////////////////////////////////////////////////////////////
 
-PBoolean PVXMLPlayableURL::Open(PVXMLChannel & chan, const PString & url, PINDEX delay, PINDEX repeat, PBoolean autoDelete)
+PBoolean PVXMLPlayableHTTP::Open(PVXMLChannel & chan, const PString & url, PINDEX delay, PINDEX repeat, PBoolean autoDelete)
 {
   if (!m_url.Parse(url)) {
     PTRACE(2, "Invalid URL \"" << url << '"');
@@ -887,7 +887,7 @@ PBoolean PVXMLPlayableURL::Open(PVXMLChannel & chan, const PString & url, PINDEX
 }
 
 
-bool PVXMLPlayableURL::OnStart()
+bool PVXMLPlayableHTTP::OnStart()
 {
   if (PAssertNULL(m_vxmlChannel) == NULL)
     return false;
@@ -896,6 +896,7 @@ bool PVXMLPlayableURL::OnStart()
   PHTTPClient * client = new PHTTPClient;
   client->SetPersistent(false);
   PMIMEInfo outMIME, replyMIME;
+  m_vxmlChannel->GetSession().GetCookies().AddCookie(outMIME, m_url);
   int code = client->GetDocument(m_url, outMIME, replyMIME);
   if ((code != 200) || (replyMIME(PHTTP::TransferEncodingTag()) *= PHTTP::ChunkedTag())) {
     delete client;
@@ -906,7 +907,8 @@ bool PVXMLPlayableURL::OnStart()
   return m_vxmlChannel->SetReadChannel(client, false);
 }
 
-PFACTORY_CREATE(PFactory<PVXMLPlayable>, PVXMLPlayableURL, "URL");
+PFACTORY_CREATE(PFactory<PVXMLPlayable>, PVXMLPlayableHTTP, "http");
+PFACTORY_SYNONYM(PFactory<PVXMLPlayable>, PVXMLPlayableHTTP, HTTPS, "https");
 
 
 ///////////////////////////////////////////////////////////////
@@ -1220,12 +1222,19 @@ bool PVXMLSession::LoadResource(const PURL & url, PBYTEArray & data)
 
   PHTTPClient http;
   PMIMEInfo outMIME, replyMIME;
+
+  m_cookieMutex.Wait();
   m_cookies.AddCookie(outMIME, url);
+  m_cookieMutex.Signal();
+
   if (!http.GetDocument(url, outMIME, replyMIME))
     return false;
 
+  m_cookieMutex.Wait();
   m_cookies.Parse(replyMIME, url);
   SetVar("document.cookie", m_cookies.AsString());
+  m_cookieMutex.Signal();
+
   return http.ReadContentBody(replyMIME, data);
 }
 
@@ -1255,6 +1264,8 @@ PBoolean PVXMLSession::LoadVXML(const PString & xmlText, const PString & firstFo
 
 bool PVXMLSession::InternalLoadVXML(const PString & xmlText, const PString & firstForm)
 {
+  PTRACE(5, "Loading VXML: " << xmlText.length() << " bytes\n" << xmlText);
+
   PWaitAndSignal mutex(m_sessionMutex);
 
   m_speakNodeData = true;
@@ -2257,7 +2268,7 @@ PBoolean PVXMLSession::PlayStop()
 
 PBoolean PVXMLSession::PlayResource(const PURL & url, PINDEX repeat, PINDEX delay)
 {
-  return IsOpen() && !m_bargingIn && GetVXMLChannel()->QueueResource(url, repeat, delay);
+  return IsOpen() && !m_bargingIn && GetVXMLChannel()->QueuePlayable(url.GetScheme().ToLower(), url.AsFilePath(), repeat, delay, false);
 }
 
 
@@ -3419,8 +3430,8 @@ bool PVXMLDigitsGrammar::IsFilled()
   PINDEX len = m_value.GetLength();
   bool filled = len >= m_minDigits && len <= m_maxDigits;
 
-  PTRACE(4, " Grammar " << *this << (filled ? " has been FILLED" : " has NOT yet been filled") << "."
-            " Collected value=" << m_value << ", length: " << len << ", while min=" << m_minDigits << " max=" << m_maxDigits);
+  PTRACE(4, "Grammar " << *this << (filled ? " has been FILLED" : " has NOT yet been filled") << ":"
+            " value=" << m_value << ", length=" << len << ", min=" << m_minDigits << ", max=" << m_maxDigits);
 
   return filled;
 }
@@ -3756,8 +3767,12 @@ PBoolean PVXMLChannel::QueuePlayable(const PString & type,
 
   PVXMLPlayable * item = PFactory<PVXMLPlayable>::CreateInstance(type);
   if (item == NULL) {
-    PTRACE(2, "Cannot find playable of type " << type);
-    return false;
+    PURL url(arg);
+    PBYTEArray data;
+    if (!url.LoadResource(data)) {
+      PTRACE(2, "Cannot find playable of type " << type);
+      return false;
+    }
   }
 
   if (item->Open(*this, arg, delay, repeat, autoDelete)) {
@@ -3782,15 +3797,6 @@ PBoolean PVXMLChannel::QueuePlayable(PVXMLPlayable * newItem)
   m_playQueue.Enqueue(newItem);
   m_playQueueMutex.Signal();
   return true;
-}
-
-
-PBoolean PVXMLChannel::QueueResource(const PURL & url, PINDEX repeat, PINDEX delay)
-{
-  if (url.GetScheme() *= "file")
-    return QueuePlayable("File", url.AsFilePath(), repeat, delay, false);
-  else
-    return QueuePlayable("URL", url.AsString(), repeat, delay);
 }
 
 
