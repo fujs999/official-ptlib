@@ -332,14 +332,15 @@ class PVXMLSession : public PIndirectChannel
     void SetTransferComplete(bool state);
 
     PStringToString GetVariables() const;
-    virtual PCaselessString GetVar(const PString & str) const;
-    virtual void SetVar(const PString & ostr, const PString & val);
+    virtual PCaselessString GetVar(const PString & varName) const;
+    virtual bool SetVar(const PString & scopedVarName, const PString & val);
     virtual PString EvaluateExpr(const PString & oexpr);
 
     static PTimeInterval StringToTime(const PString & str, int dflt = 0);
 
     bool SetCurrentForm(const PString & id, bool fullURI);
     bool GoToEventHandler(PXMLElement & element, const PString & eventName);
+    bool ThrowSemanticError(PXMLElement & element, const PString & reason);
     PXMLElement * FindElementWithCount(PXMLElement & parent, const PString & name, unsigned count);
 
     // overrides from VXMLChannelInterface
@@ -348,6 +349,7 @@ class PVXMLSession : public PIndirectChannel
 
 
     virtual PBoolean TraverseBlock(PXMLElement & element);
+    virtual PBoolean TraversedBlock(PXMLElement & element);
     virtual PBoolean TraverseAudio(PXMLElement & element);
     virtual PBoolean TraverseBreak(PXMLElement & element);
     virtual PBoolean TraverseValue(PXMLElement & element);
@@ -362,6 +364,7 @@ class PVXMLSession : public PIndirectChannel
     virtual PBoolean TraverseElse(PXMLElement & element);
     virtual PBoolean TraverseExit(PXMLElement & element);
     virtual PBoolean TraverseVar(PXMLElement & element);
+    virtual PBoolean TraverseAssign(PXMLElement & element);
     virtual PBoolean TraverseSubmit(PXMLElement & element);
     virtual PBoolean TraverseMenu(PXMLElement & element);
     virtual PBoolean TraversedMenu(PXMLElement & element);
@@ -387,11 +390,17 @@ class PVXMLSession : public PIndirectChannel
     static bool SetSignLanguageAnalyser(const PString & dllName);
 #endif // P_VXML_VIDEO
 
+    PHTTPCookies GetCookies() const { PWaitAndSignal lock(m_cookieMutex);  return m_cookies; }
+
   protected:
     virtual bool InternalLoadVXML(const PString & xml, const PString & firstForm);
     virtual void InternalStartThread();
     virtual void InternalThreadMain();
     virtual void InternalStartVXML();
+    virtual void InternalSetVar(const PString & scope, const PString & name, const PString & expr, bool evaluate = false);
+    virtual PCaselessString InternalGetVar(const PString & scope, const PString & name) const;
+    virtual bool InternalParseVar(const PString & varName, bool notVarElement, PString & scope, PString & name) const;
+    virtual void InternalPopScope();
 
     virtual bool ProcessNode();
     virtual bool ProcessEvents();
@@ -410,7 +419,9 @@ class PVXMLSession : public PIndirectChannel
     PDECLARE_MUTEX(m_sessionMutex);
 
     PURL             m_rootURL;
+    PURL             m_documentURL;
     PHTTPCookies     m_cookies;
+    PDECLARE_MUTEX(m_cookieMutex);
 
     PTextToSpeech  * m_textToSpeech;
     PVXMLCache     * m_ttsCache;
@@ -476,7 +487,7 @@ class PVXMLSession : public PIndirectChannel
     char             m_defaultMenuDTMF;
 
     PStringToString  m_variables;
-    PString          m_variableScope;
+    PStringList      m_variableScopes;
 #if P_SCRIPTS
     PScriptLanguage *m_scriptContext;
 #endif
@@ -504,6 +515,7 @@ class PVXMLSession : public PIndirectChannel
     PTime m_transferStartTime;
 
     friend class PVXMLChannel;
+    friend class PVXMLGrammar;
     friend class VideoReceiverDevice;
     friend class PVXMLTraverseEvent;
 };
@@ -602,9 +614,9 @@ class PVXMLPlayableStop : public PVXMLPlayable
 
 //////////////////////////////////////////////////////////////////
 
-class PVXMLPlayableURL : public PVXMLPlayable
+class PVXMLPlayableHTTP : public PVXMLPlayable
 {
-  PCLASSINFO(PVXMLPlayableURL, PVXMLPlayable);
+  PCLASSINFO(PVXMLPlayableHTTP, PVXMLPlayable);
   public:
     virtual PBoolean Open(PVXMLChannel & chan, const PString & arg, PINDEX delay, PINDEX repeat, PBoolean autoDelete);
     virtual bool OnStart();
@@ -737,8 +749,6 @@ class PVXMLChannel : public PDelayChannel
     virtual PINDEX CreateSilenceFrame(void * buffer, PINDEX amount) = 0;
     virtual void GetBeepData(PBYTEArray &, unsigned) { }
 
-    virtual PBoolean QueueResource(const PURL & url, PINDEX repeat= 1, PINDEX delay = 0);
-
     virtual PBoolean QueuePlayable(const PString & type, const PString & str, PINDEX repeat = 1, PINDEX delay = 0, PBoolean autoDelete = false);
     virtual PBoolean QueuePlayable(PVXMLPlayable * newItem);
     virtual PBoolean QueueData(const PBYTEArray & data, PINDEX repeat = 1, PINDEX delay = 0);
@@ -754,6 +764,8 @@ class PVXMLChannel : public PDelayChannel
 
     void SetPause(PBoolean pause) { m_paused = pause; }
     void SetSilence(unsigned msecs);
+
+    PVXMLSession & GetSession() const { return *PAssertNULL(m_vxmlSession); }
 
   protected:
     PVXMLSession * m_vxmlSession;
