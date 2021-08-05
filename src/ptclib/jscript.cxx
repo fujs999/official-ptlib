@@ -165,9 +165,9 @@ PFACTORY_CREATE(PFactory<PScriptLanguage>, PJavaScript, JavaName, false);
 
 
 #if PTRACING && V8_MAJOR_VERSION > 3
-static void LogEventCallback(const char * PTRACE_PARAM(name), int PTRACE_PARAM(event))
+static void LogEventCallback(const char * PTRACE_PARAM(name), int PTRACE_PARAM(startEnd))
 {
-  PTRACE(4, "V8-Log", "Event=" << event << " - " << name);
+  PTRACE(5, "V8-Log", name << ' '  << (startEnd == 0 ? "started" : "ended"));
 }
 
 static void TraceFunction(const v8::FunctionCallbackInfo<v8::Value>& args)
