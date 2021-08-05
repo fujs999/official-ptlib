@@ -41,10 +41,13 @@ pipeline {
           branch 'release/*'
         }
       }
-      agent { label 'Nexus' }
-      options { skipDefaultCheckout() }
+      agent {
+        dockerfile {
+          filename 'publish.Dockerfile'
+        }
+      }
       environment {
-        BASE_PATH = '/var/www/html/yum'
+        BASE_PATH = './local_repo'
       }
       steps {
         script {
@@ -52,19 +55,25 @@ pipeline {
           for (int i = 0; i < dists.size(); ++i) {
             env.REPO = "${dists[i]}/"
 
-            if (env.BRANCH_NAME == 'develop') {
-              env.REPO += 'mcu-develop'
-            } else {
+            if (env.BRANCH_NAME ==~ /release\/.*/) {
               env.REPO += 'mcu-release'
+            } else if (env.BRANCH_NAME ==~ /epic\/.*/) {
+              env.REPO += 'mcu-epic'
+            } else {
+              env.REPO += 'mcu-develop'
             }
 
             sh "rm -rf rpmbuild"
             unstash "${dists[i]}_rpms"
-            sh "aws s3 sync --acl public-read rpmbuild/RPMS/x86_64 s3://citc-artifacts/yum/$REPO/base/"
-            sh "mv rpmbuild/RPMS/x86_64/* $BASE_PATH/$REPO/base/"
-            // Update Nexus repository metadata
-            sh "createrepo --update $BASE_PATH/$REPO"
-            sh "aws s3 sync --acl public-read --delete $BASE_PATH/$REPO/repodata s3://citc-artifacts/yum/$REPO/repodata/"
+            withAWS(credentials: 'aws-dev', region: 'us-east-1') {
+              sh """
+                aws s3 sync --no-progress --acl public-read s3://citc-artifacts/yum/$REPO/ $BASE_PATH
+                repomanage --keep=5 --old $BASE_PATH | xargs rm -f no_such_file_as_this_to_prevent_error
+                mv rpmbuild/RPMS/x86_64/* $BASE_PATH/base/
+                createrepo --update $BASE_PATH
+                aws s3 sync --no-progress --acl public-read --delete $BASE_PATH s3://citc-artifacts/yum/$REPO/
+              """
+            }
           }
         }
       }

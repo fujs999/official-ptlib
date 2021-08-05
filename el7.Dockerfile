@@ -35,8 +35,8 @@ RUN mkdir /tmp/std-deps \
     && ([ -z "$(ls -A /tmp/std-deps/*.rpm)" ] || yum install -y /tmp/std-deps/*.rpm) \
     && yum clean all
 # Invalidate Docker cache if our yum repo metadata has changed (don't care about standard repos)
-ADD http://nexus.bbcollab.net/yum/el7/mcu-release/repodata/repomd.xml /tmp/mcu-release.xml
-ADD http://nexus.bbcollab.net/yum/el7/mcu-develop/repodata/repomd.xml /tmp/mcu-develop.xml
+ADD https://citc-artifacts.s3.amazonaws.com/yum/el7/mcu-release/repodata/repomd.xml /tmp/mcu-release.xml
+ADD https://citc-artifacts.s3.amazonaws.com/yum/el7/mcu-develop/repodata/repomd.xml /tmp/mcu-develop.xml
 # Download internal dependencies referenced by the spec file
 RUN mkdir /tmp/build-deps \
     && touch /tmp/build-deps/placeholder \
