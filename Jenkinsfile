@@ -73,6 +73,7 @@ pipeline {
                 createrepo --update $BASE_PATH
                 aws s3 sync --no-progress --acl public-read --delete $BASE_PATH s3://citc-artifacts/yum/$REPO/
               """
+            }
           }
         }
       }
