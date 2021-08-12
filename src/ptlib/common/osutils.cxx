@@ -4260,6 +4260,37 @@ PReadWriteMutex::~PReadWriteMutex()
 }
 
 
+PReadWriteMutex::Nest::Nest()
+  : m_readerCount(0)
+  , m_writerCount(0)
+  , m_waiting(false)
+  , m_startHeldCycle(0)
+  , m_uniqueId(PThread::GetCurrentUniqueIdentifier())
+{
+}
+
+
+PReadWriteMutex::Nest::Nest(const Nest & other)
+  : m_readerCount(other.m_readerCount.load())
+  , m_writerCount(other.m_writerCount.load())
+  , m_waiting(other.m_waiting.load())
+  , m_startHeldCycle(other.m_startHeldCycle.load())
+  , m_uniqueId(other.m_uniqueId.load())
+{
+}
+
+
+PReadWriteMutex::Nest & PReadWriteMutex::Nest::operator=(const Nest & other)
+{
+  m_readerCount = other.m_readerCount.load();
+  m_writerCount = other.m_writerCount.load();
+  m_waiting = other.m_waiting.load();
+  m_startHeldCycle = other.m_startHeldCycle.load();
+  m_uniqueId = other.m_uniqueId.load();
+  return *this;
+}
+
+
 PReadWriteMutex::Nest * PReadWriteMutex::GetNest()
 {
   PWaitAndSignal mutex(m_nestingMutex);
