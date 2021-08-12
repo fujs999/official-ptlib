@@ -43,7 +43,7 @@ class PMutexExcessiveLockInfo
   protected:
     PDebugLocation m_location;
     unsigned       m_excessiveLockTimeout;
-    mutable bool   m_excessiveLockActive;
+    mutable atomic<bool> m_excessiveLockActive;
     uint64_t       m_startHeldSamplePoint;
 
     PMutexExcessiveLockInfo();

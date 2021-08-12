@@ -3850,7 +3850,7 @@ void PMutexExcessiveLockInfo::ReleasedLock(const PObject & mutex,
                                            bool,
                                            const PDebugLocation & PTRACE_PARAM(location))
 {
-  if (m_excessiveLockActive) {
+  if (m_excessiveLockActive.exchange(false)) {
 #if PTRACING
     PTime releaseTime;
     PNanoSeconds heldDuration(PProfiling::CyclesToNanoseconds(PProfiling::GetCycles() - startHeldSamplePoint));
@@ -3877,7 +3877,6 @@ void PMutexExcessiveLockInfo::ReleasedLock(const PObject & mutex,
 #else
     PAssertAlways(PSTRSTRM("Released phantom deadlock in mutex " << mutex));
 #endif
-    m_excessiveLockActive = false;
   }
 }
 
@@ -4282,8 +4281,14 @@ PReadWriteMutex::~PReadWriteMutex()
      done by the user of the class too, but it is easier to fix here than
      there so practicality wins out!
    */
-  while (!m_nestedThreads.empty())
+  for (;;) {
+    m_nestingMutex.Wait();
+    bool empty = m_nestedThreads.empty();
+    m_nestingMutex.Signal();
+    if (empty)
+      break;
     PThread::Sleep(10);
+  }
 
   PMUTEX_DESTROYED();
 }
