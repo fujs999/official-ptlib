@@ -146,11 +146,25 @@ Default variables:
 
 //////////////////////////////////////////////////////////////////
 
-class PVXMLGrammar : public PObject
+struct PVXMLGrammarInit
 {
-  PCLASSINFO(PVXMLGrammar, PObject);
+  PVXMLSession & m_session;
+  PXMLElement  & m_field;
+  PXMLElement  * m_grammarElement;
+
+  PVXMLGrammarInit(PVXMLSession & session, PXMLElement & field, PXMLElement  * grammar = NULL)
+    :m_session(session)
+    , m_field(field)
+    , m_grammarElement(grammar)
+  { }
+};
+
+
+class PVXMLGrammar : public PObject, protected PVXMLGrammarInit
+{
+    PCLASSINFO(PVXMLGrammar, PObject);
   public:
-    PVXMLGrammar(PVXMLSession & session, PXMLElement & field);
+    PVXMLGrammar(const PVXMLGrammarInit & init);
 
     virtual void OnUserInput(const char ch) = 0;
     virtual void Start();
@@ -159,10 +173,13 @@ class PVXMLGrammar : public PObject
     enum GrammarState {
       Idle,         ///< Not yet started
       Started,      ///< Grammar awaiting input
+      PartFill,     ///< If times out goes to Filled rather than NoInput
       Filled,       ///< got something that matched the grammar
       NoInput,      ///< timeout or still waiting to match
       NoMatch,      ///< recognized something but didn't match the grammar
-      Help          ///< help keyword
+      Help,         ///< help keyword
+      Illegal,      ///< Illegal, could not be initialised
+      BadFetch      ///< Could not get dependent resource
     };
 
     GrammarState GetState() const { return m_state; }
@@ -174,10 +191,6 @@ class PVXMLGrammar : public PObject
   protected:
     PDECLARE_NOTIFIER(PTimer, PVXMLGrammar, OnTimeout);
 
-	virtual bool IsFilled() { return false; }
-
-    PVXMLSession & m_session;
-    PXMLElement  & m_field;
     PString        m_value;
     GrammarState   m_state;
     PTimeInterval  m_timeout;
@@ -185,14 +198,16 @@ class PVXMLGrammar : public PObject
     PDECLARE_MUTEX(m_mutex);
 };
 
+typedef PParamFactory<PVXMLGrammar, PVXMLGrammarInit, PCaselessString> PVXMLGrammarFactory;
+
 
 //////////////////////////////////////////////////////////////////
 
 class PVXMLMenuGrammar : public PVXMLGrammar
 {
-  PCLASSINFO(PVXMLMenuGrammar, PVXMLGrammar);
+    PCLASSINFO(PVXMLMenuGrammar, PVXMLGrammar);
   public:
-    PVXMLMenuGrammar(PVXMLSession & session, PXMLElement & field);
+    PVXMLMenuGrammar(const PVXMLGrammarInit & init);
     virtual void OnUserInput(const char ch);
     virtual bool Process();
 };
@@ -202,24 +217,57 @@ class PVXMLMenuGrammar : public PVXMLGrammar
 
 class PVXMLDigitsGrammar : public PVXMLGrammar
 {
-  PCLASSINFO(PVXMLDigitsGrammar, PVXMLGrammar);
+    PCLASSINFO(PVXMLDigitsGrammar, PVXMLGrammar);
   public:
-    PVXMLDigitsGrammar(
-      PVXMLSession & session,
-      PXMLElement & field,
-      PINDEX minDigits,
-      PINDEX maxDigits,
-      PString terminators
-    );
+    PVXMLDigitsGrammar(const PVXMLGrammarInit & init);
 
     virtual void OnUserInput(const char ch);
 
-	virtual bool IsFilled();
+  protected:
+    unsigned m_minDigits;
+    unsigned m_maxDigits;
+    PString  m_terminators;
+};
+
+
+//////////////////////////////////////////////////////////////////
+
+class PVXMLBooleanGrammar : public PVXMLGrammar
+{
+    PCLASSINFO(PVXMLBooleanGrammar, PVXMLGrammar);
+  public:
+    PVXMLBooleanGrammar(const PVXMLGrammarInit & init);
+
+    virtual void OnUserInput(const char ch);
+};
+
+
+//////////////////////////////////////////////////////////////////
+
+class PVXMLGrammarSRGS : public PVXMLGrammar
+{
+    PCLASSINFO(PVXMLGrammarSRGS, PVXMLGrammar);
+  public:
+    PVXMLGrammarSRGS(const PVXMLGrammarInit & init);
+
+    virtual void OnUserInput(const char ch);
 
   protected:
-    PINDEX  m_minDigits;
-    PINDEX  m_maxDigits;
-    PString m_terminators;
+    struct Item
+    {
+      unsigned          m_minRepeat;
+      unsigned          m_maxRepeat;
+      PString           m_token;
+      unsigned          m_currentItem;
+      typedef std::vector<std::vector<Item>> Items;
+      Items m_items; // A sequence of alternatives
+
+      Item() : m_minRepeat(1), m_maxRepeat(1), m_currentItem(0) { }
+      bool Parse(PXMLElement & grammar, PXMLElement * element);
+      GrammarState OnUserInput(const PString & str);
+    };
+
+    Item m_rule;
 };
 
 
@@ -295,8 +343,6 @@ class PVXMLSession : public PIndirectChannel
     PVXMLChannel * GetAndLockVXMLChannel();
     void UnLockVXMLChannel() { m_sessionMutex.Signal(); }
     PMutex & GetSessionMutex() { return m_sessionMutex; }
-
-    virtual PBoolean LoadGrammar(PVXMLGrammar * grammar);
 
     virtual PBoolean PlayText(const PString & text, PTextToSpeech::TextType type = PTextToSpeech::Default, PINDEX repeat = 1, PINDEX delay = 0);
 
@@ -483,8 +529,12 @@ class PVXMLSession : public PIndirectChannel
     std::map<std::string, unsigned> m_eventCount;
     unsigned                    m_promptCount;
 
-    PVXMLGrammar *   m_grammar;
-    char             m_defaultMenuDTMF;
+    virtual void LoadGrammar(const PString & type, const PVXMLGrammarInit & init);
+    void ClearGrammars();
+    bool IsGrammarRunning() const;
+    typedef PList<PVXMLGrammar> Grammars;
+    Grammars m_grammars;
+    char     m_defaultMenuDTMF;
 
     PStringToString  m_variables;
     PStringList      m_variableScopes;
@@ -516,6 +566,7 @@ class PVXMLSession : public PIndirectChannel
 
     friend class PVXMLChannel;
     friend class PVXMLGrammar;
+    friend class PVXMLGrammarSRGS;
     friend class VideoReceiverDevice;
     friend class PVXMLTraverseEvent;
 };

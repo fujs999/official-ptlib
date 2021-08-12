@@ -341,11 +341,11 @@ class PReadWriteMutex : public PObject, public PMutexExcessiveLockInfo
 #endif
     struct Nest
     {
-      unsigned m_readerCount;
-      unsigned m_writerCount;
-      bool     m_waiting;
-      uint64_t m_startHeldCycle;
-      PUniqueThreadIdentifier m_uniqueId;
+      atomic<unsigned> m_readerCount;
+      atomic<unsigned> m_writerCount;
+      atomic<bool>     m_waiting;
+      atomic<uint64_t> m_startHeldCycle;
+      atomic<PUniqueThreadIdentifier> m_uniqueId;
 
       Nest()
         : m_readerCount(0)
@@ -353,6 +353,13 @@ class PReadWriteMutex : public PObject, public PMutexExcessiveLockInfo
         , m_waiting(false)
         , m_startHeldCycle(0)
         , m_uniqueId(PThread::GetCurrentUniqueIdentifier())
+      { }
+      Nest(const Nest & other)
+        : m_readerCount(other.m_readerCount.load())
+        , m_writerCount(other.m_writerCount.load())
+        , m_waiting(other.m_waiting.load())
+        , m_startHeldCycle(other.m_startHeldCycle.load())
+        , m_uniqueId(other.m_uniqueId.load())
       { }
     };
     typedef std::map<PThreadIdentifier, Nest> NestMap;
