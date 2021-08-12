@@ -327,10 +327,9 @@
           }
 
           int addressCount = backtrace(m_addresses.data(), m_addresses.size());
-          m_addresses.resize(addressCount < 0 ? 0 : addressCount);
 
           pthread_mutex_lock(&m_condMutex);
-          m_addressCount = m_addresses.size();
+          m_addressCount = addressCount < 0 ? 0 : addressCount;
           pthread_cond_signal(&m_condVar);
           pthread_mutex_unlock(&m_condMutex);
         }
