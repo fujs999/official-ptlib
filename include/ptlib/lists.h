@@ -353,9 +353,9 @@ template <class T> class PList : public PAbstractList
         iterator_base(PListElement * e) : element(e) { }
         PListElement * element;
 
-        void Next() { this->element = PAssertNULL(this->element)->next; }
-        void Prev() { this->element = PAssertNULL(this->element)->prev; }
-        value_type * Ptr() const { return  dynamic_cast<value_type *>(PAssertNULL(this->element)->data); }
+        void Next() { if (PAssertNULL(this->element)) this->element = this->element->next; }
+        void Prev() { if (PAssertNULL(this->element)) this->element = this->element->prev; }
+        value_type * Ptr() const { return PAssertNULL(this->element) ? dynamic_cast<value_type *>(PAssertNULL(this->element)->data) : NULL; }
 
       public:
         bool operator==(const iterator_base & it) const { return this->element == it.element; }

@@ -385,13 +385,18 @@ class PSafeLockReadWrite : public PSafeLockBase
   #define P_INSTRUMENTED_LOCK_READ_ONLY2(var, obj)  PSafeLockReadOnly  var((obj))
   #define P_INSTRUMENTED_LOCK_READ_WRITE2(var, obj) PSafeLockReadWrite var((obj))
 #endif // P_TRACING
+
+#define P_MAKE_UNIQUE_VAR(base) P_MAKE_UNIQUE_VAR1(base, __LINE__)
+#define P_MAKE_UNIQUE_VAR1(base, line) P_MAKE_UNIQUE_VAR2(base, line)
+#define P_MAKE_UNIQUE_VAR2(base, line)  base##line
+
 #define P_READ_WRITE_RETURN_ARG_0()
-#define P_READ_WRITE_RETURN_ARG_1(arg) ; if (!lock##__LINE__.IsLocked()) arg
+#define P_READ_WRITE_RETURN_ARG_1(arg) ; if (!P_MAKE_UNIQUE_VAR(lock).IsLocked()) arg
 #define P_READ_WRITE_RETURN_PART1(narg, args) P_READ_WRITE_RETURN_PART2(narg, args)
 #define P_READ_WRITE_RETURN_PART2(narg, args) P_READ_WRITE_RETURN_ARG_##narg args
 
-#define P_INSTRUMENTED_LOCK_READ_ONLY(...)  P_INSTRUMENTED_LOCK_READ_ONLY2(lock##__LINE__,*this) P_READ_WRITE_RETURN_PART1(PARG_COUNT(__VA_ARGS__), (__VA_ARGS__))
-#define P_INSTRUMENTED_LOCK_READ_WRITE(...) P_INSTRUMENTED_LOCK_READ_WRITE2(lock##__LINE__,*this) P_READ_WRITE_RETURN_PART1(PARG_COUNT(__VA_ARGS__), (__VA_ARGS__))
+#define P_INSTRUMENTED_LOCK_READ_ONLY(...)  P_INSTRUMENTED_LOCK_READ_ONLY2(P_MAKE_UNIQUE_VAR(lock),*this) P_READ_WRITE_RETURN_PART1(PARG_COUNT(__VA_ARGS__), (__VA_ARGS__))
+#define P_INSTRUMENTED_LOCK_READ_WRITE(...) P_INSTRUMENTED_LOCK_READ_WRITE2(P_MAKE_UNIQUE_VAR(lock),*this) P_READ_WRITE_RETURN_PART1(PARG_COUNT(__VA_ARGS__), (__VA_ARGS__))
 
 
 /** This class defines a thread-safe collection of objects.
