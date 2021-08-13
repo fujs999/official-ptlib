@@ -170,7 +170,7 @@ class PVXMLGrammar : public PObject, protected PVXMLGrammarInit
     virtual void Start();
     virtual bool Process();
 
-    enum GrammarState {
+    P_DECLARE_TRACED_ENUM(GrammarState,
       Idle,         ///< Not yet started
       Started,      ///< Grammar awaiting input
       PartFill,     ///< If times out goes to Filled rather than NoInput
@@ -180,13 +180,12 @@ class PVXMLGrammar : public PObject, protected PVXMLGrammarInit
       Help,         ///< help keyword
       Illegal,      ///< Illegal, could not be initialised
       BadFetch      ///< Could not get dependent resource
-    };
+    );
 
     GrammarState GetState() const { return m_state; }
     void SetIdle() { m_state = Idle; }
 
-    void SetSessionTimeout();
-    void SetTimeout(const PTimeInterval & timeout);
+    void SetTimeout(const PString & timeout);
 
   protected:
     PDECLARE_NOTIFIER(PTimer, PVXMLGrammar, OnTimeout);
@@ -447,6 +446,7 @@ class PVXMLSession : public PIndirectChannel
     virtual PCaselessString InternalGetVar(const PString & scope, const PString & name) const;
     virtual bool InternalParseVar(const PString & varName, bool notVarElement, PString & scope, PString & name) const;
     virtual void InternalPopScope();
+    virtual PString InternalGetName(PXMLElement & element);
 
     virtual bool ProcessNode();
     virtual bool ProcessEvents();
@@ -525,9 +525,9 @@ class PVXMLSession : public PIndirectChannel
     bool             m_speakNodeData;
     bool             m_bargeIn;
     bool             m_bargingIn;
-
+    PStringSet       m_dialogFieldNames;
+    unsigned         m_promptCount;
     std::map<std::string, unsigned> m_eventCount;
-    unsigned                    m_promptCount;
 
     virtual void LoadGrammar(const PString & type, const PVXMLGrammarInit & init);
     void ClearGrammars();
@@ -743,7 +743,6 @@ class PVXMLPlayableFileList : public PVXMLPlayableFile
   public:
     PVXMLPlayableFileList();
     virtual PBoolean Open(PVXMLChannel & chan, const PString & arg, PINDEX delay, PINDEX repeat, PBoolean autoDelete);
-    virtual PBoolean Open(PVXMLChannel & chan, const PStringArray & filenames, PINDEX delay, PINDEX repeat, PBoolean autoDelete);
     virtual bool OnStart();
     virtual bool OnRepeat();
     virtual void OnStop();
@@ -803,12 +802,6 @@ class PVXMLChannel : public PDelayChannel
     virtual PBoolean QueuePlayable(const PString & type, const PString & str, PINDEX repeat = 1, PINDEX delay = 0, PBoolean autoDelete = false);
     virtual PBoolean QueuePlayable(PVXMLPlayable * newItem);
     virtual PBoolean QueueData(const PBYTEArray & data, PINDEX repeat = 1, PINDEX delay = 0);
-
-    virtual PBoolean QueueFile(const PString & fn, PINDEX repeat = 1, PINDEX delay = 0, PBoolean autoDelete = false)
-    { return QueuePlayable("File", fn, repeat, delay, autoDelete); }
-
-    virtual PBoolean QueueCommand(const PString & cmd, PINDEX repeat = 1, PINDEX delay = 0)
-    { return QueuePlayable("Command", cmd, repeat, delay, true); }
 
     virtual void FlushQueue();
     virtual PBoolean IsPlaying() const { return m_currentPlayItem != NULL || m_playQueue.GetSize() > 0; }
