@@ -94,7 +94,7 @@ pipeline {
       }
       steps {
         // Set the key to do the git push to "THis is probably Geo's key!"
-        sshagent(['9a03ea9a-2af6-4f40-a178-6231e71d8dab']) {
+        sshagent(credentials: ['collab_build_service_account']) {
           sh """
             major=`sed -n 's/%global *version_major *//p' bbcollab-ptlib.spec`
             minor=`sed -n 's/%global *version_minor *//p' bbcollab-ptlib.spec`
