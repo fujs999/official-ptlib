@@ -65,14 +65,16 @@ pipeline {
 
             sh "rm -rf rpmbuild"
             unstash "${dists[i]}_rpms"
-            withAWS(credentials: 'aws-dev', region: 'us-east-1') {
-              sh """
-                aws s3 sync --no-progress --acl public-read s3://citc-artifacts/yum/$REPO/ $BASE_PATH
-                repomanage --keep=5 --old $BASE_PATH | xargs rm -f no_such_file_as_this_to_prevent_error
-                mv rpmbuild/RPMS/x86_64/* $BASE_PATH/base/
-                createrepo --update $BASE_PATH
-                aws s3 sync --no-progress --acl public-read --delete $BASE_PATH s3://citc-artifacts/yum/$REPO/
-              """
+            lock('aws-s3-citc-artifacts') {
+              withAWS(credentials: 'aws-dev', region: 'us-east-1') {
+                sh """
+                  aws s3 sync --no-progress --acl public-read s3://citc-artifacts/yum/$REPO/ $BASE_PATH
+                  repomanage --keep=5 --old $BASE_PATH | xargs rm -f no_such_file_as_this_to_prevent_error
+                  mv rpmbuild/RPMS/x86_64/* $BASE_PATH/base/
+                  createrepo --update $BASE_PATH
+                  aws s3 sync --no-progress --acl public-read --delete $BASE_PATH s3://citc-artifacts/yum/$REPO/
+                """
+              }
             }
           }
         }
@@ -93,7 +95,7 @@ pipeline {
         branch 'release/*'
       }
       steps {
-        // Set the key to do the git push to "THis is probably Geo's key!"
+        // Set the key to do the git push
         sshagent(credentials: ['collab_build_service_account']) {
           sh """
             major=`sed -n 's/%global *version_major *//p' bbcollab-ptlib.spec`
