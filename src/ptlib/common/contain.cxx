@@ -2331,7 +2331,7 @@ PString PString::ToLiteral(bool ascii) const
       strm << "\\\"";
     else if (*p == '\\')
       strm << "\\\\";
-    else if (isprint(*p) || (!ascii && (*p & 0x80) != 0))
+    else if (isprint(*p & 0xff) || (!ascii && (*p & 0x80) != 0))
       strm << *p;
     else {
       PINDEX i;
