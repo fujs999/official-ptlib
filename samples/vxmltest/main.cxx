@@ -396,7 +396,7 @@ void TestInstance::CopyVideoReceiver()
 #endif
 
 #else
-#pragma message("Cannot compile test application without XML support!")
+#pragma message("Cannot compile test application without VXML support!")
 
 void VxmlTest::Main()
 {

@@ -40,6 +40,7 @@
 #include <ptclib/random.h>
 #include <ptclib/http.h>
 #include <ptclib/mediafile.h>
+#include <ptclib/simplescript.h>
 #include <ptclib/SignLanguageAnalyser.h>
 
 
@@ -1113,9 +1114,7 @@ PVXMLSession::PVXMLSession(PTextToSpeech * tts, PBoolean autoDelete)
   , m_bargingIn(false)
   , m_promptCount(0)
   , m_defaultMenuDTMF('N') /// Disabled
-#if P_SCRIPTS
-  , m_scriptContext(NULL)
-#endif
+  , m_scriptContext(PScriptLanguage::Create(PSimpleScript::LanguageName()))
   , m_recordingStatus(NotRecording)
   , m_recordStopOnDTMF(false)
   , m_recordingStartTime(0)
@@ -1129,10 +1128,6 @@ PVXMLSession::PVXMLSession(PTextToSpeech * tts, PBoolean autoDelete)
   m_videoSender.SetActualDevice(PVideoInputDevice::CreateOpenedDevice(videoArgs));
 #endif // P_VXML_VIDEO
 
-  m_variableScopes.AppendString(SessionScope);
-  m_variableScopes.AppendString(ApplicationScope);
-  m_variableScopes.AppendString(DocumentScope);
-
   PTRACE(4, "Created session: " << this);
 }
 
@@ -1145,10 +1140,6 @@ PVXMLSession::~PVXMLSession()
 
   if (m_autoDeleteTextToSpeech)
     delete m_textToSpeech;
-
-#if P_SCRIPTS
-  delete m_scriptContext;
-#endif
 }
 
 
@@ -1357,25 +1348,18 @@ PURL PVXMLSession::NormaliseResourceName(const PString & src)
   if (url.Parse(src, NULL))
     return url;
 
-  if (m_documentURL.IsEmpty()) {
+  PString path = InternalGetVar(DocumentScope, "path");
+  if (path.empty()) {
     url.Parse(src, "file");
     return url;
   }
 
-  // relative to scheme/path in root document
-  url = m_documentURL;
-  PStringArray path = url.GetPath();
-  if (src[0] == '/' || path.IsEmpty()) {
-    url.SetPathStr(src);
+  if (path[path.length()-1] != '/')
+    path += '/';
+  if (url.Parse(path + src, NULL))
     return url;
-  }
 
-  PStringStream str;
-  for (PINDEX i = 0; i < path.GetSize()-1; i++)
-    str << path[i] << '/';
-  str << src;
-  url.SetPathStr(str);
-  return url;
+  return PString::Empty();
 }
 
 
@@ -1507,7 +1491,6 @@ PBoolean PVXMLSession::Close()
 }
 
 
-#if P_SCRIPTS
 /* These functions will add in the owner composite structures in the scripting language,
 so session.connection.redirect.ani = "1234" will work even if session.connection.redirect,
 or session.connection, do not yet exist. */
@@ -1531,13 +1514,6 @@ static bool SetScriptVariableRecursive(PScriptLanguage & scriptContext, const PS
   return SetScriptVariableOrComposite(scriptContext, fullVarName, value);
 }
 
-static bool HasScriptVariable(PScriptLanguage & scriptContext, const PString & fullVarName)
-{
-  PVarType v;
-  return scriptContext.GetVar(fullVarName, v);
-}
-#endif // P_SCRIPTS
-
 
 void PVXMLSession::InternalThreadMain()
 {
@@ -1546,29 +1522,30 @@ void PVXMLSession::InternalThreadMain()
   m_sessionMutex.Wait();
 
   {
-#if P_SCRIPTS
-    if (m_scriptContext == NULL)
-      m_scriptContext = PScriptLanguage::Create("JavaScript");
-    if (m_scriptContext == NULL || !m_scriptContext->IsInitialised()) {
-      delete m_scriptContext;
-      m_scriptContext = PScriptLanguage::Create("Lua"); // Back up
-    }
-
-    if (m_scriptContext != NULL) {
-      m_scriptContext->CreateComposite(ApplicationScope);
-      m_scriptContext->CreateComposite(DocumentScope);
-      m_scriptContext->CreateComposite(DialogScope);
-      m_scriptContext->CreateComposite(PropertyScope);
-      m_scriptContext->CreateComposite(SessionScope);
+    const char * Languages[] = { "JavaScript", "Lua" };
+    PScriptLanguage * newScript = PScriptLanguage::CreateOne(PStringArray(PARRAYSIZE(Languages), Languages));
+    if (newScript != NULL) {
+      newScript->CreateComposite(PropertyScope);
+      newScript->CreateComposite(SessionScope);
+      newScript->CreateComposite(ApplicationScope);
+      newScript->CreateComposite(DocumentScope);
       #if P_VXML_VIDEO
-        m_scriptContext->SetFunction(SIGN_LANGUAGE_PREVIEW_SCRIPT_FUNCTION, PCREATE_NOTIFIER(SignLanguagePreviewFunction));
-        m_scriptContext->SetFunction(SIGN_LANGUAGE_CONTROL_SCRIPT_FUNCTION, PCREATE_NOTIFIER(SignLanguageControlFunction));
+        newScript->SetFunction(SIGN_LANGUAGE_PREVIEW_SCRIPT_FUNCTION, PCREATE_NOTIFIER(SignLanguagePreviewFunction));
+        newScript->SetFunction(SIGN_LANGUAGE_CONTROL_SCRIPT_FUNCTION, PCREATE_NOTIFIER(SignLanguageControlFunction));
       #endif
 
-      for (PStringToString::iterator it = m_variables.begin(); it != m_variables.end(); ++it)
-        SetScriptVariableRecursive(*m_scriptContext, it->first, it->second);
+      PSimpleScript * simpleScript = dynamic_cast<PSimpleScript *>(m_scriptContext.get());
+      if (simpleScript != NULL) {
+        PStringToString variables = simpleScript->GetAllVariables();
+        for (PStringToString::iterator it = variables.begin(); it != variables.end(); ++it)
+          SetScriptVariableRecursive(*m_scriptContext, it->first, it->second);
+      }
+      m_scriptContext.reset(newScript);
     }
-#endif
+
+    m_scriptContext->PushScopeChain(SessionScope, false);
+    m_scriptContext->PushScopeChain(ApplicationScope, false);
+    m_scriptContext->PushScopeChain(DocumentScope, false);
 
     PTime now;
     InternalSetVar(SessionScope, "time", now.AsString());
@@ -1952,20 +1929,15 @@ PBoolean PVXMLSession::TraversedRecord(PXMLElement & element)
       destination = uri.AsFilePath();
   }
 
-  PString name = InternalGetName(element);
+  PString name = InternalGetName(element, false);
+  if (name.empty())
+    return false;
+
   if (destination.IsEmpty()) {
     if (!m_recordDirectory.Create()) {
       PTRACE(2, "Could not create recording directory \"" << m_recordDirectory << '"');
     }
-
-    PStringStream fn;
-    fn << m_recordDirectory;
-    if (name.IsEmpty())
-      fn << "recording";
-    else
-      fn << name;
-    fn << '_' << PTime().AsString("yyyyMMdd_hhmmss") << supportedFileType;
-    destination = fn;
+    destination = PSTRSTRM(m_recordDirectory << name << '_' << PTime().AsString("yyyyMMdd_hhmmss") << supportedFileType);
   }
 
   m_recordingName = name + '$';
@@ -2001,56 +1973,22 @@ PBoolean PVXMLSession::TraversedRecord(PXMLElement & element)
 
 PBoolean PVXMLSession::TraverseScript(PXMLElement & element)
 {
-#if P_SCRIPTS
-  if (m_scriptContext != NULL) {
-    PString src = element.GetAttribute(SrcAttribute);
-    PString data = element.GetData();
-    PString script = src.IsEmpty() ? data : src;
+  PString src = element.GetAttribute(SrcAttribute);
+  PString data = element.GetData();
+  PString script = src.IsEmpty() ? data : src;
 
-    PTRACE(4, "Traverse <script> " << script.ToLiteral());
+  PTRACE(4, "Traverse <script> " << script.ToLiteral());
   
-    if (m_scriptContext->Run(script))
-      PTRACE(4, m_scriptContext->GetLanguageName() << " executed properly!");
-    else
-      PTRACE(2, "Could not evaluate script \"" << script << "\" with script language " << m_scriptContext->GetLanguageName());
-  }
-#else
-  PTRACE(2, "Unsupported <script> element");
-#endif
+  if (m_scriptContext->Run(script))
+    PTRACE(4, m_scriptContext->GetLanguageName() << " executed properly!");
+  else
+    PTRACE(2, "Could not evaluate script \"" << script << "\" with script language " << m_scriptContext->GetLanguageName());
 
   return false;
 }
 
 
-static bool IsFunction(const PString & expr, PINDEX offset, PINDEX & endname, PINDEX & startarg, PINDEX & endarg)
-{
-  if (!isalpha(expr[offset]) && expr[offset] != '_')
-    return false;
-
-  PINDEX pos = offset + 1;
-  while (isalnum(expr[pos]) || expr[pos] == '_')
-    ++pos;
-  endname = pos - 1;
-
-  while (iswspace(expr[pos]))
-    ++pos;
-
-  if (expr[pos] != '(')
-    return false;
-
-  startarg = pos + 1;
-
-  endarg = expr.Find(')', startarg);
-  if (endarg != P_MAX_INDEX)
-    --endarg;
-  else
-    PTRACE(2, "Mismatched parenthesis");
-
-  return true;
-}
-
-
-PString PVXMLSession::EvaluateExpr(const PString & expr)
+PString PVXMLSession::EvaluateExpr(const PString & expr) const
 {
   if (expr.IsEmpty())
     return PString::Empty();
@@ -2059,189 +1997,49 @@ PString PVXMLSession::EvaluateExpr(const PString & expr)
   if (expr.GetLength() > 1 && expr[0] == '\'' && expr.Find('\'', 1) == (expr.GetLength()-1))
     return expr(1, expr.GetLength()-2);
 
-#if P_SCRIPTS
-  if (m_scriptContext != NULL) {
-    static PConstString const EvalVarName("PTLibVXMLExpressionResult");
-    m_scriptContext->SetString(EvalVarName, "");
-    if (!m_scriptContext->Run(PSTRSTRM(EvalVarName<<'='<<expr))) {
-      PTRACE(2, "Could not evaluate expression \"" << expr << "\" with script language " << m_scriptContext->GetLanguageName());
-    }
+  static PConstString const EvalVarName("PTLibVXMLExpressionResult");
+  m_scriptContext->SetString(EvalVarName, "");
+  if (m_scriptContext->Run(PSTRSTRM(EvalVarName<<'='<<expr)))
     return m_scriptContext->GetString(EvalVarName);
-  }
-#endif
 
-  /* If we don't have full ECMAScript, or any other script engine for that matter ...
-     We only support extremeley limited expressions, generally of the form
-     'literal' or all numeric digits, with + signs allow concatenation of
-     those elements. */
-
-  PString result;
-
-  PINDEX pos = 0;
-  while (pos < expr.GetLength()) {
-    PINDEX endname, startarg, endarg;
-    if (IsFunction(expr, pos, endname, startarg, endarg)) {
-      PString funcname = expr(pos, endname);
-      PString expression = expr(startarg, endarg);
-      PTRACE(4, "Found " << funcname << " function: expression=\"" << expression << "\"");
-      if (funcname == "eval")
-        result += EvaluateExpr(EvaluateExpr(expression));
-#if P_VXML_VIDEO
-      else if (funcname == SIGN_LANGUAGE_PREVIEW_SCRIPT_FUNCTION)
-        SetRealVideoSender(new PVXMLSignLanguageAnalyser::PreviewVideoDevice(m_videoReceiver));
-      else if (funcname == SIGN_LANGUAGE_CONTROL_SCRIPT_FUNCTION)
-          PVXMLSignLanguageAnalyser::GetInstance().Control(m_videoReceiver.GetAnalayserInstance(), EvaluateExpr(expression));
-#endif
-      pos = endarg + 2;
-    }
-    else if (expr[pos] == '\'') {
-      PINDEX quote = expr.Find('\'', ++pos);
-      PTRACE_IF(2, quote == P_MAX_INDEX, "Mismatched quote, ignoring transfer");
-      result += expr(pos, quote-1);
-      pos = quote+1;
-    }
-    else if (isalpha(expr[pos])) {
-      PINDEX span = expr.FindSpan("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_.$", pos);
-      result += GetVar(expr(pos, span-1));
-      pos = span;
-    }
-    else if (isdigit(expr[pos])) {
-      PINDEX span = expr.FindSpan("0123456789", pos);
-      result += GetVar(expr(pos, span-1));
-      pos = span;
-    }
-    else if (expr[pos] == '+' || isspace(expr[pos]))
-      pos++;
-    else {
-      PTRACE(2, "Only '+' operator supported.");
-      break;
-    }
-  }
-
-  return result;
+  PTRACE(2, "Could not evaluate expression \"" << expr << "\" with script language " << m_scriptContext->GetLanguageName());
+  return PString::Empty();
 }
 
 
 PStringToString PVXMLSession::GetVariables() const
 {
-#if P_SCRIPTS
-  if (m_scriptContext != NULL) {
-    PStringToString vars;
-    for (PStringToString::const_iterator it = m_variables.begin(); it != m_variables.end(); ++it)
-      vars.SetAt(it->first, m_scriptContext->GetString(it->first));
-    return vars;
-  }
-#endif
-
-  return m_variables;
-}
-
-
-bool PVXMLSession::InternalParseVar(const PString & varName, bool notVarElement, PString & scope, PString & name) const
-{
-  if (varName.empty())
-    return false;
-
-  if (varName.Split('.', scope, name) && m_variableScopes.find(scope) != m_variableScopes.end())
-    return notVarElement && (
-#if P_SCRIPTS
-           m_scriptContext != NULL ? HasScriptVariable(*m_scriptContext, varName) :
-#endif
-           m_variables.Contains(varName));
-
-  for (PStringList::const_iterator it = m_variableScopes.rbegin(); it != m_variableScopes.rend(); --it) {
-    PString fullVarName = PSTRSTRM(*it << '.' << varName);
-    if (
-#if P_SCRIPTS
-        m_scriptContext != NULL ? HasScriptVariable(*m_scriptContext, fullVarName) :
-#endif
-        m_variables.Contains(fullVarName)) {
-      scope = *it;
-      name = varName;
-      return true;
-    }
-  }
-
-  if (notVarElement)
-    return false;
-
-  scope = m_variableScopes.back();
-  name = varName;
-  return true;
+  PStringToString vars;
+  return vars;
 }
 
 
 PCaselessString PVXMLSession::GetVar(const PString & varName) const
 {
-  PString scope, name;
-  if (InternalParseVar(varName, true, scope, name))
-    return InternalGetVar(scope, name);
-  return "undefined";
-}
-
-
-PCaselessString PVXMLSession::InternalGetVar(const PString & scope, const PString & name) const
-{
-  PString fullVarName = PSTRSTRM(scope << '.' << name);
-
-#if P_SCRIPTS
-  if (m_scriptContext != NULL)
-    return m_scriptContext->GetString(fullVarName);
-#endif
-
-  PString value = m_variables(fullVarName);
-  PTRACE(4, "GetVar[" << fullVarName << "]=" << value.ToLiteral());
-  return value;
-}
-
-
-bool PVXMLSession::SetVar(const PString & scopedVarName, const PString & value)
-{
-  PString scope, name;
-  if (!scopedVarName.Split('.', scope, name))
-    return false;
-  if (m_variableScopes.find(scope) == m_variableScopes.end())
-    return false;
-
-  InternalSetVar(scope, name, value, false);
-  return true;
-}
-
-
-void PVXMLSession::InternalSetVar(const PString & scope, const PString & name, const PString & value, bool evaluate)
-{
-  PString fullVarName = PSTRSTRM(scope << '.' << name);
-
-#if P_SCRIPTS
-  if (m_scriptContext != NULL) {
-    if (evaluate ? m_scriptContext->Run(PSTRSTRM(fullVarName<<'='<<value)) : SetScriptVariableRecursive(*m_scriptContext, fullVarName, value))
-      m_variables.SetAt(fullVarName, PString::Empty()); // Just to remember what was set, value is always from script
-    return;
+  static const char * const AllScopes[] = { "application.", "document.", "dialog.", "property.", "session." };
+  for (PINDEX i = 0; i < PARRAYSIZE(AllScopes); ++i) {
+    if (varName.NumCompare(AllScopes[i]))
+      return m_scriptContext->GetString(varName);
   }
-#endif
-
-  m_variables.SetAt(fullVarName, evaluate ? EvaluateExpr(value) : value);
-  PTRACE(4, "SetAt [" << fullVarName << "]=" << value.ToLiteral());
+  return EvaluateExpr(varName);
 }
 
 
-void PVXMLSession::InternalPopScope()
+bool PVXMLSession::SetVar(const PString & varName, const PString & value)
 {
-  PString popped = m_variableScopes.back();
-  m_variableScopes.pop_back();
+  return m_scriptContext->Run(PSTRSTRM(varName << '=' << value.ToLiteral()));
+}
 
-#if P_SCRIPTS
-  if (m_scriptContext != NULL)
-    m_scriptContext->Run("delete " + popped);
-#endif
 
-  popped += '.';
-  for (PStringToString::iterator it = m_variables.begin(); it != m_variables.end(); ) {
-    if (it->first.NumCompare(popped) == EqualTo)
-      m_variables.erase(it++);
-    else
-      ++it;
-  }
+PCaselessString PVXMLSession::InternalGetVar(const PString & scope, const PString & varName) const
+{
+  return m_scriptContext->GetString(PSTRSTRM(scope << '.' << varName));
+}
+
+
+void PVXMLSession::InternalSetVar(const PString & scope, const PString & varName, const PString & value)
+{
+  m_scriptContext->SetString(PSTRSTRM(scope << '.' << varName), value);
 }
 
 
@@ -2473,14 +2271,15 @@ PBoolean PVXMLSession::TraverseBlock(PXMLElement & element)
 {
   unsigned col, line;
   element.GetFilePosition(col, line);
-  m_variableScopes.push_back(PSTRSTRM("anonymous_" << line << '_' << col));
+  PString anonymous = PSTRSTRM("anonymous_" << line << '_' << col);
+  m_scriptContext->PushScopeChain(anonymous, true);
   return ExecuteCondition(element);
 }
 
 
 PBoolean PVXMLSession::TraversedBlock(PXMLElement & element)
 {
-  InternalPopScope();
+  m_scriptContext->PopScopeChain(true);
   return ExecuteCondition(element);
 }
 
@@ -2719,32 +2518,7 @@ bool PVXMLSession::ExecuteCondition(PXMLElement & element)
   if (condition.IsEmpty())
     return true;
 
-  bool result;
-
-#if P_SCRIPTS
-  if (m_scriptContext != NULL)
-    result = EvaluateExpr(condition).IsTrue();
-  else
-#endif
-  {
-    // Find comparison type
-    PINDEX location = condition.Find("==");
-    if (location == P_MAX_INDEX) {
-      location = condition.Find("!=");
-      if (location == P_MAX_INDEX) {
-        PTRACE(1, "<if> element contains condition with operator other than == or !=, not implemented");
-        return false;
-      }
-    }
-
-    PString leftExpr = EvaluateExpr(condition.Left(location).Trim());
-    PString rightExpr = EvaluateExpr(condition.Mid(location + 2).Trim());
-    if (condition[location] == '=')
-      result = leftExpr == rightExpr;
-    else
-      result = leftExpr != rightExpr;
-  }
-
+  bool result = EvaluateExpr(condition).IsTrue();
   PTRACE(4, "\tCondition \"" << condition << "\" is " << ::boolalpha << result);
   return result;
 }
@@ -2994,7 +2768,7 @@ PBoolean PVXMLSession::TraverseSubmit(PXMLElement & element)
 }
 
 
-PString PVXMLSession::InternalGetName(PXMLElement & element)
+PString PVXMLSession::InternalGetName(PXMLElement & element, bool allowScope)
 {
   PString name = element.GetAttribute(NameAttribute);
 
@@ -3003,17 +2777,26 @@ PString PVXMLSession::InternalGetName(PXMLElement & element)
     return PString::Empty();
   }
 
-  if (!isalpha(name[0]) || name[name.length()-1] == '$' || name.find('.') != string::npos) {
+  if (!isalpha(name[0]) || name[name.length()-1] == '$') {
     ThrowSemanticError(element, PSTRSTRM("Illegal \"name\" attribute \"" << name << '"'));
+    return PString::Empty();
+  }
+
+  if (allowScope)
+    return name;
+
+  if (name.find('.') != string::npos) {
+    ThrowSemanticError(element, PSTRSTRM("Scope not allowed in \"name\" attribute \"" << name << '"'));
     return PString::Empty();
   }
 
   return name;
 }
 
+
 PBoolean PVXMLSession::TraverseProperty(PXMLElement & element)
 {
-  PString name = InternalGetName(element);
+  PString name = InternalGetName(element, false);
   if (name.empty())
     return false;
 
@@ -3034,6 +2817,10 @@ PBoolean PVXMLSession::TraverseTransfer(PXMLElement & element)
 
 PBoolean PVXMLSession::TraversedTransfer(PXMLElement & element)
 {
+  PString elementName = InternalGetName(element, false);
+  if (elementName.empty())
+    return false;
+
   const char * eventName = "error";
 
   switch (m_transferStatus) {
@@ -3073,7 +2860,7 @@ PBoolean PVXMLSession::TraversedTransfer(PXMLElement & element)
       // Do default case
 
     default :
-      InternalSetVar(element.GetAttribute(NameAttribute) + "$", "duration", PString(PString::Unsigned, (PTime() - m_transferStartTime).GetSeconds()));
+      InternalSetVar(elementName + '$', "duration", (PTime() - m_transferStartTime).AsString(0, PTimeInterval::SecondsOnly));
   }
 
   m_transferStatus = TransferCompleted;
@@ -3092,7 +2879,7 @@ void PVXMLSession::SetTransferComplete(bool state)
 
 PBoolean PVXMLSession::TraverseMenu(PXMLElement & element)
 {
-  m_variableScopes.push_back(DialogScope);
+  m_scriptContext->PushScopeChain(DialogScope, true);
   LoadGrammar("menu", PVXMLGrammarInit(*this, element));
   m_defaultMenuDTMF = element.GetAttribute(DtmfAttribute).IsTrue() ? '1' : 'N';
   ++m_promptCount;
@@ -3104,7 +2891,7 @@ PBoolean PVXMLSession::TraversedMenu(PXMLElement &)
 {
   for (Grammars::iterator it = m_grammars.begin(); it != m_grammars.end(); ++it)
     it->Start();
-  InternalPopScope();
+  m_scriptContext->PopScopeChain(true);
   return false;
 }
 
@@ -3120,39 +2907,37 @@ PBoolean PVXMLSession::TraverseChoice(PXMLElement & element)
 
 PBoolean PVXMLSession::TraverseVar(PXMLElement & element)
 {
-  PString scope, name;
-  if (!InternalParseVar(element.GetAttribute(NameAttribute), false, scope, name))
-    return ThrowSemanticError(element, "Invalid \"name\" attribute.");
+  PString name = InternalGetName(element, false);
+  if (name.empty())
+    return false;
 
-  InternalSetVar(scope, name, element.GetAttribute(ExprAttribute), true);
-  if (scope == DocumentScope && m_documentURL == m_rootURL)
-    InternalSetVar(ApplicationScope, name, element.GetAttribute(ExprAttribute), true);
+  m_scriptContext->Run(PSTRSTRM(name << '=' << element.GetAttribute(ExprAttribute)));
   return true;
 }
 
 
 PBoolean PVXMLSession::TraverseAssign(PXMLElement & element)
 {
-  PString scope, name;
-  if (!InternalParseVar(element.GetAttribute(NameAttribute), true, scope, name))
-    return ThrowSemanticError(element, "Invalid \"name\" attribute.");
+  PString name = InternalGetName(element, true);
+  if (name.empty())
+    return false;
 
-  InternalSetVar(scope, name, element.GetAttribute(ExprAttribute), true);
+  m_scriptContext->Run(PSTRSTRM(name << '=' << element.GetAttribute(ExprAttribute)));
   return true;
 }
 
 
-PBoolean PVXMLSession::TraverseDisconnect(PXMLElement &)
+PBoolean PVXMLSession::TraverseDisconnect(PXMLElement & element)
 {
   m_currentNode = NULL;
-  return true;
+  return GoToEventHandler(element, "connection.disconnect");
 }
 
 
 PBoolean PVXMLSession::TraverseForm(PXMLElement &)
 {
   m_dialogFieldNames.clear();
-  m_variableScopes.push_back(DialogScope);
+  m_scriptContext->PushScopeChain(DialogScope, true);
   ++m_promptCount;
   return true;
 }
@@ -3160,7 +2945,7 @@ PBoolean PVXMLSession::TraverseForm(PXMLElement &)
 
 PBoolean PVXMLSession::TraversedForm(PXMLElement &)
 {
-  InternalPopScope();
+  m_scriptContext->PopScopeChain(true);
   return true;
 }
 
@@ -3199,7 +2984,7 @@ PBoolean PVXMLSession::TraverseField(PXMLElement & element)
   if (!ExecuteCondition(element))
     return false;
 
-  PString name = InternalGetName(element);
+  PString name = InternalGetName(element, false);
   if (name.empty())
     return false;
 
@@ -3565,7 +3350,7 @@ void PVXMLDigitsGrammar::OnUserInput(const char ch)
   if (m_state != Started)
     return;
 
-  PINDEX len = m_value.GetLength();
+  size_t len = m_value.length();
 
   // is this char the terminator?
   if (m_terminators.Find(ch) != P_MAX_INDEX) {
@@ -4421,288 +4206,222 @@ PBoolean PVXMLChannelG729::IsSilenceFrame(const void * /*buf*/, PINDEX /*len*/) 
 
 class TextToSpeech_Sample : public PTextToSpeech
 {
-  public:
-    TextToSpeech_Sample();
-    PStringArray GetVoiceList();
-    PBoolean SetVoice(const PString & voice);
-    PBoolean SetSampleRate(unsigned rate);
-    unsigned GetSampleRate();
-    PBoolean SetChannels(unsigned channels);
-    unsigned GetChannels();
-    PBoolean SetVolume(unsigned volume);
-    unsigned GetVolume();
-    PBoolean OpenFile   (const PFilePath & fn);
-    PBoolean OpenChannel(PChannel * chanel);
-    PBoolean IsOpen()    { return m_opened; }
-    PBoolean Close();
-    PBoolean Speak(const PString & text, TextType hint = Default);
-    PBoolean SpeakNumber(unsigned number);
+protected:
+  PDECLARE_MUTEX(mutex);
+  bool      m_opened;
+  bool      m_usingFile;
+  PString   m_text;
+  PFilePath m_path;
+  unsigned  m_sampleRate;
+  unsigned  m_channels;
+  unsigned  m_volume;
+  PString   m_voice;
 
-    PBoolean SpeakFile(const PString & text);
+  std::vector<PFilePath> m_filenames;
 
-  protected:
-    //PTextToSpeech * defaultEngine;
+public:
+  TextToSpeech_Sample()
+    : m_opened(false)
+    , m_usingFile(false)
+    , m_sampleRate(8000)
+    , m_channels(1)
+    , m_volume(100)
+  { }
+  PStringArray GetVoiceList() { return PStringArray(); }
+  PBoolean SetVoice(const PString & voice) { m_voice = voice; return true; }
+  PBoolean SetSampleRate(unsigned rate) { m_sampleRate = rate; return true; }
+  unsigned GetSampleRate() const { return m_sampleRate; }
+  PBoolean SetChannels(unsigned channels) { m_channels = channels; return true; }
+  unsigned GetChannels() const { return m_channels; }
+  PBoolean SetVolume(unsigned volume) { m_volume = volume; return true; }
+  unsigned GetVolume() const { return m_volume; }
+  PBoolean OpenFile(const PFilePath & fn)
+  {
+    PWaitAndSignal m(mutex);
 
-    PDECLARE_MUTEX(mutex);
-    bool      m_opened;
-    bool      m_usingFile;
-    PString   m_text;
-    PFilePath m_path;
-    unsigned  m_sampleRate;
-    unsigned  m_channels;
-    unsigned  m_volume;
-    PString   m_voice;
+    Close();
+    m_usingFile = true;
+    m_path = fn;
+    m_opened = true;
 
-    std::vector<PFilePath> m_filenames;
-};
+    PTRACE(3, "Writing speech to " << fn);
 
-
-TextToSpeech_Sample::TextToSpeech_Sample()
-  : m_opened(false)
-  , m_usingFile(false)
-  , m_sampleRate(8000)
-  , m_channels(1)
-  , m_volume(100)
-{
-}
-
-
-PStringArray TextToSpeech_Sample::GetVoiceList()
-{
-  PStringArray r;
-  return r;
-}
-
-
-PBoolean TextToSpeech_Sample::SetVoice(const PString & v)
-{
-  m_voice = v;
-  return true;
-}
-
-
-PBoolean TextToSpeech_Sample::SetSampleRate(unsigned v)
-{
-  m_sampleRate = v;
-  return true;
-}
-
-
-unsigned TextToSpeech_Sample::GetSampleRate()
-{
-  return m_sampleRate;
-}
-
-
-PBoolean TextToSpeech_Sample::SetChannels(unsigned v)
-{
-  m_channels = v;
-  return true;
-}
-
-
-unsigned TextToSpeech_Sample::GetChannels()
-{
-  return m_channels;
-}
-
-
-PBoolean TextToSpeech_Sample::SetVolume(unsigned v)
-{
-  m_volume = v;
-  return true;
-}
-
-
-unsigned TextToSpeech_Sample::GetVolume()
-{
-  return m_volume;
-}
-
-
-PBoolean TextToSpeech_Sample::OpenFile(const PFilePath & fn)
-{
-  PWaitAndSignal m(mutex);
-
-  Close();
-  m_usingFile = true;
-  m_path = fn;
-  m_opened = true;
-
-  PTRACE(3, "Writing speech to " << fn);
-
-  return true;
-}
-
-
-PBoolean TextToSpeech_Sample::OpenChannel(PChannel * /*chanel*/)
-{
-  PWaitAndSignal m(mutex);
-
-  Close();
-  m_usingFile = false;
-  m_opened = false;
-
-  return true;
-}
-
-
-PBoolean TextToSpeech_Sample::Close()
-{
-  PWaitAndSignal m(mutex);
-
-  if (!m_opened)
     return true;
+  }
+  PBoolean OpenChannel(PChannel * /*channel*/)
+  {
+    PWaitAndSignal m(mutex);
 
-  PBoolean stat = true;
+    Close();
+    m_usingFile = false;
+    m_opened = false;
 
-#if P_WAVFILE
-  if (m_usingFile) {
-    PWAVFile outputFile(PSOUND_PCM16, m_path, PFile::WriteOnly);
-    if (!outputFile.IsOpen()) {
-      PTRACE(1, "Cannot create output file " << m_path);
-      stat = false;
-    }
-    else {
-      std::vector<PFilePath>::const_iterator r;
-      for (r = m_filenames.begin(); r != m_filenames.end(); ++r) {
-        PFilePath f = *r;
-        PWAVFile file;
-        file.SetAutoconvert();
-        if (!file.Open(f, PFile::ReadOnly)) {
-          PTRACE(1, "Cannot open input file " << f);
-          stat = false;
-        } else {
-          PTRACE(1, "Reading from " << f);
-          BYTE buffer[1024];
-          for (;;) {
-            if (!file.Read(buffer, 1024))
-              break;
-            outputFile.Write(buffer, file.GetLastReadCount());
+    return true;
+  }
+  PBoolean IsOpen() const { return m_opened; }
+  PBoolean Close()
+  {
+    PWaitAndSignal m(mutex);
+
+    if (!m_opened)
+      return true;
+
+    PBoolean stat = true;
+
+    #if P_WAVFILE
+    if (m_usingFile) {
+      PWAVFile outputFile(PSOUND_PCM16, m_path, PFile::WriteOnly);
+      if (!outputFile.IsOpen()) {
+        PTRACE(1, "Cannot create output file " << m_path);
+        stat = false;
+      }
+      else {
+        std::vector<PFilePath>::const_iterator r;
+        for (r = m_filenames.begin(); r != m_filenames.end(); ++r) {
+          PFilePath f = *r;
+          PWAVFile file;
+          file.SetAutoconvert();
+          if (!file.Open(f, PFile::ReadOnly)) {
+            PTRACE(1, "Cannot open input file " << f);
+            stat = false;
+          }
+          else {
+            PTRACE(1, "Reading from " << f);
+            BYTE buffer[1024];
+            for (;;) {
+              if (!file.Read(buffer, 1024))
+                break;
+              outputFile.Write(buffer, file.GetLastReadCount());
+            }
           }
         }
       }
+      m_filenames.erase(m_filenames.begin(), m_filenames.end());
     }
-    m_filenames.erase(m_filenames.begin(), m_filenames.end());
+    #endif // P_WAVFILE
+
+    m_opened = false;
+    return stat;
   }
-#endif // P_WAVFILE
-
-  m_opened = false;
-  return stat;
-}
-
-
-PBoolean TextToSpeech_Sample::SpeakNumber(unsigned number)
-{
-  return Speak(PString(PString::Signed, number), Number);
-}
-
-
-PBoolean TextToSpeech_Sample::Speak(const PString & text, TextType hint)
-{
-  // break into lines
-  PStringArray lines = text.Lines();
-  PINDEX i;
-  for (i = 0; i < lines.GetSize(); ++i) {
-
-    PString line = lines[i].Trim();
-    if (line.IsEmpty())
-      continue;
-
-    PTRACE(3, "Asked to speak " << text << " with type " << hint);
-
-    if (hint == DateAndTime) {
-      PTRACE(3, "Speaking date and time");
-      Speak(text, Date);
-      Speak(text, Time);
-      continue;
+  PBoolean SpeakNumber(unsigned number)
+  {
+    return Speak(PString(PString::Signed, number), Number);
+  }
+  PBoolean SpeakFile(const PString & text)
+  {
+    PFilePath f = PDirectory(m_voice) + (text.ToLower() + ".wav");
+    if (!PFile::Exists(f)) {
+      PTRACE(2, "Unable to find explicit file for " << text);
+      return false;
     }
+    m_filenames.push_back(f);
+    return true;
+  }
+  PBoolean Speak(const PString & text, TextType hint = Default)
+  {
+    // break into lines
+    PStringArray lines = text.Lines();
+    PINDEX i;
+    for (i = 0; i < lines.GetSize(); ++i) {
 
-    if (hint == Date) {
-      PTime time(line);
-      if (time.IsValid()) {
-        PTRACE(4, "Speaking date " << time);
-        SpeakFile(time.GetDayName(time.GetDayOfWeek(), PTime::FullName));
-        SpeakNumber(time.GetDay());
-        SpeakFile(time.GetMonthName(time.GetMonth(), PTime::FullName));
-        SpeakNumber(time.GetYear());
+      PString line = lines[i].Trim();
+      if (line.IsEmpty())
+        continue;
+
+      PTRACE(3, "Asked to speak " << text << " with type " << hint);
+
+      if (hint == DateAndTime) {
+        PTRACE(3, "Speaking date and time");
+        Speak(text, Date);
+        Speak(text, Time);
+        continue;
       }
-      continue;
-    }
 
-    if (hint == Time) {
-      PTime time(line);
-      if (time.IsValid()) {
-        PTRACE(4, "Speaking time " << time);
-        int hour = time.GetHour();
-        if (hour < 13) {
-          SpeakNumber(hour);
-          SpeakNumber(time.GetMinute());
-          SpeakFile(PTime::GetTimeAM());
+      if (hint == Date) {
+        PTime time(line);
+        if (time.IsValid()) {
+          PTRACE(4, "Speaking date " << time);
+          SpeakFile(time.GetDayName(time.GetDayOfWeek(), PTime::FullName));
+          SpeakNumber(time.GetDay());
+          SpeakFile(time.GetMonthName(time.GetMonth(), PTime::FullName));
+          SpeakNumber(time.GetYear());
         }
-        else {
-          SpeakNumber(hour-12);
-          SpeakNumber(time.GetMinute());
-          SpeakFile(PTime::GetTimePM());
+        continue;
+      }
+
+      if (hint == Time) {
+        PTime time(line);
+        if (time.IsValid()) {
+          PTRACE(4, "Speaking time " << time);
+          int hour = time.GetHour();
+          if (hour < 13) {
+            SpeakNumber(hour);
+            SpeakNumber(time.GetMinute());
+            SpeakFile(PTime::GetTimeAM());
+          }
+          else {
+            SpeakNumber(hour-12);
+            SpeakNumber(time.GetMinute());
+            SpeakFile(PTime::GetTimePM());
+          }
+        }
+        continue;
+      }
+
+      if (hint == Default) {
+        PBoolean isTime = false;
+        PBoolean isDate = false;
+
+        for (i = 0; !isDate && i < 7; ++i) {
+          isDate = isDate || (line.Find(PTime::GetDayName((PTime::Weekdays)i, PTime::FullName)) != P_MAX_INDEX);
+          isDate = isDate || (line.Find(PTime::GetDayName((PTime::Weekdays)i, PTime::Abbreviated)) != P_MAX_INDEX);
+          PTRACE(4, " " << isDate << " - " << PTime::GetDayName((PTime::Weekdays)i, PTime::FullName) << "," << PTime::GetDayName((PTime::Weekdays)i, PTime::Abbreviated));
+        }
+        for (i = 1; !isDate && i <= 12; ++i) {
+          isDate = isDate || (line.Find(PTime::GetMonthName((PTime::Months)i, PTime::FullName)) != P_MAX_INDEX);
+          isDate = isDate || (line.Find(PTime::GetMonthName((PTime::Months)i, PTime::Abbreviated)) != P_MAX_INDEX);
+          PTRACE(4, " " << isDate << " - " << PTime::GetMonthName((PTime::Months)i, PTime::FullName) << "," << PTime::GetMonthName((PTime::Months)i, PTime::Abbreviated));
+        }
+
+        if (!isTime)
+          isTime = line.Find(PTime::GetTimeSeparator()) != P_MAX_INDEX;
+        if (!isDate)
+          isDate = line.Find(PTime::GetDateSeparator()) != P_MAX_INDEX;
+
+        if (isDate && isTime) {
+          PTRACE(4, "Default changed to DateAndTime");
+          Speak(line, DateAndTime);
+          continue;
+        }
+        if (isDate) {
+          PTRACE(4, "Default changed to Date");
+          Speak(line, Date);
+          continue;
+        }
+        else if (isTime) {
+          PTRACE(4, "Default changed to Time");
+          Speak(line, Time);
+          continue;
         }
       }
-      continue;
-    }
 
-    if (hint == Default) {
-      PBoolean isTime = false;
-      PBoolean isDate = false;
+      PStringArray tokens = line.Tokenise("\t ", false);
+      for (PINDEX j = 0; j < tokens.GetSize(); ++j) {
+        PString word = tokens[j].Trim();
+        if (word.IsEmpty())
+          continue;
+        PTRACE(4, "Speaking word " << word << " as " << hint);
+        switch (hint) {
 
-      for (i = 0; !isDate && i < 7; ++i) {
-        isDate = isDate || (line.Find(PTime::GetDayName((PTime::Weekdays)i, PTime::FullName)) != P_MAX_INDEX);
-        isDate = isDate || (line.Find(PTime::GetDayName((PTime::Weekdays)i, PTime::Abbreviated)) != P_MAX_INDEX);
-        PTRACE(4, " " << isDate << " - " << PTime::GetDayName((PTime::Weekdays)i, PTime::FullName) << "," << PTime::GetDayName((PTime::Weekdays)i, PTime::Abbreviated));
-      }
-      for (i = 1; !isDate && i <= 12; ++i) {
-        isDate = isDate || (line.Find(PTime::GetMonthName((PTime::Months)i, PTime::FullName)) != P_MAX_INDEX);
-        isDate = isDate || (line.Find(PTime::GetMonthName((PTime::Months)i, PTime::Abbreviated)) != P_MAX_INDEX);
-        PTRACE(4, " " << isDate << " - " << PTime::GetMonthName((PTime::Months)i, PTime::FullName) << "," << PTime::GetMonthName((PTime::Months)i, PTime::Abbreviated));
-      }
+          case Time:
+          case Date:
+          case DateAndTime:
+            PAssertAlways("Logic error");
+            break;
 
-      if (!isTime)
-        isTime = line.Find(PTime::GetTimeSeparator()) != P_MAX_INDEX;
-      if (!isDate)
-        isDate = line.Find(PTime::GetDateSeparator()) != P_MAX_INDEX;
-
-      if (isDate && isTime) {
-        PTRACE(4, "Default changed to DateAndTime");
-        Speak(line, DateAndTime);
-        continue;
-      }
-      if (isDate) {
-        PTRACE(4, "Default changed to Date");
-        Speak(line, Date);
-        continue;
-      }
-      else if (isTime) {
-        PTRACE(4, "Default changed to Time");
-        Speak(line, Time);
-        continue;
-      }
-    }
-
-    PStringArray tokens = line.Tokenise("\t ", false);
-    for (PINDEX j = 0; j < tokens.GetSize(); ++j) {
-      PString word = tokens[j].Trim();
-      if (word.IsEmpty())
-        continue;
-      PTRACE(4, "Speaking word " << word << " as " << hint);
-      switch (hint) {
-
-        case Time:
-        case Date:
-        case DateAndTime:
-          PAssertAlways("Logic error");
-          break;
-
-        default:
-        case Default:
-        case Literal:
+          default:
+          case Default:
+          case Literal:
           {
             PBoolean isDigits = true;
             PBoolean isIpAddress = true;
@@ -4718,34 +4437,36 @@ PBoolean TextToSpeech_Sample::Speak(const PString & text, TextType hint)
             if (isIpAddress) {
               PTRACE(4, "Default changed to IPAddress");
               Speak(word, IPAddress);
-            } else if (isDigits) {
+            }
+            else if (isDigits) {
               PTRACE(4, "Default changed to Number");
               Speak(word, Number);
-            } else {
+            }
+            else {
               PTRACE(4, "Default changed to Spell");
               Speak(word, Spell);
             }
           }
           break;
 
-        case Spell:
-          PTRACE(4, "Spelling " << text);
-          for (PINDEX k = 0; k < text.GetLength(); ++k)
-            SpeakFile(text[k]);
-          break;
-
-        case Phone:
-        case Digits:
-          PTRACE(4, "Speaking digits " << text);
-          for (PINDEX k = 0; k < text.GetLength(); ++k) {
-            if (isdigit(text[k]))
+          case Spell:
+            PTRACE(4, "Spelling " << text);
+            for (PINDEX k = 0; k < text.GetLength(); ++k)
               SpeakFile(text[k]);
-          }
-          break;
+            break;
 
-        case Duration:
-        case Currency:
-        case Number:
+          case Phone:
+          case Digits:
+            PTRACE(4, "Speaking digits " << text);
+            for (PINDEX k = 0; k < text.GetLength(); ++k) {
+              if (isdigit(text[k]))
+                SpeakFile(text[k]);
+            }
+            break;
+
+          case Duration:
+          case Currency:
+          case Number:
           {
             int number = atoi(line);
             PTRACE(4, "Speaking number " << number);
@@ -4787,7 +4508,7 @@ PBoolean TextToSpeech_Sample::Speak(const PString & text, TextType hint)
           }
           break;
 
-        case IPAddress:
+          case IPAddress:
           {
             PIPSocket::Address addr(line);
             PTRACE(4, "Speaking IP address " << addr);
@@ -4802,24 +4523,13 @@ PBoolean TextToSpeech_Sample::Speak(const PString & text, TextType hint)
             }
           }
           break;
+        }
       }
     }
+
+    return true;
   }
-
-  return true;
-}
-
-
-PBoolean TextToSpeech_Sample::SpeakFile(const PString & text)
-{
-  PFilePath f = PDirectory(m_voice) + (text.ToLower() + ".wav");
-  if (!PFile::Exists(f)) {
-    PTRACE(2, "Unable to find explicit file for " << text);
-    return false;
-  }
-  m_filenames.push_back(f);
-  return true;
-}
+};
 
 PFACTORY_CREATE(PFactory<PTextToSpeech>, TextToSpeech_Sample, "sampler", false);
 

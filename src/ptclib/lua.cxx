@@ -236,6 +236,49 @@ bool PLua::ReleaseVariable(const PString & name)
 }
 
 
+PScriptLanguage::VarTypes PLua::GetVarType(const PString & name)
+{
+  PWaitAndSignal mutex(m_mutex);
+
+  if (!InternalGetVariable(name))
+    return NumVarTypes;
+
+  VarTypes result;
+  switch (lua_type(m_lua, -1)) {
+    case LUA_TNONE:
+      result = UndefinedType;
+      break;
+
+    case LUA_TNIL:
+      result = NullType;
+      break;
+
+    case LUA_TBOOLEAN:
+      result = BooleanType;
+      break;
+
+    case LUA_TNUMBER:
+      result = NumberType;
+      break;
+
+    case LUA_TSTRING:
+      result = StringType;
+      break;
+
+    case LUA_TTABLE:
+      result = CompositeType;
+      break;
+
+    default:
+      result = NumVarTypes;
+      break;
+  }
+
+  lua_pop(m_lua, 1);
+  return result;
+}
+
+
 bool PLua::GetVar(const PString & name, PVarType & var)
 {
   PWaitAndSignal mutex(m_mutex);

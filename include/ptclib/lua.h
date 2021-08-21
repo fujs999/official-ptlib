@@ -130,6 +130,12 @@ class PLua : public PScriptLanguage
       const PString & name   ///< Name of new table
     );
 
+    /**Get the type of the variable.
+      */
+    virtual VarTypes GetVarType(
+      const PString & name  ///< Name of variable
+    );
+
     /**Get a variable in the script 
        See class description for how \p name is parsed.
       */

@@ -378,8 +378,8 @@ class PVXMLSession : public PIndirectChannel
 
     PStringToString GetVariables() const;
     virtual PCaselessString GetVar(const PString & varName) const;
-    virtual bool SetVar(const PString & scopedVarName, const PString & val);
-    virtual PString EvaluateExpr(const PString & oexpr);
+    virtual bool SetVar(const PString & varName, const PString & val);
+    virtual PString EvaluateExpr(const PString & expr) const;
 
     static PTimeInterval StringToTime(const PString & str, int dflt = 0);
 
@@ -442,11 +442,9 @@ class PVXMLSession : public PIndirectChannel
     virtual void InternalStartThread();
     virtual void InternalThreadMain();
     virtual void InternalStartVXML();
-    virtual void InternalSetVar(const PString & scope, const PString & name, const PString & expr, bool evaluate = false);
-    virtual PCaselessString InternalGetVar(const PString & scope, const PString & name) const;
-    virtual bool InternalParseVar(const PString & varName, bool notVarElement, PString & scope, PString & name) const;
-    virtual void InternalPopScope();
-    virtual PString InternalGetName(PXMLElement & element);
+    virtual PString InternalGetName(PXMLElement & element, bool allowScope);
+    virtual PCaselessString InternalGetVar(const PString & scope, const PString & varName) const;
+    virtual void InternalSetVar(const PString & scope, const PString & varName, const PString & value);
 
     virtual bool ProcessNode();
     virtual bool ProcessEvents();
@@ -536,11 +534,7 @@ class PVXMLSession : public PIndirectChannel
     Grammars m_grammars;
     char     m_defaultMenuDTMF;
 
-    PStringToString  m_variables;
-    PStringList      m_variableScopes;
-#if P_SCRIPTS
-    PScriptLanguage *m_scriptContext;
-#endif
+    PAutoPtr<PScriptLanguage> m_scriptContext;
 
     std::queue<char> m_userInputQueue;
     PDECLARE_MUTEX(m_userInputMutex);
