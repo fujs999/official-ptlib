@@ -2169,10 +2169,15 @@ void PVXMLSession::LoadGrammar(const PString & type, const PVXMLGrammarInit & in
     return;
   }
 
-  if (grammar->GetState() != PVXMLGrammar::Idle) {
+  PVXMLGrammar::GrammarState state = grammar->GetState();
+  if (state != PVXMLGrammar::Idle) {
     delete grammar;
-    PTRACE(2, "Illegal/unsupported grammar of type \"" << adjustedType << '"');
-    GoToEventHandler(init.m_field, grammar->GetState() == PVXMLGrammar::BadFetch ? "error.badfetch" : "error.unsupported.format");
+    if (state == PVXMLGrammar::BadFetch)
+      GoToEventHandler(init.m_field, "error.badfetch");
+    else {
+      PTRACE(2, "Illegal/unsupported grammar of type \"" << adjustedType << '"');
+      GoToEventHandler(init.m_field, "error.unsupported.format");
+    }
     return;
   }
 
