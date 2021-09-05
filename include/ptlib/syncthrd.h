@@ -253,7 +253,7 @@ class PIntCondMutex : public PCondMutex
    http://arxiv.org/ftp/arxiv/papers/1309/1309.4507.pdf to improve efficiency.
  */
 
-class PReadWriteMutex : public PObject, public PMutexExcessiveLockInfo
+class PReadWriteMutex : public PObject, public PMutexExcessiveLockInfo, PProfiling::HighWaterMark<PReadWriteMutex>
 {
   PCLASSINFO(PReadWriteMutex, PObject);
   public:
