@@ -1502,32 +1502,28 @@ namespace PProfiling
   #define PPROFILE_TIMESCOPE(...)
 #endif // PTRACING
 
+  struct HighWaterMarkData
+  {
+    std::string      m_name;
+    atomic<unsigned> m_totalCount;
+    atomic<unsigned> m_highWaterMark;
+
+    HighWaterMarkData(const type_info & ti);
+    ~HighWaterMarkData();
+    void NewInstance();
+    static std::map<std::string, unsigned> Get();
+  };
+
   template <class CLS> class HighWaterMark
   {
-      static atomic<unsigned> m_totalCount;
-      static atomic<unsigned> m_highWaterMark;
+      static HighWaterMarkData m_data;
     public:
-      HighWaterMark()
-      {
-        unsigned totalCount = ++m_totalCount;
-        unsigned highWaterMark = m_highWaterMark;
-        while (totalCount > highWaterMark) {
-          if (m_highWaterMark.compare_exchange_strong(highWaterMark, totalCount)) {
-            PTRACE(4, "PTlib", "New high water mark for " << typeid(CLS).name() << ": " << totalCount);
-            break;
-          }
-          highWaterMark = m_highWaterMark;
-        }
-      }
-      ~HighWaterMark()
-      {
-        --m_totalCount;
-      }
-      static unsigned GetTotalCount() { return m_totalCount; }
-      static unsigned GetHighWaterMark() { return m_highWaterMark; }
+      HighWaterMark() { m_data.NewInstance(); }
+      ~HighWaterMark() { --m_data.m_totalCount; }
+      static unsigned GetTotalCount() { return m_data.m_totalCount; }
+      static unsigned GetHighWaterMark() { return m_data.m_highWaterMark; }
   };
-  template <class CLS> atomic<unsigned> HighWaterMark<CLS>::m_totalCount(0);
-  template <class CLS> atomic<unsigned> HighWaterMark<CLS>::m_highWaterMark(0);
+  template <class CLS> HighWaterMarkData HighWaterMark<CLS>::m_data(typeid(CLS));
 };
 
 

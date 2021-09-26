@@ -1386,7 +1386,7 @@ PProcessIdentifier PProcess::GetCurrentProcessID()
 }
 
 
-void PProcess::GetMemoryUsage(MemoryUsage & usage)
+void PProcess::GetMemoryUsage(MemoryUsage & usage) const
 {
   PROCESS_MEMORY_COUNTERS info;
   info.cb = sizeof(info);

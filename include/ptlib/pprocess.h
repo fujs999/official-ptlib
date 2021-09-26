@@ -144,6 +144,13 @@ class PProcess : public PThread
     Comparison Compare(
       const PObject & obj   ///< Other process to compare against.
     ) const;
+
+    /**This will print out performance indicators for the process.
+       Includes CPU, Memory, Threads & High water marks for various resources.
+      */
+    virtual void PrintOn(
+      ostream & strm
+    ) const;
   //@}
 
   /**@name Overrides from class PThread */
@@ -346,7 +353,7 @@ class PProcess : public PThread
       */
     void GetMemoryUsage(
       MemoryUsage & usage
-    );
+    ) const;
 
     PPROFILE_EXCLUDE(
     /** Get the process execution times.
@@ -667,6 +674,10 @@ class PProcess : public PThread
     void PlatformConstruct();
     void PlatformDestruct();
 
+#if PTRACING
+    PDECLARE_NOTIFIER(PTimer, PProcess, ProfileUpdateLogTimer) { PTRACE(3, "PTLib", *this); }
+#endif
+
   // Member variables
     bool m_library;                   // Indication PTLib is being used as a library for an external process.
     int  m_terminationValue;            // Application return value
@@ -720,7 +731,6 @@ class PProcess : public PThread
     PCriticalSection m_RunTimeSignalsQueueMutex;
     void InternalPostRunTimeSignal(int signal, PProcessIdentifier source);
     void InternalHandleRunTimeSignal(const RunTimeSignalInfo & signalInfo);
-
 
   friend class PThread;
 

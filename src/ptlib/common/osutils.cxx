@@ -2406,7 +2406,13 @@ int PProcess::InternalMain(void *)
   if (device != NULL && device->ApplicationMain())
     return m_terminationValue;
 #endif
-  
+
+#if PTRACING
+  PTimer profileUpdateLogTimer;
+  profileUpdateLogTimer.SetNotifier(PCREATE_NOTIFIER(ProfileUpdateLogTimer));
+  profileUpdateLogTimer.RunContinuous(PTimeInterval(0, 0, 1));
+#endif
+
 #if P_EXCEPTIONS
   try {
     Main();
@@ -3040,6 +3046,51 @@ PObject::Comparison PProcess::Compare(const PObject & obj) const
 {
   PAssert(PIsDescendant(&obj, PProcess), PInvalidCast);
   return m_productName.Compare(((const PProcess &)obj).m_productName);
+}
+
+
+void PProcess::PrintOn(ostream & strm) const
+{
+  strm << GetName() << " v" << GetVersion(true) << "; ";
+
+  Times proc;
+  if (GetProcessTimes(proc)) {
+    float percentage = proc.AsPercentage();
+    strm << "CPU " << fixed << setprecision(1) << percentage << "%, " << (percentage/PProcess::GetNumProcessors()) << "%; ";
+  }
+
+  MemoryUsage mem;
+  GetMemoryUsage(mem);
+  strm << "Memory: virt=" << PString(PString::ScaleSI, mem.m_virtual, 4) << "B,"
+    " res=" << PString(PString::ScaleSI, mem.m_resident, 4) << "B";
+  if (mem.m_max > 0)
+    strm << ", max=" << PString(PString::ScaleSI, mem.m_max, 4) << "B";
+  if (mem.m_current > 0)
+    strm << ", current=" << PString(PString::ScaleSI, mem.m_current, 4) << "B";
+  strm << "; ";
+
+  std::vector<Times> threads;
+  GetTimes(threads);
+  float maxPercentage = 0;
+  PString threadName;
+  for (std::vector<Times>::iterator it = threads.begin(); it != threads.end(); ++it) {
+    float percentage = it->AsPercentage();
+    if (percentage > maxPercentage) {
+      maxPercentage = percentage;
+      threadName = it->m_name;
+    }
+  }
+
+  strm << "Threads: count=" << threads.size() << ","
+                  " max=" << fixed << setprecision(1) << maxPercentage << "% (" << threadName << "); ";
+
+  std::map<std::string, unsigned> highWaterMarks = PProfiling::HighWaterMarkData::Get();
+  strm << "High water marks:";
+  char sep = ' ';
+  for (std::map<std::string, unsigned>::iterator it = highWaterMarks.begin(); it != highWaterMarks.end(); ++it) {
+    strm << sep << it->first << '=' << it->second;
+    sep = ',';
+  }
 }
 
 

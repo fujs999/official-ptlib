@@ -2319,6 +2319,68 @@ namespace PProfiling
   }
 #endif // PTRACING
 
+  struct HighWaterMarks
+  {
+    PCriticalSection m_mutex;
+    std::map<std::string, HighWaterMarkData *> m_data;
+  };
+
+  static HighWaterMarks & GetHighWaterMarks()
+  {
+    static HighWaterMarks s_highWaterMarks;
+    return s_highWaterMarks;
+  }
+
+  HighWaterMarkData::HighWaterMarkData(const type_info & ti)
+    : m_name(ti.name())
+    , m_totalCount(0)
+    , m_highWaterMark(0)
+  {
+    if (m_name.compare(0, 6, "class ") == 0)
+      m_name.erase(0, 6);
+    else if (m_name.compare(0, 7, "struct ") == 0)
+      m_name.erase(0, 7);
+    HighWaterMarks & highWaterMarks = GetHighWaterMarks();
+    highWaterMarks.m_mutex.Wait();
+    highWaterMarks.m_data[m_name] = this;
+    highWaterMarks.m_mutex.Signal();
+  }
+
+
+  HighWaterMarkData::~HighWaterMarkData()
+  {
+    HighWaterMarks & highWaterMarks = GetHighWaterMarks();
+    highWaterMarks.m_mutex.Wait();
+    highWaterMarks.m_data.erase(m_name);
+    highWaterMarks.m_mutex.Signal();
+  }
+
+
+  void HighWaterMarkData::NewInstance()
+  {
+    unsigned totalCount = ++m_totalCount;
+    unsigned highWaterMark = m_highWaterMark;
+    while (totalCount > highWaterMark) {
+      if (m_highWaterMark.compare_exchange_strong(highWaterMark, totalCount)) {
+        PTRACE(4, "PTlib", "New high water mark for " << m_name << ": " << totalCount);
+        break;
+      }
+      highWaterMark = m_highWaterMark;
+    }
+  }
+
+
+  std::map<std::string, unsigned> HighWaterMarkData::Get()
+  {
+    std::map<std::string, unsigned> data;
+    HighWaterMarks & highWaterMarks = GetHighWaterMarks();
+    highWaterMarks.m_mutex.Wait();
+    for (std::map<std::string, HighWaterMarkData *>::iterator it = highWaterMarks.m_data.begin(); it != highWaterMarks.m_data.end(); ++it)
+      data[it->first] = it->second->m_highWaterMark;
+    highWaterMarks.m_mutex.Signal();
+    return data;
+  }
+
 }; // namespace PProfiling
 
 #if P_PROFILING

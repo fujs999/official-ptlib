@@ -63,7 +63,7 @@ class PSyncPoint;
    Previous versions of PTLib/PWLib have some support for co-operative
    threads, but this has been removed.
  */
-class PThread : public PObject
+class PThread : public PObject, PProfiling::HighWaterMark<PThread>
 {
   PCLASSINFO(PThread, PObject);
 
