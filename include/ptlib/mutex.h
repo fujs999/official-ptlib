@@ -267,7 +267,7 @@ typedef PTimedMutex PMutex;
     so it should only be used where a deadlock is clearly impossible, that is,
     there are never mopre than one mutex in the region being locked.
   */
-class PCriticalSection : public PSync
+class PCriticalSection : public PSync, PProfiling::HighWaterMark<PCriticalSection>
 {
   PCLASSINFO(PCriticalSection, PSync);
 

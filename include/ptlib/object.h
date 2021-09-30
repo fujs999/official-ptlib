@@ -1516,14 +1516,14 @@ namespace PProfiling
 
   template <class CLS> class HighWaterMark
   {
-      static HighWaterMarkData m_data;
+    private:
+      static HighWaterMarkData m_highWaterMarkData;
     public:
-      HighWaterMark() { m_data.NewInstance(); }
-      ~HighWaterMark() { --m_data.m_totalCount; }
-      static unsigned GetTotalCount() { return m_data.m_totalCount; }
-      static unsigned GetHighWaterMark() { return m_data.m_highWaterMark; }
+      HighWaterMark() { m_highWaterMarkData.NewInstance(); }
+      ~HighWaterMark() { --m_highWaterMarkData.m_totalCount; }
+      static const HighWaterMarkData & GetHighWaterMarkData() { return m_highWaterMarkData; }
   };
-  template <class CLS> HighWaterMarkData HighWaterMark<CLS>::m_data(typeid(CLS));
+  template <class CLS> HighWaterMarkData HighWaterMark<CLS>::m_highWaterMarkData(typeid(CLS));
 };
 
 

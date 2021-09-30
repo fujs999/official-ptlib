@@ -2407,12 +2407,6 @@ int PProcess::InternalMain(void *)
     return m_terminationValue;
 #endif
 
-#if PTRACING
-  PTimer profileUpdateLogTimer;
-  profileUpdateLogTimer.SetNotifier(PCREATE_NOTIFIER(ProfileUpdateLogTimer));
-  profileUpdateLogTimer.RunContinuous(PTimeInterval(0, 0, 1));
-#endif
-
 #if P_EXCEPTIONS
   try {
     Main();
@@ -2471,6 +2465,10 @@ PProcess::PProcess(const char * manuf, const char * name,
   , m_RunTimeSignalsQueueBuffer(10)
   , m_RunTimeSignalsQueueIn(0)
   , m_RunTimeSignalsQueueOut(0)
+#if P_TIMERS
+  , m_timerList(new PTimer::List())
+#endif
+  , m_profileProcessTimer(NULL)
 {
   m_version.m_major = major;
   m_version.m_minor = minor;
@@ -2535,10 +2533,6 @@ PProcess::PProcess(const char * manuf, const char * name,
 
   PlatformConstruct();
 
-#if P_TIMERS
-  m_timerList = new PTimer::List();
-#endif
-
   if (!suppressStartup)
     Startup();
 
@@ -2578,7 +2572,14 @@ void PProcess::Startup()
 #if PTRACING
   if (PTimedMutex::CtorDtorLogLevel != UINT_MAX)
     s_MutexLeakCheck = new PMutexLeakCheck();
-#endif
+
+  PTimeInterval profileUpdateLogPeriod(0, PString(getenv("PTLIB_PROFILE_LOG_PERIOD")).AsUnsigned());
+  if (profileUpdateLogPeriod != 0) {
+    m_profileProcessTimer = new PTimer();
+    m_profileProcessTimer->SetNotifier(PCREATE_NOTIFIER(ProfileUpdateLogTimer));
+    m_profileProcessTimer->RunContinuous(profileUpdateLogPeriod);
+  }
+#endif // PTRACING
 }
 
 
@@ -2656,6 +2657,14 @@ PProcess::~PProcess()
   PTRACE(4, "Starting process destruction.");
 
   m_shuttingDown = true;
+
+#if PTRACING
+  if (m_profileProcessTimer) {
+    m_profileProcessTimer->Stop();
+    ProfileUpdateLogTimer(*m_profileProcessTimer, 0);
+    delete m_profileProcessTimer;
+  }
+#endif
 
   RemoveRunTimeSignalHandlers();
 
@@ -3051,12 +3060,15 @@ PObject::Comparison PProcess::Compare(const PObject & obj) const
 
 void PProcess::PrintOn(ostream & strm) const
 {
-  strm << GetName() << " v" << GetVersion(true) << "; ";
+  PWaitAndSignal lock(m_profileProcessMutex);
 
-  Times proc;
-  if (GetProcessTimes(proc)) {
-    float percentage = proc.AsPercentage();
-    strm << "CPU " << fixed << setprecision(1) << percentage << "%, " << (percentage/PProcess::GetNumProcessors()) << "%; ";
+  strm << fixed << setprecision(1) << GetName() << " v" << GetVersion(true) << "; ";
+
+  Times processTimes;
+  if (GetProcessTimes(processTimes)) {
+    float percentage = (processTimes - m_profileLastProcessTimes).AsPercentage();
+    m_profileLastProcessTimes = processTimes;
+    strm << "CPU " << percentage << "%, " << (percentage/PProcess::GetNumProcessors()) << "%; ";
   }
 
   MemoryUsage mem;
@@ -3069,21 +3081,6 @@ void PProcess::PrintOn(ostream & strm) const
     strm << ", current=" << PString(PString::ScaleSI, mem.m_current, 4) << "B";
   strm << "; ";
 
-  std::vector<Times> threads;
-  GetTimes(threads);
-  float maxPercentage = 0;
-  PString threadName;
-  for (std::vector<Times>::iterator it = threads.begin(); it != threads.end(); ++it) {
-    float percentage = it->AsPercentage();
-    if (percentage > maxPercentage) {
-      maxPercentage = percentage;
-      threadName = it->m_name;
-    }
-  }
-
-  strm << "Threads: count=" << threads.size() << ","
-                  " max=" << fixed << setprecision(1) << maxPercentage << "% (" << threadName << "); ";
-
   std::map<std::string, unsigned> highWaterMarks = PProfiling::HighWaterMarkData::Get();
   strm << "High water marks:";
   char sep = ' ';
@@ -3091,6 +3088,40 @@ void PProcess::PrintOn(ostream & strm) const
     strm << sep << it->first << '=' << it->second;
     sep = ',';
   }
+  strm << "; ";
+
+  set<Times> threads;
+  GetTimes(threads);
+  for (set<Times>::iterator it = m_profileLastThreadTimes.begin(); it != m_profileLastThreadTimes.end(); ) {
+    if (threads.find(*it) != threads.end())
+      ++it;
+    else
+      it = m_profileLastThreadTimes.erase(it);
+  }
+
+  float maxPercentage = 0;
+  float totalPercentage = 0;
+  PString threadName;
+  for (set<Times>::iterator it = threads.begin(); it != threads.end(); ++it) {
+    float percentage;
+    set<Times>::iterator prev = m_profileLastThreadTimes.find(*it);
+    if (prev == m_profileLastThreadTimes.end())
+      percentage = it->AsPercentage();
+    else {
+      percentage = (*it - *prev).AsPercentage();
+      m_profileLastThreadTimes.erase(prev);
+    }
+    m_profileLastThreadTimes.insert(*it);
+
+    totalPercentage += percentage;
+    if (percentage > maxPercentage) {
+      maxPercentage = percentage;
+      threadName = it->m_name;
+    }
+  }
+  strm << "Threads: count=" << threads.size() << ","
+                  " total=" << totalPercentage << "%,"
+                  " max=" << maxPercentage << "% (" << threadName << ')';
 }
 
 

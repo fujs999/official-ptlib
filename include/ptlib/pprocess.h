@@ -674,10 +674,6 @@ class PProcess : public PThread
     void PlatformConstruct();
     void PlatformDestruct();
 
-#if PTRACING
-    PDECLARE_NOTIFIER(PTimer, PProcess, ProfileUpdateLogTimer) { PTRACE(3, "PTLib", *this); }
-#endif
-
   // Member variables
     bool m_library;                   // Indication PTLib is being used as a library for an external process.
     int  m_terminationValue;            // Application return value
@@ -731,6 +727,14 @@ class PProcess : public PThread
     PCriticalSection m_RunTimeSignalsQueueMutex;
     void InternalPostRunTimeSignal(int signal, PProcessIdentifier source);
     void InternalHandleRunTimeSignal(const RunTimeSignalInfo & signalInfo);
+
+#if PTRACING
+    PDECLARE_NOTIFIER(PTimer, PProcess, ProfileUpdateLogTimer) { PTRACE(3, "PTLibProfile", *this); }
+    PTimer           * m_profileProcessTimer;
+    PCriticalSection   m_profileProcessMutex;
+    mutable     Times  m_profileLastProcessTimes;
+    mutable set<Times> m_profileLastThreadTimes;
+#endif // PTRACING
 
   friend class PThread;
 
