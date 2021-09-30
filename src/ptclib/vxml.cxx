@@ -4230,11 +4230,11 @@ public:
   PStringArray GetVoiceList() { return PStringArray(); }
   PBoolean SetVoice(const PString & voice) { m_voice = voice; return true; }
   PBoolean SetSampleRate(unsigned rate) { m_sampleRate = rate; return true; }
-  unsigned GetSampleRate() const { return m_sampleRate; }
+  unsigned GetSampleRate() { return m_sampleRate; }
   PBoolean SetChannels(unsigned channels) { m_channels = channels; return true; }
-  unsigned GetChannels() const { return m_channels; }
+  unsigned GetChannels() { return m_channels; }
   PBoolean SetVolume(unsigned volume) { m_volume = volume; return true; }
-  unsigned GetVolume() const { return m_volume; }
+  unsigned GetVolume() { return m_volume; }
   PBoolean OpenFile(const PFilePath & fn)
   {
     PWaitAndSignal m(mutex);
@@ -4258,7 +4258,7 @@ public:
 
     return true;
   }
-  PBoolean IsOpen() const { return m_opened; }
+  PBoolean IsOpen() { return m_opened; }
   PBoolean Close()
   {
     PWaitAndSignal m(mutex);

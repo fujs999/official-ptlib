@@ -898,7 +898,7 @@ bool PJavaScript::Run(const char * text)
 {
   PWaitAndSignal mutex(m_mutex);
 
-  PString script(text != NULL ? text : m_scriptToRun);
+  PString script(text != NULL ? text : m_scriptToRun.c_str());
   if (script.empty())
     return false;
 
