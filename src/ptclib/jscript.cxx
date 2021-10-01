@@ -413,12 +413,12 @@ public:
     value = name[0] != '[' ? object->Get(NewString(name)) : object->Get(name.Mid(1).AsInteger());
 #endif
     if (value.IsEmpty())
-      m_owner.OnError(101, PSTRSTRM("Cannot get memmber \"" << name << '"'));
+      m_owner.OnError(101, PSTRSTRM("Cannot get member \"" << name << '"'));
     return value;
   }
 
 
-  v8::Local<v8::Object> GetObjectHandle(const v8::Local<v8::Context> & context, const PString & key, PString & var)
+  v8::Local<v8::Object> GetObjectHandle(const v8::Local<v8::Context> & context, const PString & key, PString & var, bool withError)
   {
     PStringArray tokens = key.Tokenise('.', false);
     if (tokens.GetSize() < 1) {
@@ -449,13 +449,15 @@ public:
       // get the member variable
       v8::Local<v8::Value> value = GetMember(context, object, tokens[i]);
       if (value.IsEmpty()) {
-        m_owner.OnError(103, PSTRSTRM("Cannot get intermediate element \"" << tokens[i] << "\" of \"" << key << '"'));
+        if (withError)
+          m_owner.OnError(103, PSTRSTRM("Cannot get intermediate element \"" << tokens[i] << "\" of \"" << key << '"'));
         return v8::Local<v8::Object>();
       }
 
       // terminals must not be composites, internal nodes must be composites
       if (!value->IsObject()) {
-        m_owner.OnError(104, PSTRSTRM("Non composite intermediate element \"" << tokens[i] << "\" of \"" << key << '"'));
+        if (withError)
+          m_owner.OnError(104, PSTRSTRM("Non composite intermediate element \"" << tokens[i] << "\" of \"" << key << '"'));
         return v8::Local<v8::Object>();
       }
 
@@ -467,7 +469,8 @@ public:
         *(object = value->ToObject()) == NULL || object->IsNull()
 #endif
         ) {
-        m_owner.OnError(105, PSTRSTRM("Cannot get value of intermediate element \"" << tokens[i] << "\" of \"" << key << '"'));
+        if (withError)
+          m_owner.OnError(105, PSTRSTRM("Cannot get value of intermediate element \"" << tokens[i] << "\" of \"" << key << '"'));
         return v8::Local<v8::Object>();
       }
     }
@@ -486,7 +489,8 @@ public:
   bool GetVarValue(const v8::Local<v8::Context> & context,
                    v8::Local<v8::Value> value,
                    PVarType & var,
-                   const PString & key)
+                   const PString & key,
+                   bool withError)
   {
     if (value.IsEmpty())
       return false;
@@ -529,13 +533,48 @@ public:
       return true;
     }
 
-    m_owner.OnError(106, PSTRSTRM("Unable to determine type of \"" << key << "\" = \"" << ToPString(value) << '"'));
+    if (withError)
+      m_owner.OnError(106, PSTRSTRM("Unable to determine type of \"" << key << "\" = \"" << ToPString(value) << '"'));
     var.SetType(PVarType::VarNULL);
     return false;
   }
 
 
-  bool GetVar(const PString & key, PVarType & var)
+  PScriptLanguage::VarTypes GetVarType(const PString & key)
+  {
+    if (m_isolate == NULL) {
+      m_owner.OnError(100, "Uninitialised");
+      return NumVarTypes;
+    }
+
+    v8::Isolate::Scope isolateScope(m_isolate);
+    HandleScope handleScope(this);
+    v8::Local<v8::Context> context = GetContext();
+    v8::Context::Scope contextScope(context);
+
+    PString varName;
+    v8::Local<v8::Object> object = GetObjectHandle(context, key, varName, false);
+    v8::Local<v8::Value> member = GetMember(context, object, varName);
+    if (member.IsEmpty() || member->IsUndefined())
+      return UndefinedType;
+
+    if (member->IsNull())
+      return NullType;
+    if (member->IsBoolean())
+      return BooleanType;
+    if (member->IsInt32())
+      return IntegerType;
+    if (member->IsNumber())
+      return NumberType;
+    if (member->IsString())
+      return StringType;
+    if (member->IsObject())
+      return CompositeType;
+    return NumVarTypes;
+}
+
+
+  bool GetVar(const PString & key, PVarType & var, bool withError)
   {
     if (m_isolate == NULL) {
       m_owner.OnError(100, "Uninitialised");
@@ -548,11 +587,11 @@ public:
     v8::Context::Scope contextScope(context);
 
     PString varName;
-    v8::Local<v8::Object> object = GetObjectHandle(context, key, varName);
+    v8::Local<v8::Object> object = GetObjectHandle(context, key, varName, withError);
     if (object.IsEmpty())
       return false;
 
-    return GetVarValue(context, GetMember(context, object, varName), var, key);
+    return GetVarValue(context, GetMember(context, object, varName), var, key, withError);
   }
 
 
@@ -617,7 +656,7 @@ public:
     v8::Context::Scope contextScope(context);
 
     PString varName;
-    v8::Local<v8::Object> object = GetObjectHandle(context, key, varName);
+    v8::Local<v8::Object> object = GetObjectHandle(context, key, varName, true);
     if (object.IsEmpty())
       return false;
 
@@ -660,7 +699,7 @@ public:
     int nargs = callbackInfo.Length();
     signature.m_arguments.resize(nargs);
     for (int arg = 0; arg < nargs; ++arg)
-      GetVarValue(context, callbackInfo[arg], signature.m_arguments[arg], notifierInfo.m_key);
+      GetVarValue(context, callbackInfo[arg], signature.m_arguments[arg], notifierInfo.m_key, true);
 
     notifierInfo.m_notifiers(notifierInfo.m_owner, signature);
 
@@ -704,7 +743,7 @@ public:
     v8::Context::Scope contextScope(context);
 
     PString varName;
-    v8::Local<v8::Object> object = GetObjectHandle(context, key, varName);
+    v8::Local<v8::Object> object = GetObjectHandle(context, key, varName, true);
     if (object.IsEmpty())
       return false;
 
@@ -847,21 +886,21 @@ bool PJavaScript::IsInitialised() const
 }
 
 
-bool PJavaScript::LoadFile(const PFilePath & /*filename*/)
+bool PJavaScript::LoadText(const PString & text)
 {
-  return false;
-}
-
-
-bool PJavaScript::LoadText(const PString & /*text*/)
-{
-  return false;
+  PWaitAndSignal mutex(m_mutex);
+  m_scriptToRun = text;
+  return !text.empty();
 }
 
 
 bool PJavaScript::Run(const char * text)
 {
-  PString script(text);
+  PWaitAndSignal mutex(m_mutex);
+
+  PString script(text != NULL ? text : m_scriptToRun.c_str());
+  if (script.empty())
+    return false;
 
   PTextFile file(text, PFile::ReadOnly);
   if (file.IsOpen()) {
@@ -869,85 +908,54 @@ bool PJavaScript::Run(const char * text)
     script = file.ReadString(P_MAX_INDEX);
   }
 
-  return m_private->Run(script, m_resultText);
+  if (m_scopeChain.empty())
+    return m_private->Run(script, m_resultText);
+
+  PStringStream wrapped;
+  for (PStringList::iterator it = m_scopeChain.begin(); it != m_scopeChain.end(); ++it)
+    wrapped << "with (" << *it << "){";
+  wrapped << script << std::string(m_scopeChain.size(), '}');
+  return m_private->Run(wrapped, m_resultText);
 }
 
 
 bool PJavaScript::CreateComposite(const PString & name)
 {
+  PWaitAndSignal mutex(m_mutex);
+
   PVarType dummy;
   dummy.SetType(PVarType::VarStaticBinary);
   return m_private->SetVar(name, dummy);
 }
 
 
-bool PJavaScript::GetVar(const PString & key, PVarType & var)
+PScriptLanguage::VarTypes PJavaScript::GetVarType(const PString & name)
 {
-  return m_private->GetVar(key, var);
-}
-
-bool PJavaScript::SetVar(const PString & key, const PVarType & var)
-{
-  return m_private->SetVar(key, var);
+  PWaitAndSignal mutex(m_mutex);
+  return m_private->GetVarType(name);
 }
 
 
-bool PJavaScript::GetBoolean(const PString & name)
+bool PJavaScript::GetVar(const PString & name, PVarType & var)
 {
-  PVarType var;
-  return GetVar(name, var) && var.AsBoolean();
+  PWaitAndSignal mutex(m_mutex);
+  for (PStringList::iterator it = m_scopeChain.rbegin(); it != m_scopeChain.rend(); --it) {
+    if (m_private->GetVar(PSTRSTRM(*it << '.' << name), var, false))
+      return true;
+  }
+  return m_private->GetVar(name, var, true);
+}
+
+bool PJavaScript::SetVar(const PString & name, const PVarType & var)
+{
+  PWaitAndSignal mutex(m_mutex);
+  return m_private->SetVar(name, var);
 }
 
 
-bool PJavaScript::SetBoolean(const PString & name, bool value)
+bool PJavaScript::ReleaseVariable(const PString & name)
 {
-  PVarType var(value);
-  return SetVar(name, value);
-}
-
-
-int PJavaScript::GetInteger(const PString & name)
-{
-  PVarType var;
-  return GetVar(name, var) ? var.AsInteger() : 0;
-}
-
-
-bool PJavaScript::SetInteger(const PString & name, int value)
-{
-  return SetVar(name, value);
-}
-
-
-double PJavaScript::GetNumber(const PString & name)
-{
-  PVarType var;
-  return GetVar(name, var) ? var.AsFloat() : 0.0;
-}
-
-
-bool PJavaScript::SetNumber(const PString & name, double value)
-{
-  return SetVar(name, value);
-}
-
-
-PString PJavaScript::GetString(const PString & name)
-{
-  PVarType var;
-  return GetVar(name, var) ? var.AsString() : PString::Empty();
-}
-
-
-bool PJavaScript::SetString(const PString & name, const char * value)
-{
-  return SetVar(name, value);
-}
-
-
-bool PJavaScript::ReleaseVariable(const PString & /*name*/)
-{
-  return false;
+  return Run("delete " + name);
 }
 
 
@@ -965,6 +973,7 @@ bool PJavaScript::Call(const PString & /*name*/, Signature & /*signature*/)
 
 bool PJavaScript::SetFunction(const PString & name, const FunctionNotifier & func)
 {
+  PWaitAndSignal mutex(m_mutex);
   return m_private->SetFunction(name, func);
 }
 

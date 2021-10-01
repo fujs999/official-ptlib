@@ -84,6 +84,16 @@ void VxmlTest::Main()
 
   PCLIStandard cli("VXML-Test> ");
   cli.SetCommand("input", PCREATE_NOTIFIER(SimulateInput), "Simulate input for VXML instance (1..n)", "<digit> [ <n> ]");
+  cli.SetCommand("0", PCREATE_NOTIFIER(SimulateInput), "Simulate input 0 for VXML instance (1..n)", "[ <n> ]");
+  cli.SetCommand("1", PCREATE_NOTIFIER(SimulateInput), "Simulate input 1 for VXML instance (1..n)", "[ <n> ]");
+  cli.SetCommand("2", PCREATE_NOTIFIER(SimulateInput), "Simulate input 2 for VXML instance (1..n)", "[ <n> ]");
+  cli.SetCommand("3", PCREATE_NOTIFIER(SimulateInput), "Simulate input 3 for VXML instance (1..n)", "[ <n> ]");
+  cli.SetCommand("4", PCREATE_NOTIFIER(SimulateInput), "Simulate input 4 for VXML instance (1..n)", "[ <n> ]");
+  cli.SetCommand("5", PCREATE_NOTIFIER(SimulateInput), "Simulate input 5 for VXML instance (1..n)", "[ <n> ]");
+  cli.SetCommand("6", PCREATE_NOTIFIER(SimulateInput), "Simulate input 6 for VXML instance (1..n)", "[ <n> ]");
+  cli.SetCommand("7", PCREATE_NOTIFIER(SimulateInput), "Simulate input 7 for VXML instance (1..n)", "[ <n> ]");
+  cli.SetCommand("8", PCREATE_NOTIFIER(SimulateInput), "Simulate input 8 for VXML instance (1..n)", "[ <n> ]");
+  cli.SetCommand("9", PCREATE_NOTIFIER(SimulateInput), "Simulate input 9 for VXML instance (1..n)", "[ <n> ]");
   cli.SetCommand("set", PCREATE_NOTIFIER(SetVar), "Set variable for VXML instance (1..n)", "<var> <value> [ <n> ]");
   cli.SetCommand("get", PCREATE_NOTIFIER(GetVar), "Get variable for VXML instance (1..n)", "<var> [ <n> ]");
   cli.Start(false);
@@ -93,15 +103,21 @@ void VxmlTest::Main()
 
 void VxmlTest::SimulateInput(PCLI::Arguments & args, P_INT_PTR)
 {
-  if (args.GetCount() < 1) {
-    args.WriteUsage();
-    return;
+  PINDEX instanceArg = 0;
+  PString input = args.GetCommandName();
+  if (input.length() != 1 || !isdigit(input[0])) {
+    if (args.GetCount() < 1) {
+      args.WriteUsage();
+      return;
+    }
+    input = args[0];
+    instanceArg = 1;
   }
 
   unsigned num;
-  if (args.GetCount() < 2)
+  if (args.GetCount() <= instanceArg)
     num = 1;
-  else if ((num = args[1].AsUnsigned()) == 0) {
+  else if ((num = args[instanceArg].AsUnsigned()) == 0) {
     args.WriteError("Invalid instance number");
     return;
   }
@@ -109,7 +125,7 @@ void VxmlTest::SimulateInput(PCLI::Arguments & args, P_INT_PTR)
   if (num > m_tests.size())
     args.WriteError("No such instance");
   else
-    m_tests[num - 1].SendInput(args[0]);
+    m_tests[num - 1].SendInput(input);
 }
 
 
@@ -380,7 +396,7 @@ void TestInstance::CopyVideoReceiver()
 #endif
 
 #else
-#pragma message("Cannot compile test application without XML support!")
+#pragma message("Cannot compile test application without VXML support!")
 
 void VxmlTest::Main()
 {

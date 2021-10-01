@@ -648,6 +648,13 @@ PString::PString(char c)
 }
 
 
+PString::PString(bool b)
+  : PCharArray(b ? "true" : "false", b ? 5 : 6)
+  , m_length(b ? 4 : 5)
+{
+}
+
+
 const PString & PString::Empty()
 {
   static int EmptyStringMemory[(sizeof(PConstString)+sizeof(int)-1)/sizeof(int)];
@@ -2324,7 +2331,7 @@ PString PString::ToLiteral(bool ascii) const
       strm << "\\\"";
     else if (*p == '\\')
       strm << "\\\\";
-    else if (isprint(*p) || (!ascii && (*p & 0x80) != 0))
+    else if (isprint(*p & 0xff) || (!ascii && (*p & 0x80) != 0))
       strm << *p;
     else {
       PINDEX i;
@@ -2356,6 +2363,40 @@ PString PString::FromLiteral(PINDEX & offset) const
   offset = cstr - theArray;
 
   return str;
+}
+
+
+bool PString::IsTrue() const
+{
+  return IsTrue(c_str());
+}
+
+
+bool PString::IsTrue(const char * str)
+{
+  return strcasecmp(str, "true") == 0 ||
+         strcasecmp(str, "t") == 0 ||
+         strcasecmp(str, "on") == 0 ||
+         strcasecmp(str, "yes") == 0 ||
+         strcasecmp(str, "y") == 0 ||
+         atoi(str) != 0;
+}
+
+
+bool PString::IsFalse() const
+{
+  return IsFalse(c_str());
+}
+
+
+bool PString::IsFalse(const char * str)
+{
+  return strcasecmp(str, "false") == 0 ||
+         strcasecmp(str, "f") == 0 ||
+         strcasecmp(str, "off") == 0 ||
+         strcasecmp(str, "no") == 0 ||
+         strcasecmp(str, "n") == 0 ||
+         strspn(str, "-0") == strlen(str);
 }
 
 

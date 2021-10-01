@@ -1,11 +1,12 @@
 /*
- * v8script.h
+ * simplescript.h
  *
- * Interface library for V8 Javascript interpreter
+ * Ultra simple script language
+ * No functions, only string variables, can only concatenate string expressions.
  *
  * Portable Tools Library
  *
- * Copyright (C) 2012 by Post Increment
+ * Copyright (C) 2021 by Vox Lucida Pty. Ltd.
  *
  * The contents of this file are subject to the Mozilla Public License
  * Version 1.0 (the "License"); you may not use this file except in
@@ -19,43 +20,35 @@
  *
  * The Original Code is Portable Tools Library.
  *
- * The Initial Developer of the Original Code is Post Increment
+ * The Initial Developer of the Original Code is Vox Lucida Pty. Ltd.
  *
  * Contributor(s): Craig Southeren
+ *                 Robert Jongbloed
  */
 
-#ifndef PTLIB_V8SCRIPT_H
-#define PTLIB_V8SCRIPT_H
+#ifndef PTLIB_SIMPLESCRIPT_H
+#define PTLIB_SIMPLESCRIPT_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
 #endif
 
-#include <ptlib.h>
-
-#if P_V8
-
 #include <ptclib/script.h>
-#include <ptclib/vartype.h>
 
 
 //////////////////////////////////////////////////////////////
 
-/** JavaScript language interpreter
+/**A wrapper around a ultra simple scripting language instance.
  */
-class PJavaScript : public PScriptLanguage
+class PSimpleScript : public PScriptLanguage
 {
-  PCLASSINFO(PJavaScript, PScriptLanguage)
-
+  PCLASSINFO(PSimpleScript, PScriptLanguage)
   public:
   /**@name Construction */
   //@{
-    /**Create a context in which to execute a JavaScript script
+    /**Create a context in which to execute a script.
      */
-    PJavaScript();
-
-    /// Destroy the JavaScript interpreter context
-    ~PJavaScript();
+    PSimpleScript();
   //@}
 
   /**@name Scripting functions */
@@ -69,7 +62,13 @@ class PJavaScript : public PScriptLanguage
     /// Indicate language has initialised successfully
     virtual bool IsInitialised() const;
 
-    /** Load a JavaScript script text.
+    /**Load a script from a file.
+      */
+    virtual bool LoadFile(
+      const PFilePath & filename  ///< Name of script file to load
+    );
+
+    /** Load script text.
       */
     virtual bool LoadText(
       const PString & text  ///< Script text to load.
@@ -78,15 +77,16 @@ class PJavaScript : public PScriptLanguage
     /**Run the script.
        If \p script is NULL or empty then the currently laoded script is
        executed. If \p script is an existing file, then that will be loaded
-       and executed. All other cases the string is laoded as direct script
+       and executed. All other cases the string is loaded as direct script
        text and executed.
       */
     virtual bool Run(
       const char * script = NULL
     );
 
-
     /**Create a composite structure.
+       The exact semantics is language dependant. For Lua this is a table.
+
        See class description for how \p name is parsed.
       */
     virtual bool CreateComposite(
@@ -150,35 +150,30 @@ class PJavaScript : public PScriptLanguage
 
        @returns false if function does not exist.
       */
-    bool Call(
+    virtual bool Call(
       const PString & name,           ///< Name of function to execute.
       const char * sigString = NULL,  ///< Signature of arguments following
       ...
     );
-    bool Call(
+    virtual bool Call(
       const PString & name,       ///< Name of function to execute.
       Signature & signature ///< Signature of arguments following
     );
 
-
-    /**Set a notifier as a JavaScript callable function.
+    /**Set a notifier as a script callable function.
        See class description for how \p name is parsed.
       */
-    bool SetFunction(
-      const PString & name,         ///< Name of function JavaScript script can call
+    virtual bool SetFunction(
+      const PString & name,         ///< Name of function script can call
       const FunctionNotifier & func ///< Notifier excuted
     );
   //@}
 
+    const PStringToString & GetAllVariables() const { return m_variables; }
+
   protected:
-    struct Private;
-    Private * m_private;
-    PString   m_resultText;
-    PString   m_scriptToRun;
+    PString InternalEvaluateExpr(const PString & expr);
+    PStringToString m_variables;
 };
-
-
-#endif // P_V8
-
-#endif  // PTLIB_V8SCRIPT_H
+#endif  // PTLIB_SIMPLESCRIPT_H
 
