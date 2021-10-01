@@ -1537,6 +1537,28 @@ namespace PProfiling
   #define PPROFILE_TIMESCOPE(...)
 #endif // PTRACING
 
+  struct HighWaterMarkData
+  {
+    std::string      m_name;
+    atomic<unsigned> m_totalCount;
+    atomic<unsigned> m_highWaterMark;
+
+    HighWaterMarkData(const type_info & ti);
+    ~HighWaterMarkData();
+    void NewInstance();
+    static std::map<std::string, unsigned> Get();
+  };
+
+  template <class CLS> class HighWaterMark
+  {
+    private:
+      static HighWaterMarkData m_highWaterMarkData;
+    public:
+      HighWaterMark() { m_highWaterMarkData.NewInstance(); }
+      ~HighWaterMark() { --m_highWaterMarkData.m_totalCount; }
+      static const HighWaterMarkData & GetHighWaterMarkData() { return m_highWaterMarkData; }
+  };
+  template <class CLS> HighWaterMarkData HighWaterMark<CLS>::m_highWaterMarkData(typeid(CLS));
 };
 
 
