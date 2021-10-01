@@ -2460,14 +2460,14 @@ PProcess::PProcess(const char * manuf, const char * name,
   , m_shuttingDown(false)
   , m_keepingHouse(false)
   , m_houseKeeper(NULL)
+#if P_TIMERS
+  , m_timerList(new PTimer::List())
+#endif
   , m_processID(GetCurrentProcessID())
   , m_previousRunTimeSignalHandlers(SIGRTMAX)
   , m_RunTimeSignalsQueueBuffer(10)
   , m_RunTimeSignalsQueueIn(0)
   , m_RunTimeSignalsQueueOut(0)
-#if P_TIMERS
-  , m_timerList(new PTimer::List())
-#endif
   , m_profileProcessTimer(NULL)
 {
   m_version.m_major = major;
