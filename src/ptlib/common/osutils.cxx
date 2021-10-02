@@ -2605,7 +2605,10 @@ void PProcess::Startup()
   if (PTimedMutex::CtorDtorLogLevel != UINT_MAX)
     s_MutexLeakCheck = new PMutexLeakCheck();
 
-  PTimeInterval profileUpdateLogPeriod(0, PString(getenv("PTLIB_PROFILE_LOG_PERIOD")).AsUnsigned());
+  PString profileUpdateLogPeriodStr(getenv("PTLIB_PROFILE_LOG_PERIOD"));
+  if (profileUpdateLogPeriodStr.empty())
+    profileUpdateLogPeriodStr = "60";
+  PTimeInterval profileUpdateLogPeriod(0, profileUpdateLogPeriodStr.AsUnsigned());
   if (profileUpdateLogPeriod != 0) {
     m_profileProcessTimer = new PTimer();
     m_profileProcessTimer->SetNotifier(PCREATE_NOTIFIER(ProfileUpdateLogTimer));
@@ -3100,17 +3103,17 @@ void PProcess::PrintOn(ostream & strm) const
   if (GetProcessTimes(processTimes)) {
     float percentage = (processTimes - m_profileLastProcessTimes).AsPercentage();
     m_profileLastProcessTimes = processTimes;
-    strm << "CPU " << percentage << "%, " << (percentage/PProcess::GetNumProcessors()) << "%; ";
+    strm << "CPU: " << (percentage/PProcess::GetNumProcessors()) << "% (" << percentage << "%); ";
   }
 
   MemoryUsage mem;
   GetMemoryUsage(mem);
   strm << "Memory: virt=" << PString(PString::ScaleSI, mem.m_virtual, 4) << "B,"
-    " res=" << PString(PString::ScaleSI, mem.m_resident, 4) << "B";
+                 " res=" << PString(PString::ScaleSI, mem.m_resident, 4) << 'B';
   if (mem.m_max > 0)
-    strm << ", max=" << PString(PString::ScaleSI, mem.m_max, 4) << "B";
+    strm << ", max=" << PString(PString::ScaleSI, mem.m_max, 4) << 'B';
   if (mem.m_current > 0)
-    strm << ", current=" << PString(PString::ScaleSI, mem.m_current, 4) << "B";
+    strm << ", current=" << PString(PString::ScaleSI, mem.m_current, 4) << 'B';
   strm << "; ";
 
   std::map<std::string, unsigned> highWaterMarks = PProfiling::HighWaterMarkData::Get();
@@ -3131,9 +3134,7 @@ void PProcess::PrintOn(ostream & strm) const
       it = m_profileLastThreadTimes.erase(it);
   }
 
-  float maxPercentage = 0;
-  float totalPercentage = 0;
-  PString threadName;
+  std::map<float, PString> topThreads;
   for (set<Times>::iterator it = threads.begin(); it != threads.end(); ++it) {
     float percentage;
     set<Times>::iterator prev = m_profileLastThreadTimes.find(*it);
@@ -3143,17 +3144,13 @@ void PProcess::PrintOn(ostream & strm) const
       percentage = (*it - *prev).AsPercentage();
       m_profileLastThreadTimes.erase(prev);
     }
+    if (percentage > 0.05)
+      topThreads[percentage] = it->m_name;
     m_profileLastThreadTimes.insert(*it);
-
-    totalPercentage += percentage;
-    if (percentage > maxPercentage) {
-      maxPercentage = percentage;
-      threadName = it->m_name;
-    }
   }
-  strm << "Threads: count=" << threads.size() << ","
-                  " total=" << totalPercentage << "%,"
-                  " max=" << maxPercentage << "% (" << threadName << ')';
+  strm << "Threads: " << threads.size();
+  for (std::map<float, PString>::reverse_iterator it = topThreads.rbegin(); it != topThreads.rend(); ++it)
+    strm << ',' << it->second << '=' << it->first << '%';
 }
 
 
