@@ -1508,22 +1508,18 @@ namespace PProfiling
     atomic<unsigned> m_totalCount;
     atomic<unsigned> m_highWaterMark;
 
-    HighWaterMarkData(const type_info & ti);
-    ~HighWaterMarkData();
+    HighWaterMarkData(const std::string & name);
     void NewInstance();
+    static HighWaterMarkData & Get(const type_info & ti);
     static std::map<std::string, unsigned> Get();
   };
 
-  template <class CLS> class HighWaterMark
+  template <class CLS> struct HighWaterMark
   {
-    private:
-      static HighWaterMarkData m_highWaterMarkData;
-    public:
-      HighWaterMark() { m_highWaterMarkData.NewInstance(); }
-      ~HighWaterMark() { --m_highWaterMarkData.m_totalCount; }
-      static const HighWaterMarkData & GetHighWaterMarkData() { return m_highWaterMarkData; }
+    static HighWaterMarkData & GetHighWaterMarkData() { static HighWaterMarkData & data = HighWaterMarkData::Get(typeid(CLS)); return data; }
+    HighWaterMark() { GetHighWaterMarkData().NewInstance(); }
+    ~HighWaterMark() { --GetHighWaterMarkData().m_totalCount; }
   };
-  template <class CLS> HighWaterMarkData HighWaterMark<CLS>::m_highWaterMarkData(typeid(CLS));
 };
 
 
