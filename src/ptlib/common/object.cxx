@@ -2359,9 +2359,14 @@ namespace PProfiling
 
   /// /////////////////////////////////////////////////////////////////
 
-  struct HighWaterMarks : std::map<std::string, std::auto_ptr<HighWaterMarkData>>
+  struct HighWaterMarks : std::map<std::string, HighWaterMarkData *>
   {
     PCriticalSection m_mutex;
+    ~HighWaterMarks()
+    {
+      for (iterator it = begin(); it != end(); ++it)
+        delete it->second;
+    }
   };
 
 
