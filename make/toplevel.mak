@@ -278,8 +278,12 @@ ifeq ($(HAS_DNS_RESOLVER),1)
              $(COMPONENT_SRC_DIR)/enum.cxx 
 endif
 
-ifeq ($(HAS_TTS),1)
-  SOURCES += $(PLATFORM_SRC_DIR)/ptts.cxx 
+ifneq ($(HAS_TEXT_TO_SPEECH)$(HAS_SPEECH_RECOGNITION),)
+  SOURCES += $(PLATFORM_SRC_DIR)/speech.cxx 
+endif
+
+ifeq ($(HAS_TEXT_TO_SPEECH),1)
+  SOURCES += $(PLATFORM_SRC_DIR)/speech_festival.cxx 
 endif
 
 ifeq ($(HAS_ASN),1)
