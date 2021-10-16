@@ -34,6 +34,19 @@
 
 #if P_CYPHER
 
+
+namespace PCRC32 {
+  uint32_t Update(const void * data, size_t size, uint32_t crc);
+  inline uint32_t Update(const PBYTEArray & data, uint32_t crc) { return Update(data.GetPointer(), data.size(), crc); }
+  inline uint32_t Update(const PString & str, uint32_t crc)     { return Update(str.c_str(), str.length(), crc); }
+  inline uint32_t Update(const std::string & str, uint32_t crc) { return Update(str.c_str(), str.length(), crc); }
+  inline uint32_t Calculate(const void * data, size_t size)     { return Update(data, size, 0); }
+  inline uint32_t Calculate(const PBYTEArray & data)            { return Update(data.GetPointer(), data.size(), 0); }
+  inline uint32_t Calculate(const PString & str)                { return Update(str.c_str(), str.length(), 0); }
+  inline uint32_t Calculate(const std::string & str)            { return Update(str.c_str(), str.length(), 0); }
+}
+
+
 /** RFC4013 "SASLprep" compatible string.
     For security systems, often some identifiers, usersname, passwords etc
     must not contain extraneous characters. This class represents a string
