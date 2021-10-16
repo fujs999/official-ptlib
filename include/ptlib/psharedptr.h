@@ -72,16 +72,22 @@ class PSharedPtr : public PContainer
     PBoolean SetSize(PINDEX)
     { return false; }
 
-    T * Get() const
+    element_type * get() const
     { return ptr; }
 
-    void Reset() const
+    element_type * Get() const
+    { return ptr; }
+
+    void reset(element_type * p = NULL)
+    { AssignContents(PSharedPtr(p)); }
+
+    void Reset()
     { AssignContents(PSharedPtr()); }
 
-    T & operator*() const
+    element_type & operator*() const
     { return *ptr; }
 
-    T * operator->() const
+    element_type * operator->() const
     { return ptr; }
 
 
@@ -97,13 +103,13 @@ class PSharedPtr : public PContainer
     { delete(ptr); }
 
     void CloneContents(const PContainer * src)
-    { ptr = new element_type(*((const PSharedPtr *)src)->ptr); }
+    { ptr = ((const PSharedPtr *)src)->ptr; }
 
     void CopyContents(const PContainer & c)
     { ptr = ((const PSharedPtr &)c).ptr; }
 
   protected:
-    T * ptr;
+    element_type * ptr;
 };
 
 
