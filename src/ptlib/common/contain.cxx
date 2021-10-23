@@ -1991,9 +1991,9 @@ PString PString::Trim() const
 PString PString::ToLower() const
 {
   PString newStr;
-  newStr.SetSize(length()+1);
+  char * ptr = newStr.GetPointerAndSetLength(length());
   for (size_t i = 0; i < length(); ++i)
-    newStr[i] = (char)tolower(at(i) & 0xff);
+    *ptr++ = (char)tolower(at(i) & 0xff);
   return newStr;
 }
 
@@ -2001,9 +2001,9 @@ PString PString::ToLower() const
 PString PString::ToUpper() const
 {
   PString newStr;
-  newStr.SetSize(length()+1);
+  char * ptr = newStr.GetPointerAndSetLength(length());
   for (size_t i = 0; i < length(); ++i)
-    newStr[i] = (char)toupper(at(i) & 0xff);
+    *ptr++ = (char)toupper(at(i) & 0xff);
   return newStr;
 }
 

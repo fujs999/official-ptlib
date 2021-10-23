@@ -300,7 +300,8 @@
 
 #undef P_TIMERS
 #undef P_REGEX
-#undef P_TTS
+#undef P_TEXT_TO_SPEECH
+#undef P_SPEECH_RECOGNITION
 #undef P_ASN
 #undef P_PIPECHAN
 #undef P_DTMF
@@ -564,69 +565,6 @@
 
 /////////////////////////////////////////////////
 //
-// EXPAT library for XML parsing
-//
-
-#undef P_EXPAT
-#undef P_EXPAT_BUILD
-#undef P_EXPAT_WIN32
-#undef P_EXPAT_WIN64
-#undef P_EXPAT_LIBRARY_W32_DEBUG
-#undef P_EXPAT_LIBRARY_W32_RELEASE
-#undef P_EXPAT_LIBRARY_W64_DEBUG
-#undef P_EXPAT_LIBRARY_W64_RELEASE
-
-#if (defined(P_EXPAT_WIN64)                 &&  defined(P_64BIT)) || \
-    (defined(P_EXPAT_WIN32)                 && !defined(P_64BIT)) || \
-    ((defined(P_EXPAT_LIBRARY_W64_DEBUG)                          || \
-      defined(P_EXPAT_LIBRARY_W64_RELEASE)) &&  defined(P_64BIT)) || \
-    ((defined(P_EXPAT_LIBRARY_W32_DEBUG)                          || \
-      defined(P_EXPAT_LIBRARY_W32_RELEASE)) && !defined(P_64BIT))
-  #define P_EXPAT 1
-#endif
-
-#if defined(_MSC_VER) && P_EXPAT
-
-  #if P_EXPAT_BUILD
-    #pragma include_alias(<expat.h>, <@EXPAT_BUILD_DIR@/lib/expat.h>)
-  #elif defined(P_EXPAT_WIN32)
-    #pragma include_alias(<expat.h>, <@EXPAT_WIN32_DIR@/Source/lib/expat.h>)
-  #else
-    #pragma include_alias(<expat.h>, <@EXPAT_WIN64_DIR@/include/expat.h>)
-  #endif
-
-  #if defined(P_EXPAT_WIN32) || defined(P_EXPAT_WIN64)
-    #undef P_EXPAT_LIBRARY
-  #elif defined(P_64BIT)
-    #if defined(_DEBUG)
-      #define P_EXPAT_LIBRARY P_EXPAT_LIBRARY_W64_DEBUG
-    #else
-      #define P_EXPAT_LIBRARY P_EXPAT_LIBRARY_W64_RELEASE
-    #endif
-  #else
-    #if defined(_DEBUG)
-      #define P_EXPAT_LIBRARY P_EXPAT_LIBRARY_W32_DEBUG
-    #else
-      #define P_EXPAT_LIBRARY P_EXPAT_LIBRARY_W32_RELEASE
-    #endif
-  #endif
-#endif
-
-#ifdef P_EXPAT
-  #if P_TTS
-    #undef P_VXML
-    #if P_VIDEO && P_VXML
-      #undef P_VXML_VIDEO
-    #endif
-  #endif
-  #undef P_JABBER
-  #undef P_XMLRPC
-  #undef P_SOAP
-#endif
-
-
-/////////////////////////////////////////////////
-//
 // Script interpreter
 //
 
@@ -753,6 +691,69 @@
 
 /////////////////////////////////////////////////
 //
+// EXPAT library for XML parsing
+//
+
+#undef P_EXPAT
+#undef P_EXPAT_BUILD
+#undef P_EXPAT_WIN32
+#undef P_EXPAT_WIN64
+#undef P_EXPAT_LIBRARY_W32_DEBUG
+#undef P_EXPAT_LIBRARY_W32_RELEASE
+#undef P_EXPAT_LIBRARY_W64_DEBUG
+#undef P_EXPAT_LIBRARY_W64_RELEASE
+
+#if (defined(P_EXPAT_WIN64)                 &&  defined(P_64BIT)) || \
+    (defined(P_EXPAT_WIN32)                 && !defined(P_64BIT)) || \
+    ((defined(P_EXPAT_LIBRARY_W64_DEBUG)                          || \
+      defined(P_EXPAT_LIBRARY_W64_RELEASE)) &&  defined(P_64BIT)) || \
+    ((defined(P_EXPAT_LIBRARY_W32_DEBUG)                          || \
+      defined(P_EXPAT_LIBRARY_W32_RELEASE)) && !defined(P_64BIT))
+  #define P_EXPAT 1
+#endif
+
+#if defined(_MSC_VER) && P_EXPAT
+
+  #if P_EXPAT_BUILD
+    #pragma include_alias(<expat.h>, <@EXPAT_BUILD_DIR@/lib/expat.h>)
+  #elif defined(P_EXPAT_WIN32)
+    #pragma include_alias(<expat.h>, <@EXPAT_WIN32_DIR@/Source/lib/expat.h>)
+  #else
+    #pragma include_alias(<expat.h>, <@EXPAT_WIN64_DIR@/include/expat.h>)
+  #endif
+
+  #if defined(P_EXPAT_WIN32) || defined(P_EXPAT_WIN64)
+    #undef P_EXPAT_LIBRARY
+  #elif defined(P_64BIT)
+    #if defined(_DEBUG)
+      #define P_EXPAT_LIBRARY P_EXPAT_LIBRARY_W64_DEBUG
+    #else
+      #define P_EXPAT_LIBRARY P_EXPAT_LIBRARY_W64_RELEASE
+    #endif
+  #else
+    #if defined(_DEBUG)
+      #define P_EXPAT_LIBRARY P_EXPAT_LIBRARY_W32_DEBUG
+    #else
+      #define P_EXPAT_LIBRARY P_EXPAT_LIBRARY_W32_RELEASE
+    #endif
+  #endif
+#endif
+
+#if P_EXPAT
+  #if P_TEXT_TO_SPEECH && P_SCRIPTS && P_HTTP
+    #undef P_VXML
+    #if P_VIDEO && P_VXML
+      #undef P_VXML_VIDEO
+    #endif
+  #endif
+  #undef P_JABBER
+  #undef P_XMLRPC
+  #undef P_SOAP
+#endif
+
+
+/////////////////////////////////////////////////
+//
 // Cyrus SASL
 //
 
@@ -833,8 +834,14 @@
 // Text To Speech - SAPI for Windows, Festival for Unix
 //
 
-#undef P_SAPI
-#undef P_FESTIVAL
+#if P_TEXT_TO_SPEECH
+  #define P_TTS P_TEXT_TO_SPEECH
+  #undef P_FESTIVAL
+#endif
+
+#if P_TEXT_TO_SPEECH || P_SPEECH_RECOGNITION
+  #undef P_SAPI
+#endif
 
 
 /////////////////////////////////////////////////
@@ -1543,6 +1550,20 @@
   #define P_GOBJECT_LIBRARY   P_GSTREAMER_DIRSTR "/lib/gobject-2.0.lib"
   #define P_GLIB_LIBRARY      P_GSTREAMER_DIRSTR "/lib/glib-2.0.lib"
   #define P_GIO_LIBRARY       P_GSTREAMER_DIRSTR "/lib/gio-2.0.lib"
+#endif
+
+
+/////////////////////////////////////////////////
+//
+// AWS SDK
+//
+
+#if defined(P_64BIT)  // Default build is only x64
+  #undef P_AWS_SDK
+#endif
+
+#if defined(_MSC_VER) && defined(P_AWS_SDK)
+  #define P_AWS_SDK_LIBDIR(module) "@AWS_SDK_DIR@/bin/aws-cpp-sdk-" ## #module ## ".lib"
 #endif
 
 

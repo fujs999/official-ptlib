@@ -41,6 +41,40 @@
 
 
 ///////////////////////////////////////////////////////////////////////////////
+
+namespace PCRC32 {
+  static vector<uint32_t> InitCrc32Table()
+  {
+    vector<uint32_t> table(256);
+    for (size_t i = 0; i < table.size(); ++i) {
+      DWORD c = i;
+      for (PINDEX j = 0; j < 8; ++j) {
+        if (c & 1)
+          c = 0xEDB88320UL ^ (c >> 1);
+        else
+          c >>= 1;
+      }
+      table[i] = c;
+    }
+    return table;
+  }
+
+  uint32_t Update(const void * data, size_t size, uint32_t crc)
+  {
+    static vector<uint32_t> Crc32Table = InitCrc32Table();
+
+    // calculate CRC-32 for buffer
+    crc ^= 0xFFFFFFFF;
+    const BYTE * ptr = static_cast<const uint8_t *>(data);
+    while (size-- > 0)
+      crc = Crc32Table[(crc ^ *ptr++) & 0xFF] ^ (crc >> 8);
+
+    return crc ^ 0xffffffff;
+  }
+};
+
+
+///////////////////////////////////////////////////////////////////////////////
 // PSASLString
 
 void PSASLString::AppendValidated(const char * str)
@@ -1198,7 +1232,8 @@ void PTEACypher::DecodeBlock(const void * in, void * out)
 
 void PHMAC::InitKey(const void * key, PINDEX len)
 {
-  memcpy(m_key.GetPointer(len), key,  len);
+  m_key.SetSize(len);
+  memcpy(m_key.GetPointer(), key,  len);
 }
 
 
