@@ -3448,16 +3448,7 @@ bool PRegularExpression::Execute(const char * cstr, PINDEX & start, PINDEX & len
     return false;
   }
 
-  switch (GetErrorCode()) {
-    case NoError:
-    case NoMatch:
-      break;
-    default:
-      return false;
-  }
-
   regmatch_t match;
-
   if ((*s_lastRegExError = (ErrorCodes)regexec((regex_t*)m_compiledRegex, cstr, 1, &match, options)) != NoError)
     return false;
 
