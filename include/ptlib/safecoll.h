@@ -539,7 +539,7 @@ class PSafeCollection : public PSmartObject
 
   private:
     PSafeCollection(const PSafeCollection & other)
-      : PSafeObject(other)
+      : PSmartObject(other)
       , m_collection()
       , m_deleteObjects()
       , m_deleteObjectsTimer()
