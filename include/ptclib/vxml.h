@@ -166,7 +166,8 @@ class PVXMLGrammar : public PObject, protected PVXMLGrammarInit
   public:
     PVXMLGrammar(const PVXMLGrammarInit & init);
 
-    virtual void OnUserInput(const char ch) = 0;
+    virtual void OnUserInput(const PString & input) = 0;
+    virtual void OnAudioInput(const short * samples, size_t count);
     virtual void Start();
     virtual bool Process();
 
@@ -189,12 +190,14 @@ class PVXMLGrammar : public PObject, protected PVXMLGrammarInit
 
   protected:
     PDECLARE_NOTIFIER(PTimer, PVXMLGrammar, OnTimeout);
+    PDECLARE_SpeechRecognitionNotifier(PVXMLGrammar, OnRecognition);
+    virtual void GetWordsToRecognise(PStringArray & words) const;
 
-    PString        m_value;
-    GrammarState   m_state;
-    PTimeInterval  m_timeout;
-    PTimer         m_timer;
-    PDECLARE_MUTEX(m_mutex);
+    PSpeechRecognition * m_recogniser;
+    PString              m_value;
+    atomic<GrammarState> m_state;
+    PTimeInterval        m_timeout;
+    PTimer               m_timer;
 };
 
 typedef PParamFactory<PVXMLGrammar, PVXMLGrammarInit, PCaselessString> PVXMLGrammarFactory;
@@ -207,8 +210,11 @@ class PVXMLMenuGrammar : public PVXMLGrammar
     PCLASSINFO(PVXMLMenuGrammar, PVXMLGrammar);
   public:
     PVXMLMenuGrammar(const PVXMLGrammarInit & init);
-    virtual void OnUserInput(const char ch);
+    virtual void OnUserInput(const PString & input);
     virtual bool Process();
+
+  protected:
+    virtual void GetWordsToRecognise(PStringArray & words) const;
 };
 
 
@@ -220,9 +226,11 @@ class PVXMLDigitsGrammar : public PVXMLGrammar
   public:
     PVXMLDigitsGrammar(const PVXMLGrammarInit & init);
 
-    virtual void OnUserInput(const char ch);
+    virtual void OnUserInput(const PString & input);
 
   protected:
+    virtual void GetWordsToRecognise(PStringArray & words) const;
+
     unsigned m_minDigits;
     unsigned m_maxDigits;
     PString  m_terminators;
@@ -237,7 +245,10 @@ class PVXMLBooleanGrammar : public PVXMLGrammar
   public:
     PVXMLBooleanGrammar(const PVXMLGrammarInit & init);
 
-    virtual void OnUserInput(const char ch);
+    virtual void OnUserInput(const PString & input);
+
+  protected:
+    virtual void GetWordsToRecognise(PStringArray & words) const;
 };
 
 
@@ -249,9 +260,11 @@ class PVXMLGrammarSRGS : public PVXMLGrammar
   public:
     PVXMLGrammarSRGS(const PVXMLGrammarInit & init);
 
-    virtual void OnUserInput(const char ch);
+    virtual void OnUserInput(const PString & input);
 
   protected:
+    virtual void GetWordsToRecognise(PStringArray & words) const;
+
     struct Item
     {
       unsigned          m_minRepeat;
@@ -263,7 +276,8 @@ class PVXMLGrammarSRGS : public PVXMLGrammar
 
       Item() : m_minRepeat(1), m_maxRepeat(1), m_currentItem(0) { }
       bool Parse(PXMLElement & grammar, PXMLElement * element);
-      GrammarState OnUserInput(const PString & str);
+      GrammarState OnUserInput(const PString & input);
+      void AddWordsToRecognise(PStringArray & words) const;
     };
 
     Item m_rule;
@@ -465,7 +479,7 @@ class PVXMLSession : public PIndirectChannel
     PURL             m_rootURL;
     PURL             m_documentURL;
     PHTTPCookies     m_cookies;
-    PDECLARE_MUTEX(m_cookieMutex);
+    PDECLARE_MUTEX(  m_cookieMutex);
 
     PTextToSpeech  * m_textToSpeech;
     PVXMLCache     * m_ttsCache;
@@ -529,15 +543,19 @@ class PVXMLSession : public PIndirectChannel
 
     virtual void LoadGrammar(const PString & type, const PVXMLGrammarInit & init);
     void ClearGrammars();
+    void StartGrammars();
+    void OnUserInputToGrammars(const PString & input);
+    void OnAudioInputToGrammars(const short * samples, size_t count);
     bool IsGrammarRunning() const;
     typedef PList<PVXMLGrammar> Grammars;
-    Grammars m_grammars;
-    char     m_defaultMenuDTMF;
+    Grammars       m_grammars;
+    PDECLARE_MUTEX(m_grammersMutex);
+    char           m_defaultMenuDTMF;
 
     PAutoPtr<PScriptLanguage> m_scriptContext;
 
-    std::queue<char> m_userInputQueue;
-    PDECLARE_MUTEX(m_userInputMutex);
+    std::queue<PString> m_userInputQueue;
+    PDECLARE_MUTEX(     m_userInputMutex);
 
     enum {
       NotRecording,

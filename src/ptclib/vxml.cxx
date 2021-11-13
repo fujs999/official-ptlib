@@ -1630,39 +1630,35 @@ bool PVXMLSession::ProcessEvents()
   if (PAssertNULL(vxmlChannel) == NULL)
     return false;
 
-  char ch;
+  PString input;
 
   m_userInputMutex.Wait();
-  if (m_userInputQueue.empty())
-    ch = '\0';
-  else {
-    ch = m_userInputQueue.front();
+  if (!m_userInputQueue.empty()) {
+    input = m_userInputQueue.front();
     m_userInputQueue.pop();
   }
   m_userInputMutex.Signal();
 
-  if (ch != '\0') {
+  if (!input.empty()) {
     if (m_recordingStatus == RecordingInProgress) {
-      PTRACE(3, "Recording ended via user input '" << ch << '\'');
+      PTRACE(3, "Recording ended via user input \"" << input << '"');
       if (m_recordStopOnDTMF && vxmlChannel->EndRecording(false)) {
         if (!m_recordingName.IsEmpty())
-          InternalSetVar(m_recordingName, "termchar", ch);
+          InternalSetVar(m_recordingName, "termchar", input[0]);
       }
     }
     else if (m_bargeIn) {
-      PTRACE(3, "Executing bargein with user input '" << ch << '\'');
+      PTRACE(3, "Executing bargein with user input \"" << input << '"');
       m_bargingIn = true;
       vxmlChannel->FlushQueue();
-      for (Grammars::iterator it = m_grammars.begin(); it != m_grammars.end(); ++it)
-        it->OnUserInput(ch);
+      OnUserInputToGrammars(input);
     }
     else if (vxmlChannel->IsPlaying()) {
-      PTRACE(3, "No bargein, ignoring user input '" << ch << '\'');
+      PTRACE(3, "No bargein, ignoring user input \"" << input << '"');
     }
     else {
-      PTRACE(3, "Handling user input '" << ch << '\'');
-      for (Grammars::iterator it = m_grammars.begin(); it != m_grammars.end(); ++it)
-        it->OnUserInput(ch);
+      PTRACE(3, "Handling user input \"" << input << '"');
+      OnUserInputToGrammars(input);
     }
   }
 
@@ -1740,30 +1736,30 @@ bool PVXMLSession::NextNode(bool processChildren)
   if (m_newXML.get() != NULL)
     return false;
 
-  Grammars grammars = m_grammars;
-  m_grammars = Grammars();
-  for (Grammars::iterator grammar = grammars.begin(); grammar != grammars.end(); ++grammar) {
-    switch (grammar->GetState()) {
-      case PVXMLGrammar::Idle:
-      case PVXMLGrammar::Started:
-        break;
+  {
+    PWaitAndSignal lock(m_grammersMutex);
+    for (Grammars::iterator grammar = m_grammars.begin(); grammar != m_grammars.end(); ++grammar) {
+      switch (grammar->GetState()) {
+        case PVXMLGrammar::Idle:
+        case PVXMLGrammar::Started:
+          break;
 
-      default:
-        ClearBargeIn();
+        default:
+          ClearBargeIn();
 
-        if (grammar->Process()) {
-          // Note the PXML objects may have been replaced at this time,
-          // pointers can't be used as we work back up the call stack.
-          PTRACE(2, "Processed grammar: " << *grammar << ", moving to node " << PXMLObject::PrintTrace(m_currentNode));
-          ClearGrammars();
-          return false;
-        }
+          if (grammar->Process()) {
+            // Note the PXML objects may have been replaced at this time,
+            // pointers can't be used as we work back up the call stack.
+            PTRACE(2, "Processed grammar: " << *grammar << ", moving to node " << PXMLObject::PrintTrace(m_currentNode));
+            ClearGrammars();
+            return false;
+          }
 
-        PTRACE(2, "Processed grammar: " << *grammar << ", restarting node " << PXMLObject::PrintTrace(m_currentNode));
-        grammar->SetIdle();
+          PTRACE(2, "Processed grammar: " << *grammar << ", restarting node " << PXMLObject::PrintTrace(m_currentNode));
+          grammar->SetIdle();
+      }
     }
   }
-  m_grammars = grammars; // Put grammars back
 
   PXMLElement * element = dynamic_cast<PXMLElement *>(m_currentNode);
   if (element != NULL) {
@@ -1862,11 +1858,9 @@ bool PVXMLSession::ProcessNode()
 
 void PVXMLSession::OnUserInput(const PString & str)
 {
-  {
-    PWaitAndSignal mutex(m_userInputMutex);
-    for (PINDEX i = 0; i < str.GetLength(); i++)
-      m_userInputQueue.push(str[i]);
-  }
+  m_userInputMutex.Wait();
+  m_userInputQueue.push(str);
+  m_userInputMutex.Signal();
   Trigger();
 }
 
@@ -2182,20 +2176,50 @@ void PVXMLSession::LoadGrammar(const PString & type, const PVXMLGrammarInit & in
   }
 
   PTRACE(2, "Grammar set to " << *grammar << " from \"" << adjustedType << '"');
+  m_grammersMutex.Wait();
   m_grammars.Append(grammar);
+  m_grammersMutex.Signal();
 }
 
 
 void PVXMLSession::ClearGrammars()
 {
+  m_grammersMutex.Wait();
   PTRACE_IF(2, !m_grammars.empty(), "Grammars cleared: " << m_grammars);
   m_grammars.RemoveAll();
+  m_grammersMutex.Signal();
   ClearBargeIn();
+}
+
+
+void PVXMLSession::StartGrammars()
+{
+  PWaitAndSignal lock(m_grammersMutex);
+  for (Grammars::iterator it = m_grammars.begin(); it != m_grammars.end(); ++it)
+    it->Start();
+}
+
+
+void PVXMLSession::OnUserInputToGrammars(const PString & input)
+{
+  PWaitAndSignal lock(m_grammersMutex);
+  for (Grammars::iterator it = m_grammars.begin(); it != m_grammars.end(); ++it)
+    it->OnUserInput(input);
+}
+
+
+void PVXMLSession::OnAudioInputToGrammars(const short * samples, size_t count)
+{
+  PWaitAndSignal lock(m_grammersMutex);
+  for (Grammars::iterator it = m_grammars.begin(); it != m_grammars.end(); ++it)
+    it->OnAudioInput(samples, count);
 }
 
 
 bool PVXMLSession::IsGrammarRunning() const
 {
+  PWaitAndSignal lock(m_grammersMutex);
+
   if (m_grammars.empty())
     return false;
 
@@ -2885,7 +2909,7 @@ void PVXMLSession::SetTransferComplete(bool state)
 PBoolean PVXMLSession::TraverseMenu(PXMLElement & element)
 {
   m_scriptContext->PushScopeChain(DialogScope, true);
-  LoadGrammar("menu", PVXMLGrammarInit(*this, element));
+  LoadGrammar(MenuElement, PVXMLGrammarInit(*this, element));
   m_defaultMenuDTMF = element.GetAttribute(DtmfAttribute).IsTrue() ? '1' : 'N';
   ++m_promptCount;
   return true;
@@ -2894,8 +2918,7 @@ PBoolean PVXMLSession::TraverseMenu(PXMLElement & element)
 
 PBoolean PVXMLSession::TraversedMenu(PXMLElement &)
 {
-  for (Grammars::iterator it = m_grammars.begin(); it != m_grammars.end(); ++it)
-    it->Start();
+  StartGrammars();
   m_scriptContext->PopScopeChain(true);
   return false;
 }
@@ -2903,9 +2926,11 @@ PBoolean PVXMLSession::TraversedMenu(PXMLElement &)
 
 PBoolean PVXMLSession::TraverseChoice(PXMLElement & element)
 {
-  if (!element.HasAttribute(DtmfAttribute) && m_defaultMenuDTMF <= '9')
-    element.SetAttribute(DtmfAttribute, PString(m_defaultMenuDTMF++));
-
+  if (m_defaultMenuDTMF <= '9') {
+    if (!element.HasAttribute(DtmfAttribute))
+      element.SetAttribute(DtmfAttribute, m_defaultMenuDTMF);
+    ++m_defaultMenuDTMF;
+  }
   return true;
 }
 
@@ -2964,8 +2989,10 @@ PBoolean PVXMLSession::TraversePrompt(PXMLElement & element)
   }
 
   // Update timeout of current recognition (if 'timeout' attribute is set)
+  m_grammersMutex.Wait();
   for (Grammars::iterator it = m_grammars.begin(); it != m_grammars.end(); ++it)
     it->SetTimeout(element.GetAttribute(TimeoutProperty));
+  m_grammersMutex.Signal();
 
   if (element.GetAttribute(BargeInProperty).IsFalse() || InternalGetVar(PropertyScope, BargeInProperty).IsFalse()) {
     PTRACE(3, "Prompt bargein disabled.");
@@ -3009,8 +3036,7 @@ PBoolean PVXMLSession::TraverseField(PXMLElement & element)
 
 PBoolean PVXMLSession::TraversedField(PXMLElement &)
 {
-  for (Grammars::iterator it = m_grammars.begin(); it != m_grammars.end(); ++it)
-    it->Start();
+  StartGrammars();
   return false;
 }
 
@@ -3186,19 +3212,30 @@ bool PVXMLSession::VideoSenderDevice::InternalGetFrameData(BYTE * buffer, PINDEX
 
 PVXMLGrammar::PVXMLGrammar(const PVXMLGrammarInit & init)
   : PVXMLGrammarInit(init)
+  , m_recogniser(NULL)
   , m_state(Idle)
 {
   if (init.m_grammarElement != NULL) {
     PCaselessString attrib = init.m_grammarElement->GetAttribute("mode");
-    if (!attrib.IsEmpty() && attrib != DtmfAttribute) {
-      PTRACE(2, "Only DTMF mode supported for grammars at this time.");
-      m_state = Illegal;
-      return;
-    }
+    if (!attrib.IsEmpty() && attrib != DtmfAttribute)
+      m_recogniser = PSpeechRecognition::Create();
   }
 
   m_timer.SetNotifier(PCREATE_NOTIFIER(OnTimeout), "VXMLGrammar");
   SetTimeout(m_session.InternalGetVar(PropertyScope, TimeoutProperty));
+}
+
+
+void PVXMLGrammar::OnRecognition(PSpeechRecognition &, PSpeechRecognition::Transcript transcript)
+{
+
+}
+
+
+void PVXMLGrammar::OnAudioInput(const short * samples, size_t count)
+{
+  if (m_recogniser)
+    m_recogniser->Listen(samples, count);
 }
 
 
@@ -3218,31 +3255,33 @@ void PVXMLGrammar::Start()
 {
   m_state = Started;
   m_timer = m_timeout;
+
+  if (m_recogniser != NULL) {
+    PStringArray words;
+    GetWordsToRecognise(words);
+    m_recogniser->Open(PCREATE_NOTIFIER(OnRecognition), words);
+  }
+
   PTRACE(3, "Started grammar " << *this << ", timeout=" << m_timeout);
+}
+
+
+void PVXMLGrammar::GetWordsToRecognise(PStringArray &) const
+{
 }
 
 
 void PVXMLGrammar::OnTimeout(PTimer &, P_INT_PTR)
 {
-  PTRACE(3, "Timeout for grammar " << *this );
-  m_mutex.Wait();
+  PTRACE(3, "Timeout for grammar " << *this);
 
-  switch (m_state) {
-    case Started:
-      m_state = NoInput;
-      m_session.Trigger();
-      break;
-
-    case PartFill :
-      m_state = Filled;
-      m_session.Trigger();
-      break;
-
-    default :
-      break;
+  GrammarState prev = Started;
+  if (!m_state.compare_exchange_strong(prev, NoInput)) {
+    prev = PartFill;
+    if (!m_state.compare_exchange_strong(prev, Filled))
+      return;
   }
-
-  m_mutex.Signal();
+  m_session.Trigger();
 }
 
 
@@ -3271,7 +3310,7 @@ bool PVXMLGrammar::Process()
 
 //////////////////////////////////////////////////////////////////
 
-PFACTORY_CREATE(PVXMLGrammarFactory, PVXMLMenuGrammar, "menu");
+PFACTORY_CREATE(PVXMLGrammarFactory, PVXMLMenuGrammar, MenuElement);
 
 PVXMLMenuGrammar::PVXMLMenuGrammar(const PVXMLGrammarInit & init)
   : PVXMLGrammar(init)
@@ -3279,15 +3318,11 @@ PVXMLMenuGrammar::PVXMLMenuGrammar(const PVXMLGrammarInit & init)
 }
 
 
-void PVXMLMenuGrammar::OnUserInput(const char ch)
+void PVXMLMenuGrammar::OnUserInput(const PString & input)
 {
-  m_mutex.Wait();
-
-  m_value = ch;
-  PTRACE(4, "Menu grammar filled with '" << ch << '\'');
+  m_value = input;
+  PTRACE(4, "Menu grammar filled with \"" << input << '"');
   m_state = PVXMLGrammar::Filled;
-
-  m_mutex.Signal();
 }
 
 
@@ -3320,6 +3355,17 @@ bool PVXMLMenuGrammar::Process()
 }
 
 
+void PVXMLMenuGrammar::GetWordsToRecognise(PStringArray & words) const
+{
+  PXMLElement * choice;
+  PINDEX index = 0;
+  while ((choice = m_field.GetElement("choice", index++)) != NULL) {
+    if (choice->HasAttribute(DtmfAttribute))
+      words.AppendString(choice->GetAttribute(DtmfAttribute));
+  }
+}
+
+
 //////////////////////////////////////////////////////////////////
 
 PFACTORY_CREATE(PVXMLGrammarFactory, PVXMLDigitsGrammar, "digits");
@@ -3344,10 +3390,8 @@ PVXMLDigitsGrammar::PVXMLDigitsGrammar(const PVXMLGrammarInit & init)
 }
 
 
-void PVXMLDigitsGrammar::OnUserInput(const char ch)
+void PVXMLDigitsGrammar::OnUserInput(const PString & input)
 {
-  PWaitAndSignal mutex(m_mutex);
-
   if (m_state == Idle)
     Start();
 
@@ -3358,14 +3402,14 @@ void PVXMLDigitsGrammar::OnUserInput(const char ch)
   size_t len = m_value.length();
 
   // is this char the terminator?
-  if (m_terminators.Find(ch) != P_MAX_INDEX) {
+  if (m_terminators.Find(input) != P_MAX_INDEX) {
     m_state = len >= m_minDigits && len <= m_maxDigits ? Filled : NoMatch;
     PTRACE(4, "Grammar " << *this << (m_state == Filled ? " has been FILLED" : " has NOT yet been filled") << ":"
               " value=" << m_value << ", length=" << len << ", min=" << m_minDigits << ", max=" << m_maxDigits);
     return;
   }
 
-  m_value += ch; // Add to collected digits string
+  m_value += input; // Add to collected digits string
 
   if (len >= m_maxDigits) {
     PTRACE(4, " Grammar " << *this << " has been FILLED, max=" << m_maxDigits);
@@ -3375,6 +3419,15 @@ void PVXMLDigitsGrammar::OnUserInput(const char ch)
     PTRACE(4, " Grammar " << *this << " has been partially FILLED, min=" << m_minDigits);
     m_state = PVXMLGrammar::PartFill;
   }
+}
+
+
+void PVXMLDigitsGrammar::GetWordsToRecognise(PStringArray & words) const
+{
+  for (char c = '0'; c <= '9'; ++c)
+    words.AppendString(c);
+  for (size_t i = 0; i < m_terminators.length(); ++i)
+    words.AppendString(m_terminators[i]);
 }
 
 
@@ -3388,24 +3441,26 @@ PVXMLBooleanGrammar::PVXMLBooleanGrammar(const PVXMLGrammarInit & init)
 }
 
 
-void PVXMLBooleanGrammar::OnUserInput(const char ch)
+void PVXMLBooleanGrammar::OnUserInput(const PString & input)
 {
-  PWaitAndSignal mutex(m_mutex);
-
   if (m_state == Idle)
     Start();
 
-  switch (ch) {
-    case 1 :
-      m_value = PString(true);
-      m_state = Filled;
-      break;
-
-    case 2 :
-      m_value = PString(false);
-      m_state = Filled;
-      break;
+  if (input == "1" || (input *= "yes")) {
+    m_value = PString(true);
+    m_state = Filled;
   }
+  else if (input == "2" || (input *= "no")) {
+    m_value = PString(false);
+    m_state = Filled;
+  }
+}
+
+
+void PVXMLBooleanGrammar::GetWordsToRecognise(PStringArray & words) const
+{
+  words.AppendString("yes");
+  words.AppendString("no");
 }
 
 
@@ -3498,13 +3553,13 @@ bool PVXMLGrammarSRGS::Item::Parse(PXMLElement & grammar, PXMLElement * element)
 }
 
 
-PVXMLGrammar::GrammarState PVXMLGrammarSRGS::Item::OnUserInput(const PString & str)
+PVXMLGrammar::GrammarState PVXMLGrammarSRGS::Item::OnUserInput(const PString & input)
 {
-  if (m_token == str)
+  if (m_token == input)
     return PartFill;
 
   for (std::vector<Item>::iterator alt = m_items[m_currentItem].begin(); alt != m_items[m_currentItem].end(); ++alt) {
-    GrammarState state = alt->OnUserInput(str);
+    GrammarState state = alt->OnUserInput(input);
     switch (state) {
       case Started:
         break;
@@ -3522,14 +3577,27 @@ PVXMLGrammar::GrammarState PVXMLGrammarSRGS::Item::OnUserInput(const PString & s
 }
 
 
-void PVXMLGrammarSRGS::OnUserInput(const char ch)
+void PVXMLGrammarSRGS::OnUserInput(const PString & input)
 {
-  PWaitAndSignal mutex(m_mutex);
-
   if (m_state == Idle)
     Start();
 
-  m_state = m_rule.OnUserInput(ch);
+  m_state = m_rule.OnUserInput(input);
+}
+
+
+void PVXMLGrammarSRGS::GetWordsToRecognise(PStringArray & words) const
+{
+  m_rule.AddWordsToRecognise(words);
+}
+
+
+void PVXMLGrammarSRGS::Item::AddWordsToRecognise(PStringArray & words) const
+{
+  if (!m_token.empty())
+    words.AppendString(m_token);
+  for (std::vector<Item>::const_iterator alt = m_items[m_currentItem].begin(); alt != m_items[m_currentItem].end(); ++alt)
+    alt->AddWordsToRecognise(words);
 }
 
 
@@ -3717,6 +3785,8 @@ PBoolean PVXMLChannel::Write(const void * buf, PINDEX len)
 {
   if (m_closed)
     return false;
+
+  m_vxmlSession->OnAudioInputToGrammars(reinterpret_cast<const short *>(buf), len/sizeof(short));
 
   m_recordingMutex.Wait();
 
