@@ -42,10 +42,7 @@ class PTextToSpeech : public PObject
 {
     PCLASSINFO(PTextToSpeech, PObject);
   public:
-    static PTextToSpeech * Create(const PString & name = PString::Empty())
-    {
-      return PFactory<PTextToSpeech>::CreateInstance(name.empty() ? PFactory<PTextToSpeech>::GetKeyList().front() : name);
-    }
+    static PTextToSpeech * Create(const PString & name = PString::Empty());
 
     virtual PStringArray GetVoiceList() = 0;
     virtual bool SetVoice(const PString & voice) = 0;
@@ -84,14 +81,17 @@ class PTextToSpeech : public PObject
 
 PFACTORY_LOAD(PTextToSpeech_WAV);
 #if P_SAPI
+  #define P_TEXT_TO_SPEECH_SAPI "Microsoft SAPI"
   PFACTORY_LOAD(PTextToSpeech_SAPI);
 #endif
 
 #if P_FESTIVAL
+  #define P_TEXT_TO_SPEECH_FESTIVAL "Festival"
   PFACTORY_LOAD(PTextToSpeech_Festival);
 #endif
 
 #if P_AWS_SDK
+  #define P_TEXT_TO_SPEECH_AWS "AWS"
   PFACTORY_LOAD(PTextToSpeech_AWS);
 #endif
 
@@ -103,10 +103,7 @@ class PSpeechRecognition : public PObject
 {
     PCLASSINFO(PSpeechRecognition, PObject);
   public:
-    static PSpeechRecognition * Create(const PString & name = PString::Empty())
-    {
-      return PFactory<PSpeechRecognition>::CreateInstance(name.empty() ? PFactory<PSpeechRecognition>::GetKeyList().front() : name);
-    }
+    static PSpeechRecognition * Create(const PString & name = PString::Empty());
 
     virtual bool SetSampleRate(unsigned rate) = 0;
     virtual unsigned GetSampleRate() const = 0;
@@ -143,10 +140,12 @@ class PSpeechRecognition : public PObject
     Notifier m_notifier;
 };
 
-#if P_SAPI
+#if P_SAPI && 0 // Not working yet!
+  #define P_SPEECH_RECOGNITION_SAPI "Microsoft SAPI"
   PFACTORY_LOAD(PSpeechRecognition_SAPI);
 #endif
 #if P_AWS_SDK
+  #define P_SPEECH_RECOGNITION_AWS "AWS"
   PFACTORY_LOAD(PSpeechRecognition_AWS);
 #endif
 

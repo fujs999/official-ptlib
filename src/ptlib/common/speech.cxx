@@ -43,6 +43,26 @@
 #include <ptclib/pwavfile.h>
 
 
+PTextToSpeech * PTextToSpeech::Create(const PString & name)
+{
+  if (!name.empty())
+    return PFactory<PTextToSpeech>::CreateInstance(name);
+
+  PTextToSpeech * tts;
+#ifdef P_TEXT_TO_SPEECH_AWS
+  if ((tts = PFactory<PTextToSpeech>::CreateInstance(P_TEXT_TO_SPEECH_AWS)) == NULL)
+#endif
+#ifdef P_TEXT_TO_SPEECH_FESTIVAL
+    if ((tts = PFactory<PTextToSpeech>::CreateInstance(P_TEXT_TO_SPEECH_FESTIVAL)) == NULL)
+#endif
+#ifdef P_TEXT_TO_SPEECH_SAPI
+      if ((tts = PFactory<PTextToSpeech>::CreateInstance(P_TEXT_TO_SPEECH_SAPI)) == NULL)
+#endif
+        tts = PFactory<PTextToSpeech>::CreateInstance(PFactory<PTextToSpeech>::GetKeyList().front());
+  PTRACE(4, tts, "Created " << *tts);
+  return tts;
+}
+
 //////////////////////////////////////////////////////////////////////////////////
 
 class PTextToSpeech_WAV : public PTextToSpeech
@@ -378,6 +398,24 @@ PFACTORY_CREATE(PFactory<PTextToSpeech>, PTextToSpeech_WAV, "WAV", false);
 
 
 #if P_SPEECH_RECOGNITION
+
+PSpeechRecognition * PSpeechRecognition::Create(const PString & name)
+{
+  if (!name.empty())
+    return PFactory<PSpeechRecognition>::CreateInstance(name);
+
+  PSpeechRecognition * sr;
+#ifdef P_SPEECH_RECOGNITION_AWS
+  if ((sr = PFactory<PSpeechRecognition>::CreateInstance(P_SPEECH_RECOGNITION_AWS)) == NULL)
+#endif
+#ifdef P_SPEECH_RECOGNITION_SAPI
+    if ((sr = PFactory<PSpeechRecognition>::CreateInstance(P_SPEECH_RECOGNITION_SAPI)) == NULL)
+#endif
+      sr = PFactory<PSpeechRecognition>::CreateInstance(PFactory<PSpeechRecognition>::GetKeyList().front());
+  PTRACE(4, sr, "Created " << *sr);
+  return sr;
+}
+
 
 PSpeechRecognition::Transcript::Transcript(bool final, const PTimeInterval & when, const PString & content)
   : m_final(final)

@@ -243,7 +243,7 @@ public:
 };
 
 
-PFACTORY_CREATE(PFactory<PTextToSpeech>, PTextToSpeech_AWS, "AWS", false);
+PFACTORY_CREATE(PFactory<PTextToSpeech>, PTextToSpeech_AWS, P_TEXT_TO_SPEECH_AWS, false);
 
 
 ////////////////////////////////////////////////////////////
@@ -663,7 +663,7 @@ public:
   }
 };
 
-PFACTORY_CREATE(PFactory<PSpeechRecognition>, PSpeechRecognition_AWS, "AWS", false);
+PFACTORY_CREATE(PFactory<PSpeechRecognition>, PSpeechRecognition_AWS, P_SPEECH_RECOGNITION_AWS, false);
 
 
 #endif // P_AWS_SDK

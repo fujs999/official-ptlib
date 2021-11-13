@@ -450,7 +450,7 @@ class PTextToSpeech_SAPI : public PTextToSpeech, protected PSpStreamFormat
     }
 };
 
-PFACTORY_CREATE(PFactory<PTextToSpeech>, PTextToSpeech_SAPI, "Microsoft SAPI", false);
+PFACTORY_CREATE(PFactory<PTextToSpeech>, PTextToSpeech_SAPI, P_TEXT_TO_SPEECH_SAPI, false);
 
 
 ////////////////////////////////////////////////////////////
@@ -694,7 +694,9 @@ class PSpeechRecognition_SAPI : public PSpeechRecognition, protected PSpStreamFo
     }
 };
 
-PFACTORY_CREATE(PFactory<PSpeechRecognition>, PSpeechRecognition_SAPI, "Microsoft SAPI", false);
+#ifdef P_SPEECH_RECOGNITION_SAPI
+  PFACTORY_CREATE(PFactory<PSpeechRecognition>, PSpeechRecognition_SAPI, P_SPEECH_RECOGNITION_SAPI, false);
+#endif
 
 
 #endif // P_SAPI
