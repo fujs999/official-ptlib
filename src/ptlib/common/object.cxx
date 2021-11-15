@@ -2321,11 +2321,14 @@ namespace PProfiling
 
   /// /////////////////////////////////////////////////////////////////
 
-  struct HighWaterMarks : std::map<std::string, PAutoPtr<HighWaterMarkData>>
+  class HighWaterMarks
   {
+    typedef std::map<std::string, PAutoPtr<HighWaterMarkData> > DataMap;
+    DataMap          m_data;
     PCriticalSection m_mutex;
 
 
+  public:
     HighWaterMarkData & Get(const type_info & ti)
     {
       std::string name = ti.name();
@@ -2335,10 +2338,13 @@ namespace PProfiling
         name.erase(0, 7);
 
       PWaitAndSignal lock(m_mutex);
-      HighWaterMarks::iterator it = find(name);
-      if (it == end())
-        it = insert(std::make_pair(name, new HighWaterMarkData(name))).first;
-      return *it->second;
+      DataMap::iterator it = m_data.find(name);
+      if (it != m_data.end())
+        return *it->second;
+
+      PAutoPtr<HighWaterMarkData> & hwmd = m_data[name];
+      hwmd.reset(new HighWaterMarkData(name));
+      return *hwmd;
     }
 
 
@@ -2346,7 +2352,7 @@ namespace PProfiling
     {
       std::map<std::string, unsigned> data;
       PWaitAndSignal lock(m_mutex);
-      for (HighWaterMarks::const_iterator it = begin(); it != end(); ++it)
+      for (DataMap::const_iterator it = m_data.begin(); it != m_data.end(); ++it)
         data[it->first] = it->second->m_highWaterMark;
       return data;
     }

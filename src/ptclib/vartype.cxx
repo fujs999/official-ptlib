@@ -132,7 +132,7 @@ bool PVarType::SetType(BasicType type, PINDEX option)
       break;
 
     default :
-      m_ = { };
+      m_ = Variant();
   }
 
   return true;
