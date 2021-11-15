@@ -94,7 +94,7 @@ using namespace std; // Not a good practice (name space polution), but will take
 
 ///////////////////////////////////////////////////////////////////////////////
 // Deal with different C++ versions and std::auto_ptr deprecation
-#if __cplusplus < 201100L
+#if __cplusplus < 201103L
   template <typename T> class PAutoPtr : public std::auto_ptr<T>
   {
     public:

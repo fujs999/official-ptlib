@@ -35,7 +35,7 @@
 #include <ptlib.h>
 #include <memory>
 
-#if __cplusplus < 201103
+#if __cplusplus < 201103L
 
 /**
  *
@@ -117,7 +117,7 @@ class PSharedPtr : public PContainer
 
 #else // __cplusplus
 
-template <typename T> using PSharedPtr = std::shared_ptr<T>
+template <typename T> using PSharedPtr = std::shared_ptr<T>;
 
 #endif // __cplusplus
 
