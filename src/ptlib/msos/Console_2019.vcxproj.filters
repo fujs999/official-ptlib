@@ -952,6 +952,9 @@
     <ClInclude Include="..\..\..\include\ptlib\msos\ptlib\platform.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\include\ptlib\psharedptr.h">
+      <Filter>Header Files\Common</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="..\common\getdate.y">

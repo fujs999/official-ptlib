@@ -1251,7 +1251,7 @@ bool PVXMLSession::InternalLoadVXML(const PString & xmlText, const PString & fir
   FlushInput();
 
   // parse the XML
-  auto_ptr<PXML> xml(new PXML);
+  PAutoPtr<PXML> xml(new PXML);
   if (!xml->Load(xmlText)) {
     m_lastXMLError = PSTRSTRM(m_rootURL <<
                               '(' << xml->GetErrorLine() <<
@@ -1293,9 +1293,9 @@ bool PVXMLSession::InternalLoadVXML(const PString & xmlText, const PString & fir
   SetVar("uri", m_rootURL);
 
   if (m_currentXML.get() == NULL)
-    m_currentXML = xml;
+    m_currentXML.transfer(xml);
   else
-    m_newXML = xml;
+    m_newXML.transfer(xml);
   m_newFormName = firstForm;
   InternalStartThread();
   return true;
@@ -1544,7 +1544,7 @@ void PVXMLSession::InternalThreadMain()
     if (m_newXML.get() != NULL) {
       /* Replace old XML with new, now it is safe to do so and no XML elements
          pointers are being referenced by the code any more */
-      m_currentXML = m_newXML;
+      m_currentXML.transfer(m_newXML);
       InternalStartVXML();
     }
 
@@ -1564,7 +1564,7 @@ void PVXMLSession::InternalThreadMain()
 
     if (m_newXML.get() != NULL) {
       // OnEndDialog() loaded some more XML to do.
-      m_currentXML = m_newXML;
+      m_currentXML.transfer(m_newXML);
       InternalStartVXML();
     }
 

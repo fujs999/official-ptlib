@@ -995,6 +995,7 @@ if errorlevel 1 copy "%(FullPath)"+nul "%(RootDir)%(Directory)%(FileName)"</Comm
     <ClInclude Include="..\..\..\include\ptlib\bitwise_enum.h" />
     <ClInclude Include="..\..\..\include\ptlib\msos\ptlib\platform.h" />
     <ClInclude Include="..\..\..\include\ptlib\msos\ptlib\pt_atl.h" />
+    <ClInclude Include="..\..\..\include\ptlib\psharedptr.h" />
     <ClInclude Include="..\..\..\include\ptlib\unix\ptlib\channel.h" />
     <ClInclude Include="..\..\..\include\ptlib\unix\ptlib\config.h" />
     <ClInclude Include="..\..\..\include\ptlib\unix\ptlib\dynalink.h" />

@@ -239,7 +239,7 @@ void Test::DoWrite(const PFilePath & filename, const PStringArray & trackInfo, b
   }
 
   if (videoTrack < tracks.size()) {
-    std::auto_ptr<PVideoInputDevice> fake(PVideoInputDevice::CreateOpenedDevice(P_FAKE_VIDEO_BOUNCING_BOXES));
+    PAutoPtr<PVideoInputDevice> fake(PVideoInputDevice::CreateOpenedDevice(P_FAKE_VIDEO_BOUNCING_BOXES));
     if (fake.get() == NULL)
       return;
 
