@@ -2321,13 +2321,34 @@ namespace PProfiling
 
   /// /////////////////////////////////////////////////////////////////
 
-  struct HighWaterMarks : std::map<std::string, std::auto_ptr<HighWaterMarkData>>
+  struct HighWaterMarks : std::map<std::string, PAutoPtr<HighWaterMarkData>>
   {
     PCriticalSection m_mutex;
-    ~HighWaterMarks()
+
+
+    HighWaterMarkData & Get(const type_info & ti)
     {
-      for (iterator it = begin(); it != end(); ++it)
-        delete it->second;
+      std::string name = ti.name();
+      if (name.compare(0, 6, "class ") == 0)
+        name.erase(0, 6);
+      else if (name.compare(0, 7, "struct ") == 0)
+        name.erase(0, 7);
+
+      PWaitAndSignal lock(m_mutex);
+      HighWaterMarks::iterator it = find(name);
+      if (it == end())
+        it = insert(std::make_pair(name, new HighWaterMarkData(name))).first;
+      return *it->second;
+    }
+
+
+    std::map<std::string, unsigned> Get() const
+    {
+      std::map<std::string, unsigned> data;
+      PWaitAndSignal lock(m_mutex);
+      for (HighWaterMarks::const_iterator it = begin(); it != end(); ++it)
+        data[it->first] = it->second->m_highWaterMark;
+      return data;
     }
   };
 
@@ -2361,30 +2382,13 @@ namespace PProfiling
 
   HighWaterMarkData & HighWaterMarkData::Get(const type_info & ti)
   {
-    std::string name = ti.name();
-    if (name.compare(0, 6, "class ") == 0)
-      name.erase(0, 6);
-    else if (name.compare(0, 7, "struct ") == 0)
-      name.erase(0, 7);
-
-    HighWaterMarks & highWaterMarks = GetHighWaterMarks();
-    PWaitAndSignal lock(highWaterMarks.m_mutex);
-    HighWaterMarks::iterator it = highWaterMarks.find(name);
-    if (it == highWaterMarks.end())
-      it = highWaterMarks.insert(std::make_pair(name, new HighWaterMarkData(name))).first;
-    return *it->second;
+    return GetHighWaterMarks().Get(ti);
   }
 
 
   std::map<std::string, unsigned> HighWaterMarkData::Get()
   {
-    std::map<std::string, unsigned> data;
-    HighWaterMarks & highWaterMarks = GetHighWaterMarks();
-    highWaterMarks.m_mutex.Wait();
-    for (HighWaterMarks::iterator it = highWaterMarks.begin(); it != highWaterMarks.end(); ++it)
-      data[it->first] = it->second->m_highWaterMark;
-    highWaterMarks.m_mutex.Signal();
-    return data;
+    return GetHighWaterMarks().Get();
   }
 
 }; // namespace PProfiling
