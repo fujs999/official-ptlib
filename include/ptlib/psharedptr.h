@@ -77,13 +77,13 @@ class PSharedPtr : public PContainer
     element_type * get() const
     { return ptr; }
 
-    element_type * Get() const
+    P_DEPRECATED element_type * Get() const
     { return ptr; }
 
     void reset(element_type * p = NULL)
     { AssignContents(PSharedPtr(p)); }
 
-    void Reset()
+    P_DEPRECATED void Reset()
     { AssignContents(PSharedPtr()); }
 
     element_type & operator*() const

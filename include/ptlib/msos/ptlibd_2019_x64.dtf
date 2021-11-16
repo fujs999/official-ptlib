@@ -15690,7 +15690,6 @@ EXPORTS
     ?GenerateHeader@PWAVFile@@IEAA_NXZ @16419 NONAME
     ?GenerateID@Stanza@XMPP@@SA?AVPString@@XZ @16420 NONAME
     ?GenerateKey@PTEACypher@@SAXAEAUKey@1@@Z @16421 NONAME
-    ?Get@?$PSharedPtr@VPExternalThread@@@@QEBAPEAVPExternalThread@@XZ @29339 NONAME
     ;public: class PExternalThread * __cdecl PSharedPtr<class PExternalThread>::Get(void)const 
     ?Get@?$PThreadLocalStorage@UThreadLocalInfo@PTraceInfo@@@@QEBAPEAUThreadLocalInfo@PTraceInfo@@XZ @16422 NONAME
     ?Get@PStringOptions@@QEBA?AVPString@@AEBVPCaselessString@@AEBV2@@Z @16423 NONAME
