@@ -134,7 +134,7 @@ bool PVarType::SetType(BasicType type, int option)
       break;
 
     default :
-      m_ = { };
+      m_ = Variant();
   }
 
   return true;

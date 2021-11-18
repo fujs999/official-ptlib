@@ -80,7 +80,7 @@ class PTextToSpeech_Festival : public PTextToSpeech
 #define new PNEW
 #define PTraceModule() "Festival-TTS"
 
-PFACTORY_CREATE(PFactory<PTextToSpeech>, PTextToSpeech_Festival, "Festival", false);
+PFACTORY_CREATE(PFactory<PTextToSpeech>, PTextToSpeech_Festival, P_TEXT_TO_SPEECH_FESTIVAL, false);
 
 
 PTextToSpeech_Festival::PTextToSpeech_Festival()

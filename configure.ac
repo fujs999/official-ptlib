@@ -11,7 +11,7 @@ AC_INIT([PTLib], m4_esyscmd([sed -n \
                              -e "s/ *#define *PATCH_VERSION *\\(.*\\)/\\1/p" \
                              version.h | tr -d '\n']))
 
-AC_PREREQ([2.66])
+AC_PREREQ([2.71])
 
 AC_CONFIG_AUX_DIR(make)
 
@@ -332,33 +332,25 @@ AC_ARG_WITH(
 if test "$withval" = "std"; then
    AC_MSG_RESULT(std)
 elif test "$withval" = "mt"; then
-   AC_TRY_COMPILE(
-      [#include <ext/mt_allocator.h>],
-      [typedef __gnu_cxx::__mt_alloc<char> TestAllocator;],
-      [
+   AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <ext/mt_allocator.h>]], [[typedef __gnu_cxx::__mt_alloc<char> TestAllocator;]])],[
          AC_DEFINE(P_GNU_ALLOCATOR, 1)
          AC_MSG_RESULT([mt])
-      ],
-      [AC_MSG_RESULT([std (mt unavailable)])]
-  )
+      ],[AC_MSG_RESULT([std (mt unavailable)])
+  ])
 elif test "$withval" = "bitmap"; then
-   AC_TRY_COMPILE(
-      [
+   AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
          #include <ext/mt_allocator.h>
          #include <ext/bitmap_allocator.h>
-      ],
-      [
+      ]], [[
          typedef __gnu_cxx::__mt_alloc<char> VariableAllocator;
          typedef __gnu_cxx::bitmap_allocator<char> FixedAllocator;
-      ],
-      [
+      ]])],[
          AC_DEFINE(P_GNU_ALLOCATOR, 2)
          AC_MSG_RESULT(bitmap)
-      ],
-      [AC_ERROR([bitmap_allocator not available])]
+      ],[AC_MSG_ERROR([bitmap_allocator not available])]
   )
 else
-  AC_ERROR([Unknown allocator type $withval])
+  AC_MSG_ERROR(Unknown allocator type $withval)
 fi
 
 
@@ -814,18 +806,14 @@ MY_COMPILE_IFELSE(
       AC_DEFINE_UNQUOTED(P_ATOMICITY_HEADER, $P_ATOMICITY_HEADER)
 
       AC_MSG_CHECKING(if atomic __exchange_and_add is in __gnu_cxx namespace)
-      AC_TRY_COMPILE(
-         [#include P_ATOMICITY_HEADER],
-         [
+      AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include P_ATOMICITY_HEADER]], [[
             _Atomic_word val;
             __gnu_cxx::__exchange_and_add(&val, 1);
-         ],
-         [
+         ]])],[
             AC_MSG_RESULT(yes)
             AC_DEFINE_UNQUOTED(P_ATOMICITY_NAMESPACE, __gnu_cxx::)
-         ],
-         [AC_MSG_RESULT(no)]
-      )
+         ],[AC_MSG_RESULT(no)
+      ])
    fi
    ]
 )
@@ -2991,7 +2979,7 @@ AC_CONFIG_COMMANDS(
 dnl ########################################################################
 dnl Do it!
 
-AC_OUTPUT()
+AC_OUTPUT
 
 
 dnl ########################################################################

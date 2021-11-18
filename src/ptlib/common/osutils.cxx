@@ -3372,7 +3372,7 @@ PThread * PThread::Current()
 
   PWaitAndSignal mutex(process.m_threadMutex);
   process.m_externalThreads.push_back(thread);
-  return thread.Get();
+  return thread.get();
 }
 
 
