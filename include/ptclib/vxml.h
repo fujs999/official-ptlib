@@ -271,7 +271,7 @@ class PVXMLGrammarSRGS : public PVXMLGrammar
       unsigned          m_maxRepeat;
       PString           m_token;
       unsigned          m_currentItem;
-      typedef std::vector<std::vector<Item>> Items;
+      typedef std::vector< std::vector<Item> > Items;
       Items m_items; // A sequence of alternatives
 
       Item() : m_minRepeat(1), m_maxRepeat(1), m_currentItem(0) { }

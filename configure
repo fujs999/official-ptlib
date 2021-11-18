@@ -799,8 +799,16 @@ PTLIB_CONFIG_FILE
 HAS_CONFIG_FILE
 PTLIB_FESTIVAL
 HAS_FESTIVAL
-PTLIB_TTS
-HAS_TTS
+PTLIB_SPEECH_RECOGNITION
+HAS_SPEECH_RECOGNITION
+PTLIB_TEXT_TO_SPEECH
+HAS_TEXT_TO_SPEECH
+PTLIB_AWS_SDK
+HAS_AWS_SDK
+AWS_SDK_USABLE
+AWS_SDK_LIBS
+AWS_SDK_CFLAGS
+AWS_SDK_SYSTEM
 PTLIB_V8
 HAS_V8
 V8_USABLE
@@ -1013,7 +1021,9 @@ with_expat_dir
 enable_lua
 enable_v8
 with_v8_dir
+enable_aws_sdk
 enable_tts
+enable_sr
 enable_configfile
 enable_url
 enable_http
@@ -1125,6 +1135,8 @@ LUA_CFLAGS
 LUA_LIBS
 V8_CFLAGS
 V8_LIBS
+AWS_SDK_CFLAGS
+AWS_SDK_LIBS
 CURSES_CFLAGS
 CURSES_LIBS
 SDL_CFLAGS
@@ -1772,7 +1784,8 @@ Optional Features:
                           options
   --enable-exceptions     enable C++ exceptions
   --enable-pindex_is_size_t
-                          enable PINDEX set to size_t
+                          enable PINDEX set to
+                          size_t
   --disable-pthread_kill  Disable use of pthread_kill for checking on thread
                           terminated
   --disable-ipv6          disable IPV6 support
@@ -1783,76 +1796,139 @@ Optional Features:
   --enable-internalregex  Force internal regex library
   --disable-resolver      disable DNS resolver support
   --disable-pcap          disable PCAP support
-  --disable-imagemagick   disable ImageMagick v6 support
-  --disable-imagemagick   disable ImageMagick v7 support
-  --disable-libjpeg       disable libJPEG support
-  --disable-mlib          disable SUN mlib support
+  --disable-imagemagick   disable
+                          ImageMagick v6 support
+  --disable-imagemagick   disable
+                          ImageMagick v7 support
+  --disable-libjpeg       disable libJPEG
+                          support
+  --disable-mlib          disable SUN
+                          mlib support
   --disable-sasl          disable SASL support
-  --disable-openldap      disable Open LDAP support
-  --disable-openssl       disable OpenSSL support
-  --disable-expat         disable expat XML support
-  --disable-lua           disable Lua script support
-  --disable-v8            disable V8 Javascript script support
-  --disable-tts           disable Text-To-Speech server support
-  --disable-configfile    disable config file support
+  --disable-openldap      disable Open
+                          LDAP support
+  --disable-openssl       disable OpenSSL
+                          support
+  --disable-expat         disable expat
+                          XML support
+  --disable-lua           disable Lua
+                          script support
+  --disable-v8            disable V8 Javascript script
+                          support
+  --disable-aws-sdk       disable AWS SDK
+                          support
+  --disable-tts           disable
+                          Text-To-Speech support
+  --disable-sr            disable Speech Recognition
+                          support
+  --disable-configfile    disable
+                          config file support
   --disable-url           disable URL support
-  --disable-http          disable HTTP support
-  --disable-httpforms     disable HTTP forms support
-  --disable-httpsvc       disable HTTP server support
-  --disable-ssdp          disable SSDP support
-  --disable-cypher        disable Cypher support
-  --disable-vartype       disable VarType support
-  --disable-guid          disable GUID support
-  --disable-scripts       disable Scripts support
-  --disable-spooldir      disable Spool directory support
-  --disable-syslog        disable System log support
+  --disable-http          disable HTTP
+                          support
+  --disable-httpforms     disable HTTP
+                          forms support
+  --disable-httpsvc       disable
+                          HTTP server support
+  --disable-ssdp          disable SSDP
+                          support
+  --disable-cypher        disable Cypher
+                          support
+  --disable-vartype       disable VarType
+                          support
+  --disable-guid          disable GUID
+                          support
+  --disable-scripts       disable Scripts
+                          support
+  --disable-spooldir      disable
+                          Spool directory support
+  --disable-syslog        disable
+                          System log support
   --disable-chanutils     disable Channel utilities support
-  --disable-timers        disable Timers support
-  --disable-networking    disable Network support
-  --disable-vcard         disable VCard support
-  --disable-jabber        disable Jabber support
-  --disable-vxml          disable VXML support
-  --disable-vxmlvideo     disable VXML (video) support
-  --disable-xmlrpc        disable XMLRPC support
-  --disable-soap          disable SOAP support
-  --disable-asn           disable ASN decoding/encoding support
-  --disable-nat           disable NAT traversal support
-  --disable-stun          disable STUN support
-  --disable-turn          disable TURN support
-  --disable-stunsrvr      disable STUN server support
-  --disable-pipechan      disable sub-process (PPipeChannel) support
-  --disable-dtmf          disable DTMF protocol support
-  --disable-socks         disable SOCKS protocol support
-  --disable-ftp           disable FTP protocol support
-  --disable-snmp          disable SNMP protocol support
-  --disable-telnet        disable TELNET protocol support
-  --disable-cli           disable command line interpreter support
+  --disable-timers        disable Timers
+                          support
+  --disable-networking    disable Network
+                          support
+  --disable-vcard         disable VCard
+                          support
+  --disable-jabber        disable Jabber
+                          support
+  --disable-vxml          disable VXML
+                          support
+  --disable-vxmlvideo     disable
+                          VXML (video) support
+  --disable-xmlrpc        disable XMLRPC
+                          support
+  --disable-soap          disable SOAP
+                          support
+  --disable-asn           disable ASN decoding/encoding
+                          support
+  --disable-nat           disable
+                          NAT traversal support
+  --disable-stun          disable STUN
+                          support
+  --disable-turn          disable TURN
+                          support
+  --disable-stunsrvr      disable
+                          STUN server support
+  --disable-pipechan      disable sub-process
+                          (PPipeChannel) support
+  --disable-dtmf          disable
+                          DTMF protocol support
+  --disable-socks         disable
+                          SOCKS protocol support
+  --disable-ftp           disable
+                          FTP protocol support
+  --disable-snmp          disable
+                          SNMP protocol support
+  --disable-telnet        disable
+                          TELNET protocol support
+  --disable-cli           disable command line interpreter
+                          support
   --disable-remconn       disable remote connection support
-  --disable-serial        disable serial port support
-  --disable-pop3smtp      disable POP3/SMTP support
-  --disable-audio         disable audio support
-  --disable-wavfile       disable WAVFILE support
-  --disable-video         disable video device support
-  --disable-vidfile       disable video file support
-  --disable-mediafile     disable Media file support
-  --disable-appshare      disable application sharing support
-  --disable-shmvideo      disable shared memory video devices
-  --disable-curses        disable disable Curses (text mode windows) support
-  --disable-sdl           disable disable libSDL2 (video display) support
-  --disable-gstreamer     disable GStreamer 0.10 support
-  --disable-gstreamer     disable GStreamer 1.0 support
-  --disable-odbc          disable ODBC database support
+  --disable-serial        disable
+                          serial port support
+  --disable-pop3smtp      disable
+                          POP3/SMTP support
+  --disable-audio         disable audio
+                          support
+  --disable-wavfile       disable WAVFILE
+                          support
+  --disable-video         disable
+                          video device support
+  --disable-vidfile       disable
+                          video file support
+  --disable-mediafile     disable
+                          Media file support
+  --disable-appshare      disable application sharing
+                          support
+  --disable-shmvideo      disable shared memory video
+                          devices
+  --disable-curses        disable disable Curses (text mode
+                          windows) support
+  --disable-sdl           disable disable libSDL2 (video
+                          display) support
+  --disable-gstreamer     disable
+                          GStreamer 0.10 support
+  --disable-gstreamer     disable
+                          GStreamer 1.0 support
+  --disable-odbc          disable
+                          ODBC database support
   --disable-odbc          disable unixODBC database support
-  --enable-vfw            enable video for windows capture
-  --disable-pluginmgr     disable Plugin Manager support
-  --disable-plugins       disable Plugin support
+  --enable-vfw            enable video for windows
+                          capture
+  --disable-pluginmgr     disable
+                          Plugin Manager support
+  --disable-plugins       disable Plugin
+                          support
   --disable-alsa          disable ALSA audio support
   --disable-esd           disable ESD audio support
   --disable-oss           disable OSS audio support
   --enable-pulse          enable Pulse audio support
   --disable-sunaudio      disable Sun audio support
   --disable-shmaudio      disable shm audio support
-  --disable-portaudio     disable PortAudio library
+  --disable-portaudio     disable
+                          PortAudio library
   --disable-v4l           disable V4L video support
   --disable-v4l2          disable V4L2 video support
   --disable-bsdvideo      disable BSD video support
@@ -1948,6 +2024,10 @@ Some influential environment variables:
   LUA_LIBS    linker flags for LUA, overriding pkg-config
   V8_CFLAGS   C compiler flags for V8, overriding pkg-config
   V8_LIBS     linker flags for V8, overriding pkg-config
+  AWS_SDK_CFLAGS
+              C compiler flags for AWS_SDK, overriding pkg-config
+  AWS_SDK_LIBS
+              linker flags for AWS_SDK, overriding pkg-config
   CURSES_CFLAGS
               C compiler flags for CURSES, overriding pkg-config
   CURSES_LIBS linker flags for CURSES, overriding pkg-config
@@ -4177,7 +4257,7 @@ case $enable_ios in #(
       target_release=`xcodebuild -showsdks | sed -n 's/.*iphonesimulator\(.*\)/\1/p' | sort | tail -n 1`
     ;; #(
   *) :
-          as_fn_error $? "Unknown iOS variant \"${enable_ios}\" - use either iphone or simulator" "$LINENO" 5
+          as_fn_error $? "Unknown iOS variant ${enable_ios} - use either iphone or simulator" "$LINENO" 5
  ;;
 esac
 
@@ -6982,8 +7062,8 @@ fi
    ;;
 
    * )
-      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: Operating system \"$target_os\" not recognized - proceed with caution!" >&5
-printf "%s\n" "$as_me: WARNING: Operating system \"$target_os\" not recognized - proceed with caution!" >&2;}
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: Operating system $target_os not recognized - proceed with caution!" >&5
+printf "%s\n" "$as_me: WARNING: Operating system $target_os not recognized - proceed with caution!" >&2;}
    ;;
 esac
 
@@ -7079,8 +7159,8 @@ fi
       target_64bit=1
     ;; #(
   *) :
-    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: CPU \"$target_cpu\" not recognized - assuming 32 bit" >&5
-printf "%s\n" "$as_me: WARNING: CPU \"$target_cpu\" not recognized - assuming 32 bit" >&2;}
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: CPU $target_cpu not recognized - assuming 32 bit" >&5
+printf "%s\n" "$as_me: WARNING: CPU $target_cpu not recognized - assuming 32 bit" >&2;}
       target_64bit=0
  ;;
 esac
@@ -7125,8 +7205,8 @@ fi
 
 target=${target_os}_${target_cpu}
 
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: Platform: \"$target_os\" release \"$target_release\" on \"$target_cpu\"" >&5
-printf "%s\n" "$as_me: Platform: \"$target_os\" release \"$target_release\" on \"$target_cpu\"" >&6;}
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: Platform: $target_os release $target_release on $target_cpu" >&5
+printf "%s\n" "$as_me: Platform: $target_os release $target_release on $target_cpu" >&6;}
 
 
 
@@ -7819,7 +7899,7 @@ fi
 
           ;; #(
   *) :
-    as_fn_error $? "Unknown profile method \"$with_profiling\"" "$LINENO" 5
+    as_fn_error $? "Unknown profile method: $with_profiling" "$LINENO" 5
        ;;
 esac
 
@@ -8006,6 +8086,7 @@ if test "${enable_minsize}x" = "yesx" ; then
   DEFAULT_VIDFILE=no
   DEFAULT_FFVDEV=no
   DEFAULT_VXML=no
+  DEFAULT_AWS_SDK=yes
 fi
 
 DEFAULT_APPSHARE=no
@@ -10924,8 +11005,8 @@ else $as_nop
              # step
              ax_pthread_save_ac_link="$ac_link"
              ax_pthread_sed='s/conftest\.\$ac_ext/conftest.$ac_objext/g'
-             ax_pthread_link_step=`$as_echo "$ac_link" | sed "$ax_pthread_sed"`
-             ax_pthread_2step_ac_link="($ac_compile) && (echo ==== >&5) && ($ax_pthread_link_step)"
+             ax_pthread_link_step=`printf "%s\n" "$ac_link" | sed "$ax_pthread_sed"`
+             ax_pthread_2step_ac_link="($ac_compile) && (printf "%s\n"  ==== >&5) && ($ax_pthread_link_step)"
              ax_pthread_save_CFLAGS="$CFLAGS"
              for ax_pthread_try in '' -Qunused-arguments -Wno-unused-command-line-argument unknown; do
                 if test "x$ax_pthread_try" = "xunknown"
@@ -15835,8 +15916,254 @@ CXXFLAGS="$oldCXXFLAGS"
 
 
 
-   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking Text-To-Speech server support" >&5
-printf %s "checking Text-To-Speech server support... " >&6; }
+
+   AWS_SDK_SYSTEM="yes"
+
+
+
+   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking AWS SDK support" >&5
+printf %s "checking AWS SDK support... " >&6; }
+
+   # Check whether --enable-aws-sdk was given.
+if test ${enable_aws_sdk+y}
+then :
+  enableval=$enable_aws_sdk; if test "x$enableval" = xno
+then :
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
+printf "%s\n" "disabled by user" >&6; }
+fi
+else $as_nop
+
+         enableval=${DEFAULT_AWS_SDK:-yes}
+         if test "x$enableval" = xno
+then :
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
+printf "%s\n" "disabled by default" >&6; }
+fi
+
+
+fi
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+   if test "x$enableval" = xyes
+then :
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+fi
+
+   if test "x$enableval" = "xyes"
+then :
+  usable=yes
+else $as_nop
+  usable=no
+fi
+
+
+   enable_aws-sdk="$enableval"
+
+
+   if test "x$usable" = xyes
+then :
+
+
+
+      if test "x$AWS_SDK_SYSTEM" = xyes
+then :
+
+
+pkg_failed=no
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for aws-sdk" >&5
+printf %s "checking for aws-sdk... " >&6; }
+
+if test -n "$AWS_SDK_CFLAGS"; then
+    pkg_cv_AWS_SDK_CFLAGS="$AWS_SDK_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"aws-sdk\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "aws-sdk") 2>&5
+  ac_status=$?
+  printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_AWS_SDK_CFLAGS=`$PKG_CONFIG --cflags "aws-sdk" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$AWS_SDK_LIBS"; then
+    pkg_cv_AWS_SDK_LIBS="$AWS_SDK_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"aws-sdk\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "aws-sdk") 2>&5
+  ac_status=$?
+  printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_AWS_SDK_LIBS=`$PKG_CONFIG --libs "aws-sdk" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        AWS_SDK_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "aws-sdk" 2>&1`
+        else
+	        AWS_SDK_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "aws-sdk" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$AWS_SDK_PKG_ERRORS" >&5
+
+	usable=no
+
+elif test $pkg_failed = untried; then
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+	usable=no
+
+else
+	AWS_SDK_CFLAGS=$pkg_cv_AWS_SDK_CFLAGS
+	AWS_SDK_LIBS=$pkg_cv_AWS_SDK_LIBS
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+fi
+
+
+         if test "x$usable" = xyes
+then :
+
+   MY_LINK_IFELSE_CPPFLAGS="$CPPFLAGS"
+   MY_LINK_IFELSE_LIBS="$LIBS"
+   CPPFLAGS="$CPPFLAGS $AWS_SDK_CFLAGS"
+   LIBS="$AWS_SDK_LIBS $LIBS"
+   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for AWS SDK support usability" >&5
+printf %s "checking for AWS SDK support usability... " >&6; }
+   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <aws/core/Aws.h>
+int
+main (void)
+{
+Aws::InitAPI(Aws::SDKOptions())
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"
+then :
+  usable=yes
+else $as_nop
+  usable=no
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
+printf "%s\n" "$usable" >&6; }
+   CPPFLAGS="$MY_LINK_IFELSE_CPPFLAGS"
+   LIBS="$MY_LINK_IFELSE_LIBS"
+
+   if test "x$usable" = "xyes"
+then :
+
+
+
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Adding CPPFLAGS: $AWS_SDK_CFLAGS" >&5
+printf "%s\n" "$as_me: Adding CPPFLAGS: $AWS_SDK_CFLAGS" >&6;}
+      CPPFLAGS="$AWS_SDK_CFLAGS $CPPFLAGS"
+
+
+
+
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Adding LIBS: $AWS_SDK_LIBS" >&5
+printf "%s\n" "$as_me: Adding LIBS: $AWS_SDK_LIBS" >&6;}
+      LIBS="$AWS_SDK_LIBS $LIBS"
+
+
+
+else $as_nop
+  usable=no
+
+fi
+
+
+
+fi
+
+
+
+fi
+
+fi
+
+   AWS_SDK_USABLE=$usable
+
+
+
+
+
+
+
+   HAS_AWS_SDK=$AWS_SDK_USABLE
+
+   if test "x$HAS_AWS_SDK" = "xyes" ; then
+      HAS_AWS_SDK=1
+   fi
+
+   if test "x$HAS_AWS_SDK" = "x0" || test "x$HAS_AWS_SDK" = "xno" ; then
+      HAS_AWS_SDK=
+   fi
+
+
+
+   if test "x$HAS_AWS_SDK" = "x1" ; then
+      PTLIB_AWS_SDK=yes
+      printf "%s\n" "#define P_AWS_SDK 1" >>confdefs.h
+
+   else
+      PTLIB_AWS_SDK=no
+   fi
+
+
+
+
+
+
+
+
+
+   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking Text-To-Speech support" >&5
+printf %s "checking Text-To-Speech support... " >&6; }
 
    # Check whether --enable-tts was given.
 if test ${enable_tts+y}
@@ -15848,7 +16175,7 @@ printf "%s\n" "disabled by user" >&6; }
 fi
 else $as_nop
 
-         enableval=${DEFAULT_TTS:-yes}
+         enableval=${DEFAULT_TEXT_TO_SPEECH:-yes}
          if test "x$enableval" = xno
 then :
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
@@ -15881,34 +16208,116 @@ fi
    if test "x$enableval" = "xyes"
 then :
 
-   HAS_TTS=1
+   HAS_TEXT_TO_SPEECH=1
 
-   if test "x$HAS_TTS" = "xyes" ; then
-      HAS_TTS=1
+   if test "x$HAS_TEXT_TO_SPEECH" = "xyes" ; then
+      HAS_TEXT_TO_SPEECH=1
    fi
 
-   if test "x$HAS_TTS" = "x0" || test "x$HAS_TTS" = "xno" ; then
-      HAS_TTS=
+   if test "x$HAS_TEXT_TO_SPEECH" = "x0" || test "x$HAS_TEXT_TO_SPEECH" = "xno" ; then
+      HAS_TEXT_TO_SPEECH=
    fi
 
 
 
-   if test "x$HAS_TTS" = "x1" ; then
-      PTLIB_TTS=yes
-      printf "%s\n" "#define P_TTS 1" >>confdefs.h
+   if test "x$HAS_TEXT_TO_SPEECH" = "x1" ; then
+      PTLIB_TEXT_TO_SPEECH=yes
+      printf "%s\n" "#define P_TEXT_TO_SPEECH 1" >>confdefs.h
 
    else
-      PTLIB_TTS=no
+      PTLIB_TEXT_TO_SPEECH=no
    fi
 
 
 
 else $as_nop
-  HAS_TTS=
+  HAS_TEXT_TO_SPEECH=
 fi
 
 
    enable_tts="$enableval"
+
+
+
+
+
+
+
+   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking Speech Recognition support" >&5
+printf %s "checking Speech Recognition support... " >&6; }
+
+   # Check whether --enable-sr was given.
+if test ${enable_sr+y}
+then :
+  enableval=$enable_sr; if test "x$enableval" = xno
+then :
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
+printf "%s\n" "disabled by user" >&6; }
+fi
+else $as_nop
+
+         enableval=${DEFAULT_SPEECH_RECOGNITION:-yes}
+         if test "x$enableval" = xno
+then :
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
+printf "%s\n" "disabled by default" >&6; }
+fi
+
+
+fi
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+   if test "x$enableval" = xyes
+then :
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+fi
+
+   if test "x$enableval" = "xyes"
+then :
+
+   HAS_SPEECH_RECOGNITION=1
+
+   if test "x$HAS_SPEECH_RECOGNITION" = "xyes" ; then
+      HAS_SPEECH_RECOGNITION=1
+   fi
+
+   if test "x$HAS_SPEECH_RECOGNITION" = "x0" || test "x$HAS_SPEECH_RECOGNITION" = "xno" ; then
+      HAS_SPEECH_RECOGNITION=
+   fi
+
+
+
+   if test "x$HAS_SPEECH_RECOGNITION" = "x1" ; then
+      PTLIB_SPEECH_RECOGNITION=yes
+      printf "%s\n" "#define P_SPEECH_RECOGNITION 1" >>confdefs.h
+
+   else
+      PTLIB_SPEECH_RECOGNITION=no
+   fi
+
+
+
+else $as_nop
+  HAS_SPEECH_RECOGNITION=
+fi
+
+
+   enable_sr="$enableval"
+
 
 
 
@@ -15977,6 +16386,9 @@ then :
 
 
 fi
+
+
+
 
 
 
@@ -17500,15 +17912,15 @@ fi
 
 
       if test "x${enableval}" = "xyes" && \
-             test "x$HAS_TTS" != "x1" && \
-             test "x$HAS_TTS" != "xyes"
+             test "x$HAS_SCRIPTS" != "x1" && \
+             test "x$HAS_SCRIPTS" != "xyes"
 then :
 
-         { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: disabled due to disabled dependency HAS_TTS
-   =$HAS_TTS
+         { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: disabled due to disabled dependency HAS_SCRIPTS
+   =$HAS_SCRIPTS
    " >&5
-printf "%s\n" "disabled due to disabled dependency HAS_TTS
-   =$HAS_TTS
+printf "%s\n" "disabled due to disabled dependency HAS_SCRIPTS
+   =$HAS_SCRIPTS
    " >&6; }
          enableval=no
 
@@ -24534,6 +24946,15 @@ then :
   printf "%s\n" "                        GStreamer : ${PTLIB_GSTREAMER}"
 else $as_nop
   printf "%s\n" "                        GStreamer : no"
+
+fi
+
+
+   if test ${PTLIB_AWS+y}
+then :
+  printf "%s\n" "                          AWS SDK : ${PTLIB_AWS}"
+else $as_nop
+  printf "%s\n" "                          AWS SDK : no"
 
 fi
 

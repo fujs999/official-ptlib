@@ -3288,7 +3288,7 @@ void PVXMLGrammar::OnTimeout(PTimer &, P_INT_PTR)
 bool PVXMLGrammar::Process()
 {
   // Figure out what happened
-  switch (m_state) {
+  switch (m_state.load()) {
     case Filled:
       if (m_field.HasAttribute(NameAttribute))
         m_session.InternalSetVar(DialogScope, m_field.GetAttribute(NameAttribute), m_value);

@@ -35,6 +35,8 @@
 #include <ptlib.h>
 #include <memory>
 
+#if __cplusplus < 201103L
+
 /**
  *
  * These templates implement an pointner class with an integral reference count
@@ -75,13 +77,13 @@ class PSharedPtr : public PContainer
     element_type * get() const
     { return ptr; }
 
-    element_type * Get() const
+    P_DEPRECATED element_type * Get() const
     { return ptr; }
 
     void reset(element_type * p = NULL)
     { AssignContents(PSharedPtr(p)); }
 
-    void Reset()
+    P_DEPRECATED void Reset()
     { AssignContents(PSharedPtr()); }
 
     element_type & operator*() const
@@ -112,6 +114,12 @@ class PSharedPtr : public PContainer
     element_type * ptr;
 };
 
+
+#else // __cplusplus
+
+template <typename T> using PSharedPtr = std::shared_ptr<T>;
+
+#endif // __cplusplus
 
 #endif // PTLIB_SHAREDPTR_H
 
