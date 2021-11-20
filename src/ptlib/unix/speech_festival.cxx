@@ -32,7 +32,7 @@
 
 #if P_TEXT_TO_SPEECH && P_FESTIVAL
 
-#include <ptclib/ptts.h>
+#include <ptclib/speech.h>
 
 #include <festival/festival.h>
 
