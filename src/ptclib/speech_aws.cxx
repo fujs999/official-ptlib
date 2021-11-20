@@ -30,7 +30,7 @@
 
 #include <ptclib/speech.h>
 #include <ptclib/pwavfile.h>
-#include <ptclib/guid.h>
+#include <ptclib/random.h>
 #include <ptclib/url.h>
 #include <ptclib/cypher.h>
 #include <ptclib/http.h>
@@ -41,11 +41,9 @@
 #include <aws/polly/PollyClient.h>
 #include <aws/text-to-speech/PCMOutputDriver.h>
 #include <aws/text-to-speech/TextToSpeechManager.h>
-#include <aws/transcribestreaming/TranscribeStreamingServiceClient.h>
-#include <aws/transcribestreaming/model/StartStreamTranscriptionHandler.h>
-#include <aws/transcribestreaming/model/StartStreamTranscriptionRequest.h>
-#include <aws/transcribestreaming/model/AudioStream.h>
-#include <aws/transcribestreaming/model/LanguageCode.h>
+#include <aws/transcribe/TranscribeServiceClient.h>
+#include <aws/transcribe/model/CreateVocabularyRequest.h>
+#include <aws/transcribe/model/DeleteVocabularyRequest.h>
 
 
 #define PTraceModule() "AWS-Speech"
@@ -53,7 +51,7 @@
 #ifdef _MSC_VER
   #pragma comment(lib, P_AWS_SDK_LIBDIR(polly))
   #pragma comment(lib, P_AWS_SDK_LIBDIR(text-to-speech))
-  #pragma comment(lib, P_AWS_SDK_LIBDIR(transcribestreaming))
+  #pragma comment(lib, P_AWS_SDK_LIBDIR(transcribe))
 #endif
 
 
@@ -249,13 +247,14 @@ PFACTORY_CREATE(PFactory<PTextToSpeech>, PTextToSpeech_AWS, P_TEXT_TO_SPEECH_AWS
 ////////////////////////////////////////////////////////////
 // Speech recognition using Microsoft's Speech API (SAPI)
 
-class PSpeechRecognition_AWS : public PSpeechRecognition, PAwsClient<Aws::TranscribeStreamingService::TranscribeStreamingServiceClient>
+class PSpeechRecognition_AWS : public PSpeechRecognition, PAwsClient<Aws::TranscribeService::TranscribeServiceClient>
 {
   PCLASSINFO(PSpeechRecognition_AWS, PSpeechRecognition);
 
   unsigned m_sampleRate;
-  Aws::TranscribeStreamingService::Model::LanguageCode m_language;
+  Aws::TranscribeService::Model::LanguageCode m_language;
 
+  PString m_vocabulary;
   PWebSocket m_webSocket;
   PThread  * m_eventThread;
   PDECLARE_MUTEX(m_openMutex);
@@ -400,7 +399,7 @@ class PSpeechRecognition_AWS : public PSpeechRecognition, PAwsClient<Aws::Transc
       PBYTEArray data;
       PStringOptions headers;
       if (ReadEvent(data, headers)) {
-        PTRACE(4, "Read " << data.size() << " bytes, headers:\n" << headers);
+        PTRACE(5, "Read " << data.size() << " bytes, headers:\n" << headers);
 
         PJSON json(PJSON::e_Null);
         if (headers.Get(":content-type") == PMIMEInfo::ApplicationJSON())
@@ -409,12 +408,12 @@ class PSpeechRecognition_AWS : public PSpeechRecognition, PAwsClient<Aws::Transc
         PString messageType = headers.Get(":message-type");
         if (messageType == "event") {
           PString type = headers.Get(":event-type");
-          PTRACE(4, "Received " << type << ":\n" << json.AsString(0, 2));
           if (type == "TranscriptEvent" &&
               json.IsType(PJSON::e_Object) &&
               json.GetObject().IsType("Transcript", PJSON::e_Object) &&
               json.GetObject().GetObject("Transcript").IsType("Results", PJSON::e_Array)) {
             PJSON::Array const & results = json.GetObject().GetObject("Transcript").GetArray("Results");
+            PTRACE_IF(4, !results.empty(), "Received " << type << ":\n" << json.AsString(0, 2));
             for (size_t idxResult = 0; idxResult < results.size(); ++idxResult) {
               if (results.IsType(idxResult, PJSON::e_Object)) {
                 PJSON::Object const & result = results.GetObject(idxResult);
@@ -445,6 +444,9 @@ class PSpeechRecognition_AWS : public PSpeechRecognition, PAwsClient<Aws::Transc
               }
             }
           }
+          else {
+            PTRACE(4, "Received " << type << ":\n" << json.AsString(0, 2));
+          }
         }
 #if PTRACING
         else if (PTrace::CanTrace(2) && messageType == "exception") {
@@ -471,10 +473,21 @@ class PSpeechRecognition_AWS : public PSpeechRecognition, PAwsClient<Aws::Transc
   }
 
 
+  void DeleteVocabulary()
+  {
+    if (m_vocabulary.empty())
+      return;
+
+    m_client->DeleteVocabulary(Aws::TranscribeService::Model::DeleteVocabularyRequest()
+                               .WithVocabularyName(m_vocabulary.c_str()));
+    m_vocabulary.clear();
+  }
+
+
 public:
   PSpeechRecognition_AWS()
     : m_sampleRate(8000)
-    , m_language(Aws::TranscribeStreamingService::Model::LanguageCode::en_US)
+    , m_language(Aws::TranscribeService::Model::LanguageCode::en_US)
     , m_eventThread(NULL)
   { }
 
@@ -520,8 +533,8 @@ public:
     if (IsOpen())
       return false;
 
-    auto code = Aws::TranscribeStreamingService::Model::LanguageCodeMapper::GetLanguageCodeForName(language.c_str());
-    if (code ==  Aws::TranscribeStreamingService::Model::LanguageCode::NOT_SET)
+    auto code = Aws::TranscribeService::Model::LanguageCodeMapper::GetLanguageCodeForName(language.c_str());
+    if (code ==  Aws::TranscribeService::Model::LanguageCode::NOT_SET)
       return false;
 
     m_language = code;
@@ -531,7 +544,7 @@ public:
 
   virtual PString GetLanguage() const
   {
-    return Aws::TranscribeStreamingService::Model::LanguageCodeMapper::GetNameForLanguageCode(m_language);
+    return Aws::TranscribeService::Model::LanguageCodeMapper::GetNameForLanguageCode(m_language);
   }
 
 
@@ -578,6 +591,24 @@ public:
     AddSignedHeader(url, canonical, "language-code", GetLanguage());
     AddSignedHeader(url, canonical, "media-encoding", "pcm");
     AddSignedHeader(url, canonical, "sample-rate", PString(GetSampleRate()));
+
+    if (!words.empty()) {
+      DeleteVocabulary();
+
+      Aws::Vector<Aws::String> phrases(words.size());
+      for (size_t i = 0; i < words.size(); ++i)
+        phrases[i] = words[i].c_str();
+
+      m_vocabulary = "PTLib-" + PRandom::String(6);
+      auto outcome = m_client->CreateVocabulary(Aws::TranscribeService::Model::CreateVocabularyRequest()
+                                                .WithVocabularyName(m_vocabulary.c_str())
+                                                .WithLanguageCode(m_language)
+                                                .WithPhrases(phrases));
+      if (outcome.IsSuccess())
+        ;//Timing issue AddSignedHeader(url, canonical, "vocabulary-name", m_vocabulary);
+      else
+        PTRACE(2, "Could not create vocubulary: " << outcome.GetResult().GetFailureReason());
+    }
 
     canonical << "\nhost:" << url.GetHostPort() << "\n\nhost\n";
 

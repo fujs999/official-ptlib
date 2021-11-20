@@ -421,6 +421,7 @@ PSpeechRecognition::Transcript::Transcript(bool final, const PTimeInterval & whe
   : m_final(final)
   , m_when(when)
   , m_content(content)
+  , m_confidence(1)
 {
 }
 

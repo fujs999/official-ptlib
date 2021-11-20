@@ -119,6 +119,7 @@ class PSpeechRecognition : public PObject
       bool          m_final;
       PTimeInterval m_when;
       PString       m_content;
+      float         m_confidence;  // 0.0 to 1.0
 
       Transcript(bool final, const PTimeInterval & when, const PString & content);
       virtual Comparison Compare(const PObject & other) const;
