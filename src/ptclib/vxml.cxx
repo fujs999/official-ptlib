@@ -3255,7 +3255,7 @@ PVXMLGrammar::PVXMLGrammar(const PVXMLGrammarInit & init)
 
 void PVXMLGrammar::OnRecognition(PSpeechRecognition &, PSpeechRecognition::Transcript transcript)
 {
-  switch (m_state) {
+  switch (m_state.load()) {
     case Idle:
       Start();
     case Started:
