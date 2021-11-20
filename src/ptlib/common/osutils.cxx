@@ -2500,7 +2500,9 @@ PProcess::PProcess(const char * manuf, const char * name,
   , m_RunTimeSignalsQueueBuffer(10)
   , m_RunTimeSignalsQueueIn(0)
   , m_RunTimeSignalsQueueOut(0)
+#if PTRACING
   , m_profileProcessTimer(NULL)
+#endif
 {
   m_version.m_major = major;
   m_version.m_minor = minor;
@@ -3095,9 +3097,10 @@ PObject::Comparison PProcess::Compare(const PObject & obj) const
 
 void PProcess::PrintOn(ostream & strm) const
 {
-  PWaitAndSignal lock(m_profileProcessMutex);
-
   strm << fixed << setprecision(1) << GetName() << " v" << GetVersion(true) << "; ";
+
+#if PTRACING
+  PWaitAndSignal lock(m_profileProcessMutex);
 
   Times processTimes;
   if (GetProcessTimes(processTimes)) {
@@ -3151,6 +3154,7 @@ void PProcess::PrintOn(ostream & strm) const
   strm << "Threads: " << threads.size();
   for (std::map<float, PString>::reverse_iterator it = topThreads.rbegin(); it != topThreads.rend(); ++it)
     strm << ',' << it->second << '=' << it->first << '%';
+#endif // PTRACING
 }
 
 
