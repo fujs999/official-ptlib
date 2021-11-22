@@ -360,6 +360,7 @@ AC_DEFUN([MY_OUTPUT_SUMMARY],[
    AS_ECHO("")
    m4_map_args_pair([INTERNAL_OUTPUT_SUMMARY], [AS_ECHO], $@)
    AS_ECHO("")
+   INTERNAL_OUTPUT_SUMMARY([                     Advanced C++], [CPLUSPLUS_STD])
    INTERNAL_OUTPUT_SUMMARY([                         CPPFLAGS], [CPPFLAGS])
    INTERNAL_OUTPUT_SUMMARY([                           CFLAGS], [CFLAGS])
    INTERNAL_OUTPUT_SUMMARY([                         CXXFLAGS], [CXXFLAGS])
@@ -473,6 +474,7 @@ AC_SUBST(ARFLAGS, "rc")
 
 
 dnl Check for latest and greatest
+AC_SUBST(CPLUSPLUS_STD,"-std=c++03")
 AC_ARG_ENABLE(cpp11, AS_HELP_STRING([--enable-cpp11],[Enable C++11 build]),AC_SUBST(CPLUSPLUS_STD,"-std=c++11"))
 AC_ARG_ENABLE(cpp14, AS_HELP_STRING([--enable-cpp14],[Enable C++14 build]),AC_SUBST(CPLUSPLUS_STD,"-std=c++14"))
 AC_ARG_ENABLE(cpp17, AS_HELP_STRING([--enable-cpp17],[Enable C++17 build]),AC_SUBST(CPLUSPLUS_STD,"-std=c++17"))

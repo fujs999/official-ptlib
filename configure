@@ -6820,6 +6820,8 @@ ARFLAGS="rc"
 
 
 
+CPLUSPLUS_STD="-std=c++03"
+
 # Check whether --enable-cpp11 was given.
 if test ${enable_cpp11+y}
 then :
@@ -24865,6 +24867,16 @@ fi
 
 
    printf "%s\n" ""
+
+   if test ${CPLUSPLUS_STD+y}
+then :
+  printf "%s\n" "                     Advanced C++ : ${CPLUSPLUS_STD}"
+else $as_nop
+  printf "%s\n" "                     Advanced C++ : no"
+
+fi
+
+
 
    if test ${CPPFLAGS+y}
 then :
