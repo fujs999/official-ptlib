@@ -243,7 +243,7 @@ PSoundChannelDirectSound::PSoundChannelDirectSound()
   m_triggerEvent[SOUNDEVENT_SOUND] = CreateEvent(NULL, false, false, NULL);// auto-reset
   m_triggerEvent[SOUNDEVENT_ABORT] = CreateEvent(NULL, false, false, NULL);// auto-reset
 
-  SetBuffers(4000, 4); // 1 second at 8kHz
+  SetBufferSections(4000, 4); // 1 second at 8kHz
 }
 
 
@@ -517,6 +517,8 @@ PBoolean PSoundChannelDirectSound::SetBuffers (PINDEX size, PINDEX count) // pub
   }
   else
     SetBufferSections(size, count);
+
+  m_isStreaming = false;
 
 #if PTRACING
   if (PTrace::CanTrace(4)) {

@@ -6842,6 +6842,8 @@ ARFLAGS="rc"
 
 
 
+CPLUSPLUS_STD="-std=c++03"
+
 # Check whether --enable-cpp11 was given.
 if test ${enable_cpp11+y}
 then :

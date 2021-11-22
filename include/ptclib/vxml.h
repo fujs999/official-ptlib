@@ -166,9 +166,10 @@ class PVXMLGrammar : public PObject, protected PVXMLGrammarInit
   public:
     PVXMLGrammar(const PVXMLGrammarInit & init);
 
-    virtual void OnUserInput(const PString & input) = 0;
+    virtual void OnUserInput(const PString & input);
     virtual void OnAudioInput(const short * samples, size_t count);
     virtual void Start();
+    virtual void Stop();
     virtual bool Process();
 
     P_DECLARE_TRACED_ENUM(GrammarState,
@@ -192,8 +193,11 @@ class PVXMLGrammar : public PObject, protected PVXMLGrammarInit
     PDECLARE_NOTIFIER(PTimer, PVXMLGrammar, OnTimeout);
     PDECLARE_SpeechRecognitionNotifier(PVXMLGrammar, OnRecognition);
     virtual void GetWordsToRecognise(PStringArray & words) const;
+    virtual void OnInput(const PString & input) = 0;
 
     PSpeechRecognition * m_recogniser;
+    bool                 m_allowDTMF;
+    PString              m_fieldName;
     PString              m_value;
     atomic<GrammarState> m_state;
     PTimeInterval        m_timeout;
@@ -210,7 +214,7 @@ class PVXMLMenuGrammar : public PVXMLGrammar
     PCLASSINFO(PVXMLMenuGrammar, PVXMLGrammar);
   public:
     PVXMLMenuGrammar(const PVXMLGrammarInit & init);
-    virtual void OnUserInput(const PString & input);
+    virtual void OnInput(const PString & input);
     virtual bool Process();
 
   protected:
@@ -226,7 +230,7 @@ class PVXMLDigitsGrammar : public PVXMLGrammar
   public:
     PVXMLDigitsGrammar(const PVXMLGrammarInit & init);
 
-    virtual void OnUserInput(const PString & input);
+    virtual void OnInput(const PString & input);
 
   protected:
     virtual void GetWordsToRecognise(PStringArray & words) const;
@@ -245,10 +249,22 @@ class PVXMLBooleanGrammar : public PVXMLGrammar
   public:
     PVXMLBooleanGrammar(const PVXMLGrammarInit & init);
 
-    virtual void OnUserInput(const PString & input);
+    virtual void OnInput(const PString & input);
 
   protected:
     virtual void GetWordsToRecognise(PStringArray & words) const;
+};
+
+
+//////////////////////////////////////////////////////////////////
+
+class PVXMLTextGrammar : public PVXMLGrammar
+{
+    PCLASSINFO(PVXMLTextGrammar, PVXMLGrammar);
+  public:
+    PVXMLTextGrammar(const PVXMLGrammarInit & init);
+
+    virtual void OnInput(const PString & input);
 };
 
 
@@ -260,7 +276,7 @@ class PVXMLGrammarSRGS : public PVXMLGrammar
   public:
     PVXMLGrammarSRGS(const PVXMLGrammarInit & init);
 
-    virtual void OnUserInput(const PString & input);
+    virtual void OnInput(const PString & input);
 
   protected:
     virtual void GetWordsToRecognise(PStringArray & words) const;
@@ -276,7 +292,7 @@ class PVXMLGrammarSRGS : public PVXMLGrammar
 
       Item() : m_minRepeat(1), m_maxRepeat(1), m_currentItem(0) { }
       bool Parse(PXMLElement & grammar, PXMLElement * element);
-      GrammarState OnUserInput(const PString & input);
+      GrammarState OnInput(const PString & input);
       void AddWordsToRecognise(PStringArray & words) const;
     };
 
