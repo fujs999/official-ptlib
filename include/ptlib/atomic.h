@@ -175,7 +175,21 @@ private:
   #define P_DEFINE_ATOMIC_INT_CLASS_BUILTIN(Type) \
     P_DEFINE_ATOMIC_INT_CLASS(Type, __sync_lock_test_and_set, __sync_fetch_and_add, __sync_add_and_fetch, p_compare_exchange_strong)
 
-  P_DEFINE_ATOMIC_INT_CLASS_BUILTIN(          bool);
+  template <> struct atomic<bool>
+  {
+    __inline atomic() : m_storage() { }
+    __inline atomic(bool value) : m_storage(value) { }
+    __inline atomic(const atomic & other) : m_storage(__sync_add_and_fetch(reinterpret_cast<char *>(const_cast<bool *>(&other.m_storage)), 0)) { }
+    __inline atomic & operator=(const atomic & other) { store(other.load()); return *this; }
+    __inline atomic & operator=(bool other) { store(other); return *this; }
+    __inline operator bool() const { return __sync_add_and_fetch(reinterpret_cast<char *>(const_cast<bool *>(&m_storage)), 0) != 0; }
+    __inline bool compare_exchange_strong(bool & comp, bool value) { return p_compare_exchange_strong(&m_storage, comp, value); }
+    __inline void store(bool value) { exchange(value); }
+    __inline bool load() const { return __sync_add_and_fetch(reinterpret_cast<char *>(const_cast<bool *>(&m_storage)), 0) != 0; }
+    __inline bool exchange(bool value) { return __sync_lock_test_and_set(&m_storage, value) != 0; }
+  private: volatile bool m_storage;
+  };
+
   P_DEFINE_ATOMIC_INT_CLASS_BUILTIN(  signed  char);
   P_DEFINE_ATOMIC_INT_CLASS_BUILTIN(unsigned  char);
   P_DEFINE_ATOMIC_INT_CLASS_BUILTIN(  signed short);
