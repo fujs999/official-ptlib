@@ -1120,6 +1120,20 @@ PTrace::ThrottleBase::ThrottleBase(const ThrottleBase & other)
 }
 
 
+PTrace::ThrottleBase & PTrace::ThrottleBase::operator=(const ThrottleBase & other)
+{
+  m_interval = other.m_interval;
+  m_lowLevel = other.m_lowLevel;
+  m_highLevel = other.m_highLevel;
+  m_maxShown = other.m_maxShown;
+  m_currentLevel = other.m_highLevel;
+  m_nextLog = 0;
+  m_repeatCount = 0;
+  m_hiddenCount = 0;
+  return *this;
+}
+
+
 bool PTrace::ThrottleBase::CanTrace(int64_t now)
 {
   if (!PTrace::CanTrace(m_lowLevel))
@@ -3098,8 +3112,13 @@ PObject::Comparison PProcess::Compare(const PObject & obj) const
 void PProcess::PrintOn(ostream & strm) const
 {
   strm << fixed << setprecision(1) << GetName() << " v" << GetVersion(true) << "; ";
-
 #if PTRACING
+  const_cast<PProcess *>(this)->PrintProfileOn(strm);
+}
+
+
+void PProcess::PrintProfileOn(ostream & strm)
+{
   PWaitAndSignal lock(m_profileProcessMutex);
 
   Times processTimes;
@@ -3134,7 +3153,7 @@ void PProcess::PrintOn(ostream & strm) const
     if (threads.find(*it) != threads.end())
       ++it;
     else
-      it = m_profileLastThreadTimes.erase(it);
+      m_profileLastThreadTimes.erase(it++);
   }
 
   std::map<float, PString> topThreads;
