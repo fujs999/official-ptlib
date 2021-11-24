@@ -2361,12 +2361,19 @@ namespace PProfiling
 
   class HighWaterMarks
   {
-    typedef std::map<std::string, PAutoPtr<HighWaterMarkData> > DataMap;
+    typedef std::map<std::string, HighWaterMarkData*> DataMap;
     DataMap          m_data;
     PCriticalSection m_mutex;
 
 
   public:
+    ~HighWaterMarks()
+    {
+      for (DataMap::const_iterator it = m_data.begin(); it != m_data.end(); ++it)
+        delete it->second;
+    }
+
+
     HighWaterMarkData & Get(const type_info & ti)
     {
       std::string name = ti.name();
@@ -2377,12 +2384,9 @@ namespace PProfiling
 
       PWaitAndSignal lock(m_mutex);
       DataMap::iterator it = m_data.find(name);
-      if (it != m_data.end())
-        return *it->second;
-
-      PAutoPtr<HighWaterMarkData> & hwmd = m_data[name];
-      hwmd.reset(new HighWaterMarkData(name));
-      return *hwmd;
+      if (it == m_data.end())
+        it = m_data.insert(make_pair(name, new HighWaterMarkData(name))).first;
+      return *it->second;
     }
 
 
