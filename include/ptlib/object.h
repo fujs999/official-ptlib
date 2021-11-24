@@ -879,6 +879,7 @@ public:
         unsigned maxShown = 1       ///< Max shown messages in time interval
       );
       ThrottleBase(const ThrottleBase & other);
+      ThrottleBase & operator=(const ThrottleBase & other);
 
       bool CanTrace(int64_t now = 0);
       operator unsigned() const { return m_currentLevel; }
@@ -891,17 +892,14 @@ public:
       __inline unsigned GetHiddenCount() const { return m_hiddenCount; }
 
     protected:
-      const unsigned   m_interval;
-      const unsigned   m_lowLevel;
-      const unsigned   m_highLevel;
-      const unsigned   m_maxShown;
+      unsigned         m_interval;
+      unsigned         m_lowLevel;
+      unsigned         m_highLevel;
+      unsigned         m_maxShown;
       atomic<unsigned> m_currentLevel;
       atomic<int64_t>  m_nextLog;
       atomic<unsigned> m_repeatCount;
       atomic<unsigned> m_hiddenCount;
-
-    private:
-      void operator=(const ThrottleBase &) { }
   };
 
   /** Template class to reduce noise level for some logging.

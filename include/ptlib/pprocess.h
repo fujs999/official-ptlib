@@ -730,10 +730,11 @@ class PProcess : public PThread
 
 #if PTRACING
     PDECLARE_NOTIFIER(PTimer, PProcess, ProfileUpdateLogTimer) { PTRACE(3, "PTLibProfile", *this); }
-    PTimer           * m_profileProcessTimer;
-    PCriticalSection   m_profileProcessMutex;
-    mutable     Times  m_profileLastProcessTimes;
-    mutable set<Times> m_profileLastThreadTimes;
+    void PrintProfileOn(ostream & strm);
+    PTimer         * m_profileProcessTimer;
+    PCriticalSection m_profileProcessMutex;
+    Times            m_profileLastProcessTimes;
+    set<Times>       m_profileLastThreadTimes;
 #endif // PTRACING
 
   friend class PThread;
