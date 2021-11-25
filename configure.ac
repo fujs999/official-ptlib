@@ -1074,7 +1074,7 @@ dnl MSWIN_IF_FEATURE set_rdbuf,!android
 
 MY_COMPILE_IFELSE(
    [if has iostream::set_rdbuf],
-   [],
+   [$CPLUSPLUS_STD],
    [#include <iostream>],
    [
       struct MyStream : public std::iostream {
