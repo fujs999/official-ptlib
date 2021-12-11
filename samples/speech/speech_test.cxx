@@ -156,7 +156,16 @@ void MyProcess::Recognise(const PArgList & args)
     return;
   }
 
-  if (!sr->Open(PCREATE_NOTIFIER(OnRecognition), args.GetParameters())) {
+  PString vocaulary;
+  if (args.GetCount() > 0) {
+    vocaulary = "TestVocab";
+    if (!sr->SetVocabulary(vocaulary, args.GetParameters())) {
+      cerr << "COuld not set vocabulary!\n";
+      return;
+    }
+  }
+
+  if (!sr->Open(PCREATE_NOTIFIER(OnRecognition), vocaulary)) {
     cerr << "Could not open speech recognition!\n";
     return;
   }
