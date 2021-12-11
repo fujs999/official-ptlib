@@ -518,23 +518,8 @@ class PSpeechRecognition_SAPI : public PSpeechRecognition, protected PSpStreamFo
       return m_language;
     }
 
-
-    virtual bool Open(const Notifier & notifier, const PStringArray & words)
+    virtual bool SetVocabulary(const PString & /*name*/, const PStringArray & /*words*/)
     {
-      m_notifier = notifier;
-
-      PThread::Current()->CoInitialise();
-
-      PCOM_RETURN_ON_FAILED(m_cpRecognizer.CoCreateInstance,(CLSID_SpInprocRecognizer));
-
-      PCOM_RETURN_ON_FAILED(m_cpRecognizer->CreateRecoContext, (&m_cpRecoContext));
-      PCOM_RETURN_ON_FAILED(m_cpRecoContext->SetNotifyWin32Event, ());
-      PCOM_RETURN_ON_FAILED(m_cpRecoContext->CreateGrammar, (0, &m_cpRecoGrammar));
-
-      if (words.empty()) {
-        PCOM_RETURN_ON_FAILED(m_cpRecoGrammar->LoadDictation, (NULL, SPLO_STATIC));
-      }
-      else {
         /*
         WORD langId = MAKELANGID(LANG_FRENCH, SUBLANG_FRENCH);
         m_cpRecoGrammar->ResetGrammar(langId);
@@ -561,7 +546,22 @@ class PSpeechRecognition_SAPI : public PSpeechRecognition, protected PSpStreamFo
         hr = recoGrammar->SetRuleState(ruleName1, 0, SPRS_ACTIVE);
         check_result(hr);
         */
-      }
+    }
+
+    virtual bool Open(const Notifier & notifier, const PString & vocabulary)
+    {
+      m_notifier = notifier;
+
+      PThread::Current()->CoInitialise();
+
+      PCOM_RETURN_ON_FAILED(m_cpRecognizer.CoCreateInstance,(CLSID_SpInprocRecognizer));
+
+      PCOM_RETURN_ON_FAILED(m_cpRecognizer->CreateRecoContext, (&m_cpRecoContext));
+      PCOM_RETURN_ON_FAILED(m_cpRecoContext->SetNotifyWin32Event, ());
+      PCOM_RETURN_ON_FAILED(m_cpRecoContext->CreateGrammar, (0, &m_cpRecoGrammar));
+
+      if (vocabulary.empty())
+        PCOM_RETURN_ON_FAILED(m_cpRecoGrammar->LoadDictation, (vocabulary.AsWide(), SPLO_STATIC));
 
       PCOM_RETURN_ON_FAILED(m_cpRecoContext->SetInterest,(SPFEI(SPEI_RECOGNITION) | SPFEI(SPEI_END_SR_STREAM),
                                                           SPFEI(SPEI_RECOGNITION) | SPFEI(SPEI_END_SR_STREAM)));

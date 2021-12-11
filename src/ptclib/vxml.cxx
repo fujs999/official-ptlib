@@ -3264,9 +3264,11 @@ void PVXMLGrammar::OnRecognition(PSpeechRecognition &, PSpeechRecognition::Trans
       return;
   }
 
-  m_session.InternalSetVar(DialogScope, m_fieldName+"$.utterance", PSTRSTRM(transcript.m_content));
-  m_session.InternalSetVar(DialogScope, m_fieldName+"$.confidence", PSTRSTRM(transcript.m_confidence));
-  m_session.InternalSetVar(DialogScope, m_fieldName+"$.inputmode", VoiceAttribute);
+  if (!m_fieldName.empty()) {
+    m_session.InternalSetVar(DialogScope, m_fieldName+"$.utterance", PSTRSTRM(transcript.m_content));
+    m_session.InternalSetVar(DialogScope, m_fieldName+"$.confidence", PSTRSTRM(transcript.m_confidence));
+    m_session.InternalSetVar(DialogScope, m_fieldName+"$.inputmode", VoiceAttribute);
+  }
 
   OnInput(transcript.m_content);
   m_session.Trigger();
@@ -3314,9 +3316,12 @@ void PVXMLGrammar::Start()
   m_timer = m_timeout;
 
   if (m_recogniser != NULL) {
-    PStringArray words;
-    GetWordsToRecognise(words);
-    m_recogniser->Open(PCREATE_NOTIFIER(OnRecognition), words);
+    // Currentlly, in AWS world, it takes several seconds to create a vocabulary.
+    // So we need to figure out another solution than setting it up here.
+    //PStringArray words;
+    //GetWordsToRecognise(words);
+    //m_recogniser->SetVocabulary()
+    m_recogniser->Open(PCREATE_NOTIFIER(OnRecognition));
   }
 
   PTRACE(3, "Started grammar " << *this << ", timeout=" << m_timeout);
@@ -3389,6 +3394,16 @@ PVXMLMenuGrammar::PVXMLMenuGrammar(const PVXMLGrammarInit & init)
 void PVXMLMenuGrammar::OnInput(const PString & input)
 {
   m_value = input;
+
+  // Sadly, this is only English
+  static const char * const Numerals[] = { "zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine" };
+  for (PINDEX i = 0; i < PARRAYSIZE(Numerals); ++i) {
+    if (input *= Numerals[i]) {
+      m_value = (char)(i+'0');
+      break;
+    }
+  }
+
   PTRACE(4, "Menu grammar filled with \"" << input << '"');
   m_state = PVXMLGrammar::Filled;
 }
