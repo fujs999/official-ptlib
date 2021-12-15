@@ -1984,10 +1984,10 @@ PBoolean PVXMLSession::TraverseScript(PXMLElement & element)
   PString script = src.empty() ? element.GetData() : src;
 
   PTRACE(4, "Traverse <script> " << script.ToLiteral());
-  if (!m_scriptContext->Run(script))
+  if (!m_scriptContext->Run(script)) {
     PTRACE(2, "Could not evaluate script " << script.ToLiteral()
            << " with script language " << m_scriptContext->GetLanguageName());
-
+  }
   return false;
 }
 
@@ -2444,7 +2444,7 @@ bool PVXMLSession::GoToEventHandler(PXMLElement & element, const PString & event
 }
 
 
-bool PVXMLSession::ThrowSemanticError(PXMLElement & element, const PString & reason)
+bool PVXMLSession::ThrowSemanticError(PXMLElement & element, const PString & PTRACE_PARAM(reason))
 {
   PTRACE(2, "Semantic error on " << element.PrintTrace() << " - " << reason);
   return GoToEventHandler(element, ErrorSemantic);
