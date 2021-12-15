@@ -220,6 +220,13 @@ class PString : public PCharArray
       char ch    ///< Single character to initialise string.
     );
 
+    /**Create a string from the boolean type.
+       This will create a string of either "true" or "false".
+      */
+    PString(
+      bool b   ///< Boolean to convert
+    );
+
     /**Create a string from the integer type.
        This will create a simple base 10, shortest length conversion of the
        integer (with sign character if appropriate) into the string.
@@ -1839,6 +1846,20 @@ class PString : public PCharArray
     PString FromLiteral(
       PINDEX & offset
     ) const;
+
+    /**Determine if the string is a synonym for "true".
+       Will indicate true if string is "true", "t", "on", "yes", "y" or
+       a non-zero integer.
+      */
+    bool IsTrue() const;
+    static bool IsTrue(const char * str);
+
+    /**Determine if the string is a synonym for "false".
+       Will indicate true if string is "false", "f", "off", "no" "n" or
+       is a valid integer for zero, e.g. "0000".
+      */
+    bool IsFalse() const;
+    static bool IsFalse(const char * str);
 
     /**Get the internal buffer as a pointer to unsigned characters. The
        standard "operator const char *" function is provided by the

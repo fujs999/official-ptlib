@@ -93,6 +93,28 @@ using namespace std; // Not a good practice (name space polution), but will take
 
 
 ///////////////////////////////////////////////////////////////////////////////
+// Deal with different C++ versions and std::auto_ptr deprecation
+#if __cplusplus < 201103L
+  template <typename T> class PAutoPtr : public std::auto_ptr<T>
+  {
+    public:
+      PAutoPtr() { }
+      explicit PAutoPtr(T * p) : std::auto_ptr<T>(p) { }
+      PAutoPtr(PAutoPtr & other) : std::auto_ptr<T>(other.release()) { }
+      void transfer(PAutoPtr & other) { this->reset(other.release()); }
+  };
+#else
+  template <typename T> class PAutoPtr : public std::unique_ptr<T>
+  {
+    public:
+      PAutoPtr() = default;
+      explicit PAutoPtr(T * p) : std::unique_ptr<T>(p) { }
+      void transfer(PAutoPtr & other) { std::unique_ptr<T>::operator=(std::move(other)); }
+  };
+#endif
+
+
+///////////////////////////////////////////////////////////////////////////////
 
 #define P_REMOVE_VIRTUAL_INTERNAL_BASE(fn) __inline virtual struct ptlib_virtual_function_changed_or_removed ****** fn { return 0; }
 
@@ -171,25 +193,6 @@ typedef bool   PBoolean;
 #else
 #define PINLINE
 #endif
-
-
-///////////////////////////////////////////////////////////////////////////////
-// Deal with different C++ versions and auto_ptr deprecation
-#if (__cplusplus >= 201103L)
-  #define PAutoPtrBase unique_ptr
-#else
-  #define PAutoPtrBase auto_ptr
-#endif
-
-template <typename T>
-class PAutoPtr : public std::PAutoPtrBase<T>
-{
-  public:
-    PAutoPtr() { }
-    explicit PAutoPtr(T * p) : std::PAutoPtrBase<T>(p) { }
-    PAutoPtr(PAutoPtr & other) : std::PAutoPtrBase<T>(other.release()) { }
-    void transfer(PAutoPtr & other) { this->reset(other.release()); }
-};
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -880,6 +883,7 @@ public:
         unsigned maxShown = 1       ///< Max shown messages in time interval
       );
       ThrottleBase(const ThrottleBase & other);
+      ThrottleBase & operator=(const ThrottleBase & other);
 
       bool CanTrace(int64_t now = 0);
       operator unsigned() const { return m_currentLevel; }
@@ -892,17 +896,14 @@ public:
       __inline unsigned GetHiddenCount() const { return m_hiddenCount; }
 
     protected:
-      const unsigned   m_interval;
-      const unsigned   m_lowLevel;
-      const unsigned   m_highLevel;
-      const unsigned   m_maxShown;
+      unsigned         m_interval;
+      unsigned         m_lowLevel;
+      unsigned         m_highLevel;
+      unsigned         m_maxShown;
       atomic<unsigned> m_currentLevel;
       atomic<int64_t>  m_nextLog;
       atomic<unsigned> m_repeatCount;
       atomic<unsigned> m_hiddenCount;
-
-    private:
-      void operator=(const ThrottleBase &) { }
   };
 
   /** Template class to reduce noise level for some logging.
@@ -1537,6 +1538,24 @@ namespace PProfiling
   #define PPROFILE_TIMESCOPE(...)
 #endif // PTRACING
 
+  struct HighWaterMarkData
+  {
+    std::string      m_name;
+    atomic<unsigned> m_totalCount;
+    atomic<unsigned> m_highWaterMark;
+
+    HighWaterMarkData(const std::string & name);
+    void NewInstance();
+    static HighWaterMarkData & Get(const type_info & ti);
+    static std::map<std::string, unsigned> Get();
+  };
+
+  template <class CLS> struct HighWaterMark
+  {
+    static HighWaterMarkData & GetHighWaterMarkData() { static HighWaterMarkData & data = HighWaterMarkData::Get(typeid(CLS)); return data; }
+    HighWaterMark() { GetHighWaterMarkData().NewInstance(); }
+    ~HighWaterMark() { --GetHighWaterMarkData().m_totalCount; }
+  };
 };
 
 

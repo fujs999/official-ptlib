@@ -98,7 +98,7 @@ class PMutexExcessiveLockInfo
     <code>Signal()</code> function, releasing the second thread.
  */
 
-class PTimedMutex : public PSync, public PMutexExcessiveLockInfo
+class PTimedMutex : public PSync, public PMutexExcessiveLockInfo, PProfiling::HighWaterMark<PTimedMutex>
 {
     PCLASSINFO(PTimedMutex, PSync)
   public:

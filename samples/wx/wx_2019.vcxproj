@@ -225,7 +225,7 @@ exit 1
     </ResourceCompile>
     <ProjectReference />
     <Link>
-      <AdditionalDependencies>ptlib.lib;wxmsw$(wxShortVersionString)u_xrc.lib;wxmsw$(wxShortVersionString)u_html.lib;wxmsw$(wxShortVersionString)u_adv.lib;wxmsw$(wxShortVersionString)u_core.lib;wxbase$(wxShortVersionString)u_xml.lib;wxbase$(wxShortVersionString)u.lib;wxexpat.lib;wxtiff.lib;wxjpeg.lib;wxpng.lib;wxzlib.lib;wxregexu.lib;wsock32.lib;comctl32.lib;rpcrt4.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>wxmsw$(wxShortVersionString)u_xrc.lib;wxmsw$(wxShortVersionString)u_html.lib;wxmsw$(wxShortVersionString)u_adv.lib;wxmsw$(wxShortVersionString)u_core.lib;wxbase$(wxShortVersionString)u_xml.lib;wxbase$(wxShortVersionString)u.lib;wxexpat.lib;wxtiff.lib;wxjpeg.lib;wxpng.lib;wxzlib.lib;wxregexu.lib;wsock32.lib;comctl32.lib;rpcrt4.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ProgramDatabaseFile>$(TargetDir)\$(TargetName).pdb</ProgramDatabaseFile>
       <SubSystem>Windows</SubSystem>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
@@ -316,7 +316,7 @@ exit 1
     </ResourceCompile>
     <ProjectReference />
     <Link>
-      <AdditionalDependencies>ptlibd.lib;wxmsw$(wxShortVersionString)ud_xrc.lib;wxmsw$(wxShortVersionString)ud_html.lib;wxmsw$(wxShortVersionString)ud_adv.lib;wxmsw$(wxShortVersionString)ud_core.lib;wxbase$(wxShortVersionString)ud_xml.lib;wxbase$(wxShortVersionString)ud.lib;wxexpatd.lib;wxtiffd.lib;wxjpegd.lib;wxpngd.lib;wxzlibd.lib;wxregexud.lib;wsock32.lib;comctl32.lib;rpcrt4.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>wxmsw$(wxShortVersionString)ud_xrc.lib;wxmsw$(wxShortVersionString)ud_html.lib;wxmsw$(wxShortVersionString)ud_adv.lib;wxmsw$(wxShortVersionString)ud_core.lib;wxbase$(wxShortVersionString)ud_xml.lib;wxbase$(wxShortVersionString)ud.lib;wxexpatd.lib;wxtiffd.lib;wxjpegd.lib;wxpngd.lib;wxzlibd.lib;wxregexud.lib;wsock32.lib;comctl32.lib;rpcrt4.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>$(TargetDir)\$(TargetName).pdb</ProgramDatabaseFile>
       <SubSystem>Windows</SubSystem>
@@ -407,7 +407,7 @@ exit 1
     </ResourceCompile>
     <ProjectReference />
     <Link>
-      <AdditionalDependencies>ptlibn.lib;wxmsw$(wxShortVersionString)u_xrc.lib;wxmsw$(wxShortVersionString)u_html.lib;wxmsw$(wxShortVersionString)u_adv.lib;wxmsw$(wxShortVersionString)u_core.lib;wxbase$(wxShortVersionString)u_xml.lib;wxbase$(wxShortVersionString)u.lib;wxexpat.lib;wxtiff.lib;wxjpeg.lib;wxpng.lib;wxzlib.lib;wxregexu.lib;wsock32.lib;comctl32.lib;rpcrt4.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>wxmsw$(wxShortVersionString)u_xrc.lib;wxmsw$(wxShortVersionString)u_html.lib;wxmsw$(wxShortVersionString)u_adv.lib;wxmsw$(wxShortVersionString)u_core.lib;wxbase$(wxShortVersionString)u_xml.lib;wxbase$(wxShortVersionString)u.lib;wxexpat.lib;wxtiff.lib;wxjpeg.lib;wxpng.lib;wxzlib.lib;wxregexu.lib;wsock32.lib;comctl32.lib;rpcrt4.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ProgramDatabaseFile>$(TargetDir)\$(TargetName).pdb</ProgramDatabaseFile>
       <SubSystem>Windows</SubSystem>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>

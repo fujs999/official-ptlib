@@ -1120,6 +1120,20 @@ PTrace::ThrottleBase::ThrottleBase(const ThrottleBase & other)
 }
 
 
+PTrace::ThrottleBase & PTrace::ThrottleBase::operator=(const ThrottleBase & other)
+{
+  m_interval = other.m_interval;
+  m_lowLevel = other.m_lowLevel;
+  m_highLevel = other.m_highLevel;
+  m_maxShown = other.m_maxShown;
+  m_currentLevel = other.m_highLevel;
+  m_nextLog = 0;
+  m_repeatCount = 0;
+  m_hiddenCount = 0;
+  return *this;
+}
+
+
 bool PTrace::ThrottleBase::CanTrace(int64_t now)
 {
   if (!PTrace::CanTrace(m_lowLevel))
@@ -2438,7 +2452,7 @@ int PProcess::InternalMain(void *)
   if (device != NULL && device->ApplicationMain())
     return m_terminationValue;
 #endif
-  
+
 #if P_EXCEPTIONS
   try {
     Main();
@@ -2492,11 +2506,17 @@ PProcess::PProcess(const char * manuf, const char * name,
   , m_shuttingDown(false)
   , m_keepingHouse(false)
   , m_houseKeeper(NULL)
+#if P_TIMERS
+  , m_timerList(new PTimer::List())
+#endif
   , m_processID(GetCurrentProcessID())
   , m_previousRunTimeSignalHandlers(SIGRTMAX)
   , m_RunTimeSignalsQueueBuffer(10)
   , m_RunTimeSignalsQueueIn(0)
   , m_RunTimeSignalsQueueOut(0)
+#if PTRACING
+  , m_profileProcessTimer(NULL)
+#endif
 {
   m_version.m_major = major;
   m_version.m_minor = minor;
@@ -2561,10 +2581,6 @@ PProcess::PProcess(const char * manuf, const char * name,
 
   PlatformConstruct();
 
-#if P_TIMERS
-  m_timerList = new PTimer::List();
-#endif
-
   if (!suppressStartup)
     Startup();
 
@@ -2604,7 +2620,17 @@ void PProcess::Startup()
 #if PTRACING
   if (PTimedMutex::CtorDtorLogLevel != UINT_MAX)
     s_MutexLeakCheck = new PMutexLeakCheck();
-#endif
+
+  PString profileUpdateLogPeriodStr(getenv("PTLIB_PROFILE_LOG_PERIOD"));
+  if (profileUpdateLogPeriodStr.empty())
+    profileUpdateLogPeriodStr = "60";
+  PTimeInterval profileUpdateLogPeriod(0, profileUpdateLogPeriodStr.AsUnsigned());
+  if (profileUpdateLogPeriod != 0) {
+    m_profileProcessTimer = new PTimer();
+    m_profileProcessTimer->SetNotifier(PCREATE_NOTIFIER(ProfileUpdateLogTimer));
+    m_profileProcessTimer->RunContinuous(profileUpdateLogPeriod);
+  }
+#endif // PTRACING
 }
 
 
@@ -2682,6 +2708,14 @@ PProcess::~PProcess()
   PTRACE(4, "Starting process destruction.");
 
   m_shuttingDown = true;
+
+#if PTRACING
+  if (m_profileProcessTimer) {
+    m_profileProcessTimer->Stop();
+    ProfileUpdateLogTimer(*m_profileProcessTimer, 0);
+    delete m_profileProcessTimer;
+  }
+#endif
 
   RemoveRunTimeSignalHandlers();
 
@@ -3075,6 +3109,74 @@ PObject::Comparison PProcess::Compare(const PObject & obj) const
 }
 
 
+void PProcess::PrintOn(ostream & strm) const
+{
+  strm << fixed << setprecision(1) << GetName() << " v" << GetVersion(true) << "; ";
+#if PTRACING
+  const_cast<PProcess *>(this)->PrintProfileOn(strm);
+}
+
+
+void PProcess::PrintProfileOn(ostream & strm)
+{
+  PWaitAndSignal lock(m_profileProcessMutex);
+
+  Times processTimes;
+  if (GetProcessTimes(processTimes)) {
+    float percentage = (processTimes - m_profileLastProcessTimes).AsPercentage();
+    m_profileLastProcessTimes = processTimes;
+    strm << "CPU: " << (percentage/PProcess::GetNumProcessors()) << "% (" << percentage << "%); ";
+  }
+
+  MemoryUsage mem;
+  GetMemoryUsage(mem);
+  strm << "Memory: virt=" << PString(PString::ScaleSI, mem.m_virtual, 4) << "B,"
+                 " res=" << PString(PString::ScaleSI, mem.m_resident, 4) << 'B';
+  if (mem.m_max > 0)
+    strm << ", max=" << PString(PString::ScaleSI, mem.m_max, 4) << 'B';
+  if (mem.m_current > 0)
+    strm << ", current=" << PString(PString::ScaleSI, mem.m_current, 4) << 'B';
+  strm << "; ";
+
+  std::map<std::string, unsigned> highWaterMarks = PProfiling::HighWaterMarkData::Get();
+  strm << "High water marks:";
+  char sep = ' ';
+  for (std::map<std::string, unsigned>::iterator it = highWaterMarks.begin(); it != highWaterMarks.end(); ++it) {
+    strm << sep << it->first << '=' << it->second;
+    sep = ',';
+  }
+  strm << "; ";
+
+  set<Times> threads;
+  GetTimes(threads);
+  for (set<Times>::iterator it = m_profileLastThreadTimes.begin(); it != m_profileLastThreadTimes.end(); ) {
+    if (threads.find(*it) != threads.end())
+      ++it;
+    else
+      m_profileLastThreadTimes.erase(it++);
+  }
+
+  std::map<float, PString> topThreads;
+  for (set<Times>::iterator it = threads.begin(); it != threads.end(); ++it) {
+    float percentage;
+    set<Times>::iterator prev = m_profileLastThreadTimes.find(*it);
+    if (prev == m_profileLastThreadTimes.end())
+      percentage = it->AsPercentage();
+    else {
+      percentage = (*it - *prev).AsPercentage();
+      m_profileLastThreadTimes.erase(prev);
+    }
+    if (percentage > 0.05)
+      topThreads[percentage] = it->m_name;
+    m_profileLastThreadTimes.insert(*it);
+  }
+  strm << "Threads: " << threads.size();
+  for (std::map<float, PString>::reverse_iterator it = topThreads.rbegin(); it != topThreads.rend(); ++it)
+    strm << ',' << it->second << '=' << it->first << '%';
+#endif // PTRACING
+}
+
+
 void PProcess::Terminate()
 {
   // With extreme prejudice
@@ -3293,7 +3395,7 @@ PThread * PThread::Current()
 
   PWaitAndSignal mutex(process.m_threadMutex);
   process.m_externalThreads.push_back(thread);
-  return thread.Get();
+  return thread.get();
 }
 
 
