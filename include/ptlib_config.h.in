@@ -1558,12 +1558,44 @@
 // AWS SDK
 //
 
-#if defined(P_64BIT)  // Default build is only x64
-  #undef P_AWS_SDK
+#undef P_AWS_SDK_DEBUG32
+#undef P_AWS_SDK_RELEASE32
+#undef P_AWS_SDK_DEBUG64
+#undef P_AWS_SDK_RELEASE64
+
+#if defined(P_64BIT)
+  #if defined(_DEBUG)
+    #if P_AWS_SDK_DEBUG64
+      #define P_AWS_SDK 1
+      #define AWS_SDK_SUBDIR "out/install/x64-Debug"
+    #endif
+  #else
+    #if P_AWS_SDK_RELEASE64
+      #define P_AWS_SDK 1
+      #define AWS_SDK_SUBDIR "out/install/x64-Release"
+    #endif
+  #endif
+  #if !defined(P_AWS_SDK)
+    // Default build can only be x64
+    #undef P_AWS_SDK
+    #define AWS_SDK_SUBDIR ""
+  #endif
+#else
+  #if defined(_DEBUG)
+    #if P_AWS_SDK_DEBUG32
+      #define P_AWS_SDK 1
+      #define AWS_SDK_SUBDIR "out/install/x86-Debug"
+    #endif
+  #else
+    #if P_AWS_SDK_RELEASE32
+      #define P_AWS_SDK 1
+      #define AWS_SDK_SUBDIR "out/install/x86-Release"
+    #endif
+  #endif
 #endif
 
 #if defined(_MSC_VER) && defined(P_AWS_SDK)
-  #define P_AWS_SDK_LIBDIR(module) "@AWS_SDK_DIR@/bin/aws-cpp-sdk-" ## #module ## ".lib"
+  #define P_AWS_SDK_LIBDIR(module) "@AWS_SDK_DIR@/" AWS_SDK_SUBDIR "bin/aws-cpp-sdk-" ## #module ## ".lib"
 #endif
 
 

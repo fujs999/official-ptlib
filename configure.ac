@@ -1923,13 +1923,15 @@ dnl ########################################################################
 dnl check for AWS SDK library
 
 dnl MSWIN_DISPLAY    aws,AWS SDK
-dnl MSWIN_CHECK_FILE aws,include/aws/core/Aws.h,P_AWS_SDK=1
+dnl MSWIN_CHECK_FILE aws,include/aws/core/Aws.h,P_AWS_SDK_DEFAULT=1
+dnl MSWIN_CHECK_FILE aws,out/install/x86-Debug/include/aws/core/Aws.h,P_AWS_SDK_DEBUG32=1
+dnl MSWIN_CHECK_FILE aws,out/install/x86-Release/include/aws/core/Aws.h,P_AWS_SDK_RELEASE32=1
+dnl MSWIN_CHECK_FILE aws,out/install/x64-Debug/include/aws/core/Aws.h,P_AWS_SDK_DEBUG64=1
+dnl MSWIN_CHECK_FILE aws,out/install/x64-Release/include/aws/core/Aws.h,P_AWS_SDK_RELEASE64=1
 dnl MSWIN_DIR_SYMBOL aws,AWS_SDK_DIR
 dnl MSWIN_CHECK_DIR  aws,%AWS_SDK%\
 dnl MSWIN_CHECK_DIR  aws,..\external\aws-sdk-cpp
 dnl MSWIN_CHECK_DIR  aws,..\..\external\aws-sdk-cpp
-dnl MSWIN_CHECK_DIR  aws,..\external\aws-sdk-cpp\out\install\x64-Debug
-dnl MSWIN_CHECK_DIR  aws,..\..\external\aws-sdk-cpp\out\install\x64-Debug
 dnl MSWIN_CHECK_DIR  aws,\aws-sdk-cpp
 dnl MSWIN_CHECK_DIR  aws,%ProgramFiles%\aws-sdk-cpp
 dnl MSWIN_CHECK_DIR  aws,%ProgramW6432%\aws-sdk-cpp
