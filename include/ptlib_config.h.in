@@ -1595,7 +1595,7 @@
 #endif
 
 #if defined(_MSC_VER) && defined(P_AWS_SDK)
-  #define P_AWS_SDK_LIBDIR(module) "@AWS_SDK_DIR@/" AWS_SDK_SUBDIR "bin/aws-cpp-sdk-" ## #module ## ".lib"
+  #define P_AWS_SDK_LIBDIR(module) "@AWS_SDK_DIR@/" AWS_SDK_SUBDIR "/bin/aws-cpp-sdk-" ## #module ## ".lib"
 #endif
 
 
