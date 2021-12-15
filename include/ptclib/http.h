@@ -985,7 +985,7 @@ class PWebSocket : public PIndirectChannel
       */
     virtual bool Connect(
       const PURL & url,                  ///< Base URL for connection ("ws:" or "wss:")
-      const PStringArray & protocols,    ///< WebSocket sub-protocol to use.
+      const PStringArray & protocols = PStringArray(),    ///< WebSocket sub-protocol to use.
       PString * selectedProtocol = NULL  ///< Selected protocol by server
     );
 

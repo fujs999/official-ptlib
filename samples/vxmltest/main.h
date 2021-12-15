@@ -32,13 +32,17 @@ class TestInstance
   protected:
     unsigned             m_instance;
     PSoundChannel      * m_player;
+    PSoundChannel      * m_recorder;
     PVideoInputDevice  * m_grabber;
     PVideoOutputDevice * m_preview;
     PVideoOutputDevice * m_viewer;
     PVXMLSession       * m_vxml;
 
-    PThread * m_audioThread;
-    void CopyAudio();
+    PThread * m_playerThread;
+    void PlayAudio();
+
+    PThread * m_recorderThread;
+    void RecordAudio();
 
 #if P_VXML_VIDEO
     PThread * m_videoSenderThread;

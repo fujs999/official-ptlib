@@ -30,9 +30,9 @@
 
 #include <ptlib.h>
 
-#if P_TTS && P_FESTIVAL
+#if P_TEXT_TO_SPEECH && P_FESTIVAL
 
-#include <ptclib/ptts.h>
+#include <ptclib/speech.h>
 
 #include <festival/festival.h>
 
@@ -54,17 +54,17 @@ class PTextToSpeech_Festival : public PTextToSpeech
     PBoolean SetVoice(const PString & voice);
 
     PBoolean SetSampleRate(unsigned rate);
-    unsigned GetSampleRate();
+    unsigned GetSampleRate() const;
 
     PBoolean SetChannels(unsigned channels);
-    unsigned GetChannels();
+    unsigned GetChannels() const;
 
     PBoolean SetVolume(unsigned volume);
-    unsigned GetVolume();
+    unsigned GetVolume() const;
 
     PBoolean OpenFile(const PFilePath & fn);
     PBoolean OpenChannel(PChannel * channel);
-    PBoolean IsOpen()    { return !m_filePath.empty(); }
+    PBoolean IsOpen() const { return !m_filePath.empty(); }
 
     PBoolean Close();
     PBoolean Speak(const PString & str, TextType hint);
@@ -80,7 +80,7 @@ class PTextToSpeech_Festival : public PTextToSpeech
 #define new PNEW
 #define PTraceModule() "Festival-TTS"
 
-PFACTORY_CREATE(PFactory<PTextToSpeech>, PTextToSpeech_Festival, "Festival", false);
+PFACTORY_CREATE(PFactory<PTextToSpeech>, PTextToSpeech_Festival, P_TEXT_TO_SPEECH_FESTIVAL, false);
 
 
 PTextToSpeech_Festival::PTextToSpeech_Festival()
@@ -174,7 +174,7 @@ PBoolean PTextToSpeech_Festival::SetSampleRate(unsigned v)
 }
 
 
-unsigned PTextToSpeech_Festival::GetSampleRate()
+unsigned PTextToSpeech_Festival::GetSampleRate() const
 {
   return m_sampleRate;
 }
@@ -190,7 +190,7 @@ PBoolean PTextToSpeech_Festival::SetChannels(unsigned v)
 }
 
 
-unsigned PTextToSpeech_Festival::GetChannels()
+unsigned PTextToSpeech_Festival::GetChannels() const
 {
   return m_wave.num_channels();
 }
@@ -203,10 +203,10 @@ PBoolean PTextToSpeech_Festival::SetVolume(unsigned v)
 }
 
 
-unsigned PTextToSpeech_Festival::GetVolume()
+unsigned PTextToSpeech_Festival::GetVolume() const
 {
   return m_volume;
 }
 
 
-#endif // P_TTS && P_FESTIVAL
+#endif // P_TEXT_TO_SPEECH && P_FESTIVAL

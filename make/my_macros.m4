@@ -37,8 +37,7 @@ AC_DEFUN([MY_ARG_ENABLE],[
 
    AC_ARG_ENABLE(
       [$1],
-      AC_HELP_STRING([--m4_bmatch([$2],[enable.*],[enable],[disable])-$1],
-                         m4_bmatch([$2],[enable.*],[],[disable ])[$2]),
+      AS_HELP_STRING([--m4_bmatch([$2],[enable.*],[enable],[disable])-$1],[m4_bmatch($2,enable.*,,disable )$2]),
       AS_VAR_IF([enableval], [no], AC_MSG_RESULT([disabled by user])),
       [
          enableval=m4_default([$3],m4_bmatch([$2],[enable.*],[no],[yes]))
@@ -196,7 +195,7 @@ AC_DEFUN([MY_MODULE_OPTION],[
       m4_bmatch([$4], [.*local-source.*], [
          AC_ARG_ENABLE(
             [local$2],
-            [AC_HELP_STRING([--enable-local$2],[force use internal source for $3])],
+            [AS_HELP_STRING([--enable-local$2],[force use internal source for $3])],
             AS_VAR_IF([enableval], [yes], [
                $1[_SYSTEM]="no"
                AC_MSG_NOTICE(Forced use of internal source for $3)
@@ -405,7 +404,7 @@ AS_CASE([$enable_ios],
       target_release=`xcodebuild -showsdks | sed -n 's/.*iphonesimulator\(.*\)/\1/p' | sort | tail -n 1`
    ],
    dnl default
-      AC_MSG_ERROR([Unknown iOS variant \"${enable_ios}\" - use either iphone or simulator])
+      AC_MSG_ERROR([Unknown iOS variant ${enable_ios} - use either iphone or simulator])
 )
 
 
@@ -475,6 +474,7 @@ AC_SUBST(ARFLAGS, "rc")
 
 
 dnl Check for latest and greatest
+AC_SUBST(CPLUSPLUS_STD,"-std=c++03")
 AC_ARG_ENABLE(cpp11, AS_HELP_STRING([--enable-cpp11],[Enable C++11 build]),AC_SUBST(CPLUSPLUS_STD,"-std=c++11"))
 AC_ARG_ENABLE(cpp14, AS_HELP_STRING([--enable-cpp14],[Enable C++14 build]),AC_SUBST(CPLUSPLUS_STD,"-std=c++14"))
 AC_ARG_ENABLE(cpp17, AS_HELP_STRING([--enable-cpp17],[Enable C++17 build]),AC_SUBST(CPLUSPLUS_STD,"-std=c++17"))
@@ -567,7 +567,7 @@ case "$target_os" in
    ;;
 
    * )
-      AC_MSG_WARN([Operating system \"$target_os\" not recognized - proceed with caution!])
+      AC_MSG_WARN([Operating system $target_os not recognized - proceed with caution!])
    ;;
 esac
 
@@ -638,7 +638,7 @@ AS_CASE([$target_cpu],
    mips64 | mips64el, [
       target_64bit=1
    ],
-      AC_MSG_WARN([CPU \"$target_cpu\" not recognized - assuming 32 bit])
+      AC_MSG_WARN([CPU $target_cpu not recognized - assuming 32 bit])
       target_64bit=0
 )
 
@@ -663,7 +663,7 @@ AS_VAR_IF([enable_force32], [yes], [
 
 target=${target_os}_${target_cpu}
 
-AC_MSG_NOTICE([Platform: \"$target_os\" release \"$target_release\" on \"$target_cpu\"])
+AC_MSG_NOTICE([Platform: $target_os release $target_release on $target_cpu])
 
 
 dnl add additional information for the debugger to ensure the user can indeed
@@ -807,7 +807,7 @@ dnl Check for profiling
 
 AC_ARG_WITH(
    [profiling],
-   AC_HELP_STRING([--with-profiling], [Enable profiling: gprof, eccam, raw or manual]),
+   AS_HELP_STRING([--with-profiling],[Enable profiling: gprof, eccam, raw or manual]),
    [
       AS_CASE([$with_profiling],
          [gprof], [
@@ -849,7 +849,7 @@ AC_ARG_WITH(
          [manual], [
             AC_DEFINE(P_PROFILING, 2)
          ],
-         AC_MSG_ERROR([Unknown profile method \"$with_profiling\"])
+         AC_MSG_ERROR([Unknown profile method: $with_profiling])
       )
 
       AC_SUBST(P_PROFILING, $with_profiling)

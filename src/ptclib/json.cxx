@@ -952,7 +952,7 @@ PJSON::Base * PJSON::Null::DeepClone() const
 
 ///////////////////////////////////////////////////////////////////////////////
 
-static PThreadLocalStorage<std::stack<PJSONRecord*>> s_jsonDataInitialiser;
+static PThreadLocalStorage< std::stack<PJSONRecord*> > s_jsonDataInitialiser;
 
 PJSONRecord::PJSONRecord()
 {

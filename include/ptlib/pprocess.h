@@ -144,6 +144,13 @@ class PProcess : public PThread
     Comparison Compare(
       const PObject & obj   ///< Other process to compare against.
     ) const;
+
+    /**This will print out performance indicators for the process.
+       Includes CPU, Memory, Threads & High water marks for various resources.
+      */
+    virtual void PrintOn(
+      ostream & strm
+    ) const;
   //@}
 
   /**@name Overrides from class PThread */
@@ -351,7 +358,7 @@ class PProcess : public PThread
       */
     void GetMemoryUsage(
       MemoryUsage & usage
-    );
+    ) const;
 
     PPROFILE_EXCLUDE(
     /** Get the process execution times.
@@ -726,6 +733,14 @@ class PProcess : public PThread
     void InternalPostRunTimeSignal(int signal, PProcessIdentifier source);
     void InternalHandleRunTimeSignal(const RunTimeSignalInfo & signalInfo);
 
+#if PTRACING
+    PDECLARE_NOTIFIER(PTimer, PProcess, ProfileUpdateLogTimer) { PTRACE(3, "PTLibProfile", *this); }
+    void PrintProfileOn(ostream & strm);
+    PTimer         * m_profileProcessTimer;
+    PCriticalSection m_profileProcessMutex;
+    Times            m_profileLastProcessTimes;
+    set<Times>       m_profileLastThreadTimes;
+#endif // PTRACING
 
   friend class PThread;
 

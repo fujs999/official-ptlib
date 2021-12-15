@@ -38,10 +38,14 @@ VxmlTest::VxmlTest()
 void VxmlTest::Main()
 {
   PArgList & args = GetArguments();
-  if (!args.Parse("-sound-driver: Output to sound driver\n"
-                  "S-sound-device: Output to sound device\n"
-                  "-sound-rate: Output to sound sample rate\n"
-                  "-sound-channels: Output to sound channels\n"
+  if (!args.Parse("-player-driver: Output to sound driver\n"
+                  "P-player-device: Output to sound device\n"
+                  "-player-rate: Output to sound sample rate\n"
+                  "-player-channels: Output to sound channels\n"
+                  "-recorder-driver: Output to sound driver\n"
+                  "R-recorder-device: Output to sound device\n"
+                  "-recorder-rate: Output to sound sample rate\n"
+                  "-recorder-channels: Output to sound channels\n"
                   "T-tts: Text to speech method\n"
                   "c-cache: Text to speech cache directory\n"
 #if P_VXML_VIDEO
@@ -50,7 +54,7 @@ void VxmlTest::Main()
                   "-input-driver: Video input driver\n"
                   "I-input-device: Video input device\n"
                   "C-input-channel: Video input channel\n"
-                  "P-preview. Show preview window for video input\n"
+                  "p-preview. Show preview window for video input\n"
                   "-output-driver: Video output driver\n"
                   "O-output-device: Video output device\n"
                   "-output-channel: Video output channel\n"
@@ -74,7 +78,15 @@ void VxmlTest::Main()
     m_tests.push_back(TestInstance());
     if (!m_tests.back().Initialise(m_tests.size(), args))
       m_tests.pop_back();
-  } while (args.Parse("-sound-driver:S-sound-device::-sound-rate:-sound-channels:T-tts:"
+  } while (args.Parse("-player-driver:"
+                      "P-player-device:"
+                      "-player-rate:"
+                      "-player-channels:"
+                      "-recorder-driver:"
+                      "R-recorder-device:"
+                      "-recorder-rate:"
+                      "-recorder-channels:"
+                      "T-tts:"
 #if P_VXML_VIDEO
                       "V-video."
                       "-input-driver:I-input-device:C-input-channel:"
@@ -84,6 +96,16 @@ void VxmlTest::Main()
 
   PCLIStandard cli("VXML-Test> ");
   cli.SetCommand("input", PCREATE_NOTIFIER(SimulateInput), "Simulate input for VXML instance (1..n)", "<digit> [ <n> ]");
+  cli.SetCommand("0", PCREATE_NOTIFIER(SimulateInput), "Simulate input 0 for VXML instance (1..n)", "[ <n> ]");
+  cli.SetCommand("1", PCREATE_NOTIFIER(SimulateInput), "Simulate input 1 for VXML instance (1..n)", "[ <n> ]");
+  cli.SetCommand("2", PCREATE_NOTIFIER(SimulateInput), "Simulate input 2 for VXML instance (1..n)", "[ <n> ]");
+  cli.SetCommand("3", PCREATE_NOTIFIER(SimulateInput), "Simulate input 3 for VXML instance (1..n)", "[ <n> ]");
+  cli.SetCommand("4", PCREATE_NOTIFIER(SimulateInput), "Simulate input 4 for VXML instance (1..n)", "[ <n> ]");
+  cli.SetCommand("5", PCREATE_NOTIFIER(SimulateInput), "Simulate input 5 for VXML instance (1..n)", "[ <n> ]");
+  cli.SetCommand("6", PCREATE_NOTIFIER(SimulateInput), "Simulate input 6 for VXML instance (1..n)", "[ <n> ]");
+  cli.SetCommand("7", PCREATE_NOTIFIER(SimulateInput), "Simulate input 7 for VXML instance (1..n)", "[ <n> ]");
+  cli.SetCommand("8", PCREATE_NOTIFIER(SimulateInput), "Simulate input 8 for VXML instance (1..n)", "[ <n> ]");
+  cli.SetCommand("9", PCREATE_NOTIFIER(SimulateInput), "Simulate input 9 for VXML instance (1..n)", "[ <n> ]");
   cli.SetCommand("set", PCREATE_NOTIFIER(SetVar), "Set variable for VXML instance (1..n)", "<var> <value> [ <n> ]");
   cli.SetCommand("get", PCREATE_NOTIFIER(GetVar), "Get variable for VXML instance (1..n)", "<var> [ <n> ]");
   cli.Start(false);
@@ -93,15 +115,21 @@ void VxmlTest::Main()
 
 void VxmlTest::SimulateInput(PCLI::Arguments & args, P_INT_PTR)
 {
-  if (args.GetCount() < 1) {
-    args.WriteUsage();
-    return;
+  PINDEX instanceArg = 0;
+  PString input = args.GetCommandName();
+  if (input.length() != 1 || !isdigit(input[0])) {
+    if (args.GetCount() < 1) {
+      args.WriteUsage();
+      return;
+    }
+    input = args[0];
+    instanceArg = 1;
   }
 
   unsigned num;
-  if (args.GetCount() < 2)
+  if (args.GetCount() <= instanceArg)
     num = 1;
-  else if ((num = args[1].AsUnsigned()) == 0) {
+  else if ((num = args[instanceArg].AsUnsigned()) == 0) {
     args.WriteError("Invalid instance number");
     return;
   }
@@ -109,7 +137,7 @@ void VxmlTest::SimulateInput(PCLI::Arguments & args, P_INT_PTR)
   if (num > m_tests.size())
     args.WriteError("No such instance");
   else
-    m_tests[num - 1].SendInput(args[0]);
+    m_tests[num - 1].SendInput(input);
 }
 
 
@@ -165,7 +193,8 @@ TestInstance::TestInstance()
   , m_preview(NULL)
   , m_viewer(NULL)
   , m_vxml(NULL)
-  , m_audioThread(NULL)
+  , m_playerThread(NULL)
+  , m_recorderThread(NULL)
   , m_videoSenderThread(NULL)
   , m_videoReceiverThread(NULL)
 {
@@ -176,8 +205,14 @@ TestInstance::~TestInstance()
 {
   if (m_player != NULL) {
     m_player->Close();
-    PThread::WaitAndDelete(m_audioThread, PMaxTimeInterval);
+    PThread::WaitAndDelete(m_playerThread, PMaxTimeInterval);
     delete m_player;
+  }
+
+  if (m_recorder != NULL) {
+    m_recorder->Close();
+    PThread::WaitAndDelete(m_recorderThread, PMaxTimeInterval);
+    delete m_recorder;
   }
 
 #if P_VXML_VIDEO
@@ -203,18 +238,34 @@ bool TestInstance::Initialise(unsigned instance, const PArgList & args)
 
   PSoundChannel::Params audioParams;
   audioParams.m_direction = PSoundChannel::Player;
-  audioParams.m_driver = args.GetOptionString("sound-driver");
-  audioParams.m_device = args.GetOptionString("sound-device");
-  if (args.HasOption("sound-rate"))
-    audioParams.m_sampleRate = args.GetOptionString("sound-rate").AsUnsigned();
-  if (args.HasOption("sound-channels"))
-    audioParams.m_channels = args.GetOptionString("sound-channels").AsUnsigned();
+  audioParams.m_driver = args.GetOptionString("player-driver");
+  audioParams.m_device = args.GetOptionString("player-device");
+  if (args.HasOption("player-rate"))
+    audioParams.m_sampleRate = args.GetOptionString("player-rate").AsUnsigned();
+  if (args.HasOption("player-channels"))
+    audioParams.m_channels = args.GetOptionString("player-channels").AsUnsigned();
   m_player = PSoundChannel::CreateOpenedChannel(audioParams);
   if (m_player == NULL) {
-    cerr << "Instance " << m_instance << " error: cannot open sound device \"" << audioParams.m_device << "\"" << endl;
+    cerr << "Instance " << m_instance << " error: cannot open audio player device \"" << audioParams.m_device << "\"\n"
+            "Available:\n" << setfill('\n') << PSoundChannel::GetDeviceNames(audioParams.m_driver, PSoundChannel::Player);
     return false;
   }
-  cout << "Instance " << m_instance << " using audio device \"" << m_player->GetName() << "\"" << endl;
+  cout << "Instance " << m_instance << " using audio player device \"" << m_player->GetName() << "\"" << endl;
+
+  audioParams.m_direction = PSoundChannel::Recorder;
+  audioParams.m_driver = args.GetOptionString("recorder-driver");
+  audioParams.m_device = args.GetOptionString("recorder-device");
+  if (args.HasOption("recorder-rate"))
+    audioParams.m_sampleRate = args.GetOptionString("recorder-rate").AsUnsigned();
+  if (args.HasOption("recorder-channels"))
+    audioParams.m_channels = args.GetOptionString("recorder-channels").AsUnsigned();
+  m_recorder = PSoundChannel::CreateOpenedChannel(audioParams);
+  if (m_recorder == NULL) {
+    cerr << "Instance " << m_instance << " error: cannot open audio recorder device \"" << audioParams.m_device << "\"\n"
+            "Available:\n" << setfill('\n') << PSoundChannel::GetDeviceNames(audioParams.m_driver, PSoundChannel::Recorder);
+    return false;
+  }
+  cout << "Instance " << m_instance << " using audio recording device \"" << m_recorder->GetName() << "\"" << endl;
 
 
 #if P_VXML_VIDEO
@@ -282,7 +333,8 @@ bool TestInstance::Initialise(unsigned instance, const PArgList & args)
     m_videoReceiverThread = new PThreadObj<TestInstance>(*this, &TestInstance::CopyVideoReceiver, false, "CopyVideoReceiver");
 #endif
 
-  m_audioThread = new PThreadObj<TestInstance>(*this, &TestInstance::CopyAudio, false, "CopyAudio");
+  m_playerThread = new PThreadObj<TestInstance>(*this, &TestInstance::PlayAudio, false, "PlayAudio");
+  m_recorderThread = new PThreadObj<TestInstance>(*this, &TestInstance::RecordAudio, false, "RecordAudio");
 
   cout << "Started test instance " << m_instance << " on " << args[0].ToLiteral() << endl;
   return true;
@@ -296,20 +348,42 @@ void TestInstance::SendInput(const PString & digits)
 }
 
 
-void TestInstance::CopyAudio()
+void TestInstance::PlayAudio()
 {
-  PBYTEArray audioPCM(1024);
+  PBYTEArray audioPCM(8*320);
+  m_player->SetBuffers(8, 320);
 
   for (;;) {
     if (!m_vxml->Read(audioPCM.GetPointer(), audioPCM.GetSize())) {
       if (m_vxml->GetErrorCode(PChannel::LastReadError) != PChannel::NotOpen) {
-        PTRACE(2, "Instance " << m_instance << " audio read error " << m_vxml->GetErrorText());
+        PTRACE(2, "Instance " << m_instance << " audio player read error " << m_vxml->GetErrorText());
       }
       break;
     }
 
     if (!m_player->Write(audioPCM, m_vxml->GetLastReadCount())) {
-      PTRACE_IF(2, m_player->IsOpen(), "Instance " << m_instance << " audio write error " << m_player->GetErrorText());
+      PTRACE_IF(2, m_player->IsOpen(), "Instance " << m_instance << " audio player write error " << m_player->GetErrorText());
+      break;
+    }
+  }
+}
+
+
+void TestInstance::RecordAudio()
+{
+  PBYTEArray audioPCM(8*320);
+  m_recorder->SetBuffers(8, 320);
+
+  for (;;) {
+    if (!m_recorder->Read(audioPCM.GetPointer(), audioPCM.GetSize())) {
+      if (m_vxml->GetErrorCode(PChannel::LastReadError) != PChannel::NotOpen) {
+        PTRACE(2, "Instance " << m_instance << " audio player recorder error " << m_vxml->GetErrorText());
+      }
+      break;
+    }
+
+    if (!m_vxml->Write(audioPCM, m_recorder->GetLastReadCount())) {
+      PTRACE_IF(2, m_player->IsOpen(), "Instance " << m_instance << " audio player write error " << m_player->GetErrorText());
       break;
     }
   }
@@ -380,7 +454,7 @@ void TestInstance::CopyVideoReceiver()
 #endif
 
 #else
-#pragma message("Cannot compile test application without XML support!")
+#pragma message("Cannot compile test application without VXML support!")
 
 void VxmlTest::Main()
 {

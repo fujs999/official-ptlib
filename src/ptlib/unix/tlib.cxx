@@ -720,7 +720,7 @@ bool PProcess::GetSystemTimes(Times & times)
 }
 
 
-void PProcess::GetMemoryUsage(MemoryUsage & usage)
+void PProcess::GetMemoryUsage(MemoryUsage & usage) const
 {
   usage = MemoryUsage();
 
@@ -799,7 +799,7 @@ void PProcess::GetMemoryUsage(MemoryUsage & usage)
 
 #else //P_LINUX
 
-void PProcess::GetMemoryUsage(MemoryUsage & usage)
+void PProcess::GetMemoryUsage(MemoryUsage & usage) const
 {
 }
 

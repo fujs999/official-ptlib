@@ -40,7 +40,7 @@
 #include <ptlib/videoio.h>
 #include <ptclib/delaychan.h>
 #include <ptclib/pwavfile.h>
-#include <ptclib/ptts.h>
+#include <ptclib/speech.h>
 #include <ptclib/url.h>
 #include <ptclib/script.h>
 
@@ -166,11 +166,13 @@ class PVXMLGrammar : public PObject, protected PVXMLGrammarInit
   public:
     PVXMLGrammar(const PVXMLGrammarInit & init);
 
-    virtual void OnUserInput(const char ch) = 0;
+    virtual void OnUserInput(const PString & input);
+    virtual void OnAudioInput(const short * samples, size_t count);
     virtual void Start();
+    virtual void Stop();
     virtual bool Process();
 
-    enum GrammarState {
+    P_DECLARE_TRACED_ENUM(GrammarState,
       Idle,         ///< Not yet started
       Started,      ///< Grammar awaiting input
       PartFill,     ///< If times out goes to Filled rather than NoInput
@@ -180,22 +182,26 @@ class PVXMLGrammar : public PObject, protected PVXMLGrammarInit
       Help,         ///< help keyword
       Illegal,      ///< Illegal, could not be initialised
       BadFetch      ///< Could not get dependent resource
-    };
+    );
 
     GrammarState GetState() const { return m_state; }
     void SetIdle() { m_state = Idle; }
 
-    void SetSessionTimeout();
-    void SetTimeout(const PTimeInterval & timeout);
+    void SetTimeout(const PString & timeout);
 
   protected:
     PDECLARE_NOTIFIER(PTimer, PVXMLGrammar, OnTimeout);
+    PDECLARE_SpeechRecognitionNotifier(PVXMLGrammar, OnRecognition);
+    virtual void GetWordsToRecognise(PStringArray & words) const;
+    virtual void OnInput(const PString & input) = 0;
 
-    PString        m_value;
-    GrammarState   m_state;
-    PTimeInterval  m_timeout;
-    PTimer         m_timer;
-    PDECLARE_MUTEX(m_mutex);
+    PSpeechRecognition * m_recogniser;
+    bool                 m_allowDTMF;
+    PString              m_fieldName;
+    PString              m_value;
+    atomic<GrammarState> m_state;
+    PTimeInterval        m_timeout;
+    PTimer               m_timer;
 };
 
 typedef PParamFactory<PVXMLGrammar, PVXMLGrammarInit, PCaselessString> PVXMLGrammarFactory;
@@ -208,8 +214,11 @@ class PVXMLMenuGrammar : public PVXMLGrammar
     PCLASSINFO(PVXMLMenuGrammar, PVXMLGrammar);
   public:
     PVXMLMenuGrammar(const PVXMLGrammarInit & init);
-    virtual void OnUserInput(const char ch);
+    virtual void OnInput(const PString & input);
     virtual bool Process();
+
+  protected:
+    virtual void GetWordsToRecognise(PStringArray & words) const;
 };
 
 
@@ -221,9 +230,11 @@ class PVXMLDigitsGrammar : public PVXMLGrammar
   public:
     PVXMLDigitsGrammar(const PVXMLGrammarInit & init);
 
-    virtual void OnUserInput(const char ch);
+    virtual void OnInput(const PString & input);
 
   protected:
+    virtual void GetWordsToRecognise(PStringArray & words) const;
+
     unsigned m_minDigits;
     unsigned m_maxDigits;
     PString  m_terminators;
@@ -238,7 +249,22 @@ class PVXMLBooleanGrammar : public PVXMLGrammar
   public:
     PVXMLBooleanGrammar(const PVXMLGrammarInit & init);
 
-    virtual void OnUserInput(const char ch);
+    virtual void OnInput(const PString & input);
+
+  protected:
+    virtual void GetWordsToRecognise(PStringArray & words) const;
+};
+
+
+//////////////////////////////////////////////////////////////////
+
+class PVXMLTextGrammar : public PVXMLGrammar
+{
+    PCLASSINFO(PVXMLTextGrammar, PVXMLGrammar);
+  public:
+    PVXMLTextGrammar(const PVXMLGrammarInit & init);
+
+    virtual void OnInput(const PString & input);
 };
 
 
@@ -250,21 +276,24 @@ class PVXMLGrammarSRGS : public PVXMLGrammar
   public:
     PVXMLGrammarSRGS(const PVXMLGrammarInit & init);
 
-    virtual void OnUserInput(const char ch);
+    virtual void OnInput(const PString & input);
 
   protected:
+    virtual void GetWordsToRecognise(PStringArray & words) const;
+
     struct Item
     {
       unsigned          m_minRepeat;
       unsigned          m_maxRepeat;
       PString           m_token;
       unsigned          m_currentItem;
-      typedef std::vector<std::vector<Item>> Items;
+      typedef std::vector< std::vector<Item> > Items;
       Items m_items; // A sequence of alternatives
 
       Item() : m_minRepeat(1), m_maxRepeat(1), m_currentItem(0) { }
       bool Parse(PXMLElement & grammar, PXMLElement * element);
-      GrammarState OnUserInput(const PString & str);
+      GrammarState OnInput(const PString & input);
+      void AddWordsToRecognise(PStringArray & words) const;
     };
 
     Item m_rule;
@@ -379,8 +408,8 @@ class PVXMLSession : public PIndirectChannel
 
     PStringToString GetVariables() const;
     virtual PCaselessString GetVar(const PString & varName) const;
-    virtual bool SetVar(const PString & scopedVarName, const PString & val);
-    virtual PString EvaluateExpr(const PString & oexpr);
+    virtual bool SetVar(const PString & varName, const PString & val);
+    virtual PString EvaluateExpr(const PString & expr) const;
 
     static PTimeInterval StringToTime(const PString & str, int dflt = 0);
 
@@ -443,10 +472,9 @@ class PVXMLSession : public PIndirectChannel
     virtual void InternalStartThread();
     virtual void InternalThreadMain();
     virtual void InternalStartVXML();
-    virtual void InternalSetVar(const PString & scope, const PString & name, const PString & expr, bool evaluate = false);
-    virtual PCaselessString InternalGetVar(const PString & scope, const PString & name) const;
-    virtual bool InternalParseVar(const PString & varName, bool notVarElement, PString & scope, PString & name) const;
-    virtual void InternalPopScope();
+    virtual PString InternalGetName(PXMLElement & element, bool allowScope);
+    virtual PCaselessString InternalGetVar(const PString & scope, const PString & varName) const;
+    virtual void InternalSetVar(const PString & scope, const PString & varName, const PString & value);
 
     virtual bool ProcessNode();
     virtual bool ProcessEvents();
@@ -467,7 +495,7 @@ class PVXMLSession : public PIndirectChannel
     PURL             m_rootURL;
     PURL             m_documentURL;
     PHTTPCookies     m_cookies;
-    PDECLARE_MUTEX(m_cookieMutex);
+    PDECLARE_MUTEX(  m_cookieMutex);
 
     PTextToSpeech  * m_textToSpeech;
     PVXMLCache     * m_ttsCache;
@@ -525,25 +553,25 @@ class PVXMLSession : public PIndirectChannel
     bool             m_speakNodeData;
     bool             m_bargeIn;
     bool             m_bargingIn;
-
+    PStringSet       m_dialogFieldNames;
+    unsigned         m_promptCount;
     std::map<std::string, unsigned> m_eventCount;
-    unsigned                    m_promptCount;
 
     virtual void LoadGrammar(const PString & type, const PVXMLGrammarInit & init);
     void ClearGrammars();
+    void StartGrammars();
+    void OnUserInputToGrammars(const PString & input);
+    void OnAudioInputToGrammars(const short * samples, size_t count);
     bool IsGrammarRunning() const;
     typedef PList<PVXMLGrammar> Grammars;
-    Grammars m_grammars;
-    char     m_defaultMenuDTMF;
+    Grammars       m_grammars;
+    PDECLARE_MUTEX(m_grammersMutex);
+    char           m_defaultMenuDTMF;
 
-    PStringToString  m_variables;
-    PStringList      m_variableScopes;
-#if P_SCRIPTS
-    PScriptLanguage *m_scriptContext;
-#endif
+    PAutoPtr<PScriptLanguage> m_scriptContext;
 
-    std::queue<char> m_userInputQueue;
-    PDECLARE_MUTEX(m_userInputMutex);
+    std::queue<PString> m_userInputQueue;
+    PDECLARE_MUTEX(     m_userInputMutex);
 
     enum {
       NotRecording,
@@ -743,7 +771,6 @@ class PVXMLPlayableFileList : public PVXMLPlayableFile
   public:
     PVXMLPlayableFileList();
     virtual PBoolean Open(PVXMLChannel & chan, const PString & arg, PINDEX delay, PINDEX repeat, PBoolean autoDelete);
-    virtual PBoolean Open(PVXMLChannel & chan, const PStringArray & filenames, PINDEX delay, PINDEX repeat, PBoolean autoDelete);
     virtual bool OnStart();
     virtual bool OnRepeat();
     virtual void OnStop();
@@ -803,12 +830,6 @@ class PVXMLChannel : public PDelayChannel
     virtual PBoolean QueuePlayable(const PString & type, const PString & str, PINDEX repeat = 1, PINDEX delay = 0, PBoolean autoDelete = false);
     virtual PBoolean QueuePlayable(PVXMLPlayable * newItem);
     virtual PBoolean QueueData(const PBYTEArray & data, PINDEX repeat = 1, PINDEX delay = 0);
-
-    virtual PBoolean QueueFile(const PString & fn, PINDEX repeat = 1, PINDEX delay = 0, PBoolean autoDelete = false)
-    { return QueuePlayable("File", fn, repeat, delay, autoDelete); }
-
-    virtual PBoolean QueueCommand(const PString & cmd, PINDEX repeat = 1, PINDEX delay = 0)
-    { return QueuePlayable("Command", cmd, repeat, delay, true); }
 
     virtual void FlushQueue();
     virtual PBoolean IsPlaying() const { return m_currentPlayItem != NULL || m_playQueue.GetSize() > 0; }

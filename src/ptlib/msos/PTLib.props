@@ -13,9 +13,11 @@
     <FFMPEG64DIR Condition="'$(FFMPEG64DIR)' == ''">$(EXTERNALDIR)\ffmpeg-win64-dev</FFMPEG64DIR>
     <JPEG32DIR Condition="'$(JPEG32DIR)' == ''">$(EXTERNALDIR)\libjpeg-turbo</JPEG32DIR>
     <JPEG64DIR Condition="'$(JPEG64DIR)' == ''">$(EXTERNALDIR)\libjpeg-turbo64</JPEG64DIR>
+    <AWS32DIR Condition="'$(AWS32DIR)' == ''">$(EXTERNALDIR)\aws-sdk-cpp\out\install\x32-Debug\bin</AWS32DIR>
+    <AWS64DIR Condition="'$(AWS64DIR)' == ''">$(EXTERNALDIR)\aws-sdk-cpp\out\install\x64-Debug\bin</AWS64DIR>
     <WXDIR Condition="'$(WXDIR)' == ''">$(EXTERNALDIR)\wxWidgets</WXDIR>
-    <LIB32PATH>$(LUA32DIR);$(OPENSSL32DIR)\bin;$(FFMPEG32DIR)\bin;$(wxLibOrDllDir);$(ProjectDir)..\..\Lib</LIB32PATH>
-    <LIB64PATH>$(LUA64DIR);$(OPENSSL64DIR)\bin;$(FFMPEG64DIR)\bin;$(wxLibOrDllDir);$(ProjectDir)..\..\Lib</LIB64PATH>
+    <LIB32PATH>$(LUA32DIR);$(OPENSSL32DIR)\bin;$(FFMPEG32DIR)\bin;$(AWS32DIR);$(wxLibOrDllDir);$(ProjectDir)..\..\Lib</LIB32PATH>
+    <LIB64PATH>$(LUA64DIR);$(OPENSSL64DIR)\bin;$(FFMPEG64DIR)\bin;$(AWS64DIR);$(wxLibOrDllDir);$(ProjectDir)..\..\Lib</LIB64PATH>
     <LocalDebuggerEnvironment>PATH=$(PATH);$(LIB64PATH)</LocalDebuggerEnvironment>
   </PropertyGroup>
   <PropertyGroup />
@@ -68,6 +70,14 @@
     <BuildMacro Include="JPEG64DIR">
       <Value>$(JPEG64DIR)</Value>
       <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="AWS32DIR">
+        <Value>$(AWS32DIR)</Value>
+        <EnvironmentVariable>true</EnvironmentVariable>
+    </BuildMacro>
+    <BuildMacro Include="AWS64DIR">
+        <Value>$(AWS64DIR)</Value>
+        <EnvironmentVariable>true</EnvironmentVariable>
     </BuildMacro>
     <BuildMacro Include="WXDIR">
       <Value>$(WXDIR)</Value>

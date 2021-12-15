@@ -2357,6 +2357,88 @@ namespace PProfiling
   }
 #endif // PTRACING
 
+  /// /////////////////////////////////////////////////////////////////
+
+  class HighWaterMarks
+  {
+    typedef std::map<std::string, HighWaterMarkData*> DataMap;
+    DataMap          m_data;
+    PCriticalSection m_mutex;
+
+
+  public:
+    ~HighWaterMarks()
+    {
+      for (DataMap::const_iterator it = m_data.begin(); it != m_data.end(); ++it)
+        delete it->second;
+    }
+
+
+    HighWaterMarkData & Get(const type_info & ti)
+    {
+      std::string name = ti.name();
+      if (name.compare(0, 6, "class ") == 0)
+        name.erase(0, 6);
+      else if (name.compare(0, 7, "struct ") == 0)
+        name.erase(0, 7);
+
+      PWaitAndSignal lock(m_mutex);
+      DataMap::iterator it = m_data.find(name);
+      if (it == m_data.end())
+        it = m_data.insert(make_pair(name, new HighWaterMarkData(name))).first;
+      return *it->second;
+    }
+
+
+    std::map<std::string, unsigned> Get() const
+    {
+      std::map<std::string, unsigned> data;
+      PWaitAndSignal lock(m_mutex);
+      for (DataMap::const_iterator it = m_data.begin(); it != m_data.end(); ++it)
+        data[it->first] = it->second->m_highWaterMark;
+      return data;
+    }
+  };
+
+
+  static HighWaterMarks & GetHighWaterMarks()
+  {
+    static HighWaterMarks s_highWaterMarks;
+    return s_highWaterMarks;
+  }
+
+
+  HighWaterMarkData::HighWaterMarkData(const std::string & name)
+    : m_name(name)
+    , m_totalCount(0)
+    , m_highWaterMark(0)
+  {
+  }
+
+
+  void HighWaterMarkData::NewInstance()
+  {
+    unsigned totalCount = ++m_totalCount;
+    unsigned highWaterMark = m_highWaterMark;
+    while (totalCount > highWaterMark) {
+      if (m_highWaterMark.compare_exchange_strong(highWaterMark, totalCount))
+        break;
+      highWaterMark = m_highWaterMark;
+    }
+  }
+
+
+  HighWaterMarkData & HighWaterMarkData::Get(const type_info & ti)
+  {
+    return GetHighWaterMarks().Get(ti);
+  }
+
+
+  std::map<std::string, unsigned> HighWaterMarkData::Get()
+  {
+    return GetHighWaterMarks().Get();
+  }
+
 }; // namespace PProfiling
 
 #if P_PROFILING

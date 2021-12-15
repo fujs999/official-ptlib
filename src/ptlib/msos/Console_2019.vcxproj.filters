@@ -361,7 +361,7 @@
     <ClCompile Include="..\..\ptclib\pssl.cxx">
       <Filter>Source Files\Components\Wrappers</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\ptlib\msos\ptts.cxx">
+    <ClCompile Include="speech_sapi.cxx">
       <Filter>Source Files\Components\Wrappers</Filter>
     </ClCompile>
     <ClCompile Include="..\..\ptclib\script.cxx">
@@ -381,6 +381,21 @@
     </ClCompile>
     <ClCompile Include="..\..\ptclib\vxml.cxx">
       <Filter>Source Files\Components\Media</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\ptclib\simplescript.cxx">
+      <Filter>Source Files\Components\Wrappers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\unix\speech_festival.cxx">
+      <Filter>Source Files\Android</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\ptclib\aws_sdk.cxx">
+      <Filter>Source Files\Components\Wrappers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\ptclib\speech_aws.cxx">
+      <Filter>Source Files\Components\Wrappers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\speech.cxx">
+      <Filter>Source Files\Components\Wrappers</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -610,9 +625,6 @@
       <Filter>Header Files\Components</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\include\ptlib\pluginmgr.h">
-      <Filter>Header Files\Components</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\include\ptclib\ptts.h">
       <Filter>Header Files\Components</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\include\ptclib\pxml.h">
@@ -955,7 +967,16 @@
     <ClInclude Include="..\..\..\include\ptlib\msos\ptlib\platform.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\include\ptlib\psharedptr.h">
+      <Filter>Header Files\Common</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\include\ptclib\textdata.h">
+      <Filter>Header Files\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\ptclib\psr.h">
+      <Filter>Header Files\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\ptclib\aws_sdk.h">
       <Filter>Header Files\Components</Filter>
     </ClInclude>
   </ItemGroup>
@@ -989,6 +1010,7 @@
     </None>
     <None Include="..\..\..\include\ptlib\msos\ptlib.natvis" />
     <None Include="..\..\..\tools\get_revision.sh" />
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Header Files">

@@ -11,7 +11,7 @@ AC_INIT([PTLib], m4_esyscmd([sed -n \
                              -e "s/ *#define *PATCH_VERSION *\\(.*\\)/\\1/p" \
                              version.h | tr -d '\n']))
 
-AC_PREREQ([2.66])
+AC_PREREQ([2.71])
 
 AC_CONFIG_AUX_DIR(make)
 
@@ -71,6 +71,7 @@ if test "${enable_minsize}x" = "yesx" ; then
   DEFAULT_VIDFILE=no
   DEFAULT_FFVDEV=no
   DEFAULT_VXML=no
+  DEFAULT_AWS_SDK=yes
 fi
 
 DEFAULT_APPSHARE=no
@@ -87,8 +88,9 @@ MEMORY_CHECKER=None
 dnl ########################################################################
 dnl Normalise target_os and target_cpu
 
+dnl Set to Windows 7 or above
 dnl MSWIN_DISPLAY winver,Advanced Windows API
-dnl MSWIN_DEFINE  winver,WINVER=0x502
+dnl MSWIN_DEFINE  winver,WINVER=0x601
 
 dnl MSWIN_DISPLAY android,Android build (using vs-android)
 dnl MSWIN_DEFINE  android,P_ANDROID
@@ -330,33 +332,25 @@ AC_ARG_WITH(
 if test "$withval" = "std"; then
    AC_MSG_RESULT(std)
 elif test "$withval" = "mt"; then
-   AC_TRY_COMPILE(
-      [#include <ext/mt_allocator.h>],
-      [typedef __gnu_cxx::__mt_alloc<char> TestAllocator;],
-      [
+   AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <ext/mt_allocator.h>]], [[typedef __gnu_cxx::__mt_alloc<char> TestAllocator;]])],[
          AC_DEFINE(P_GNU_ALLOCATOR, 1)
          AC_MSG_RESULT([mt])
-      ],
-      [AC_MSG_RESULT([std (mt unavailable)])]
-  )
+      ],[AC_MSG_RESULT([std (mt unavailable)])
+  ])
 elif test "$withval" = "bitmap"; then
-   AC_TRY_COMPILE(
-      [
+   AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
          #include <ext/mt_allocator.h>
          #include <ext/bitmap_allocator.h>
-      ],
-      [
+      ]], [[
          typedef __gnu_cxx::__mt_alloc<char> VariableAllocator;
          typedef __gnu_cxx::bitmap_allocator<char> FixedAllocator;
-      ],
-      [
+      ]])],[
          AC_DEFINE(P_GNU_ALLOCATOR, 2)
          AC_MSG_RESULT(bitmap)
-      ],
-      [AC_ERROR([bitmap_allocator not available])]
+      ],[AC_MSG_ERROR([bitmap_allocator not available])]
   )
 else
-  AC_ERROR([Unknown allocator type $withval])
+  AC_MSG_ERROR(Unknown allocator type $withval)
 fi
 
 
@@ -812,18 +806,14 @@ MY_COMPILE_IFELSE(
       AC_DEFINE_UNQUOTED(P_ATOMICITY_HEADER, $P_ATOMICITY_HEADER)
 
       AC_MSG_CHECKING(if atomic __exchange_and_add is in __gnu_cxx namespace)
-      AC_TRY_COMPILE(
-         [#include P_ATOMICITY_HEADER],
-         [
+      AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include P_ATOMICITY_HEADER]], [[
             _Atomic_word val;
             __gnu_cxx::__exchange_and_add(&val, 1);
-         ],
-         [
+         ]])],[
             AC_MSG_RESULT(yes)
             AC_DEFINE_UNQUOTED(P_ATOMICITY_NAMESPACE, __gnu_cxx::)
-         ],
-         [AC_MSG_RESULT(no)]
-      )
+         ],[AC_MSG_RESULT(no)
+      ])
    fi
    ]
 )
@@ -1084,7 +1074,7 @@ dnl MSWIN_IF_FEATURE set_rdbuf,!android
 
 MY_COMPILE_IFELSE(
    [if has iostream::set_rdbuf],
-   [],
+   [$CPLUSPLUS_STD],
    [#include <iostream>],
    [
       struct MyStream : public std::iostream {
@@ -1930,17 +1920,45 @@ CXXFLAGS="$oldCXXFLAGS"
 
 
 dnl ########################################################################
+dnl check for AWS SDK library
+
+dnl MSWIN_DISPLAY    aws,AWS SDK
+dnl MSWIN_CHECK_FILE aws,include/aws/core/Aws.h,P_AWS_SDK=1
+dnl MSWIN_DIR_SYMBOL aws,AWS_SDK_DIR
+dnl MSWIN_CHECK_DIR  aws,%AWS_SDK%\
+dnl MSWIN_CHECK_DIR  aws,..\external\aws-sdk-cpp
+dnl MSWIN_CHECK_DIR  aws,..\..\external\aws-sdk-cpp
+dnl MSWIN_CHECK_DIR  aws,..\external\aws-sdk-cpp\out\install\x64-Debug
+dnl MSWIN_CHECK_DIR  aws,..\..\external\aws-sdk-cpp\out\install\x64-Debug
+dnl MSWIN_CHECK_DIR  aws,\aws-sdk-cpp
+dnl MSWIN_CHECK_DIR  aws,%ProgramFiles%\aws-sdk-cpp
+dnl MSWIN_CHECK_DIR  aws,%ProgramW6432%\aws-sdk-cpp
+
+PTLIB_MODULE_OPTION(
+   [AWS_SDK], 
+   [aws-sdk],
+   [AWS SDK support],
+   [aws-sdk], 
+   [],[],
+   [#include <aws/core/Aws.h>],
+   [Aws::InitAPI(Aws::SDKOptions())]
+)
+
+
+dnl ########################################################################
 dnl Text to Speech
 
-PTLIB_SIMPLE_OPTION([tts], [TTS], [Text-To-Speech server support])
+PTLIB_SIMPLE_OPTION([tts], [TEXT_TO_SPEECH], [Text-To-Speech support])
 
-dnl MSWIN_DISPLAY    sapi,Speech API
-dnl MSWIN_CHECK_FILE sapi,sphelper.h,P_SAPI=1
-dnl MSWIN_CHECK_FILE sapi,include\sphelper.h,P_SAPI=1
-dnl MSWIN_CHECK_FILE sapi,include\um\sphelper.h,P_SAPI=1
-dnl MSWIN_DEFINE     sapi,P_TTS
-dnl MSWIN_CHECK_DIR  sapi,%ProgramFiles%\Windows Kits\8.*
-dnl MSWIN_CHECK_DIR  sapi,%ProgramW6432%\Windows Kits\8.*
+
+dnl ########################################################################
+dnl Speech Recognition
+
+PTLIB_SIMPLE_OPTION([sr], [SPEECH_RECOGNITION], [Speech Recognition support])
+
+
+dnl ########################################################################
+dnl Festival Text to Speech
 
 MY_LINK_IFELSE(
    [for Festival support],
@@ -1955,6 +1973,19 @@ MY_LINK_IFELSE(
       PTLIB_SUBST(FESTIVAL, 1)
    ]
 )
+
+
+dnl ########################################################################
+dnl Windows Speech API
+
+dnl MSWIN_DISPLAY    sapi,Speech API
+dnl MSWIN_CHECK_FILE sapi,sphelper.h,P_SAPI=1
+dnl MSWIN_CHECK_FILE sapi,include\sphelper.h,P_SAPI=1
+dnl MSWIN_CHECK_FILE sapi,include\um\sphelper.h,P_SAPI=1
+dnl MSWIN_DEFINE     sapi,P_TEXT_TO_SPEECH
+dnl MSWIN_DEFINE     sapi,P_SPEECH_RECOGNITION
+dnl MSWIN_CHECK_DIR  sapi,%ProgramFiles%\Windows Kits\8.*
+dnl MSWIN_CHECK_DIR  sapi,%ProgramW6432%\Windows Kits\8.*
 
 
 dnl ########################################################################
@@ -2087,14 +2118,14 @@ dnl ########################################################################
 dnl VXML 
 dnl MSWIN_DISPLAY    vxml,VXML Support
 dnl MSWIN_DEFINE     vxml,P_VXML
-dnl MSWIN_IF_FEATURE vxml,http&sapi&expat
-dnl MSWIN_IF_FEATURE vxml,http&sapi&expat32
+dnl MSWIN_IF_FEATURE vxml,http&scripts&expat
+dnl MSWIN_IF_FEATURE vxml,http&scripts&expat32
 
 dnl MSWIN_DISPLAY    vxmlvideo,VXML (video) Support
 dnl MSWIN_DEFINE     vxmlvideo,P_VXML_VIDEO
 dnl MSWIN_IF_FEATURE vxmlvideo,vxml
 
-PTLIB_SIMPLE_OPTION([vxml], [VXML], [VXML support], [HAS_EXPAT], [HAS_HTTP], [HAS_TTS])
+PTLIB_SIMPLE_OPTION([vxml], [VXML], [VXML support], [HAS_EXPAT], [HAS_HTTP], [HAS_SCRIPTS])
 PTLIB_SIMPLE_OPTION([vxmlvideo], [VXML_VIDEO], [VXML (video) support], [HAS_VXML])
 
 dnl ########################################################################
@@ -2948,7 +2979,7 @@ AC_CONFIG_COMMANDS(
 dnl ########################################################################
 dnl Do it!
 
-AC_OUTPUT()
+AC_OUTPUT
 
 
 dnl ########################################################################
@@ -2971,6 +3002,7 @@ MY_OUTPUT_SUMMARY(
    [                     Festival TTS], PTLIB_FESTIVAL,
    [                           Curses], PTLIB_CURSES,
    [                        GStreamer], PTLIB_GSTREAMER,
+   [                          AWS SDK], PTLIB_AWS,
    [], [],
    [                            Audio], PTLIB_AUDIO,
    [                             ALSA], PTLIB_ALSA,
