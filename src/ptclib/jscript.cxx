@@ -94,66 +94,66 @@ They are usually in the output directory of the build, e.g. out.gn\x64.release
 #include <v8.h>
 
 #ifndef V8_MAJOR_VERSION
-// This is the version distributed with many Linux distros
-#define V8_MAJOR_VERSION 3
-#define V8_MINOR_VERSION 14
+  // This is the version distributed with many Linux distros
+  #define V8_MAJOR_VERSION 3
+  #define V8_MINOR_VERSION 14
 #endif
 
 
 #if V8_MAJOR_VERSION >= 6
-#include "libplatform/libplatform.h"
+  #include "libplatform/libplatform.h"
 #endif
 
 
 #ifdef _MSC_VER
-#pragma comment(lib, "winmm.lib")
-#pragma comment(lib, "dbghelp.lib")
-#pragma comment(lib, "shlwapi.lib")
-#if defined(_DEBUG)
-#if defined(P_64BIT)
-#pragma comment(lib, P_V8_BASE0_DEBUG64)
-#pragma comment(lib, P_V8_BASE1_DEBUG64)
-#pragma comment(lib, P_V8_LIBBASE_DEBUG64)
-#pragma comment(lib, P_V8_SNAPSHOT_DEBUG64)
-#pragma comment(lib, P_V8_LIBPLATFORM_DEBUG64)
-#pragma comment(lib, P_V8_LIBSAMPLER_DEBUG64)
-#pragma comment(lib, P_V8_ICUI18N_DEBUG64)
-#pragma comment(lib, P_V8_ICUUC_DEBUG64)
-#define V8_BLOBS_DIR V8_DIR "/out.gn/x64.debug"
-#else
-#pragma comment(lib, P_V8_BASE0_DEBUG32)
-#pragma comment(lib, P_V8_BASE1_DEBUG32)
-#pragma comment(lib, P_V8_LIBBASE_DEBUG32)
-#pragma comment(lib, P_V8_SNAPSHOT_DEBUG32)
-#pragma comment(lib, P_V8_LIBPLATFORM_DEBUG32)
-#pragma comment(lib, P_V8_LIBSAMPLER_DEBUG32)
-#pragma comment(lib, P_V8_ICUI18N_DEBUG32)
-#pragma comment(lib, P_V8_ICUUC_DEBUG32)
-#define V8_BLOBS_DIR V8_DIR "/out.gn/ia32.debug"
-#endif
-#else
-#if defined(P_64BIT)
-#pragma comment(lib, P_V8_BASE0_RELEASE64)
-#pragma comment(lib, P_V8_BASE1_RELEASE64)
-#pragma comment(lib, P_V8_LIBBASE_RELEASE64)
-#pragma comment(lib, P_V8_SNAPSHOT_RELEASE64)
-#pragma comment(lib, P_V8_LIBPLATFORM_RELEASE64)
-#pragma comment(lib, P_V8_LIBSAMPLER_RELEASE64)
-#pragma comment(lib, P_V8_ICUI18N_RELEASE64)
-#pragma comment(lib, P_V8_ICUUC_RELEASE64)
-#define V8_BLOBS_DIR V8_DIR "/out.gn/x64.release"
-#else
-#pragma comment(lib, P_V8_BASE0_RELEASE32)
-#pragma comment(lib, P_V8_BASE1_RELEASE32)
-#pragma comment(lib, P_V8_LIBBASE_RELEASE32)
-#pragma comment(lib, P_V8_SNAPSHOT_RELEASE32)
-#pragma comment(lib, P_V8_LIBPLATFORM_RELEASE32)
-#pragma comment(lib, P_V8_LIBSAMPLER_RELEASE32)
-#pragma comment(lib, P_V8_ICUI18N_RELEASE32)
-#pragma comment(lib, P_V8_ICUUC_RELEASE32)
-#define V8_BLOBS_DIR V8_DIR "/out.gn/ia32.release"
-#endif
-#endif
+  #pragma comment(lib, "winmm.lib")
+  #pragma comment(lib, "dbghelp.lib")
+  #pragma comment(lib, "shlwapi.lib")
+  #if defined(_DEBUG)
+    #if defined(P_64BIT)
+      #pragma comment(lib, P_V8_BASE0_DEBUG64)
+      #pragma comment(lib, P_V8_BASE1_DEBUG64)
+      #pragma comment(lib, P_V8_LIBBASE_DEBUG64)
+      #pragma comment(lib, P_V8_SNAPSHOT_DEBUG64)
+      #pragma comment(lib, P_V8_LIBPLATFORM_DEBUG64)
+      #pragma comment(lib, P_V8_LIBSAMPLER_DEBUG64)
+      #pragma comment(lib, P_V8_ICUI18N_DEBUG64)
+      #pragma comment(lib, P_V8_ICUUC_DEBUG64)
+      #define V8_BLOBS_DIR V8_DIR "/out.gn/x64.debug"
+    #else
+      #pragma comment(lib, P_V8_BASE0_DEBUG32)
+      #pragma comment(lib, P_V8_BASE1_DEBUG32)
+      #pragma comment(lib, P_V8_LIBBASE_DEBUG32)
+      #pragma comment(lib, P_V8_SNAPSHOT_DEBUG32)
+      #pragma comment(lib, P_V8_LIBPLATFORM_DEBUG32)
+      #pragma comment(lib, P_V8_LIBSAMPLER_DEBUG32)
+      #pragma comment(lib, P_V8_ICUI18N_DEBUG32)
+      #pragma comment(lib, P_V8_ICUUC_DEBUG32)
+      #define V8_BLOBS_DIR V8_DIR "/out.gn/ia32.debug"
+    #endif
+  #else
+    #if defined(P_64BIT)
+      #pragma comment(lib, P_V8_BASE0_RELEASE64)
+      #pragma comment(lib, P_V8_BASE1_RELEASE64)
+      #pragma comment(lib, P_V8_LIBBASE_RELEASE64)
+      #pragma comment(lib, P_V8_SNAPSHOT_RELEASE64)
+      #pragma comment(lib, P_V8_LIBPLATFORM_RELEASE64)
+      #pragma comment(lib, P_V8_LIBSAMPLER_RELEASE64)
+      #pragma comment(lib, P_V8_ICUI18N_RELEASE64)
+      #pragma comment(lib, P_V8_ICUUC_RELEASE64)
+      #define V8_BLOBS_DIR V8_DIR "/out.gn/x64.release"
+    #else
+      #pragma comment(lib, P_V8_BASE0_RELEASE32)
+      #pragma comment(lib, P_V8_BASE1_RELEASE32)
+      #pragma comment(lib, P_V8_LIBBASE_RELEASE32)
+      #pragma comment(lib, P_V8_SNAPSHOT_RELEASE32)
+      #pragma comment(lib, P_V8_LIBPLATFORM_RELEASE32)
+      #pragma comment(lib, P_V8_LIBSAMPLER_RELEASE32)
+      #pragma comment(lib, P_V8_ICUI18N_RELEASE32)
+      #pragma comment(lib, P_V8_ICUUC_RELEASE32)
+      #define V8_BLOBS_DIR V8_DIR "/out.gn/ia32.release"
+    #endif
+  #endif
 #endif
 
 
