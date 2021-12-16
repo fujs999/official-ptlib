@@ -84,8 +84,9 @@ class PTextToSpeech_AWS : public PTextToSpeech, PAwsClient<Aws::Polly::PollyClie
       if (m_wavFile.Open(deviceInfo.deviceName.c_str(), PFile::WriteOnly) &&
           m_wavFile.SetSampleRate(capability.sampleRate) &&
           m_wavFile.SetChannels(capability.channels) &&
-          m_wavFile.SetSampleSize(capability.sampleWidthBits))
+          m_wavFile.SetSampleSize(capability.sampleWidthBits)) {
         PTRACE(4, "Opened WAV file " << m_wavFile.GetName());
+      }
     }
     virtual const char* GetName() const
     {
