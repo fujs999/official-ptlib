@@ -429,6 +429,7 @@ class PVXMLSession : public PIndirectChannel
     virtual PBoolean TraverseBreak(PXMLElement & element);
     virtual PBoolean TraverseValue(PXMLElement & element);
     virtual PBoolean TraverseSayAs(PXMLElement & element);
+    virtual PBoolean TraverseVoice(PXMLElement & element);
     virtual PBoolean TraverseGoto(PXMLElement & element);
     virtual PBoolean TraverseGrammar(PXMLElement & element);
     virtual PBoolean TraverseRecord(PXMLElement & element);

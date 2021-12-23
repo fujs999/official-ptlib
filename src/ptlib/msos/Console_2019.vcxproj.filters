@@ -1010,7 +1010,6 @@
     </None>
     <None Include="..\..\..\include\ptlib\msos\ptlib.natvis" />
     <None Include="..\..\..\tools\get_revision.sh" />
-    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Header Files">

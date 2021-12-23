@@ -292,39 +292,52 @@ class PTextToSpeech_SAPI : public PTextToSpeech, protected PSpStreamFormat
       // Get the number of voices
       if (PCOM_SUCCEEDED_EX(hr,SpEnumTokens,(SPCAT_VOICES, NULL, NULL, &cpEnum))) {
         if (PCOM_SUCCEEDED_EX(hr,cpEnum->GetCount,(&ulCount))) {
-          PTRACE(4, "Found " << ulCount << " voices..");
-
           // Obtain a list of available voice tokens, set the voice to the token, and call Speak
           while (ulCount-- > 0) {
             CComPtr<ISpObjectToken> cpVoiceToken;
             if (hr.Succeeded(cpEnum->Next(1, &cpVoiceToken, NULL))) {
               PWSTR pDescription = NULL;
               SpGetDescription(cpVoiceToken, &pDescription);
-              PWideString desc(pDescription);
+              PString desc(pDescription);
               CoTaskMemFree(pDescription);
+              if (desc.NumCompare("Microsoft ") == EqualTo) {
+                PINDEX dash = desc.Find(" - ");
+                if (dash != P_MAX_INDEX)
+                  desc = PSTRSTRM(desc(10, dash-1) << ':' << desc.Mid(dash+3));
+              }
               voiceList.AppendString(desc);
-              PTRACE(4, "Found voice: " << desc);
             }
           } 
         }
       }
 
+      PTRACE(4, "Voices: " << setfill(',') << voiceList);
       return voiceList;
     }
 
 
-    virtual bool SetVoice(const PString & voice)
+    virtual bool InternalSetVoice(const PString & name, const PString & /*language*/)
     {
-      PStringArray voices = GetVoiceList();
-      if (voice.empty())
-        m_currentVoice = voices[0];
-      else if (voices.GetValuesIndex(voice) != P_MAX_INDEX)
-        m_currentVoice = voice;
-      else {
-        PTRACE(2, "Illegal voice \"" << voice << "\" for " << *this);
+      if (!IsOpen())
         return false;
-      }
 
+      PTRACE(4, "Trying to set voice \"" << name << '"');
+
+      //Enumerate voice tokens with attribute "Name=<specified voice>"
+      CComPtr<IEnumSpObjectTokens> cpEnum;
+      if (PCOM_FAILED(SpEnumTokens, (SPCAT_VOICES, name.AsWide(), NULL, &cpEnum)))
+        return false;
+
+      //Get the closest token
+      CComPtr<ISpObjectToken> cpVoiceToken;
+      if (PCOM_FAILED(cpEnum->Next, (1, &cpVoiceToken, NULL)))
+        return false;
+
+      //set the voice
+      if (PCOM_FAILED(m_cpVoice->SetVoice, (cpVoiceToken)))
+        return false;
+
+      PTRACE(4, "SetVoice(" << name << ") OK!");
       return true;
     }
 

@@ -122,35 +122,26 @@ public:
   virtual PStringArray GetVoiceList()
   {
     //Enumerate the available voices 
-    auto mgr = Aws::TextToSpeech::TextToSpeechManager::Create(m_client);
+    auto mgr = m_manager;
+    if (!mgr)
+      mgr = Aws::TextToSpeech::TextToSpeechManager::Create(m_client);
     Aws::Vector<std::pair<Aws::String, Aws::String>> awsVoices = mgr->ListAvailableVoices();
 
     PStringArray voiceList(awsVoices.size());
     for (size_t i = 0; i < awsVoices.size(); ++i)
-      voiceList[i] = PSTRSTRM(awsVoices[i].first << " (" << awsVoices[i].second << ')');
+      voiceList[i] = PSTRSTRM(awsVoices[i].first << ':' << awsVoices[i].second);
+    PTRACE(3, "Voices: " << setfill(',') << voiceList);
     return voiceList;
   }
 
 
-  virtual bool SetVoice(const PString & voice)
+  virtual bool InternalSetVoice(const PString & name, const PString & /*language*/)
   {
-    if (voice.empty()) // Don't change
-      return true;
+    if (!m_manager)
+      return false;
 
-    PStringArray voices = GetVoiceList();
-    unsigned count = 0;
-    for (size_t i = 0; i < voices.size(); ++i) {
-      if (voices[i].NumCompare(voice) == EqualTo)
-        ++count;
-    }
-
-    if (count == 1) {
-      m_manager->SetActiveVoice(voice.c_str());
-      return true;
-    }
-
-    PTRACE(2, (count > 0 ? "Ambiguous" : "Illegal") << " voice \"" << voice << "\" for " << *this);
-    return false;
+    m_manager->SetActiveVoice(name.c_str());
+    return true;
   }
 
 
@@ -200,6 +191,10 @@ public:
     Aws::TextToSpeech::DeviceInfo deviceInfo;
     deviceInfo.deviceName = fn.c_str();
     m_manager->SetActiveDevice(driver, deviceInfo, m_capability);
+    if (m_voiceName.empty())
+      SetVoice(PString::Empty());
+    else
+      InternalSetVoice(m_voiceName, m_voiceLanguage);
     return true;
   }
 

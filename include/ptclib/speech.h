@@ -45,7 +45,8 @@ class PTextToSpeech : public PObject
     static PTextToSpeech * Create(const PString & name = PString::Empty());
 
     virtual PStringArray GetVoiceList() = 0;
-    virtual bool SetVoice(const PString & voice) = 0;
+    bool SetVoice(const PString & voice);
+    PString GetVoice() const;
 
     virtual bool SetSampleRate(unsigned rate) = 0;
     virtual unsigned GetSampleRate() const = 0;
@@ -77,6 +78,10 @@ class PTextToSpeech : public PObject
     );
 
     virtual bool Speak(const PString & text, TextType hint = Default) = 0;
+
+  protected:
+    virtual bool InternalSetVoice(const PString & /*name*/, const PString & /*language*/) { return true; }
+    PString m_voiceName, m_voiceLanguage;
 };
 
 PFACTORY_LOAD(PTextToSpeech_WAV);

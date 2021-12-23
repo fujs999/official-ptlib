@@ -153,6 +153,7 @@ TRAVERSE_NODE(Audio);
 TRAVERSE_NODE(Break);
 TRAVERSE_NODE(Value);
 TRAVERSE_NODE(SayAs);
+TRAVERSE_NODE(Voice);
 TRAVERSE_NODE(Goto);
 TRAVERSE_NODE(Grammar);
 TRAVERSE_NODE(ElseIf);
@@ -2380,6 +2381,75 @@ PBoolean PVXMLSession::TraverseValue(PXMLElement & element)
 PBoolean PVXMLSession::TraverseSayAs(PXMLElement & element)
 {
   SayAs(element.GetAttribute("class"), element.GetData());
+  return true;
+}
+
+
+static bool UnsupportedVoiceAttribute(const PStringArray & attr)
+{
+  for (PINDEX i = 0; i < attr.GetSize(); ++i) {
+    PCaselessString a = attr[i];
+    if (a != "name" || a != "languages")
+      return true;
+  }
+    return false;
+}
+
+
+PBoolean PVXMLSession::TraverseVoice(PXMLElement & element)
+{
+  if (m_textToSpeech == NULL)
+    return true;
+
+  PStringArray names = element.GetAttribute("name").Tokenise(" ", false);
+  PStringArray languages = element.GetAttribute("languages").Tokenise(" ", false);
+  if (names.empty() && languages.empty())
+    return ThrowSemanticError(element, "<voice> must have name or language");
+
+  PStringArray required = element.GetAttribute("required").Tokenise(" ", false);
+  PStringArray ordering = element.GetAttribute("ordering").Tokenise(" ", false);
+  if (UnsupportedVoiceAttribute(required) && UnsupportedVoiceAttribute(ordering))
+    return ThrowSemanticError(element, "<voice> has unsupported required/ordering");
+
+  if (names.empty() || languages.empty() || ordering.empty() || (ordering[0] *= "name")) {
+    if (languages.empty()) {
+      for (PINDEX i = 0; i < names.GetSize(); ++i) {
+        if (m_textToSpeech->SetVoice(names[i]))
+          return true;
+      }
+    }
+    else if (names.empty()) {
+      for (PINDEX i = 0; i < languages.GetSize(); ++i) {
+        if (m_textToSpeech->SetVoice(':' + languages[i]))
+          return true;
+      }
+    }
+    else {
+      for (PINDEX i = 0; i < names.GetSize(); ++i) {
+        for (PINDEX j = 0; j < languages.GetSize(); ++j) {
+          if (m_textToSpeech->SetVoice(PSTRSTRM(names[i] << ':' << languages[j])))
+            return true;
+        }
+      }
+    }
+  }
+  else {
+    for (PINDEX j = 0; j < languages.GetSize(); ++j) {
+      for (PINDEX i = 0; i < names.GetSize(); ++i) {
+        if (m_textToSpeech->SetVoice(PSTRSTRM(names[i] << ':' << languages[j])))
+          return true;
+      }
+    }
+  }
+
+  PString failure = element.GetAttribute("onvoicefailure");
+  PTRACE(3, "Could not set voice to any of [" << setfill(',') << names << "], onvoicefailure=" << failure);
+
+  if (failure.empty() || (failure *= "priorityselect"))
+    m_textToSpeech->SetVoice(":");
+  else if (failure *= "processorchoice")
+    m_textToSpeech->SetVoice(PString::Empty());
+
   return true;
 }
 
