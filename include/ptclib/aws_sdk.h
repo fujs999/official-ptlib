@@ -31,6 +31,14 @@
 
 #if P_AWS_SDK
 
+/* Note, all the AWS code requires C++11 or better. So, we can use things like
+   std::shared_ptr<> in this header too. Some compilers (MSVC) allow use of
+   C++11 classes even if not explicitly stated C++11 is in use. Others (GCC) do
+   not allow this, so you must configure them for C++11 or later to use AWS.
+*/
+#include <memory>
+
+
 namespace Aws {
   namespace Client {
     struct ClientConfiguration;
@@ -41,9 +49,10 @@ namespace Aws {
 class PAwsClientBase
 {
 protected:
+  PString m_region;
   PString m_accessKeyId;
   PString m_secretAccessKey;
-  PAutoPtr<Aws::Client::ClientConfiguration> m_clientConfig;
+  std::shared_ptr<Aws::Client::ClientConfiguration> m_clientConfig;
 public:
   PAwsClientBase();
   ~PAwsClientBase();

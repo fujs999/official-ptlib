@@ -317,9 +317,9 @@
     </ClCompile>
     <ClCompile Include="..\..\ptclib\simplescript.cxx" />
     <ClCompile Include="..\..\ptclib\speech_aws.cxx">
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)aws-sdk-cpp\out\install\x64-Debug\include;$(SolutionDir)..\aws-sdk-cpp\out\install\x64-Debug\include;$(SolutionDir)..\external\aws-sdk-cpp\out\install\x64-Debug\include;$(SolutionDir)..\..\external\aws-sdk-cpp\out\install\x64-Debug\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">$(SolutionDir)aws-sdk-cpp\out\install\x64-Debug\include;$(SolutionDir)..\aws-sdk-cpp\out\install\x64-Debug\include;$(SolutionDir)..\external\aws-sdk-cpp\out\install\x64-Debug\include;$(SolutionDir)..\..\external\aws-sdk-cpp\out\install\x64-Debug\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SolutionDir)aws-sdk-cpp\out\install\x64-Debug\include;$(SolutionDir)..\aws-sdk-cpp\out\install\x64-Debug\include;$(SolutionDir)..\external\aws-sdk-cpp\out\install\x64-Debug\include;$(SolutionDir)..\..\external\aws-sdk-cpp\out\install\x64-Debug\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(EXTERNALDIR)\aws-sdk-cpp\out\install\x64-Debug\include;$(SolutionDir)..\aws-sdk-cpp\out\install\x64-Debug\include;$(SolutionDir)..\external\aws-sdk-cpp\out\install\x64-Debug\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">$(EXTERNALDIR)\aws-sdk-cpp\out\install\x64-Release\include;$(SolutionDir)..\aws-sdk-cpp\out\install\x64-Release\include;$(SolutionDir)..\external\aws-sdk-cpp\out\install\x64-Release\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(EXTERNALDIR)\aws-sdk-cpp\out\install\x64-Release\include;$(SolutionDir)..\aws-sdk-cpp\out\install\x64-Release\include;$(SolutionDir)..\external\aws-sdk-cpp\out\install\x64-Release\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <ClCompile Include="..\..\ptclib\textdata.cxx" />
     <ClCompile Include="..\..\ptclib\tonedev.cxx" />

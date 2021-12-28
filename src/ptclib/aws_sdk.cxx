@@ -152,13 +152,15 @@ PAwsClientBase::PAwsClientBase()
   m_secretAccessKey = wrap.GetSecretAccessKey();
 
   if (wrap.GetProfile().empty())
-    m_clientConfig.reset(new Aws::Client::ClientConfiguration);
+    m_clientConfig = std::make_shared<Aws::Client::ClientConfiguration>();
   else
-    m_clientConfig.reset(new Aws::Client::ClientConfiguration(wrap.GetProfile()));
+    m_clientConfig = std::make_shared<Aws::Client::ClientConfiguration>(wrap.GetProfile());
 #ifdef _WIN32
   m_clientConfig->httpLibOverride = Aws::Http::TransferLibType::WIN_INET_CLIENT;
 #endif
   // Maybe add more stuff here
+  PTRACE(4, NULL, PTraceModule(), "Client config: " << m_clientConfig.get());
+  m_region = m_clientConfig->region.empty() ? "us-east-1" : m_clientConfig->region.c_str();
 }
 
 
