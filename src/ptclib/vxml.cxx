@@ -206,7 +206,7 @@ class PVXMLTraverseEvent : public PVXMLNodeHandler
     if (session.m_currentNode == NULL &&
         parent != NULL &&
         parent->GetParent() != NULL &&
-        session.GoToEventHandler(*parent->GetParent(), element.GetName()))
+        session.GoToEventHandler(*parent->GetParent(), element.GetName(), false))
       return false;
 
     session.m_currentNode = parent;
@@ -1899,7 +1899,7 @@ PBoolean PVXMLSession::TraversedRecord(PXMLElement & element)
       return false;
 
     case RecordingComplete :
-      return !GoToEventHandler(element, FilledElement);
+      return !GoToEventHandler(element, FilledElement, false);
 
     default :
       break;
@@ -2170,7 +2170,7 @@ void PVXMLSession::LoadGrammar(const PString & type, const PVXMLGrammarInit & in
   PVXMLGrammar * grammar = PVXMLGrammarFactory::CreateInstance(adjustedType, init);
   if (grammar == NULL) {
     PTRACE(2, "Could not set grammar of type \"" << adjustedType << '"');
-    GoToEventHandler(init.m_field, "error.unsupported.builtin");
+    GoToEventHandler(init.m_field, "error.unsupported.builtin", true);
     return;
   }
 
@@ -2178,10 +2178,10 @@ void PVXMLSession::LoadGrammar(const PString & type, const PVXMLGrammarInit & in
   if (state != PVXMLGrammar::Idle) {
     delete grammar;
     if (state == PVXMLGrammar::BadFetch)
-      GoToEventHandler(init.m_field, "error.badfetch");
+      GoToEventHandler(init.m_field, ErrorBadFetch, true);
     else {
       PTRACE(2, "Illegal/unsupported grammar of type \"" << adjustedType << '"');
-      GoToEventHandler(init.m_field, "error.unsupported.format");
+      GoToEventHandler(init.m_field, "error.unsupported.format", true);
     }
     return;
   }
@@ -2475,7 +2475,7 @@ PBoolean PVXMLSession::TraverseGoto(PXMLElement & element)
   if (SetCurrentForm(target, fullURI))
     return ProcessNode();
 
-  return GoToEventHandler(element, ErrorBadFetch);
+  return GoToEventHandler(element, ErrorBadFetch, true);
 }
 
 
@@ -2489,7 +2489,7 @@ PBoolean PVXMLSession::TraverseGrammar(PXMLElement & element)
 
 // Finds the proper event hander for 'noinput', 'filled', 'nomatch' and 'error'
 // by searching the scope hiearchy from the current from
-bool PVXMLSession::GoToEventHandler(PXMLElement & element, const PString & eventName)
+bool PVXMLSession::GoToEventHandler(PXMLElement & element, const PString & eventName, bool exitIfNotFound)
 {
   PXMLElement * level = &element;
   PXMLElement * handler = NULL;
@@ -2501,8 +2501,16 @@ bool PVXMLSession::GoToEventHandler(PXMLElement & element, const PString & event
     level = level->GetParent();
     if (level == NULL) {
       PTRACE(4, "No event handler found for \"" << eventName << '"');
-      if (eventName.NumCompare("error.") == EqualTo)
-        m_currentNode = NULL; // Exit script
+      static PConstString const MatchAll(".");
+      if (eventName != MatchAll) {
+        PINDEX dot = eventName.FindLast('.');
+        return GoToEventHandler(element, dot == P_MAX_INDEX ? MatchAll : eventName.Left(dot), exitIfNotFound);
+      }
+
+      if (exitIfNotFound) {
+        PTRACE(3, "Exiting script.");
+        m_currentNode = NULL;
+      }
       return false;
     }
   }
@@ -2517,7 +2525,7 @@ bool PVXMLSession::GoToEventHandler(PXMLElement & element, const PString & event
 bool PVXMLSession::ThrowSemanticError(PXMLElement & element, const PString & PTRACE_PARAM(reason))
 {
   PTRACE(2, "Semantic error on " << element.PrintTrace() << " - " << reason);
-  return GoToEventHandler(element, ErrorSemantic);
+  return GoToEventHandler(element, ErrorSemantic, true);
 }
 
 
@@ -2738,13 +2746,12 @@ PBoolean PVXMLSession::TraverseSubmit(PXMLElement & element)
     url.Parse(EvaluateExpr(element.GetAttribute(ExprAttribute)));
   else if (element.HasAttribute(NextAttribute))
     url.Parse(element.GetAttribute(NextAttribute));
-  else {
-    PTRACE(1, "<submit> does not contain \"next\" or \"expr\" attribute.");
-    return false;
-  }
+  else
+    return ThrowSemanticError(element, "<submit> does not contain \"next\" or \"expr\" attribute.");
+
   if (url.IsEmpty()) {
     PTRACE(1, "<submit> has an invalid URL.");
-    return false;
+    return GoToEventHandler(element, ErrorBadFetch, true);
   }
 
   bool urlencoded;
@@ -2755,7 +2762,7 @@ PBoolean PVXMLSession::TraverseSubmit(PXMLElement & element)
     urlencoded = false;
   else {
     PTRACE(1, "<submit> has unknown \"enctype\" attribute of \"" << str << '"');
-    return false;
+    return GoToEventHandler(element, ErrorBadFetch, true);
   }
 
   bool get;
@@ -2768,7 +2775,7 @@ PBoolean PVXMLSession::TraverseSubmit(PXMLElement & element)
     get = false;
   else {
     PTRACE(1, "<submit> has unknown \"method\" attribute of \"" << str << '"');
-    return false;
+    return GoToEventHandler(element, ErrorBadFetch, true);
   }
 
   PHTTPClient client("PTLib VXML");
@@ -2791,7 +2798,7 @@ PBoolean PVXMLSession::TraverseSubmit(PXMLElement & element)
 
     PTRACE(1, "<submit> GET " << url << " failed with "
            << client.GetLastResponseCode() << ' ' << client.GetLastResponseInfo());
-    return false;
+    return GoToEventHandler(element, ErrorBadFetch, true);
   }
 
   if (urlencoded) {
@@ -2808,7 +2815,7 @@ PBoolean PVXMLSession::TraverseSubmit(PXMLElement & element)
 
     PTRACE(1, "<submit> POST " << url << " failed with "
            << client.GetLastResponseCode() << ' ' << client.GetLastResponseInfo());
-    return false;
+    return GoToEventHandler(element, PSTRSTRM(ErrorBadFetch << '.' << url.GetScheme() << '.' << client.GetLastResponseCode()), true);
   }
 
   PMIMEInfo sendMIME;
@@ -2934,7 +2941,7 @@ PBoolean PVXMLSession::TraversedTransfer(PXMLElement & element)
   if (elementName.empty())
     return false;
 
-  const char * eventName = "error";
+  bool error = true;
 
   switch (m_transferStatus) {
     case TransferCompleted :
@@ -2969,7 +2976,7 @@ PBoolean PVXMLSession::TraversedTransfer(PXMLElement & element)
     }
 
     case TransferSuccessful :
-      eventName = FilledElement;
+      error = false;
       // Do default case
 
     default :
@@ -2978,7 +2985,7 @@ PBoolean PVXMLSession::TraversedTransfer(PXMLElement & element)
 
   m_transferStatus = TransferCompleted;
 
-  return !GoToEventHandler(element, eventName);
+  return !GoToEventHandler(element, error ? "error" : FilledElement, error);
 }
 
 
@@ -3043,8 +3050,7 @@ PBoolean PVXMLSession::TraverseAssign(PXMLElement & element)
 
 PBoolean PVXMLSession::TraverseDisconnect(PXMLElement & element)
 {
-  m_currentNode = NULL;
-  return GoToEventHandler(element, "connection.disconnect");
+  return GoToEventHandler(element, "connection.disconnect", true);
 }
 
 
@@ -3435,13 +3441,13 @@ bool PVXMLGrammar::Process()
       m_timer.Stop(false);
       if (m_field.HasAttribute(NameAttribute))
         m_session.InternalSetVar(DialogScope, m_fieldName, m_value);
-      return m_session.GoToEventHandler(m_field, FilledElement);
+      return m_session.GoToEventHandler(m_field, FilledElement, false);
 
     case PVXMLGrammar::NoInput:
-      return m_session.GoToEventHandler(m_field, "noinput");
+      return m_session.GoToEventHandler(m_field, "noinput", false);
 
     case PVXMLGrammar::NoMatch:
-      return m_session.GoToEventHandler(m_field, "nomatch");
+      return m_session.GoToEventHandler(m_field, "nomatch", false);
 
     default:
       break; //ERROR - unexpected grammar state
@@ -3496,7 +3502,7 @@ bool PVXMLMenuGrammar::Process()
         if (m_session.SetCurrentForm(next, true))
           return true;
 
-        return m_session.GoToEventHandler(m_field, choice->GetAttribute("event"));
+        return m_session.GoToEventHandler(m_field, choice->GetAttribute("event"), false);
       }
     }
 

@@ -414,7 +414,7 @@ class PVXMLSession : public PIndirectChannel
     static PTimeInterval StringToTime(const PString & str, int dflt = 0);
 
     bool SetCurrentForm(const PString & id, bool fullURI);
-    bool GoToEventHandler(PXMLElement & element, const PString & eventName);
+    bool GoToEventHandler(PXMLElement & element, const PString & eventName, bool exitIfNotFound);
     bool ThrowSemanticError(PXMLElement & element, const PString & reason);
     PXMLElement * FindElementWithCount(PXMLElement & parent, const PString & name, unsigned count);
 
