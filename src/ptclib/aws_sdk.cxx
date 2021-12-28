@@ -76,7 +76,7 @@ private:
       if (PTrace::CanTrace(level)) {
         va_list args;
         va_start(args, formatStr);
-        PTRACE_BEGIN(level, NULL, PTraceModule()) << pvsprintf(formatStr, args) << PTrace::End;
+        PTRACE_BEGIN(level, NULL, "AWS-Log") << pvsprintf(formatStr, args) << PTrace::End;
         va_end(args);
       }
     }
@@ -85,10 +85,10 @@ private:
     {
       auto level = static_cast<unsigned>(logLevel)-1;
       if (PTrace::CanTrace(level)) {
-        auto msg = messageStream.str();
+        std::string msg = messageStream.str();
         PINDEX dummy;
         if (!m_suppression.Execute(msg.c_str(), dummy))
-          PTRACE_BEGIN(level, NULL, PTraceModule()) << msg << PTrace::End;
+          PTRACE_BEGIN(level, NULL, "AWS-Log") << msg << PTrace::End;
       }
     }
 
@@ -124,6 +124,11 @@ public:
       m_accessKeyId = cfg.GetString("aws_access_key_id");
       m_secretAccessKey = cfg.GetString("aws_secret_access_key");
     }
+
+    PTRACE(4, "Initialised API:"
+              " profile=\"" << m_profile << "\","
+              " aws_access_key_id=" << (m_accessKeyId.empty() ? "unset" : "set") << ","
+              " aws_secret_access_key=" << (m_accessKeyId.empty() ? "unset" : "set"));
   }
 
   virtual void OnShutdown()
@@ -151,16 +156,20 @@ PAwsClientBase::PAwsClientBase()
   m_accessKeyId = wrap.GetAccessKeyId();
   m_secretAccessKey = wrap.GetSecretAccessKey();
 
-  if (wrap.GetProfile().empty())
+  if (wrap.GetProfile().empty()) {
+    PTRACE(4, "Default client config");
     m_clientConfig = std::make_shared<Aws::Client::ClientConfiguration>();
-  else
+  }
+  else {
+    PTRACE(4, "Client config for \"" << wrap.GetProfile() << '"');
     m_clientConfig = std::make_shared<Aws::Client::ClientConfiguration>(wrap.GetProfile());
+  }
 #ifdef _WIN32
   m_clientConfig->httpLibOverride = Aws::Http::TransferLibType::WIN_INET_CLIENT;
 #endif
-  // Maybe add more stuff here
-  PTRACE(4, NULL, PTraceModule(), "Client config: " << m_clientConfig.get());
+
   m_region = m_clientConfig->region.empty() ? "us-east-1" : m_clientConfig->region.c_str();
+  PTRACE(4, "Client config: region=\"" << m_region << "\" profile=\"" << m_clientConfig->profileName << '"');
 }
 
 
