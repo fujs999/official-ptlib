@@ -1322,6 +1322,8 @@ bool PVXMLSession::InternalLoadVXML(const PString & xmlText, const PString & fir
     return false;
   }
 
+  m_xmlLanguage = root->GetAttribute("xml:lang");
+
   if (firstForm.IsEmpty()) {
     if (root->GetElement(FormElement) == NULL && root->GetElement(MenuElement) == NULL) {
       PTRACE(1, "No form or menu element.");
@@ -3392,6 +3394,17 @@ void PVXMLGrammar::Start()
   m_timer = m_timeout;
 
   if (m_recogniser != NULL) {
+    PString lang;
+    if (m_grammarElement != NULL)
+      lang = m_grammarElement->GetAttribute("xml:lang");
+    if (lang.empty())
+      lang = m_session.m_xmlLanguage;
+    if (!lang.empty() && !m_recogniser->SetLanguage(lang)) {
+      PTRACE(2, "Could not set speech recognition language to \"" << lang << '"');
+      m_session.GoToEventHandler(m_field, "error.unsupported.language", true);
+      return;
+    }
+
     // Currentlly, in AWS world, it takes several seconds to create a vocabulary.
     // So we need to figure out another solution than setting it up here.
     //PStringArray words;

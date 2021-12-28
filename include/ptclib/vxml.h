@@ -495,6 +495,7 @@ class PVXMLSession : public PIndirectChannel
 
     PURL             m_rootURL;
     PURL             m_documentURL;
+    PString          m_xmlLanguage;
     PHTTPCookies     m_cookies;
     PDECLARE_MUTEX(  m_cookieMutex);
 
