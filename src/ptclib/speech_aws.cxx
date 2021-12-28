@@ -423,8 +423,9 @@ class PSpeechRecognition_AWS : public PSpeechRecognition, PAwsClient<Aws::Transc
                           PJSON::Object const & item = items.GetObject(idxItem);
                           if (item.GetString("Type") == "pronunciation") {
                             Transcript transcript(false,
-                                                   PTimeInterval::Seconds((double)item.GetNumber("StartTime")),
-                                                   item.GetString("Content"));
+                                                  PTimeInterval::Seconds((double)item.GetNumber("StartTime")),
+                                                  item.GetString("Content"),
+                                                  (float)item.GetNumber("Confidence"));
                             if (!transcript.m_content.empty() && sentTranscripts.find(transcript) == sentTranscripts.end()) {
                               sentTranscripts.insert(transcript);
                               m_notifier(*this, transcript);
@@ -437,7 +438,8 @@ class PSpeechRecognition_AWS : public PSpeechRecognition, PAwsClient<Aws::Transc
                   if (!alternatives.empty() && !result.GetBoolean("IsPartial"))
                     m_notifier(*this, Transcript(true,
                                                  PTimeInterval::Seconds((double)result.GetNumber("StartTime")),
-                                                 alternatives.GetObject(0).GetString("Transcript")));
+                                                 alternatives.GetObject(0).GetString("Transcript"),
+                                                 1));
                 }
               }
             }
@@ -597,13 +599,13 @@ public:
 
     PString timestamp = PTime().AsString(PTime::ShortISO8601, PTime::UTC);
     PString credentialDatestamp = timestamp.Left(8);
-    PString credentialScope = PSTRSTRM(credentialDatestamp << '/' << m_clientConfig->region << '/' << service << '/' << operation);
+    PString credentialScope = PSTRSTRM(credentialDatestamp << '/' << m_region << '/' << service << '/' << operation);
 
     PStringStream canonical;
 
     PURL url;
     url.SetScheme("wss");
-    url.SetHostName(PSTRSTRM("transcribestreaming." << m_clientConfig->region << ".amazonaws.com"));
+    url.SetHostName(PSTRSTRM("transcribestreaming." << m_region << ".amazonaws.com"));
     url.SetPort(8443);
     url.SetPathStr("stream-transcription-websocket");
     canonical << "GET\n" << url.GetPathStr() << '\n';
@@ -632,7 +634,7 @@ public:
 
     PHMAC_SHA256 signer;
     signer.SetKey("AWS4" + m_secretAccessKey); signer.Process(credentialDatestamp, result);
-    signer.SetKey(result); signer.Process(m_clientConfig->region.c_str(), result);
+    signer.SetKey(result); signer.Process(m_region.c_str(), result);
     signer.SetKey(result); signer.Process(service, result);
     signer.SetKey(result); signer.Process(operation, result);
     signer.SetKey(result); signer.Process(stringToSign, result);

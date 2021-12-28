@@ -496,11 +496,11 @@ PSpeechRecognition * PSpeechRecognition::Create(const PString & name)
 }
 
 
-PSpeechRecognition::Transcript::Transcript(bool final, const PTimeInterval & when, const PString & content)
+PSpeechRecognition::Transcript::Transcript(bool final, const PTimeInterval & when, const PString & content, float confidence)
   : m_final(final)
   , m_when(when)
   , m_content(content)
-  , m_confidence(1)
+  , m_confidence(confidence > 0 ? confidence : 1.0f)
 {
 }
 

@@ -131,7 +131,7 @@ class PSpeechRecognition : public PObject
       PString       m_content;
       float         m_confidence;  // 0.0 to 1.0
 
-      Transcript(bool final, const PTimeInterval & when, const PString & content);
+      Transcript(bool final, const PTimeInterval & when, const PString & content, float confidence);
       virtual Comparison Compare(const PObject & other) const;
       virtual void PrintOn(ostream & strm) const;
     };

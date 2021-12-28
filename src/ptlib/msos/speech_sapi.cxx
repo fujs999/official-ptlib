@@ -647,7 +647,7 @@ class PSpeechRecognition_SAPI : public PSpeechRecognition, protected PSpStreamFo
               WCHAR * pwszText;
               pResult->GetText((ULONG)SP_GETWHOLEPHRASE, (ULONG)SP_GETWHOLEPHRASE, FALSE, &pwszText, NULL);
               if (!m_notifier.IsNULL())
-                m_notifier(*this, Transcript(true, PTimer::Tick(), pwszText));
+                m_notifier(*this, Transcript(true, PTimer::Tick(), pwszText, 1));
               CoTaskMemFree(pwszText);
             }
         }
