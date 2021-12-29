@@ -264,6 +264,7 @@ class PVXMLTextGrammar : public PVXMLGrammar
   public:
     PVXMLTextGrammar(const PVXMLGrammarInit & init);
 
+    void OnRecognition(PSpeechRecognition &, PSpeechRecognition::Transcript transcript);
     virtual void OnInput(const PString & input);
 };
 

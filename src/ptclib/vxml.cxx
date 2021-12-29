@@ -3640,6 +3640,13 @@ PVXMLTextGrammar::PVXMLTextGrammar(const PVXMLGrammarInit & init)
 }
 
 
+void PVXMLTextGrammar::OnRecognition(PSpeechRecognition& sr, PSpeechRecognition::Transcript transcript)
+{
+  if (transcript.m_final)
+    PVXMLGrammar::OnRecognition(sr, transcript);
+}
+
+
 void PVXMLTextGrammar::OnInput(const PString & input)
 {
   m_value += input;
