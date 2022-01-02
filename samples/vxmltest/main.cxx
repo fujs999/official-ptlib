@@ -47,6 +47,7 @@ void VxmlTest::Main()
                   "-recorder-rate: Output to sound sample rate\n"
                   "-recorder-channels: Output to sound channels\n"
                   "T-tts: Text to speech method\n"
+                  "S-sr: Speech recognition method\n"
                   "c-cache: Text to speech cache directory\n"
 #if P_VXML_VIDEO
                   "V-video. Enabled video support\n"
@@ -297,22 +298,25 @@ bool TestInstance::Initialise(unsigned instance, const PArgList & args)
 #endif
 
 
-  PTextToSpeech * tts = PFactory<PTextToSpeech>::CreateInstance(args.GetOptionString("tts", "Microsoft SAPI"));
-  if (tts == NULL) {
+  m_vxml = new PVXMLSession();
+  if (m_vxml->SetTextToSpeech(args.GetOptionString("tts")) == NULL) {
+    cerr << "Instance " << m_instance << " error: cannot select text to speech engine, use one of:\n";
     PFactory<PTextToSpeech>::KeyList_T engines = PFactory<PTextToSpeech>::GetKeyList();
-    if (!engines.empty()) {
-      tts = PFactory<PTextToSpeech>::CreateInstance(engines[0]);
-      if (tts == NULL) {
-        cerr << "Instance " << m_instance << " error: cannot select default text to speech engine, use one of:\n";
-        for (PFactory<PTextToSpeech>::KeyList_T::iterator it = engines.begin(); it != engines.end(); ++it)
-          cerr << "  " << *it << '\n';
-        return false;
-      }
-    }
+    for (PFactory<PTextToSpeech>::KeyList_T::iterator it = engines.begin(); it != engines.end(); ++it)
+      cerr << "  " << *it << '\n';
+    return false;
   }
-  cout << "Instance " << m_instance << " using text to speech \"" << tts->GetVoiceList() << "\"" << endl;
+  cout << "Instance " << m_instance << " using text to speech \"" << m_vxml->GetTextToSpeech()->GetVoiceList() << '"' << endl;
 
-  m_vxml = new PVXMLSession(tts, true);
+  if (!m_vxml->SetSpeechRecognition(args.GetOptionString("sr"))) {
+    cerr << "Instance " << m_instance << " error: cannot select speech recognition engine, use one of:\n";
+    PFactory<PTextToSpeech>::KeyList_T engines = PFactory<PSpeechRecognition>::GetKeyList();
+    for (PFactory<PTextToSpeech>::KeyList_T::iterator it = engines.begin(); it != engines.end(); ++it)
+      cerr << "  " << *it << '\n';
+    return false;
+  }
+  cout << "Instance " << m_instance << " using speech recognition \"" << m_vxml->GetSpeechRecognition() << '"' << endl;
+
   if (!m_vxml->Load(args[0])) {
     cerr << "Instance " << m_instance << " error: cannot loading VXML document \"" << args[0] << "\" - " << m_vxml->GetXMLError() << endl;
     return false;

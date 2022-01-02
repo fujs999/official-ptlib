@@ -347,13 +347,16 @@ class PVXMLSession : public PIndirectChannel
 {
   PCLASSINFO(PVXMLSession, PIndirectChannel);
   public:
-    PVXMLSession(PTextToSpeech * tts = NULL, PBoolean autoDelete = false);
+    PVXMLSession();
     virtual ~PVXMLSession();
 
     // new functions
     PTextToSpeech * SetTextToSpeech(PTextToSpeech * tts, PBoolean autoDelete = false);
     PTextToSpeech * SetTextToSpeech(const PString & ttsName);
     PTextToSpeech * GetTextToSpeech() const { return m_textToSpeech; }
+    bool SetSpeechRecognition(const PString & srName);
+    PString GetSpeechRecognition() const { PWaitAndSignal lock(m_grammersMutex); return m_speechRecognition.c_str(); }
+    virtual PSpeechRecognition * CreateSpeechRecognition();
 
     void SetCache(PVXMLCache & cache);
     PVXMLCache & GetCache();
@@ -503,6 +506,7 @@ class PVXMLSession : public PIndirectChannel
     PTextToSpeech  * m_textToSpeech;
     PVXMLCache     * m_ttsCache;
     bool             m_autoDeleteTextToSpeech;
+    PString          m_speechRecognition;
 
 #if P_VXML_VIDEO
     void SetRealVideoSender(PVideoInputDevice * device);

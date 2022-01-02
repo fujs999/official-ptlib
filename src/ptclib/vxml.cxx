@@ -1110,10 +1110,10 @@ bool PVXMLCache::PutWithLock(const PString & prefix,
 
 //////////////////////////////////////////////////////////
 
-PVXMLSession::PVXMLSession(PTextToSpeech * tts, PBoolean autoDelete)
-  : m_textToSpeech(tts)
+PVXMLSession::PVXMLSession()
+  : m_textToSpeech(NULL)
   , m_ttsCache(NULL)
-  , m_autoDeleteTextToSpeech(autoDelete)
+  , m_autoDeleteTextToSpeech(false)
 #if P_VXML_VIDEO
   , m_videoReceiver(*this)
 #endif
@@ -1182,6 +1182,27 @@ PTextToSpeech * PVXMLSession::SetTextToSpeech(const PString & ttsName)
   }
 
   return SetTextToSpeech(PFactory<PTextToSpeech>::CreateInstance(name), true);
+}
+
+
+bool PVXMLSession::SetSpeechRecognition(const PString & srName)
+{
+  PSpeechRecognition * sr = PSpeechRecognition::Create(srName);
+  if (sr == NULL) {
+    PTRACE(2, "Cannot use Speech Recognition \"" << srName << '"');
+    return false;
+  }
+  delete sr;
+
+  PWaitAndSignal lock(m_grammersMutex);
+  m_speechRecognition = srName;
+  return true;
+}
+
+
+PSpeechRecognition * PVXMLSession::CreateSpeechRecognition()
+{
+  return PSpeechRecognition::Create(m_speechRecognition);
 }
 
 
@@ -3323,7 +3344,7 @@ PVXMLGrammar::PVXMLGrammar(const PVXMLGrammarInit & init)
     }
 
     if (allowVoice)
-      m_recogniser = PSpeechRecognition::Create();
+      m_recogniser = m_session.CreateSpeechRecognition();
   }
 
   m_timer.SetNotifier(PCREATE_NOTIFIER(OnTimeout), "VXMLGrammar");
