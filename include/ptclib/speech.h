@@ -45,7 +45,8 @@ class PTextToSpeech : public PObject
     static PTextToSpeech * Create(const PString & name = PString::Empty());
 
     virtual PStringArray GetVoiceList() = 0;
-    virtual bool SetVoice(const PString & voice) = 0;
+    bool SetVoice(const PString & voice);
+    PString GetVoice() const;
 
     virtual bool SetSampleRate(unsigned rate) = 0;
     virtual unsigned GetSampleRate() const = 0;
@@ -77,6 +78,10 @@ class PTextToSpeech : public PObject
     );
 
     virtual bool Speak(const PString & text, TextType hint = Default) = 0;
+
+  protected:
+    virtual bool InternalSetVoice(const PString & /*name*/, const PString & /*language*/) { return true; }
+    PString m_voiceName, m_voiceLanguage;
 };
 
 PFACTORY_LOAD(PTextToSpeech_WAV);
@@ -114,6 +119,11 @@ class PSpeechRecognition : public PObject
     virtual bool SetLanguage(const PString & language) = 0;
     virtual PString GetLanguage() const = 0;
 
+    virtual bool SetVocabulary(
+      const PString & name,
+      const PStringArray & words
+    ) = 0;
+
     struct Transcript : PObject
     {
       bool          m_final;
@@ -121,7 +131,7 @@ class PSpeechRecognition : public PObject
       PString       m_content;
       float         m_confidence;  // 0.0 to 1.0
 
-      Transcript(bool final, const PTimeInterval & when, const PString & content);
+      Transcript(bool final, const PTimeInterval & when, const PString & content, float confidence);
       virtual Comparison Compare(const PObject & other) const;
       virtual void PrintOn(ostream & strm) const;
     };
@@ -130,7 +140,7 @@ class PSpeechRecognition : public PObject
     virtual void SetNotifier(const Notifier & notifier) { m_notifier = notifier; }
     const Notifier & GetNotifier() const { return m_notifier; }
 
-    virtual bool Open(const Notifier & notifier, const PStringArray & words) = 0;
+    virtual bool Open(const Notifier & notifier, const PString & vocabulary = PString::Empty()) = 0;
     virtual bool IsOpen() const = 0;
     virtual bool Close() = 0;
 

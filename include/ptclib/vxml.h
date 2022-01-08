@@ -264,6 +264,7 @@ class PVXMLTextGrammar : public PVXMLGrammar
   public:
     PVXMLTextGrammar(const PVXMLGrammarInit & init);
 
+    void OnRecognition(PSpeechRecognition &, PSpeechRecognition::Transcript transcript);
     virtual void OnInput(const PString & input);
 };
 
@@ -346,13 +347,16 @@ class PVXMLSession : public PIndirectChannel
 {
   PCLASSINFO(PVXMLSession, PIndirectChannel);
   public:
-    PVXMLSession(PTextToSpeech * tts = NULL, PBoolean autoDelete = false);
+    PVXMLSession();
     virtual ~PVXMLSession();
 
     // new functions
     PTextToSpeech * SetTextToSpeech(PTextToSpeech * tts, PBoolean autoDelete = false);
     PTextToSpeech * SetTextToSpeech(const PString & ttsName);
     PTextToSpeech * GetTextToSpeech() const { return m_textToSpeech; }
+    bool SetSpeechRecognition(const PString & srName);
+    PString GetSpeechRecognition() const { PWaitAndSignal lock(m_grammersMutex); return m_speechRecognition.c_str(); }
+    virtual PSpeechRecognition * CreateSpeechRecognition();
 
     void SetCache(PVXMLCache & cache);
     PVXMLCache & GetCache();
@@ -414,7 +418,7 @@ class PVXMLSession : public PIndirectChannel
     static PTimeInterval StringToTime(const PString & str, int dflt = 0);
 
     bool SetCurrentForm(const PString & id, bool fullURI);
-    bool GoToEventHandler(PXMLElement & element, const PString & eventName);
+    bool GoToEventHandler(PXMLElement & element, const PString & eventName, bool exitIfNotFound);
     bool ThrowSemanticError(PXMLElement & element, const PString & reason);
     PXMLElement * FindElementWithCount(PXMLElement & parent, const PString & name, unsigned count);
 
@@ -429,6 +433,7 @@ class PVXMLSession : public PIndirectChannel
     virtual PBoolean TraverseBreak(PXMLElement & element);
     virtual PBoolean TraverseValue(PXMLElement & element);
     virtual PBoolean TraverseSayAs(PXMLElement & element);
+    virtual PBoolean TraverseVoice(PXMLElement & element);
     virtual PBoolean TraverseGoto(PXMLElement & element);
     virtual PBoolean TraverseGrammar(PXMLElement & element);
     virtual PBoolean TraverseRecord(PXMLElement & element);
@@ -494,12 +499,14 @@ class PVXMLSession : public PIndirectChannel
 
     PURL             m_rootURL;
     PURL             m_documentURL;
+    PString          m_xmlLanguage;
     PHTTPCookies     m_cookies;
     PDECLARE_MUTEX(  m_cookieMutex);
 
     PTextToSpeech  * m_textToSpeech;
     PVXMLCache     * m_ttsCache;
     bool             m_autoDeleteTextToSpeech;
+    PString          m_speechRecognition;
 
 #if P_VXML_VIDEO
     void SetRealVideoSender(PVideoInputDevice * device);

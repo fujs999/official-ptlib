@@ -63,6 +63,87 @@ PTextToSpeech * PTextToSpeech::Create(const PString & name)
   return tts;
 }
 
+
+bool PTextToSpeech::SetVoice(const PString & voice)
+{
+  PStringArray voices = GetVoiceList();
+
+  PString name, language;
+  if (voice.empty()) {
+    if (m_voiceName.empty())
+      voices[0].Split(':', name, language, PString::SplitDefaultToBefore|PString::SplitTrim);
+    else {
+      name = m_voiceName;
+      language = m_voiceLanguage;
+    }
+  }
+  else
+    voice.Split(':', name, language, PString::SplitDefaultToBefore|PString::SplitTrim);
+
+  PINDEX found = P_MAX_INDEX;
+  unsigned count = 0;
+
+  if (name.empty()) {
+    if (language.empty())
+      language = "US English";
+    for (PINDEX i = 0; i < voices.GetSize(); ++i) {
+      PString v = voices[i];
+      if (v.NumCompare(language, language.length(), v.Find(':')+1) == PObject::EqualTo) {
+        found = i;
+        ++count;
+        break;
+      }
+    }
+  }
+  else if (language.empty()) {
+    for (PINDEX i = 0; i < voices.GetSize(); ++i) {
+      if (voices[i].NumCompare(name) == PObject::EqualTo) {
+        if (found == P_MAX_INDEX)
+          found = i;
+        ++count;
+      }
+    }
+  }
+  else {
+    for (PINDEX i = 0; i < voices.GetSize(); ++i) {
+      PString v = voices[i];
+      if (v.NumCompare(name) == PObject::EqualTo && v.NumCompare(language, language.length(), v.Find(':')+1) == PObject::EqualTo) {
+        if (found == P_MAX_INDEX)
+          found = i;
+        ++count;
+      }
+    }
+  }
+
+  switch (count) {
+    case 0 :
+      PTRACE(2, "No voice \"" << voice << "\" available in " << setfill(',') << voices);
+      return false;
+    case 1 :
+      voices[found].Split(':', name, language);
+      break;
+    default :
+      PTRACE(2, "Multiple voices matching \"" << voice << "\" in " << setfill(',') << voices);
+      return false;
+  }
+
+  if (IsOpen() && !InternalSetVoice(name, language))
+    return false;
+
+  m_voiceName = name;
+  m_voiceLanguage = language;
+  return true;
+}
+
+
+PString PTextToSpeech::GetVoice() const
+{
+  if (m_voiceLanguage.empty())
+    return m_voiceName;
+  return PSTRSTRM(m_voiceName << ':' << m_voiceLanguage);
+}
+
+
 //////////////////////////////////////////////////////////////////////////////////
 
 class PTextToSpeech_WAV : public PTextToSpeech
@@ -76,7 +157,6 @@ protected:
   unsigned  m_sampleRate;
   unsigned  m_channels;
   unsigned  m_volume;
-  PString   m_voice;
 
   std::vector<PFilePath> m_filenames;
 
@@ -89,7 +169,6 @@ public:
     , m_volume(100)
   { }
   PStringArray GetVoiceList() { return PStringArray(); }
-  PBoolean SetVoice(const PString & voice) { m_voice = voice; return true; }
   PBoolean SetSampleRate(unsigned rate) { m_sampleRate = rate; return true; }
   unsigned GetSampleRate() const { return m_sampleRate; }
   PBoolean SetChannels(unsigned channels) { m_channels = channels; return true; }
@@ -170,7 +249,7 @@ public:
   }
   PBoolean SpeakFile(const PString & text)
   {
-    PFilePath f = PDirectory(m_voice) + (text.ToLower() + ".wav");
+    PFilePath f = PDirectory(m_voiceName) + (text.ToLower() + ".wav");
     if (!PFile::Exists(f)) {
       PTRACE(2, "Unable to find explicit file for " << text);
       return false;
@@ -417,11 +496,11 @@ PSpeechRecognition * PSpeechRecognition::Create(const PString & name)
 }
 
 
-PSpeechRecognition::Transcript::Transcript(bool final, const PTimeInterval & when, const PString & content)
+PSpeechRecognition::Transcript::Transcript(bool final, const PTimeInterval & when, const PString & content, float confidence)
   : m_final(final)
   , m_when(when)
   , m_content(content)
-  , m_confidence(1)
+  , m_confidence(confidence > 0 ? confidence : 1.0f)
 {
 }
 

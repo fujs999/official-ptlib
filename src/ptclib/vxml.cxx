@@ -153,6 +153,7 @@ TRAVERSE_NODE(Audio);
 TRAVERSE_NODE(Break);
 TRAVERSE_NODE(Value);
 TRAVERSE_NODE(SayAs);
+TRAVERSE_NODE(Voice);
 TRAVERSE_NODE(Goto);
 TRAVERSE_NODE(Grammar);
 TRAVERSE_NODE(ElseIf);
@@ -205,7 +206,7 @@ class PVXMLTraverseEvent : public PVXMLNodeHandler
     if (session.m_currentNode == NULL &&
         parent != NULL &&
         parent->GetParent() != NULL &&
-        session.GoToEventHandler(*parent->GetParent(), element.GetName()))
+        session.GoToEventHandler(*parent->GetParent(), element.GetName(), false))
       return false;
 
     session.m_currentNode = parent;
@@ -1109,10 +1110,10 @@ bool PVXMLCache::PutWithLock(const PString & prefix,
 
 //////////////////////////////////////////////////////////
 
-PVXMLSession::PVXMLSession(PTextToSpeech * tts, PBoolean autoDelete)
-  : m_textToSpeech(tts)
+PVXMLSession::PVXMLSession()
+  : m_textToSpeech(NULL)
   , m_ttsCache(NULL)
-  , m_autoDeleteTextToSpeech(autoDelete)
+  , m_autoDeleteTextToSpeech(false)
 #if P_VXML_VIDEO
   , m_videoReceiver(*this)
 #endif
@@ -1181,6 +1182,27 @@ PTextToSpeech * PVXMLSession::SetTextToSpeech(const PString & ttsName)
   }
 
   return SetTextToSpeech(PFactory<PTextToSpeech>::CreateInstance(name), true);
+}
+
+
+bool PVXMLSession::SetSpeechRecognition(const PString & srName)
+{
+  PSpeechRecognition * sr = PSpeechRecognition::Create(srName);
+  if (sr == NULL) {
+    PTRACE(2, "Cannot use Speech Recognition \"" << srName << '"');
+    return false;
+  }
+  delete sr;
+
+  PWaitAndSignal lock(m_grammersMutex);
+  m_speechRecognition = srName;
+  return true;
+}
+
+
+PSpeechRecognition * PVXMLSession::CreateSpeechRecognition()
+{
+  return PSpeechRecognition::Create(m_speechRecognition);
 }
 
 
@@ -1320,6 +1342,8 @@ bool PVXMLSession::InternalLoadVXML(const PString & xmlText, const PString & fir
     PTRACE(1, "Invalid root element: " << root->PrintTrace());
     return false;
   }
+
+  m_xmlLanguage = root->GetAttribute("xml:lang");
 
   if (firstForm.IsEmpty()) {
     if (root->GetElement(FormElement) == NULL && root->GetElement(MenuElement) == NULL) {
@@ -1898,7 +1922,7 @@ PBoolean PVXMLSession::TraversedRecord(PXMLElement & element)
       return false;
 
     case RecordingComplete :
-      return !GoToEventHandler(element, FilledElement);
+      return !GoToEventHandler(element, FilledElement, false);
 
     default :
       break;
@@ -1984,10 +2008,10 @@ PBoolean PVXMLSession::TraverseScript(PXMLElement & element)
   PString script = src.empty() ? element.GetData() : src;
 
   PTRACE(4, "Traverse <script> " << script.ToLiteral());
-  if (!m_scriptContext->Run(script))
+  if (!m_scriptContext->Run(script)) {
     PTRACE(2, "Could not evaluate script " << script.ToLiteral()
            << " with script language " << m_scriptContext->GetLanguageName());
-
+  }
   return false;
 }
 
@@ -2169,7 +2193,7 @@ void PVXMLSession::LoadGrammar(const PString & type, const PVXMLGrammarInit & in
   PVXMLGrammar * grammar = PVXMLGrammarFactory::CreateInstance(adjustedType, init);
   if (grammar == NULL) {
     PTRACE(2, "Could not set grammar of type \"" << adjustedType << '"');
-    GoToEventHandler(init.m_field, "error.unsupported.builtin");
+    GoToEventHandler(init.m_field, "error.unsupported.builtin", true);
     return;
   }
 
@@ -2177,10 +2201,10 @@ void PVXMLSession::LoadGrammar(const PString & type, const PVXMLGrammarInit & in
   if (state != PVXMLGrammar::Idle) {
     delete grammar;
     if (state == PVXMLGrammar::BadFetch)
-      GoToEventHandler(init.m_field, "error.badfetch");
+      GoToEventHandler(init.m_field, ErrorBadFetch, true);
     else {
       PTRACE(2, "Illegal/unsupported grammar of type \"" << adjustedType << '"');
-      GoToEventHandler(init.m_field, "error.unsupported.format");
+      GoToEventHandler(init.m_field, "error.unsupported.format", true);
     }
     return;
   }
@@ -2384,6 +2408,75 @@ PBoolean PVXMLSession::TraverseSayAs(PXMLElement & element)
 }
 
 
+static bool UnsupportedVoiceAttribute(const PStringArray & attr)
+{
+  for (PINDEX i = 0; i < attr.GetSize(); ++i) {
+    PCaselessString a = attr[i];
+    if (a != "name" || a != "languages")
+      return true;
+  }
+    return false;
+}
+
+
+PBoolean PVXMLSession::TraverseVoice(PXMLElement & element)
+{
+  if (m_textToSpeech == NULL)
+    return true;
+
+  PStringArray names = element.GetAttribute("name").Tokenise(" ", false);
+  PStringArray languages = element.GetAttribute("languages").Tokenise(" ", false);
+  if (names.empty() && languages.empty())
+    return ThrowSemanticError(element, "<voice> must have name or language");
+
+  PStringArray required = element.GetAttribute("required").Tokenise(" ", false);
+  PStringArray ordering = element.GetAttribute("ordering").Tokenise(" ", false);
+  if (UnsupportedVoiceAttribute(required) && UnsupportedVoiceAttribute(ordering))
+    return ThrowSemanticError(element, "<voice> has unsupported required/ordering");
+
+  if (names.empty() || languages.empty() || ordering.empty() || (ordering[0] *= "name")) {
+    if (languages.empty()) {
+      for (PINDEX i = 0; i < names.GetSize(); ++i) {
+        if (m_textToSpeech->SetVoice(names[i]))
+          return true;
+      }
+    }
+    else if (names.empty()) {
+      for (PINDEX i = 0; i < languages.GetSize(); ++i) {
+        if (m_textToSpeech->SetVoice(':' + languages[i]))
+          return true;
+      }
+    }
+    else {
+      for (PINDEX i = 0; i < names.GetSize(); ++i) {
+        for (PINDEX j = 0; j < languages.GetSize(); ++j) {
+          if (m_textToSpeech->SetVoice(PSTRSTRM(names[i] << ':' << languages[j])))
+            return true;
+        }
+      }
+    }
+  }
+  else {
+    for (PINDEX j = 0; j < languages.GetSize(); ++j) {
+      for (PINDEX i = 0; i < names.GetSize(); ++i) {
+        if (m_textToSpeech->SetVoice(PSTRSTRM(names[i] << ':' << languages[j])))
+          return true;
+      }
+    }
+  }
+
+  PString failure = element.GetAttribute("onvoicefailure");
+  PTRACE(3, "Could not set voice to any of [" << setfill(',') << names << "], onvoicefailure=" << failure);
+
+  if (failure.empty() || (failure *= "priorityselect"))
+    m_textToSpeech->SetVoice(":");
+  else if (failure *= "processorchoice")
+    m_textToSpeech->SetVoice(PString::Empty());
+
+  return true;
+}
+
+
 PBoolean PVXMLSession::TraverseGoto(PXMLElement & element)
 {
   bool fullURI = false;
@@ -2405,7 +2498,7 @@ PBoolean PVXMLSession::TraverseGoto(PXMLElement & element)
   if (SetCurrentForm(target, fullURI))
     return ProcessNode();
 
-  return GoToEventHandler(element, ErrorBadFetch);
+  return GoToEventHandler(element, ErrorBadFetch, true);
 }
 
 
@@ -2419,7 +2512,7 @@ PBoolean PVXMLSession::TraverseGrammar(PXMLElement & element)
 
 // Finds the proper event hander for 'noinput', 'filled', 'nomatch' and 'error'
 // by searching the scope hiearchy from the current from
-bool PVXMLSession::GoToEventHandler(PXMLElement & element, const PString & eventName)
+bool PVXMLSession::GoToEventHandler(PXMLElement & element, const PString & eventName, bool exitIfNotFound)
 {
   PXMLElement * level = &element;
   PXMLElement * handler = NULL;
@@ -2431,8 +2524,16 @@ bool PVXMLSession::GoToEventHandler(PXMLElement & element, const PString & event
     level = level->GetParent();
     if (level == NULL) {
       PTRACE(4, "No event handler found for \"" << eventName << '"');
-      if (eventName.NumCompare("error.") == EqualTo)
-        m_currentNode = NULL; // Exit script
+      static PConstString const MatchAll(".");
+      if (eventName != MatchAll) {
+        PINDEX dot = eventName.FindLast('.');
+        return GoToEventHandler(element, dot == P_MAX_INDEX ? MatchAll : eventName.Left(dot), exitIfNotFound);
+      }
+
+      if (exitIfNotFound) {
+        PTRACE(3, "Exiting script.");
+        m_currentNode = NULL;
+      }
       return false;
     }
   }
@@ -2444,10 +2545,10 @@ bool PVXMLSession::GoToEventHandler(PXMLElement & element, const PString & event
 }
 
 
-bool PVXMLSession::ThrowSemanticError(PXMLElement & element, const PString & reason)
+bool PVXMLSession::ThrowSemanticError(PXMLElement & element, const PString & PTRACE_PARAM(reason))
 {
   PTRACE(2, "Semantic error on " << element.PrintTrace() << " - " << reason);
-  return GoToEventHandler(element, ErrorSemantic);
+  return GoToEventHandler(element, ErrorSemantic, true);
 }
 
 
@@ -2668,13 +2769,12 @@ PBoolean PVXMLSession::TraverseSubmit(PXMLElement & element)
     url.Parse(EvaluateExpr(element.GetAttribute(ExprAttribute)));
   else if (element.HasAttribute(NextAttribute))
     url.Parse(element.GetAttribute(NextAttribute));
-  else {
-    PTRACE(1, "<submit> does not contain \"next\" or \"expr\" attribute.");
-    return false;
-  }
+  else
+    return ThrowSemanticError(element, "<submit> does not contain \"next\" or \"expr\" attribute.");
+
   if (url.IsEmpty()) {
     PTRACE(1, "<submit> has an invalid URL.");
-    return false;
+    return GoToEventHandler(element, ErrorBadFetch, true);
   }
 
   bool urlencoded;
@@ -2685,7 +2785,7 @@ PBoolean PVXMLSession::TraverseSubmit(PXMLElement & element)
     urlencoded = false;
   else {
     PTRACE(1, "<submit> has unknown \"enctype\" attribute of \"" << str << '"');
-    return false;
+    return GoToEventHandler(element, ErrorBadFetch, true);
   }
 
   bool get;
@@ -2698,7 +2798,7 @@ PBoolean PVXMLSession::TraverseSubmit(PXMLElement & element)
     get = false;
   else {
     PTRACE(1, "<submit> has unknown \"method\" attribute of \"" << str << '"');
-    return false;
+    return GoToEventHandler(element, ErrorBadFetch, true);
   }
 
   PHTTPClient client("PTLib VXML");
@@ -2721,7 +2821,7 @@ PBoolean PVXMLSession::TraverseSubmit(PXMLElement & element)
 
     PTRACE(1, "<submit> GET " << url << " failed with "
            << client.GetLastResponseCode() << ' ' << client.GetLastResponseInfo());
-    return false;
+    return GoToEventHandler(element, ErrorBadFetch, true);
   }
 
   if (urlencoded) {
@@ -2738,7 +2838,7 @@ PBoolean PVXMLSession::TraverseSubmit(PXMLElement & element)
 
     PTRACE(1, "<submit> POST " << url << " failed with "
            << client.GetLastResponseCode() << ' ' << client.GetLastResponseInfo());
-    return false;
+    return GoToEventHandler(element, PSTRSTRM(ErrorBadFetch << '.' << url.GetScheme() << '.' << client.GetLastResponseCode()), true);
   }
 
   PMIMEInfo sendMIME;
@@ -2864,7 +2964,7 @@ PBoolean PVXMLSession::TraversedTransfer(PXMLElement & element)
   if (elementName.empty())
     return false;
 
-  const char * eventName = "error";
+  bool error = true;
 
   switch (m_transferStatus) {
     case TransferCompleted :
@@ -2899,7 +2999,7 @@ PBoolean PVXMLSession::TraversedTransfer(PXMLElement & element)
     }
 
     case TransferSuccessful :
-      eventName = FilledElement;
+      error = false;
       // Do default case
 
     default :
@@ -2908,7 +3008,7 @@ PBoolean PVXMLSession::TraversedTransfer(PXMLElement & element)
 
   m_transferStatus = TransferCompleted;
 
-  return !GoToEventHandler(element, eventName);
+  return !GoToEventHandler(element, error ? "error" : FilledElement, error);
 }
 
 
@@ -2973,8 +3073,7 @@ PBoolean PVXMLSession::TraverseAssign(PXMLElement & element)
 
 PBoolean PVXMLSession::TraverseDisconnect(PXMLElement & element)
 {
-  m_currentNode = NULL;
-  return GoToEventHandler(element, "connection.disconnect");
+  return GoToEventHandler(element, "connection.disconnect", true);
 }
 
 
@@ -3245,7 +3344,7 @@ PVXMLGrammar::PVXMLGrammar(const PVXMLGrammarInit & init)
     }
 
     if (allowVoice)
-      m_recogniser = PSpeechRecognition::Create();
+      m_recogniser = m_session.CreateSpeechRecognition();
   }
 
   m_timer.SetNotifier(PCREATE_NOTIFIER(OnTimeout), "VXMLGrammar");
@@ -3264,9 +3363,11 @@ void PVXMLGrammar::OnRecognition(PSpeechRecognition &, PSpeechRecognition::Trans
       return;
   }
 
-  m_session.InternalSetVar(DialogScope, m_fieldName+"$.utterance", PSTRSTRM(transcript.m_content));
-  m_session.InternalSetVar(DialogScope, m_fieldName+"$.confidence", PSTRSTRM(transcript.m_confidence));
-  m_session.InternalSetVar(DialogScope, m_fieldName+"$.inputmode", VoiceAttribute);
+  if (!m_fieldName.empty()) {
+    m_session.InternalSetVar(DialogScope, m_fieldName+"$.utterance", PSTRSTRM(transcript.m_content));
+    m_session.InternalSetVar(DialogScope, m_fieldName+"$.confidence", PSTRSTRM(transcript.m_confidence));
+    m_session.InternalSetVar(DialogScope, m_fieldName+"$.inputmode", VoiceAttribute);
+  }
 
   OnInput(transcript.m_content);
   m_session.Trigger();
@@ -3314,9 +3415,23 @@ void PVXMLGrammar::Start()
   m_timer = m_timeout;
 
   if (m_recogniser != NULL) {
-    PStringArray words;
-    GetWordsToRecognise(words);
-    m_recogniser->Open(PCREATE_NOTIFIER(OnRecognition), words);
+    PString lang;
+    if (m_grammarElement != NULL)
+      lang = m_grammarElement->GetAttribute("xml:lang");
+    if (lang.empty())
+      lang = m_session.m_xmlLanguage;
+    if (!lang.empty() && !m_recogniser->SetLanguage(lang)) {
+      PTRACE(2, "Could not set speech recognition language to \"" << lang << '"');
+      m_session.GoToEventHandler(m_field, "error.unsupported.language", true);
+      return;
+    }
+
+    // Currentlly, in AWS world, it takes several seconds to create a vocabulary.
+    // So we need to figure out another solution than setting it up here.
+    //PStringArray words;
+    //GetWordsToRecognise(words);
+    //m_recogniser->SetVocabulary()
+    m_recogniser->Open(PCREATE_NOTIFIER(OnRecognition));
   }
 
   PTRACE(3, "Started grammar " << *this << ", timeout=" << m_timeout);
@@ -3360,13 +3475,13 @@ bool PVXMLGrammar::Process()
       m_timer.Stop(false);
       if (m_field.HasAttribute(NameAttribute))
         m_session.InternalSetVar(DialogScope, m_fieldName, m_value);
-      return m_session.GoToEventHandler(m_field, FilledElement);
+      return m_session.GoToEventHandler(m_field, FilledElement, false);
 
     case PVXMLGrammar::NoInput:
-      return m_session.GoToEventHandler(m_field, "noinput");
+      return m_session.GoToEventHandler(m_field, "noinput", false);
 
     case PVXMLGrammar::NoMatch:
-      return m_session.GoToEventHandler(m_field, "nomatch");
+      return m_session.GoToEventHandler(m_field, "nomatch", false);
 
     default:
       break; //ERROR - unexpected grammar state
@@ -3389,6 +3504,16 @@ PVXMLMenuGrammar::PVXMLMenuGrammar(const PVXMLGrammarInit & init)
 void PVXMLMenuGrammar::OnInput(const PString & input)
 {
   m_value = input;
+
+  // Sadly, this is only English
+  static const char * const Numerals[] = { "zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine" };
+  for (PINDEX i = 0; i < PARRAYSIZE(Numerals); ++i) {
+    if (input *= Numerals[i]) {
+      m_value = (char)(i+'0');
+      break;
+    }
+  }
+
   PTRACE(4, "Menu grammar filled with \"" << input << '"');
   m_state = PVXMLGrammar::Filled;
 }
@@ -3411,7 +3536,7 @@ bool PVXMLMenuGrammar::Process()
         if (m_session.SetCurrentForm(next, true))
           return true;
 
-        return m_session.GoToEventHandler(m_field, choice->GetAttribute("event"));
+        return m_session.GoToEventHandler(m_field, choice->GetAttribute("event"), false);
       }
     }
 
@@ -3533,6 +3658,13 @@ PFACTORY_CREATE(PVXMLGrammarFactory, PVXMLTextGrammar, "text");
 PVXMLTextGrammar::PVXMLTextGrammar(const PVXMLGrammarInit & init)
   : PVXMLGrammar(init)
 {
+}
+
+
+void PVXMLTextGrammar::OnRecognition(PSpeechRecognition& sr, PSpeechRecognition::Transcript transcript)
+{
+  if (transcript.m_final)
+    PVXMLGrammar::OnRecognition(sr, transcript);
 }
 
 

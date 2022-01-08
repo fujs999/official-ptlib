@@ -84,8 +84,9 @@ class PTextToSpeech_AWS : public PTextToSpeech, PAwsClient<Aws::Polly::PollyClie
       if (m_wavFile.Open(deviceInfo.deviceName.c_str(), PFile::WriteOnly) &&
           m_wavFile.SetSampleRate(capability.sampleRate) &&
           m_wavFile.SetChannels(capability.channels) &&
-          m_wavFile.SetSampleSize(capability.sampleWidthBits))
+          m_wavFile.SetSampleSize(capability.sampleWidthBits)) {
         PTRACE(4, "Opened WAV file " << m_wavFile.GetName());
+      }
     }
     virtual const char* GetName() const
     {
@@ -121,35 +122,26 @@ public:
   virtual PStringArray GetVoiceList()
   {
     //Enumerate the available voices 
-    auto mgr = Aws::TextToSpeech::TextToSpeechManager::Create(m_client);
+    auto mgr = m_manager;
+    if (!mgr)
+      mgr = Aws::TextToSpeech::TextToSpeechManager::Create(m_client);
     Aws::Vector<std::pair<Aws::String, Aws::String>> awsVoices = mgr->ListAvailableVoices();
 
     PStringArray voiceList(awsVoices.size());
     for (size_t i = 0; i < awsVoices.size(); ++i)
-      voiceList[i] = PSTRSTRM(awsVoices[i].first << " (" << awsVoices[i].second << ')');
+      voiceList[i] = PSTRSTRM(awsVoices[i].first << ':' << awsVoices[i].second);
+    PTRACE(3, "Voices: " << setfill(',') << voiceList);
     return voiceList;
   }
 
 
-  virtual bool SetVoice(const PString & voice)
+  virtual bool InternalSetVoice(const PString & name, const PString & /*language*/)
   {
-    if (voice.empty()) // Don't change
-      return true;
+    if (!m_manager)
+      return false;
 
-    PStringArray voices = GetVoiceList();
-    unsigned count = 0;
-    for (size_t i = 0; i < voices.size(); ++i) {
-      if (voices[i].NumCompare(voice) == EqualTo)
-        ++count;
-    }
-
-    if (count == 1) {
-      m_manager->SetActiveVoice(voice.c_str());
-      return true;
-    }
-
-    PTRACE(2, (count > 0 ? "Ambiguous" : "Illegal") << " voice \"" << voice << "\" for " << *this);
-    return false;
+    m_manager->SetActiveVoice(name.c_str());
+    return true;
   }
 
 
@@ -199,6 +191,10 @@ public:
     Aws::TextToSpeech::DeviceInfo deviceInfo;
     deviceInfo.deviceName = fn.c_str();
     m_manager->SetActiveDevice(driver, deviceInfo, m_capability);
+    if (m_voiceName.empty())
+      SetVoice(PString::Empty());
+    else
+      InternalSetVoice(m_voiceName, m_voiceLanguage);
     return true;
   }
 
@@ -253,8 +249,8 @@ class PSpeechRecognition_AWS : public PSpeechRecognition, PAwsClient<Aws::Transc
 
   unsigned m_sampleRate;
   Aws::TranscribeService::Model::LanguageCode m_language;
+  PStringSet m_vocabularies;
 
-  PString m_vocabulary;
   PWebSocket m_webSocket;
   PThread  * m_eventThread;
   PDECLARE_MUTEX(m_openMutex);
@@ -425,12 +421,15 @@ class PSpeechRecognition_AWS : public PSpeechRecognition, PAwsClient<Aws::Transc
                       for (size_t idxItem = 0; idxItem < items.size(); ++idxItem) {
                         if (items.IsType(idxItem, PJSON::e_Object)) {
                           PJSON::Object const & item = items.GetObject(idxItem);
-                          Transcript transcript(false,
-                                                 PTimeInterval::Seconds((double)item.GetNumber("StartTime")),
-                                                 item.GetString("Content"));
-                          if (!transcript.m_content.empty() && sentTranscripts.find(transcript) == sentTranscripts.end()) {
-                            sentTranscripts.insert(transcript);
-                            m_notifier(*this, transcript);
+                          if (item.GetString("Type") == "pronunciation") {
+                            Transcript transcript(false,
+                                                  PTimeInterval::Seconds((double)item.GetNumber("StartTime")),
+                                                  item.GetString("Content"),
+                                                  (float)item.GetNumber("Confidence"));
+                            if (!transcript.m_content.empty() && sentTranscripts.find(transcript) == sentTranscripts.end()) {
+                              sentTranscripts.insert(transcript);
+                              m_notifier(*this, transcript);
+                            }
                           }
                         }
                       }
@@ -439,7 +438,8 @@ class PSpeechRecognition_AWS : public PSpeechRecognition, PAwsClient<Aws::Transc
                   if (!alternatives.empty() && !result.GetBoolean("IsPartial"))
                     m_notifier(*this, Transcript(true,
                                                  PTimeInterval::Seconds((double)result.GetNumber("StartTime")),
-                                                 alternatives.GetObject(0).GetString("Transcript")));
+                                                 alternatives.GetObject(0).GetString("Transcript"),
+                                                 1));
                 }
               }
             }
@@ -473,14 +473,14 @@ class PSpeechRecognition_AWS : public PSpeechRecognition, PAwsClient<Aws::Transc
   }
 
 
-  void DeleteVocabulary()
+  void DeleteVocabulary(const PString & name)
   {
-    if (m_vocabulary.empty())
+    if (name.empty() || !m_vocabularies.Contains(name))
       return;
 
     m_client->DeleteVocabulary(Aws::TranscribeService::Model::DeleteVocabularyRequest()
-                               .WithVocabularyName(m_vocabulary.c_str()));
-    m_vocabulary.clear();
+                               .WithVocabularyName(name.c_str()));
+    m_vocabularies -= name;
   }
 
 
@@ -495,6 +495,9 @@ public:
   ~PSpeechRecognition_AWS()
   {
     Close();
+
+    while (!m_vocabularies.empty())
+      DeleteVocabulary(*m_vocabularies.begin());
   }
 
 
@@ -548,6 +551,31 @@ public:
   }
 
 
+  virtual bool SetVocabulary(const PString & name, const PStringArray & words)
+  {
+    DeleteVocabulary(name);
+
+    if (words.empty())
+      return true;
+
+    Aws::Vector<Aws::String> phrases(words.size());
+    for (size_t i = 0; i < words.size(); ++i)
+      phrases[i] = words[i].c_str();
+
+    auto outcome = m_client->CreateVocabulary(Aws::TranscribeService::Model::CreateVocabularyRequest()
+                                              .WithVocabularyName(name.c_str())
+                                              .WithLanguageCode(m_language)
+                                              .WithPhrases(phrases));
+    if (outcome.IsSuccess()) {
+      m_vocabularies += name;
+      return true;
+    }
+
+    PTRACE(2, "Could not create vocubulary: " << outcome.GetResult().GetFailureReason());
+    return false;
+  }
+
+
   static void AddSignedHeader(PURL & url, PStringStream & canonical, const char * key, const PString & value, bool first = false)
   {
     url.SetQueryVar(key, value);
@@ -556,7 +584,7 @@ public:
     canonical << key << '=' << PURL::TranslateString(value, PURL::QueryTranslation);
   }
 
-  virtual bool Open(const Notifier & notifier, const PStringArray & words)
+  virtual bool Open(const Notifier & notifier, const PString & vocabulary)
   {
     PWaitAndSignal lock(m_openMutex);
     Close();
@@ -571,13 +599,13 @@ public:
 
     PString timestamp = PTime().AsString(PTime::ShortISO8601, PTime::UTC);
     PString credentialDatestamp = timestamp.Left(8);
-    PString credentialScope = PSTRSTRM(credentialDatestamp << '/' << m_clientConfig->region << '/' << service << '/' << operation);
+    PString credentialScope = PSTRSTRM(credentialDatestamp << '/' << m_region << '/' << service << '/' << operation);
 
     PStringStream canonical;
 
     PURL url;
     url.SetScheme("wss");
-    url.SetHostName(PSTRSTRM("transcribestreaming." << m_clientConfig->region << ".amazonaws.com"));
+    url.SetHostName(PSTRSTRM("transcribestreaming." << m_region << ".amazonaws.com"));
     url.SetPort(8443);
     url.SetPathStr("stream-transcription-websocket");
     canonical << "GET\n" << url.GetPathStr() << '\n';
@@ -592,23 +620,8 @@ public:
     AddSignedHeader(url, canonical, "media-encoding", "pcm");
     AddSignedHeader(url, canonical, "sample-rate", PString(GetSampleRate()));
 
-    if (!words.empty()) {
-      DeleteVocabulary();
-
-      Aws::Vector<Aws::String> phrases(words.size());
-      for (size_t i = 0; i < words.size(); ++i)
-        phrases[i] = words[i].c_str();
-
-      m_vocabulary = "PTLib-" + PRandom::String(6);
-      auto outcome = m_client->CreateVocabulary(Aws::TranscribeService::Model::CreateVocabularyRequest()
-                                                .WithVocabularyName(m_vocabulary.c_str())
-                                                .WithLanguageCode(m_language)
-                                                .WithPhrases(phrases));
-      if (outcome.IsSuccess())
-        ;//Timing issue AddSignedHeader(url, canonical, "vocabulary-name", m_vocabulary);
-      else
-        PTRACE(2, "Could not create vocubulary: " << outcome.GetResult().GetFailureReason());
-    }
+    if (!vocabulary.empty())
+      AddSignedHeader(url, canonical, "vocabulary-name", vocabulary);
 
     canonical << "\nhost:" << url.GetHostPort() << "\n\nhost\n";
 
@@ -621,7 +634,7 @@ public:
 
     PHMAC_SHA256 signer;
     signer.SetKey("AWS4" + m_secretAccessKey); signer.Process(credentialDatestamp, result);
-    signer.SetKey(result); signer.Process(m_clientConfig->region.c_str(), result);
+    signer.SetKey(result); signer.Process(m_region.c_str(), result);
     signer.SetKey(result); signer.Process(service, result);
     signer.SetKey(result); signer.Process(operation, result);
     signer.SetKey(result); signer.Process(stringToSign, result);
@@ -651,8 +664,6 @@ public:
       return false;
 
     PTRACE(3, "Closing speech recognition.");
-    WriteAudioEvent(NULL, 0); // Empty event ends the stream
-    PThread::Sleep(5000);
     m_webSocket.Close();
     PThread::WaitAndDelete(m_eventThread);
 
@@ -679,6 +690,7 @@ public:
         return false;
     }
 
+    WriteAudioEvent(NULL, 0); // Empty event ends the stream
     PTRACE(4, "Written " << fn);
     return wavFile.GetErrorCode() == PChannel::NoError;
   }
@@ -686,9 +698,6 @@ public:
 
   virtual bool Listen(const int16_t * samples, size_t sampleCount)
   {
-    if (!PAssert(samples != NULL && sampleCount > 0, PInvalidParameter))
-      return false;
-
     PWaitAndSignal lock(m_openMutex);
     return m_webSocket.IsOpen() && WriteAudioEvent(samples, sampleCount);
   }

@@ -2066,7 +2066,11 @@ static int VerifyCallback(int ok, X509_STORE_CTX * ctx)
   PSSLChannel::VerifyInfo info(ok, X509_STORE_CTX_get_current_cert(ctx), X509_STORE_CTX_get_error(ctx));
 
   PSSLChannel * channel;
+#if (OPENSSL_VERSION_NUMBER < 0x10101000L)
   SSL * ssl = reinterpret_cast<SSL *>(X509_STORE_CTX_get_app_data(ctx));
+#else
+  SSL * ssl = reinterpret_cast<SSL *>(X509_STORE_CTX_get_ex_data(ctx, SSL_get_ex_data_X509_STORE_CTX_idx()));
+#endif
   if (ssl != NULL && (channel = reinterpret_cast<PSSLChannel *>(SSL_get_app_data(ssl))) != NULL)
     channel->OnVerify(info);
 

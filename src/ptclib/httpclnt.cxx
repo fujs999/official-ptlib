@@ -1271,7 +1271,7 @@ void PHTTPClientPool::QueueRequest(const Request & request)
         ++it;
       else {
         delete it->second;
-        it = m_connections.erase(it);
+        m_connections.erase(it++);
       }
     }
 
