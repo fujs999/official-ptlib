@@ -631,64 +631,45 @@
   #undef P_V8
 
   #if defined(_MSC_VER)
-    #undef P_V8_WIN32
-    #undef P_V8_WIN64
-
-    #undef P_V8_BASE0_DEBUG32
-    #undef P_V8_BASE0_DEBUG64
-    #undef P_V8_BASE0_RELEASE32
-    #undef P_V8_BASE0_RELEASE64
-    #undef P_V8_BASE1_DEBUG32
-    #undef P_V8_BASE1_DEBUG64
-    #undef P_V8_BASE1_RELEASE32
-    #undef P_V8_BASE1_RELEASE64
-    #undef P_V8_LIBBASE_DEBUG32
-    #undef P_V8_LIBBASE_DEBUG64
-    #undef P_V8_LIBBASE_RELEASE32
-    #undef P_V8_LIBBASE_RELEASE64
-    #undef P_V8_SNAPSHOT_DEBUG32
-    #undef P_V8_SNAPSHOT_DEBUG64
-    #undef P_V8_SNAPSHOT_RELEASE32
-    #undef P_V8_SNAPSHOT_RELEASE64
-    #undef P_V8_LIBPLATFORM_DEBUG32
-    #undef P_V8_LIBPLATFORM_DEBUG64
-    #undef P_V8_LIBPLATFORM_RELEASE32
-    #undef P_V8_LIBPLATFORM_RELEASE64
-    #undef P_V8_LIBSAMPLER_DEBUG32
-    #undef P_V8_LIBSAMPLER_DEBUG64
-    #undef P_V8_LIBSAMPLER_RELEASE32
-    #undef P_V8_LIBSAMPLER_RELEASE64
-    #undef P_V8_ICUI18N_DEBUG32
-    #undef P_V8_ICUI18N_DEBUG64
-    #undef P_V8_ICUI18N_RELEASE32
-    #undef P_V8_ICUI18N_RELEASE64
-    #undef P_V8_ICUUC_DEBUG32
-    #undef P_V8_ICUUC_DEBUG64
-    #undef P_V8_ICUUC_RELEASE32
-    #undef P_V8_ICUUC_RELEASE64
+    #undef P_V8_LIB_DEBUG32
+    #undef P_V8_LIB_DEBUG64
+    #undef P_V8_LIB_RELEASE32
+    #undef P_V8_LIB_RELEASE64
 
     #if defined(P_64BIT)
-      #if defined(P_V8_WIN64)
-        #if defined(_DEBUG)
-          #if defined(P_V8_LIBBASE_DEBUG64)
-            #define P_V8 1
-          #endif
-        #else
-          #if defined(P_V8_LIBBASE_RELEASE64)
-            #define P_V8 1
-          #endif
+      #if defined(_DEBUG)
+        #if defined(P_V8_LIB_DEBUG64)
+          #define P_V8 1
+          #define P_V8_LIB P_V8_LIB_DEBUG64
+        #elif defined(P_V8_LIB_RELEASE64)
+          #define P_V8 1
+          #define P_V8_LIB P_V8_LIB_RELEASE64
+        #endif
+      #else
+        #if defined(P_V8_LIB_RELEASE64)
+          #define P_V8 1
+          #define P_V8_LIB P_V8_LIB_RELEASE64
+        #elif defined(P_V8_LIB_DEBUG64)
+          #define P_V8 1
+          #define P_V8_LIB P_V8_LIB_DEBUG64
         #endif
       #endif
     #else
-      #if defined(P_V8_WIN32)
-        #if defined(_DEBUG)
-          #if defined(P_V8_LIBBASE_DEBUG32)
-            #define P_V8 1
-          #endif
-        #else
-          #if defined(P_V8_LIBBASE_RELEASE32)
-            #define P_V8 1
-          #endif
+      #if defined(_DEBUG)
+        #if defined(P_V8_LIB_DEBUG32)
+          #define P_V8 1
+          #define P_V8_LIB P_V8_LIB_DEBUG32
+        #elif defined(P_V8_LIB_RELEASE32)
+          #define P_V8 1
+          #define P_V8_LIB P_V8_LIB_RELEASE32
+        #endif
+      #else
+        #if defined(P_V8_LIBE_RELEASE32)
+          #define P_V8 1
+          #define P_V8_LIB P_V8_LIBE_RELEASE32
+        #elif defined(P_V8_LIB_DEBUG32)
+          #define P_V8 1
+          #define P_V8_LIB P_V8_LIB_DEBUG32
         #endif
       #endif
     #endif

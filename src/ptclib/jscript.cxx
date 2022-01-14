@@ -47,38 +47,66 @@ For Windows the following commands was used to build V8:
 
 Install Visual Studio 2015, note you should do a full isntallation, in
 particular the "Windows SDK" component.
+
 Install Windows 10 SDK (yes, in addition to the above) from
 https://developer.microsoft.com/en-us/windows/downloads/windows-10-sdk
+
 Download https://storage.googleapis.com/chrome-infra/depot_tools.zip and
 unpack to somehere, e.g. C:\tools\depot_tools
+
+Set up the environment in CMD:
 set DEPOT_TOOLS_WIN_TOOLCHAIN=0
-set GYP_MSVS_VERSION=2015
+set vs2019_install=C:\Program Files (x86)\Microsoft Visual Studio\2019\Community
 PATH=C:\tools\depot_tools;%PATH%
-mkdir <v8-dir>   ;e.g. if PTLib is in C:\Work\ptlib, use C:\Work\v8 or C:\Work\external\v8
+
+or for PowerShell:
+$env:DEPOT_TOOLS_WIN_TOOLCHAIN=0
+$env:vs2019_install="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community"
+$env:PATH="C:\tools\depot_tools;$env:PATH"
+
+Get the source to somewhere e.g. if PTLib is in C:\Work\ptlib, C:\Work\external\v8:
+mkdir <v8-dir>   ;
 cd <v8-dir>
 fetch v8
-Wait a while, this step is notorious for failing in myserious ways
 cd v8
-Edit build\config\win\BUILD.gn and change ":static_crt" to ":dynamic_crt"
+gclient sync
 
-Then do any or all of the following
-.\tools\dev\v8gen.py x64.release -- v8_static_library=true is_component_build=false
-ninja -C out.gn\x64.release
+Apply the following patch:
+diff --git a/build/config/win/BUILD.gn b/config/win/BUILD.gn
+index 1e76a54cc..cc92f23bf 100644
+--- a/build/config/win/BUILD.gn
++++ b/build/config/win/BUILD.gn
+@@ -490,7 +490,7 @@ config("default_crt") {
+       configs = [ ":dynamic_crt" ]
+     } else {
+       # Desktop Windows: static CRT.
+-      configs = [ ":static_crt" ]
++      configs = [ ":dynamic_crt" ]
+     }
+   }
+ }
 
-.\tools\dev\v8gen.py x64.debug -- v8_static_library=true is_component_build=false
-ninja -C out.gn\x64.debug
+Set up the builds:
+python tools/dev/v8gen.py x64.release
+python tools/dev/v8gen.py x64.debug
+python tools/dev/v8gen.py ia32.release
+python tools/dev/v8gen.py ia32.debug
 
-.\tools\dev\v8gen.py ia32.release -- v8_static_library=true is_component_build=false
-ninja -C out.gn\ia32.release
+In each of the builds chosen, go to it's subdirectory(e.g. out.gn/x64-release),
+and add to the existing args.gn file:
+v8_use_external_startup_data = false
+is_component_build = false
+v8_monolithic = true
+is_clang = false
 
-.\tools\dev\v8gen.py ia32.debug -- v8_static_library=true is_component_build=false
-ninja -C out.gn\ia32.debug
+in the debug directories also include:
+enable_iterator_debugging = true
 
-Then reconfigure PTLib.
+Then build each directory as a separate command e.g.
+ninja -C out.gn/x64.release v8_monolith
+ninja -C out.gn/x64.debug v8_monolith
 
-Note that three files, icudtl.dat, natives_blob.bin & snapshot_blob.bin, must be
-copied to the executable directory of any application that uses the V8 system.
-They are usually in the output directory of the build, e.g. out.gn\x64.release
+Finally, reconfigure PTLib and rebuild.
 */
 
 #ifdef _MSC_VER
@@ -91,7 +119,11 @@ They are usually in the output directory of the build, e.g. out.gn\x64.release
 
 #define V8_DEPRECATION_WARNINGS 1
 #define V8_IMMINENT_DEPRECATION_WARNINGS 1
+#define V8_COMPRESS_POINTERS 1
+#pragma warning(push)
+#pragma warning(disable:4996)
 #include <v8.h>
+#pragma warning(pop)
 
 #ifndef V8_MAJOR_VERSION
   // This is the version distributed with many Linux distros
@@ -109,51 +141,7 @@ They are usually in the output directory of the build, e.g. out.gn\x64.release
   #pragma comment(lib, "winmm.lib")
   #pragma comment(lib, "dbghelp.lib")
   #pragma comment(lib, "shlwapi.lib")
-  #if defined(_DEBUG)
-    #if defined(P_64BIT)
-      #pragma comment(lib, P_V8_BASE0_DEBUG64)
-      #pragma comment(lib, P_V8_BASE1_DEBUG64)
-      #pragma comment(lib, P_V8_LIBBASE_DEBUG64)
-      #pragma comment(lib, P_V8_SNAPSHOT_DEBUG64)
-      #pragma comment(lib, P_V8_LIBPLATFORM_DEBUG64)
-      #pragma comment(lib, P_V8_LIBSAMPLER_DEBUG64)
-      #pragma comment(lib, P_V8_ICUI18N_DEBUG64)
-      #pragma comment(lib, P_V8_ICUUC_DEBUG64)
-      #define V8_BLOBS_DIR V8_DIR "/out.gn/x64.debug"
-    #else
-      #pragma comment(lib, P_V8_BASE0_DEBUG32)
-      #pragma comment(lib, P_V8_BASE1_DEBUG32)
-      #pragma comment(lib, P_V8_LIBBASE_DEBUG32)
-      #pragma comment(lib, P_V8_SNAPSHOT_DEBUG32)
-      #pragma comment(lib, P_V8_LIBPLATFORM_DEBUG32)
-      #pragma comment(lib, P_V8_LIBSAMPLER_DEBUG32)
-      #pragma comment(lib, P_V8_ICUI18N_DEBUG32)
-      #pragma comment(lib, P_V8_ICUUC_DEBUG32)
-      #define V8_BLOBS_DIR V8_DIR "/out.gn/ia32.debug"
-    #endif
-  #else
-    #if defined(P_64BIT)
-      #pragma comment(lib, P_V8_BASE0_RELEASE64)
-      #pragma comment(lib, P_V8_BASE1_RELEASE64)
-      #pragma comment(lib, P_V8_LIBBASE_RELEASE64)
-      #pragma comment(lib, P_V8_SNAPSHOT_RELEASE64)
-      #pragma comment(lib, P_V8_LIBPLATFORM_RELEASE64)
-      #pragma comment(lib, P_V8_LIBSAMPLER_RELEASE64)
-      #pragma comment(lib, P_V8_ICUI18N_RELEASE64)
-      #pragma comment(lib, P_V8_ICUUC_RELEASE64)
-      #define V8_BLOBS_DIR V8_DIR "/out.gn/x64.release"
-    #else
-      #pragma comment(lib, P_V8_BASE0_RELEASE32)
-      #pragma comment(lib, P_V8_BASE1_RELEASE32)
-      #pragma comment(lib, P_V8_LIBBASE_RELEASE32)
-      #pragma comment(lib, P_V8_SNAPSHOT_RELEASE32)
-      #pragma comment(lib, P_V8_LIBPLATFORM_RELEASE32)
-      #pragma comment(lib, P_V8_LIBSAMPLER_RELEASE32)
-      #pragma comment(lib, P_V8_ICUI18N_RELEASE32)
-      #pragma comment(lib, P_V8_ICUUC_RELEASE32)
-      #define V8_BLOBS_DIR V8_DIR "/out.gn/ia32.release"
-    #endif
-  #endif
+  #pragma comment(lib, P_V8_LIB)
 #endif
 
 
@@ -195,23 +183,6 @@ static void TraceFunction(const v8::FunctionCallbackInfo<v8::Value>& args)
   trace << PTrace::End;
 }
 #endif // PTRACING && V8_MAJOR_VERSION > 3
-
-
-#ifdef V8_BLOBS_DIR
-static bool MyInitializeExternalStartupData(const PDirectory dir)
-{
-  /* For some exceptionally stupid reason, the initialisation function for the
-  external start up files returns no success/failure, it just crashes later
-  when you try and create an Isolate object */
-  if (!PFile::Exists(dir + "snapshot_blob.bin"))
-    return false;
-  if (!PFile::Exists(dir + "natives_blob.bin"))
-    return false;
-
-  v8::V8::InitializeExternalStartupData(dir);
-  return true;
-}
-#endif // V8_BLOBS_DIR
 
 
 struct PJavaScript::Private : PObject
@@ -276,20 +247,6 @@ struct PJavaScript::Private : PObject
     {
 #if V8_MAJOR_VERSION > 3
       PDirectory exeDir = PProcess::Current().GetFile().GetDirectory();
-
-#ifdef V8_BLOBS_DIR
-      // Initialise some basics
-      if (!MyInitializeExternalStartupData(exeDir)) {
-        const char * dir = getenv("V8_BLOBS_DIR");
-        if (dir == NULL || !MyInitializeExternalStartupData(dir)) {
-          if (!MyInitializeExternalStartupData(V8_BLOBS_DIR)) {
-            PTRACE(1, NULL, PTraceModule(), "v8::V8::InitializeExternalStartupData() failed, not loaded.");
-            return;
-          }
-        }
-      }
-#endif // V8_BLOBS_DIR
-
 #if V8_MAJOR_VERSION < 6
       if (!v8::V8::InitializeICU(exeDir)) {
 #else
@@ -316,11 +273,13 @@ struct PJavaScript::Private : PObject
     {
       PTRACE(4, PTraceModule(), "V8 shutdown.");
       v8::V8::Dispose();
-#if V8_MAJOR_VERSION > 3
+#if V8_MAJOR_VERSION > 8
+      v8::V8::DisposePlatform();
+#elif V8_MAJOR_VERSION > 3
       v8::V8::ShutdownPlatform();
 #endif
     }
-    };
+   };
 
 
 #if V8_MAJOR_VERSION > 3
