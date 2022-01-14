@@ -2527,7 +2527,7 @@ bool PVXMLSession::GoToEventHandler(PXMLElement & element, const PString & event
       static PConstString const MatchAll(".");
       if (eventName != MatchAll) {
         PINDEX dot = eventName.FindLast('.');
-        return GoToEventHandler(element, dot == P_MAX_INDEX ? MatchAll : eventName.Left(dot), exitIfNotFound);
+        return GoToEventHandler(element, dot == P_MAX_INDEX ? static_cast<PString>(MatchAll) : eventName.Left(dot), exitIfNotFound);
       }
 
       if (exitIfNotFound) {
