@@ -3386,6 +3386,7 @@ void PVXMLGrammar::OnUserInput(const PString & input)
 
     for (size_t i = 0; i < input.length(); ++i)
       OnInput(input[i]);
+    m_timer = m_timeout;
   }
 }
 
@@ -3665,6 +3666,8 @@ void PVXMLTextGrammar::OnRecognition(PSpeechRecognition& sr, PSpeechRecognition:
 {
   if (transcript.m_final)
     PVXMLGrammar::OnRecognition(sr, transcript);
+  else
+    m_timer = m_timeout;
 }
 
 
