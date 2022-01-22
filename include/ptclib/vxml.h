@@ -168,9 +168,6 @@ class PVXMLGrammar : public PObject, protected PVXMLGrammarInit
 
     virtual void OnUserInput(const PString & input);
     virtual void OnAudioInput(const short * samples, size_t count);
-    virtual void Start();
-    virtual void Stop();
-    virtual bool Process();
 
     P_DECLARE_TRACED_ENUM(GrammarState,
       Idle,         ///< Not yet started
@@ -185,7 +182,13 @@ class PVXMLGrammar : public PObject, protected PVXMLGrammarInit
     );
 
     GrammarState GetState() const { return m_state; }
-    void SetIdle() { m_state = Idle; }
+
+    virtual bool Start();
+    virtual void SetIdle();
+    virtual void SetPartFilled(const PString & input);
+    virtual void SetFilled(const PString & value);
+    virtual void Stop();
+    virtual bool Process();
 
     void SetTimeout(const PString & timeout);
 
@@ -198,9 +201,11 @@ class PVXMLGrammar : public PObject, protected PVXMLGrammarInit
     PSpeechRecognition * m_recogniser;
     bool                 m_allowDTMF;
     PString              m_fieldName;
+    PString              m_terminators;
     PString              m_value;
     atomic<GrammarState> m_state;
-    PTimeInterval        m_timeout;
+    PTimeInterval        m_noInputTimeout;
+    PTimeInterval        m_partFillTimeout;
     PTimer               m_timer;
 };
 
@@ -237,7 +242,6 @@ class PVXMLDigitsGrammar : public PVXMLGrammar
 
     unsigned m_minDigits;
     unsigned m_maxDigits;
-    PString  m_terminators;
 };
 
 
@@ -264,7 +268,8 @@ class PVXMLTextGrammar : public PVXMLGrammar
   public:
     PVXMLTextGrammar(const PVXMLGrammarInit & init);
 
-    void OnRecognition(PSpeechRecognition &, PSpeechRecognition::Transcript transcript);
+    virtual void OnRecognition(PSpeechRecognition &, PSpeechRecognition::Transcript transcript);
+    virtual void OnUserInput(const PString & input);
     virtual void OnInput(const PString & input);
 };
 
@@ -287,6 +292,7 @@ class PVXMLGrammarSRGS : public PVXMLGrammar
       unsigned          m_minRepeat;
       unsigned          m_maxRepeat;
       PString           m_token;
+      PString           m_value;
       unsigned          m_currentItem;
       typedef std::vector< std::vector<Item> > Items;
       Items m_items; // A sequence of alternatives
@@ -369,6 +375,7 @@ class PVXMLSession : public PIndirectChannel
     virtual PBoolean LoadURL(const PURL & url);
     virtual PBoolean LoadVXML(const PString & xml, const PString & firstForm = PString::Empty());
     virtual PBoolean IsLoaded() const { return m_currentXML.get() != NULL; }
+    bool LoadResource(const PURL & url, PBYTEArray & data);
 
     virtual bool Open(const PString & mediaFormat, unsigned sampleRate = 8000, unsigned channels = 1);
     virtual PBoolean Close();
@@ -413,6 +420,8 @@ class PVXMLSession : public PIndirectChannel
     PStringToString GetVariables() const;
     virtual PCaselessString GetVar(const PString & varName) const;
     virtual bool SetVar(const PString & varName, const PString & val);
+    PCaselessString GetProperty(const PString & propName) const;
+    void SetDialogVar(const PString & varName, const PString & value);
     virtual PString EvaluateExpr(const PString & expr) const;
 
     static PTimeInterval StringToTime(const PString & str, int dflt = 0);
@@ -472,6 +481,8 @@ class PVXMLSession : public PIndirectChannel
 
     PHTTPCookies GetCookies() const { PWaitAndSignal lock(m_cookieMutex);  return m_cookies; }
 
+    const PString & GetLanguage() const { return m_xmlLanguage; }
+
   protected:
     virtual bool InternalLoadVXML(const PString & xml, const PString & firstForm);
     virtual void InternalStartThread();
@@ -492,8 +503,6 @@ class PVXMLSession : public PIndirectChannel
     void SayAs(const PString & className, const PString & text, const PString & voice);
 
     PURL NormaliseResourceName(const PString & src);
-
-    bool LoadResource(const PURL & url, PBYTEArray & data);
 
     PDECLARE_MUTEX(m_sessionMutex);
 
@@ -601,7 +610,6 @@ class PVXMLSession : public PIndirectChannel
 
     friend class PVXMLChannel;
     friend class PVXMLGrammar;
-    friend class PVXMLGrammarSRGS;
     friend class VideoReceiverDevice;
     friend class PVXMLTraverseEvent;
 };
