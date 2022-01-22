@@ -645,10 +645,10 @@ template <class T> class PSet : public PAbstractSet
         PHashTableInfo    * table;
         PHashTableElement * element;
 
-        void Next() { this->element = PAssertNULL(this->table)->NextElement(this->element); }
-        void Prev() { this->element = PAssertNULL(this->table)->PrevElement(this->element); }
+        void Next() { if (PAssertNULL(this->table)) this->element = this->table->NextElement(this->element); }
+        void Prev() { if (PAssertNULL(this->table)) this->element = this->table->PrevElement(this->element); }
 
-        T * Ptr() const { return dynamic_cast<T *>(PAssertNULL(this->element)->m_key); }
+        T * Ptr() const { return PAssertNULL(this->element) ? dynamic_cast<T *>(this->element->m_key) : NULL; }
 
       public:
         bool operator==(const iterator_base & it) const { return this->element == it.element; }
