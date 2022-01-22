@@ -3830,7 +3830,7 @@ bool PVXMLGrammarSRGS::Item::Parse(PXMLElement & grammar, PXMLElement * element)
       std::vector<Item> & alternatives = m_items.back();
       PINDEX alt = 0;
       PXMLElement * altElement;
-      while ((altElement = element->GetElement(alt++)) != NULL) {
+      while ((altElement = subElement->GetElement(alt++)) != NULL) {
         Item item;
         if (!item.Parse(grammar, altElement))
           return false;
@@ -3849,6 +3849,9 @@ PVXMLGrammar::GrammarState PVXMLGrammarSRGS::Item::OnInput(const PString & input
     m_value = m_token;
     return PartFill;
   }
+
+  if (m_currentItem >= m_items.size())
+    return Started;
 
   for (std::vector<Item>::iterator alt = m_items[m_currentItem].begin(); alt != m_items[m_currentItem].end(); ++alt) {
     GrammarState state = alt->OnInput(input);
