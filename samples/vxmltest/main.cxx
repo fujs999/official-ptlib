@@ -76,9 +76,9 @@ void VxmlTest::Main()
   }
 
   do {
-    m_tests.push_back(TestInstance());
-    if (!m_tests.back().Initialise(m_tests.size(), args))
-      m_tests.pop_back();
+    PSharedPtr<TestInstance> instance(new TestInstance());
+    if (instance->Initialise(m_tests.size(), args))
+      m_tests.push_back(instance);
   } while (args.Parse("-player-driver:"
                       "P-player-device:"
                       "-player-rate:"
@@ -138,7 +138,7 @@ void VxmlTest::SimulateInput(PCLI::Arguments & args, P_INT_PTR)
   if (num > m_tests.size())
     args.WriteError("No such instance");
   else
-    m_tests[num - 1].SendInput(input);
+    m_tests[num - 1]->SendInput(input);
 }
 
 
@@ -160,7 +160,7 @@ void VxmlTest::SetVar(PCLI::Arguments & args, P_INT_PTR)
   if (num > m_tests.size())
     args.WriteError("No such instance");
   else
-    m_tests[num - 1].SetVar(args[0], args[1]);
+    m_tests[num - 1]->SetVar(args[0], args[1]);
 }
 
 
@@ -182,7 +182,7 @@ void VxmlTest::GetVar(PCLI::Arguments & args, P_INT_PTR)
   if (num > m_tests.size())
     args.WriteError("No such instance");
   else
-    args.GetContext() << m_tests[num - 1].GetVar(args[0]) << endl;
+    args.GetContext() << m_tests[num - 1]->GetVar(args[0]) << endl;
 }
 
 
@@ -190,10 +190,10 @@ void VxmlTest::GetVar(PCLI::Arguments & args, P_INT_PTR)
 TestInstance::TestInstance()
   : m_instance(0)
   , m_player(NULL)
+  , m_recorder(NULL)
   , m_grabber(NULL)
   , m_preview(NULL)
   , m_viewer(NULL)
-  , m_vxml(NULL)
   , m_playerThread(NULL)
   , m_recorderThread(NULL)
   , m_videoSenderThread(NULL)
@@ -229,9 +229,8 @@ TestInstance::~TestInstance()
     delete m_grabber;
   }
 #endif // P_VXML_VIDEO
-
-  delete m_vxml;
 }
+
 
 bool TestInstance::Initialise(unsigned instance, const PArgList & args)
 {
@@ -298,34 +297,33 @@ bool TestInstance::Initialise(unsigned instance, const PArgList & args)
 #endif
 
 
-  m_vxml = new PVXMLSession();
-  if (m_vxml->SetTextToSpeech(args.GetOptionString("tts")) == NULL) {
+  if (SetTextToSpeech(args.GetOptionString("tts")) == NULL) {
     cerr << "Instance " << m_instance << " error: cannot select text to speech engine, use one of:\n";
     PFactory<PTextToSpeech>::KeyList_T engines = PFactory<PTextToSpeech>::GetKeyList();
     for (PFactory<PTextToSpeech>::KeyList_T::iterator it = engines.begin(); it != engines.end(); ++it)
       cerr << "  " << *it << '\n';
     return false;
   }
-  cout << "Instance " << m_instance << " using text to speech \"" << m_vxml->GetTextToSpeech()->GetVoiceList() << '"' << endl;
+  cout << "Instance " << m_instance << " using text to speech \"" << GetTextToSpeech()->GetVoiceList() << '"' << endl;
 
-  if (!m_vxml->SetSpeechRecognition(args.GetOptionString("sr"))) {
+  if (!SetSpeechRecognition(args.GetOptionString("sr"))) {
     cerr << "Instance " << m_instance << " error: cannot select speech recognition engine, use one of:\n";
     PFactory<PTextToSpeech>::KeyList_T engines = PFactory<PSpeechRecognition>::GetKeyList();
     for (PFactory<PTextToSpeech>::KeyList_T::iterator it = engines.begin(); it != engines.end(); ++it)
       cerr << "  " << *it << '\n';
     return false;
   }
-  cout << "Instance " << m_instance << " using speech recognition \"" << m_vxml->GetSpeechRecognition() << '"' << endl;
+  cout << "Instance " << m_instance << " using speech recognition \"" << GetSpeechRecognition() << '"' << endl;
 
-  if (!m_vxml->Load(args[0])) {
-    cerr << "Instance " << m_instance << " error: cannot loading VXML document \"" << args[0] << "\" - " << m_vxml->GetXMLError() << endl;
+  if (!Load(args[0])) {
+    cerr << "Instance " << m_instance << " error: cannot loading VXML document \"" << args[0] << "\" - " << GetXMLError() << endl;
     return false;
   }
 
   if (args.HasOption('C'))
-    m_vxml->GetCache().SetDirectory(args.GetOptionString('C'));
+    GetCache().SetDirectory(args.GetOptionString('C'));
 
-  if (!m_vxml->Open(VXML_PCM16, audioParams.m_sampleRate, audioParams.m_channels)) {
+  if (!Open(VXML_PCM16, audioParams.m_sampleRate, audioParams.m_channels)) {
     cerr << "Instance " << m_instance << " error: cannot open VXML device in PCM mode" << endl;
     return false;
   }
@@ -345,10 +343,15 @@ bool TestInstance::Initialise(unsigned instance, const PArgList & args)
 }
 
 
-void TestInstance::SendInput(const PString & digits)
+void TestInstance::OnEndDialog()
 {
-  if (m_vxml != NULL)
-    m_vxml->OnUserInput(digits);
+  cout << "VXML Dialog ended." << endl;
+}
+
+
+void TestInstance::OnEndSession()
+{
+  cout << "VXML Session ended." << endl;
 }
 
 
@@ -358,14 +361,14 @@ void TestInstance::PlayAudio()
   m_player->SetBuffers(8, 320);
 
   for (;;) {
-    if (!m_vxml->Read(audioPCM.GetPointer(), audioPCM.GetSize())) {
-      if (m_vxml->GetErrorCode(PChannel::LastReadError) != PChannel::NotOpen) {
-        PTRACE(2, "Instance " << m_instance << " audio player read error " << m_vxml->GetErrorText());
+    if (!Read(audioPCM.GetPointer(), audioPCM.GetSize())) {
+      if (GetErrorCode(PChannel::LastReadError) != PChannel::NotOpen) {
+        PTRACE(2, "Instance " << m_instance << " audio player read error " << GetErrorText());
       }
       break;
     }
 
-    if (!m_player->Write(audioPCM, m_vxml->GetLastReadCount())) {
+    if (!m_player->Write(audioPCM, GetLastReadCount())) {
       PTRACE_IF(2, m_player->IsOpen(), "Instance " << m_instance << " audio player write error " << m_player->GetErrorText());
       break;
     }
@@ -380,13 +383,13 @@ void TestInstance::RecordAudio()
 
   for (;;) {
     if (!m_recorder->Read(audioPCM.GetPointer(), audioPCM.GetSize())) {
-      if (m_vxml->GetErrorCode(PChannel::LastReadError) != PChannel::NotOpen) {
-        PTRACE(2, "Instance " << m_instance << " audio player recorder error " << m_vxml->GetErrorText());
+      if (GetErrorCode(PChannel::LastReadError) != PChannel::NotOpen) {
+        PTRACE(2, "Instance " << m_instance << " audio player recorder error " << GetErrorText());
       }
       break;
     }
 
-    if (!m_vxml->Write(audioPCM, m_recorder->GetLastReadCount())) {
+    if (!Write(audioPCM, m_recorder->GetLastReadCount())) {
       PTRACE_IF(2, m_player->IsOpen(), "Instance " << m_instance << " audio player write error " << m_player->GetErrorText());
       break;
     }
@@ -399,7 +402,7 @@ void TestInstance::CopyVideoSender()
 {
   PBYTEArray frame;
   PVideoOutputDevice::FrameData frameData;
-  PVideoInputDevice & sender = m_vxml->GetVideoSender();
+  PVideoInputDevice & sender = GetVideoSender();
   sender.SetColourFormatConverter(PVideoFrameInfo::YUV420P());
   m_viewer->SetColourFormatConverter(PVideoFrameInfo::YUV420P());
 
@@ -427,7 +430,7 @@ void TestInstance::CopyVideoReceiver()
   PTime start;
   PBYTEArray frame;
   PVideoOutputDevice::FrameData frameData;
-  PVideoOutputDevice & receiver = m_vxml->GetVideoReceiver();
+  PVideoOutputDevice & receiver = GetVideoReceiver();
 
   receiver.SetColourFormatConverter(m_grabber->GetColourFormat());
   if (m_preview)

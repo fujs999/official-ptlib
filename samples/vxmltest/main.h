@@ -17,7 +17,7 @@ class PVideoInputDevice;
 class PVideoOutputDevice;
 
 
-class TestInstance
+class TestInstance : public PVXMLSession
 {
 #if P_VXML
   public:
@@ -25,9 +25,10 @@ class TestInstance
     ~TestInstance();
 
     bool Initialise(unsigned instance, const PArgList & args);
-    void SendInput(const PString & digits);
-    void SetVar(const PString & name, const PString & value) { m_vxml->SetVar(name, value); }
-    PString GetVar(const PString & name) { return m_vxml->GetVar(name); }
+    void SendInput(const PString & digits) { OnUserInput(digits); }
+
+    virtual void OnEndDialog();
+    virtual void OnEndSession();
 
   protected:
     unsigned             m_instance;
@@ -36,7 +37,6 @@ class TestInstance
     PVideoInputDevice  * m_grabber;
     PVideoOutputDevice * m_preview;
     PVideoOutputDevice * m_viewer;
-    PVXMLSession       * m_vxml;
 
     PThread * m_playerThread;
     void PlayAudio();
@@ -67,7 +67,7 @@ class VxmlTest : public PProcess
     PDECLARE_NOTIFIER(PCLI::Arguments, VxmlTest, SimulateInput);
     PDECLARE_NOTIFIER(PCLI::Arguments, VxmlTest, SetVar);
     PDECLARE_NOTIFIER(PCLI::Arguments, VxmlTest, GetVar);
-    std::vector<TestInstance> m_tests;
+    std::vector< PSharedPtr<TestInstance> > m_tests;
 };
 
 
