@@ -236,7 +236,9 @@ class PVXMLTraverseLog : public PVXMLNodeHandler {
     unsigned level = node.GetAttribute("level").AsUnsigned();
     if (level == 0)
       level = 3;
-    PTRACE(level, "VXML-Log\t" + session.EvaluateExpr(node.GetAttribute(ExprAttribute)));
+    PString log;
+    session.EvaluateExpr(node, ExprAttribute, log);
+    PTRACE_IF(level, !log.IsEmpty(), "VXML-Log", log);
     return true;
   }
 };
@@ -1958,9 +1960,16 @@ PBoolean PVXMLSession::TraversedRecord(PXMLElement & element)
       destination = uri.AsFilePath();
   }
   else if (element.HasAttribute(DestExprAttribute)) {
-    PURL uri;
-    if (uri.Parse(EvaluateExpr(element.GetAttribute(DestExprAttribute)), "file"))
+    PString dest;
+    if (EvaluateExpr(element, DestExprAttribute, dest, true))
+      return true; // Threw exception
+
+    if (!dest.IsEmpty()) {
+      PURL uri;
+      if (!uri.Parse(dest, "file"))
+        return ThrowSemanticError(element, "Bad URI");
       destination = uri.AsFilePath();
+    }
   }
 
   PString name = InternalGetName(element, false);
@@ -2011,30 +2020,48 @@ PBoolean PVXMLSession::TraverseScript(PXMLElement & element)
   PString script = src.empty() ? element.GetData() : src;
 
   PTRACE(4, "Traverse <script> " << script.ToLiteral());
-  if (!m_scriptContext->Run(script)) {
-    PTRACE(2, "Could not evaluate script " << script.ToLiteral()
-           << " with script language " << m_scriptContext->GetLanguageName());
-  }
-  return false;
+  return RunScript(element, script);
 }
 
 
-PString PVXMLSession::EvaluateExpr(const PString & expr) const
+bool PVXMLSession::RunScript(PXMLElement & element, const PString & script)
 {
+  if (m_scriptContext->Run(script))
+    return false;
+
+  return ThrowSemanticError(element, PSTRSTRM(m_scriptContext->GetLanguageName()
+                                              << " error \"" << m_scriptContext->GetLastErrorText()
+                                              << "\" executing " << script.ToLiteral()));
+}
+
+
+bool PVXMLSession::EvaluateExpr(PXMLElement & element, const PString & attrib, PString & result, bool allowEmpty)
+{
+  result.MakeEmpty();
+
+  PString expr = element.GetAttribute(attrib);
   if (expr.IsEmpty())
-    return PString::Empty();
+    return !allowEmpty && ThrowSemanticError(element, "Empty expression");
 
   // Optimisation, if simple string - starts/ends with quote and no other quotes in expression
-  if (expr.GetLength() > 1 && expr[0] == '\'' && expr.Find('\'', 1) == (expr.GetLength()-1))
-    return expr(1, expr.GetLength()-2);
+  if (expr.GetLength() > 1 && expr[0] == '\'' && expr.Find('\'', 1) == (expr.GetLength()-1)) {
+    result = expr(1, expr.GetLength()-2);
+    PTRACE(4, "Evaluated simple expression: " << expr.ToLiteral() << " -> " << result.ToLiteral());
+    return false;
+  }
 
   static PConstString const EvalVarName("PTLibVXMLExpressionResult");
   m_scriptContext->SetString(EvalVarName, "");
-  if (m_scriptContext->Run(PSTRSTRM(EvalVarName<<'='<<expr)))
-    return m_scriptContext->GetString(EvalVarName);
+  if (m_scriptContext->Run(PSTRSTRM(EvalVarName<<'='<<expr))) {
+    result = m_scriptContext->GetString(EvalVarName);
+    PTRACE(4, "Evaluated expression: " << expr.ToLiteral() << " -> " << result.ToLiteral());
+    return false;
+  }
 
   PTRACE(2, "Could not evaluate expression \"" << expr << "\" with script language " << m_scriptContext->GetLanguageName());
-  return PString::Empty();
+  return ThrowSemanticError(element, PSTRSTRM(m_scriptContext->GetLanguageName()
+                                              << " error \"" << m_scriptContext->GetLastErrorText()
+                                              << "\" evaluating " << expr.ToLiteral()));
 }
 
 
@@ -2052,7 +2079,12 @@ PCaselessString PVXMLSession::GetVar(const PString & varName) const
     if (varName.NumCompare(AllScopes[i]))
       return m_scriptContext->GetString(varName);
   }
-  return EvaluateExpr(varName);
+  static PConstString const EvalVarName("PTLibVXMLVarResult");
+  if (m_scriptContext->Run(PSTRSTRM(EvalVarName<<'='<<varName)))
+    return m_scriptContext->GetString(EvalVarName);
+
+  PTRACE(2, "Could not get variable \"" << varName << "\" in " << m_scriptContext->GetLanguageName());
+  return PString::Empty();
 }
 
 
@@ -2117,11 +2149,9 @@ PBoolean PVXMLSession::PlayElement(PXMLElement & element)
 
   PString str = element.GetAttribute(SrcAttribute).Trim();
   if (str.IsEmpty()) {
-    str = EvaluateExpr(element.GetAttribute(ExprAttribute));
-    if (str.IsEmpty()) {
-      PTRACE(2, "No src attribute to play element.");
-      return false;
-    }
+    bool retval = EvaluateExpr(element, ExprAttribute, str);
+    if (str.IsEmpty())
+      return retval;
   }
 
   if (str[0] == '|')
@@ -2412,7 +2442,10 @@ PBoolean PVXMLSession::TraverseBreak(PXMLElement & element)
 PBoolean PVXMLSession::TraverseValue(PXMLElement & element)
 {
   PString className = element.GetAttribute("class");
-  PString value = EvaluateExpr(element.GetAttribute(ExprAttribute));
+  PString value;
+  bool retval = EvaluateExpr(element, ExprAttribute, value);
+  if (value.IsEmpty())
+    return retval;
   PString voice = element.GetAttribute("voice");
   if (voice.IsEmpty())
     voice = InternalGetVar(PropertyScope, "voice");
@@ -2504,11 +2537,16 @@ PBoolean PVXMLSession::TraverseGoto(PXMLElement & element)
 
   if (element.HasAttribute("nextitem"))
     target = element.GetAttribute("nextitem");
-  else if (element.HasAttribute("expritem"))
-    target = EvaluateExpr(element.GetAttribute("expritem"));
+  else if (element.HasAttribute("expritem")) {
+    bool retval = EvaluateExpr(element, "expritem", target);
+    if (target.IsEmpty())
+      return retval;
+  }
   else if (element.HasAttribute(ExprAttribute)) {
     fullURI = true;
-    target = EvaluateExpr(element.GetAttribute(ExprAttribute));
+    bool retval = EvaluateExpr(element, ExprAttribute, target);
+    if (target.IsEmpty())
+      return retval;
   }
   else if (element.HasAttribute(NextAttribute)) {
     fullURI = true;
@@ -2567,7 +2605,7 @@ bool PVXMLSession::GoToEventHandler(PXMLElement & element, const PString & event
 
 bool PVXMLSession::ThrowSemanticError(PXMLElement & element, const PString & PTRACE_PARAM(reason))
 {
-  PTRACE(2, "Semantic error on " << element.PrintTrace() << " - " << reason);
+  PTRACE(2, "Semantic error thown in " << element.PrintTrace() << " - " << reason);
   return GoToEventHandler(element, ErrorSemantic, true);
 }
 
@@ -2678,13 +2716,8 @@ PTimeInterval PVXMLSession::StringToTime(const PString & str, int dflt)
 
 bool PVXMLSession::ExecuteCondition(PXMLElement & element)
 {
-  PString condition = element.GetAttribute("cond");
-  if (condition.IsEmpty())
-    return true;
-
-  bool result = EvaluateExpr(condition).IsTrue();
-  PTRACE(4, "\tCondition \"" << condition << "\" is " << ::boolalpha << result);
-  return result;
+  PString result;
+  return EvaluateExpr(element, "cond", result, true) || result.IsEmpty() || result.IsTrue();
 }
 
 
@@ -2783,16 +2816,19 @@ PBoolean PVXMLSession::TraverseExit(PXMLElement &)
 
 PBoolean PVXMLSession::TraverseSubmit(PXMLElement & element)
 {
-  PURL url;
-
-  if (element.HasAttribute(ExprAttribute))
-    url.Parse(EvaluateExpr(element.GetAttribute(ExprAttribute)));
+  PString urlStr;
+  if (element.HasAttribute(ExprAttribute)) {
+    bool retval = EvaluateExpr(element, ExprAttribute, urlStr);
+    if (urlStr.IsEmpty())
+      return retval;
+  }
   else if (element.HasAttribute(NextAttribute))
-    url.Parse(element.GetAttribute(NextAttribute));
+    urlStr = element.GetAttribute(NextAttribute);
   else
     return ThrowSemanticError(element, "<submit> does not contain \"next\" or \"expr\" attribute.");
 
-  if (url.IsEmpty()) {
+  PURL url;
+  if (!url.Parse(urlStr)) {
     PTRACE(1, "<submit> has an invalid URL.");
     return GoToEventHandler(element, ErrorBadFetch, true);
   }
@@ -3008,8 +3044,13 @@ PBoolean PVXMLSession::TraversedTransfer(PXMLElement & element)
       bool started = false;
       if (element.HasAttribute(DestAttribute))
         started = OnTransfer(element.GetAttribute(DestAttribute), type);
-      else if (element.HasAttribute(DestExprAttribute))
-        started = OnTransfer(EvaluateExpr(element.GetAttribute(DestExprAttribute)), type);
+      else if (element.HasAttribute(DestExprAttribute)) {
+        PString str;
+        bool retval = EvaluateExpr(element, DestExprAttribute, str);
+        if (str.IsEmpty())
+          return retval;
+        started = OnTransfer(str, type);
+      }
 
       if (started) {
         m_transferStatus = TransferInProgress;
@@ -3073,10 +3114,9 @@ PBoolean PVXMLSession::TraverseVar(PXMLElement & element)
 {
   PString name = InternalGetName(element, false);
   if (name.empty())
-    return false;
+    return ThrowSemanticError(element, "No name");
 
-  m_scriptContext->Run(PSTRSTRM(name << '=' << element.GetAttribute(ExprAttribute)));
-  return true;
+  return RunScript(element, PSTRSTRM(name << '=' << element.GetAttribute(ExprAttribute)));
 }
 
 
@@ -3084,10 +3124,9 @@ PBoolean PVXMLSession::TraverseAssign(PXMLElement & element)
 {
   PString name = InternalGetName(element, true);
   if (name.empty())
-    return false;
+    return ThrowSemanticError(element, "No name");
 
-  m_scriptContext->Run(PSTRSTRM(name << '=' << element.GetAttribute(ExprAttribute)));
-  return true;
+  return RunScript(element, PSTRSTRM(name << '=' << element.GetAttribute(ExprAttribute)));
 }
 
 
@@ -3161,6 +3200,7 @@ PBoolean PVXMLSession::TraverseField(PXMLElement & element)
   m_dialogFieldNames += name;
 
   m_scriptContext->CreateComposite(PSTRSTRM(DialogScope << '.' << name << '$'));
+  SetDialogVar(name, PString::Empty());
 
   PString type = element.GetAttribute("type");
   if (!type.empty())
@@ -3546,8 +3586,7 @@ bool PVXMLGrammar::Process()
   switch (m_state.load()) {
     case Filled:
       m_timer.Stop(false);
-      if (m_field.HasAttribute(NameAttribute))
-        m_session.SetDialogVar(m_fieldName, m_value);
+      m_session.SetDialogVar(m_fieldName, m_value);
       handler = FilledElement;
       break;
 
@@ -3608,8 +3647,11 @@ bool PVXMLMenuGrammar::Process()
         PTRACE(3, "Grammar " << *this << " matched menu choice: " << m_value << " to " << choice->PrintTrace());
 
         PString next = choice->GetAttribute(NextAttribute);
-        if (next.IsEmpty())
-          next = m_session.EvaluateExpr(choice->GetAttribute(ExprAttribute));
+        if (next.IsEmpty()) {
+          bool retval = m_session.EvaluateExpr(*choice, ExprAttribute, next);
+          if (next.IsEmpty())
+            return retval;
+        }
 
         if (m_session.SetCurrentForm(next, true))
           return true;

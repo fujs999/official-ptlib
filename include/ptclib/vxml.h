@@ -422,7 +422,6 @@ class PVXMLSession : public PIndirectChannel
     virtual bool SetVar(const PString & varName, const PString & val);
     PCaselessString GetProperty(const PString & propName) const;
     void SetDialogVar(const PString & varName, const PString & value);
-    virtual PString EvaluateExpr(const PString & expr) const;
 
     static PTimeInterval StringToTime(const PString & str, int dflt = 0);
 
@@ -491,6 +490,8 @@ class PVXMLSession : public PIndirectChannel
     virtual PString InternalGetName(PXMLElement & element, bool allowScope);
     virtual PCaselessString InternalGetVar(const PString & scope, const PString & varName) const;
     virtual void InternalSetVar(const PString & scope, const PString & varName, const PString & value);
+    virtual bool RunScript(PXMLElement & element, const PString & script);
+    virtual bool EvaluateExpr(PXMLElement & element, const PString & attrib, PString & result, bool allowEmpty = false);
 
     virtual bool ProcessNode();
     virtual bool ProcessEvents();
@@ -609,9 +610,11 @@ class PVXMLSession : public PIndirectChannel
     PTime m_transferStartTime;
 
     friend class PVXMLChannel;
+    friend class PVXMLMenuGrammar;
     friend class PVXMLGrammar;
     friend class VideoReceiverDevice;
     friend class PVXMLTraverseEvent;
+    friend class PVXMLTraverseLog;
 };
 
 
