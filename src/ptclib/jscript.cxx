@@ -771,11 +771,7 @@ public:
     // compile the source 
     v8::Local<v8::Script> script;
 #if V8_MAJOR_VERSION > 3
-    if (!v8::Script::Compile(context, source).ToLocal(&script)) {
-      PTRACE(3, "Could not compile source " << text.Left(100).ToLiteral());
-      m_owner.OnError(120, "Compile ToLocal failed");
-      return false;
-    }
+    v8::Script::Compile(context, source).ToLocal(&script);
 #else
     script = v8::Script::Compile(source);
 #endif
@@ -784,21 +780,28 @@ public:
       m_owner.OnError(120, OnException(exceptionHandler));
       return false;
     }
+    if (script.IsEmpty()) {
+      PTRACE(3, "Could not compile source " << text.Left(100).ToLiteral());
+      m_owner.OnError(120, "Compile ToLocal failed");
+      return false;
+    }
 
     // run the code
     v8::Local<v8::Value> result;
 #if V8_MAJOR_VERSION > 3
-    if (!script->Run(context).ToLocal(&result)) {
-      PTRACE(3, "Could not run source " << text.Left(100).ToLiteral());
-      m_owner.OnError(120, "Run ToLocal failed");
-      return false;
-    }
+    script->Run(context).ToLocal(&result);
 #else
     result = script->Run();
 #endif
     if (exceptionHandler.HasCaught()) {
-      PTRACE(3, "Could not run source " << text. Ellipsis(100).ToLiteral());
+      PTRACE(3, "Exception running source " << text. Ellipsis(100).ToLiteral());
       m_owner.OnError(121, OnException(exceptionHandler));
+      return false;
+    }
+
+    if (result.IsEmpty()) {
+      PTRACE(3, "No result running source " << text.Ellipsis(100).ToLiteral());
+      m_owner.OnError(121, "Run had no result");
       return false;
     }
 
@@ -872,7 +875,7 @@ bool PJavaScript::Run(const char * text)
 
   PStringStream wrapped;
   for (PStringList::iterator it = m_scopeChain.begin(); it != m_scopeChain.end(); ++it)
-    wrapped << "with (" << *it << "){";
+    wrapped << "with(" << *it << "){";
   wrapped << script << std::string(m_scopeChain.size(), '}');
   return m_private->Run(wrapped, m_resultText);
 }
