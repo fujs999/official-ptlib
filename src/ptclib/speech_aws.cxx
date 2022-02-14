@@ -428,6 +428,7 @@ class PSpeechRecognition_AWS : public PSpeechRecognition, PAwsClient<Aws::Transc
                                                   (float)item.GetNumber("Confidence"));
                             if (!transcript.m_content.empty() && sentTranscripts.find(transcript) == sentTranscripts.end()) {
                               sentTranscripts.insert(transcript);
+                              PTRACE(4, "Sending notification of " << transcript);
                               m_notifier(*this, transcript);
                             }
                           }
@@ -435,11 +436,14 @@ class PSpeechRecognition_AWS : public PSpeechRecognition, PAwsClient<Aws::Transc
                       }
                     }
                   }
-                  if (!alternatives.empty() && !result.GetBoolean("IsPartial"))
-                    m_notifier(*this, Transcript(true,
-                                                 PTimeInterval::Seconds((double)result.GetNumber("StartTime")),
-                                                 alternatives.GetObject(0).GetString("Transcript"),
-                                                 1));
+                  if (!alternatives.empty() && !result.GetBoolean("IsPartial")) {
+                    Transcript transcript(true,
+                                          PTimeInterval::Seconds((double)result.GetNumber("StartTime")),
+                                          alternatives.GetObject(0).GetString("Transcript"),
+                                          1);
+                    PTRACE(4, "Sending notification of " << transcript);
+                    m_notifier(*this, transcript);
+                  }
                 }
               }
             }
