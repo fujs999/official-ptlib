@@ -3472,7 +3472,7 @@ bool PVXMLGrammar::Start()
 {
   GrammarState prev = Idle;
   if (!m_state.compare_exchange_strong(prev, Started))
-    return prev == Started;
+    return prev == Started || prev == PartFill;
 
   m_timer = m_noInputTimeout;
 
