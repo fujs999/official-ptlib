@@ -297,6 +297,7 @@ class PHTTPCookies
     void AddCookie(PMIMEInfo & mime, const PURL & url, const PTime & now = PTime()) const;
 
     PString AsString() const;
+    friend ostream & operator<<(ostream & strm, const PHTTPCookies & cookies) { return strm << cookies.AsString(); }
 
     void Clear() { m_cookies.clear(); }
 
@@ -673,13 +674,26 @@ class PHTTPClient : public PHTTP
       const PStringToString & data  ///< Information posted to the HTTP server.
     );
 
-	/** Post the "application/x-www-form-urlencoded" data specified to the URL.
+    /** Post the "application/x-www-form-urlencoded" data specified to the URL.
         The body of the reply is returned.
 
         @return true if document is being transferred.
      */
     bool PostData(
       const PURL & url,              ///< Universal Resource Locator for document.
+      const PStringToString & data,  ///< Information posted to the HTTP server.
+      PMIMEInfo & replyMIME,         ///< MIME info in response
+      PString & replyBody            ///< Body of response
+    );
+
+    /** Post the "application/x-www-form-urlencoded" data specified to the URL.
+        The body of the reply is returned.
+
+        @return true if document is being transferred.
+     */
+    bool PostData(
+      const PURL & url,              ///< Universal Resource Locator for document.
+      PMIMEInfo & outMIME,           ///< MIME info in request
       const PStringToString & data,  ///< Information posted to the HTTP server.
       PMIMEInfo & replyMIME,         ///< MIME info in response
       PString & replyBody            ///< Body of response

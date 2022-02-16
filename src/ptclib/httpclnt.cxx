@@ -716,10 +716,19 @@ bool PHTTPClient::PostData(const PURL & url, const PStringToString & data)
 
 bool PHTTPClient::PostData(const PURL & url, const PStringToString & data, PMIMEInfo & replyMIME, PString & replyBody)
 {
+  PMIMEInfo outMIME;
+  return PostData(url, outMIME, data, replyMIME, replyBody);
+}
+
+
+bool PHTTPClient::PostData(const PURL & url,
+                           PMIMEInfo & outMIME,
+                           const PStringToString & data,
+                           PMIMEInfo & replyMIME,
+                           PString & replyBody)
+{
   PStringStream entityBody;
   PURL::OutputVars(entityBody, data, '\0', '&', '=', PURL::QueryTranslation);
-
-  PMIMEInfo outMIME;
   return PostData(url, outMIME, entityBody, replyMIME, replyBody);
 }
 

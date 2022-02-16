@@ -479,6 +479,7 @@ class PVXMLSession : public PIndirectChannel
 #endif // P_VXML_VIDEO
 
     PHTTPCookies GetCookies() const { PWaitAndSignal lock(m_cookieMutex);  return m_cookies; }
+    void AddCookie(PMIMEInfo & mime, const PURL & url) const;
 
     const PString & GetLanguage() const { return m_xmlLanguage; }
 

@@ -158,13 +158,18 @@ bool PHTTPCookies::Parse(const PString & strCookies,const PURL & url, const PTim
 {
   PStringArray cookies = strCookies.Lines();
   for (PINDEX i = 0; i < cookies.size(); ++i) {
+    PString cookie = cookies[i];
     PString nameValue, attributes;
-    if (!cookies[i].Split(';', nameValue, attributes, PString::SplitBeforeNonEmpty))
+    if (!cookie.Split(';', nameValue, attributes, PString::SplitBeforeNonEmpty)) {
+      PTRACE(3, "Invalid cookie: \"" << cookie << '"');
       continue;
+    }
 
     Info info;
-    if (!nameValue.Split('=', info.m_name, info.m_value, PString::SplitTrim|PString::SplitBeforeNonEmpty))
+    if (!nameValue.Split('=', info.m_name, info.m_value, PString::SplitTrim|PString::SplitBeforeNonEmpty)) {
+      PTRACE(3, "Invalid cookie name: \"" << cookie << '"');
       continue;
+    }
 
     int maxAge = INT_MAX;
     PStringArray fields = attributes.Tokenise(';');
@@ -194,11 +199,15 @@ bool PHTTPCookies::Parse(const PString & strCookies,const PURL & url, const PTim
       }
     }
 
-    if (info.m_httpOnly && url.GetScheme().NumCompare("http") != PString::EqualTo)
+    if (info.m_httpOnly && url.GetScheme().NumCompare("http") != PString::EqualTo) {
+      PTRACE(3, "Invalid cookie scheme: \"" << cookie << '"');
       continue;
+    }
 
-    if (maxAge <= 0)
-      continue; // Illegal Expires or Max-Age
+    if (maxAge <= 0) {
+      PTRACE(3, "Invalid cookie Expires/Max-Age: \"" << cookie << '"');
+      continue;
+    }
 
     if (maxAge != INT_MAX)
       info.m_expiryTime = now + PTimeInterval(0, maxAge);
@@ -239,8 +248,8 @@ PString PHTTPCookies::GetCookie(const PURL & url, const PTime & now) const
     }
 
     if (!it->m_path.empty()) {
-      PString urlPath = '/' + url.GetPathStr();
-      if (it->m_path != urlPath && (it->m_path[it->m_path.length()-1] != '/' || urlPath.NumCompare(it->m_path) != PString::EqualTo))
+      PString urlPath = url.GetPathStr();
+      if (it->m_path != urlPath && urlPath.NumCompare(it->m_path+'/') != PString::EqualTo)
         continue;
     }
 

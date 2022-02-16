@@ -936,7 +936,7 @@ bool PVXMLPlayableHTTP::OnStart()
   PHTTPClient * client = new PHTTPClient;
   client->SetPersistent(false);
   PMIMEInfo outMIME, replyMIME;
-  m_vxmlChannel->GetSession().GetCookies().AddCookie(outMIME, m_url);
+  m_vxmlChannel->GetSession().AddCookie(outMIME, m_url);
   int code = client->GetDocument(m_url, outMIME, replyMIME);
   if ((code != 200) || (replyMIME(PHTTP::TransferEncodingTag()) *= PHTTP::ChunkedTag())) {
     delete client;
@@ -1279,19 +1279,26 @@ bool PVXMLSession::LoadResource(const PURL & url, PBYTEArray & data)
   PHTTPClient http;
   PMIMEInfo outMIME, replyMIME;
 
-  m_cookieMutex.Wait();
-  m_cookies.AddCookie(outMIME, url);
-  m_cookieMutex.Signal();
+  AddCookie(outMIME, url);
 
   if (!http.GetDocument(url, outMIME, replyMIME))
     return false;
 
   m_cookieMutex.Wait();
-  m_cookies.Parse(replyMIME, url);
-  InternalSetVar(DocumentScope, "cookie", m_cookies.AsString());
+  if (m_cookies.Parse(replyMIME, url)) {
+    PTRACE(4, "Cookie found: " << m_cookies);
+    InternalSetVar(DocumentScope, "cookie", m_cookies.AsString());
+  }
   m_cookieMutex.Signal();
 
   return http.ReadContentBody(replyMIME, data);
+}
+
+
+void PVXMLSession::AddCookie(PMIMEInfo & mime, const PURL & url) const
+{
+  PWaitAndSignal lock(m_cookieMutex);
+  m_cookies.AddCookie(mime, url);
 }
 
 
@@ -2864,13 +2871,15 @@ PBoolean PVXMLSession::TraverseSubmit(PXMLElement & element)
   if (namelist.IsEmpty())
     namelist = m_dialogFieldNames;
 
+  PMIMEInfo sendMIME, replyMIME;
+  AddCookie(sendMIME, url);
+
   if (get) {
     for (PStringSet::iterator it = namelist.begin(); it != namelist.end(); ++it)
       url.SetQueryVar(*it, GetVar(*it));
 
-    PMIMEInfo replyMIME;
     PString body;
-    if (client.GetTextDocument(url, body)) {
+    if (client.GetDocument(url, sendMIME, replyMIME) && client.ReadContentBody(replyMIME, body)) {
       PTRACE(4, "<submit> GET " << url << " succeeded and returned body size=" << body.length());
       return InternalLoadVXML(body, PString::Empty());
     }
@@ -2883,11 +2892,10 @@ PBoolean PVXMLSession::TraverseSubmit(PXMLElement & element)
   if (urlencoded) {
     PStringToString vars;
     for (PStringSet::iterator it = namelist.begin(); it != namelist.end(); ++it)
-      url.SetQueryVar(*it, GetVar(*it));
+      vars.SetAt(*it, GetVar(*it));
 
-    PMIMEInfo replyMIME;
     PString replyBody;
-    if (client.PostData(url, vars, replyMIME, replyBody)) {
+    if (client.PostData(url, sendMIME, vars, replyMIME, replyBody)) {
       PTRACE(4, "<submit> POST " << url << " succeeded and returned body:\n" << replyBody);
       return InternalLoadVXML(replyBody, PString::Empty());
     }
@@ -2896,8 +2904,6 @@ PBoolean PVXMLSession::TraverseSubmit(PXMLElement & element)
            << client.GetLastResponseCode() << ' ' << client.GetLastResponseInfo());
     return GoToEventHandler(element, PSTRSTRM(ErrorBadFetch << '.' << url.GetScheme() << '.' << client.GetLastResponseCode()), true);
   }
-
-  PMIMEInfo sendMIME;
 
   // Put in boundary
   PString boundary = "--------012345678901234567890123458VXML";
@@ -2954,7 +2960,6 @@ PBoolean PVXMLSession::TraverseSubmit(PXMLElement & element)
     return false;
   }
 
-  PMIMEInfo replyMIME;
   PString replyBody;
   if (client.PostData(url, sendMIME, entityBody, replyMIME, replyBody)) {
     PTRACE(1, "<submit> POST " << url << " succeeded and returned body:\n" << replyBody);
