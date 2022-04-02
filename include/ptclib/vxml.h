@@ -370,6 +370,15 @@ class PVXMLSession : public PIndirectChannel
     void SetRecordDirectory(const PDirectory & dir) { m_recordDirectory = dir; }
     const PDirectory & GetRecordDirectory() const { return m_recordDirectory; }
 
+#if P_SSL
+    void SetSSLCredentials(
+      const PString & authority,
+      const PString & certificate,
+      const PString & privateKey
+    );
+#endif
+    PHTTPClient * CreateHTTPClient() const;
+
     virtual PBoolean Load(const PString & source);
     virtual PBoolean LoadFile(const PFilePath & file, const PString & firstForm = PString::Empty());
     virtual PBoolean LoadURL(const PURL & url);
@@ -518,6 +527,13 @@ class PVXMLSession : public PIndirectChannel
     PVXMLCache     * m_ttsCache;
     bool             m_autoDeleteTextToSpeech;
     PString          m_speechRecognition;
+
+#if P_SSL
+    PString m_httpAuthority;
+    PString m_httpCertificate;
+    PString m_httpPrivateKey;
+    PDECLARE_MUTEX(m_httpMutex);
+#endif
 
 #if P_VXML_VIDEO
     void SetRealVideoSender(PVideoInputDevice * device);

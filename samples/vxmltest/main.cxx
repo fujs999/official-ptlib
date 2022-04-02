@@ -46,6 +46,11 @@ void VxmlTest::Main()
                   "R-recorder-device: Output to sound device\n"
                   "-recorder-rate: Output to sound sample rate\n"
                   "-recorder-channels: Output to sound channels\n"
+#if P_SSL
+                  "-authority: Set certificate authority file/directory\n"
+                  "-certificate: Set client certificate\n"
+                  "-private-key: Set client certificate private key\n"
+#endif
                   "T-tts: Text to speech method\n"
                   "S-sr: Speech recognition method\n"
                   "c-cache: Text to speech cache directory\n"
@@ -296,6 +301,11 @@ bool TestInstance::Initialise(unsigned instance, const PArgList & args)
   }
 #endif
 
+#if P_SSL
+  SetSSLCredentials(args.GetOptionString("authority"),
+                    args.GetOptionString("certificate"),
+                    args.GetOptionString("private-key"));
+#endif
 
   if (SetTextToSpeech(args.GetOptionString("tts")) == NULL) {
     cerr << "Instance " << m_instance << " error: cannot select text to speech engine, use one of:\n";
