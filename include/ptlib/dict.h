@@ -652,7 +652,7 @@ template <class T> class PSet : public PAbstractSet
 
       public:
         bool operator==(const iterator_base & it) const { return this->element == it.element; }
-        bool operator!=(const iterator_base & it) const { return this->element != it.element; }
+        bool operator!=(const iterator_base & it) const { return !operator==(it); }
     };
 
     class iterator : public iterator_base  {
@@ -663,10 +663,10 @@ template <class T> class PSet : public PAbstractSet
       public:
         iterator() { }
 
-        iterator operator++()    {                      this->Next(); return *this; }
-        iterator operator--()    {                      this->Prev(); return *this; }
-        iterator operator++(int) { iterator it = *this; this->Next(); return it;    }
-        iterator operator--(int) { iterator it = *this; this->Prev(); return it;    }
+        iterator & operator++()    {                      this->Next(); return *this; }
+        iterator & operator--()    {                      this->Prev(); return *this; }
+        iterator   operator++(int) { iterator it = *this; this->Next(); return it;    }
+        iterator   operator--(int) { iterator it = *this; this->Prev(); return it;    }
 
         T * operator->() const { return  this->Ptr(); }
         T & operator* () const { return *this->Ptr(); }
@@ -687,10 +687,10 @@ template <class T> class PSet : public PAbstractSet
       public:
         const_iterator() { }
 
-        const_iterator operator++()    {                            this->Next(); return *this; }
-        const_iterator operator--()    {                            this->Prev(); return *this; }
-        const_iterator operator++(int) { const_iterator it = *this; this->Next(); return it;    }
-        const_iterator operator--(int) { const_iterator it = *this; this->Prev(); return it;    }
+        const_iterator & operator++()    {                            this->Next(); return *this; }
+        const_iterator & operator--()    {                            this->Prev(); return *this; }
+        const_iterator   operator++(int) { const_iterator it = *this; this->Next(); return it;    }
+        const_iterator   operator--(int) { const_iterator it = *this; this->Prev(); return it;    }
 
         const T * operator->() const { return  this->Ptr(); }
         const T & operator* () const { return *this->Ptr(); }
@@ -1174,7 +1174,7 @@ template <class K, class D> class PDictionary : public PAbstractDictionary
 
       public:
         bool operator==(const iterator_base & it) const { return this->m_element == it.m_element; }
-        bool operator!=(const iterator_base & it) const { return this->m_element != it.m_element; }
+        bool operator!=(const iterator_base & it) const { return !operator==(it); }
     };
 
     template<class CK, class CD>
@@ -1187,7 +1187,7 @@ template <class K, class D> class PDictionary : public PAbstractDictionary
         iterator_pair() : first(reinterpret_cast<CK&>(0)), second(reinterpret_cast<CD&>(0)) { }
     };
 
-    class iterator : public iterator_base, public std::iterator<std::forward_iterator_tag, iterator_pair<K,D> > {
+    class iterator : public iterator_base, public std::iterator<std::bidirectional_iterator_tag, iterator_pair<K,D> > {
       protected:
         iterator(dict_type * dict) : iterator_base(dict) { }
         iterator(dict_type * dict, const K & key) : iterator_base(dict, key) { }
@@ -1195,10 +1195,10 @@ template <class K, class D> class PDictionary : public PAbstractDictionary
       public:
         iterator() { }
 
-        iterator operator++()    {                      this->Next(); return *this; }
-        iterator operator--()    {                      this->Prev(); return *this; }
-        iterator operator++(int) { iterator it = *this; this->Next(); return it;    }
-        iterator operator--(int) { iterator it = *this; this->Prev(); return it;    }
+        iterator & operator++()    {                      this->Next(); return *this; }
+        iterator & operator--()    {                      this->Prev(); return *this; }
+        iterator   operator++(int) { iterator it = *this; this->Next(); return it;    }
+        iterator   operator--(int) { iterator it = *this; this->Prev(); return it;    }
 
         typedef iterator_pair<K,D> pair;
         const pair * operator->() const { return  reinterpret_cast<const pair *>(this); }
