@@ -59,7 +59,10 @@ PTextToSpeech * PTextToSpeech::Create(const PString & name)
       if ((tts = PFactory<PTextToSpeech>::CreateInstance(P_TEXT_TO_SPEECH_SAPI)) == NULL)
 #endif
         tts = PFactory<PTextToSpeech>::CreateInstance(PFactory<PTextToSpeech>::GetKeyList().front());
-  PTRACE(4, tts, "Created " << *tts);
+  if (tts != NULL)
+    PTRACE(4, tts, "Created " << *tts);
+  else
+    PTRACE(2, tts, "Could not create default Text To Speech engine");
   return tts;
 }
 
@@ -491,7 +494,10 @@ PSpeechRecognition * PSpeechRecognition::Create(const PString & name)
     if ((sr = PFactory<PSpeechRecognition>::CreateInstance(P_SPEECH_RECOGNITION_SAPI)) == NULL)
 #endif
       sr = PFactory<PSpeechRecognition>::CreateInstance(PFactory<PSpeechRecognition>::GetKeyList().front());
-  PTRACE(4, sr, "Created " << *sr);
+  if (sr != NULL)
+    PTRACE(4, sr, "Created " << *sr);
+  else
+    PTRACE(2, sr, "Could not create default Speech Recognition engine");
   return sr;
 }
 

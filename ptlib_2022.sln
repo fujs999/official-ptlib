@@ -1,18 +1,18 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.32228.343
+# Visual Studio Version 17
+VisualStudioVersion = 17.1.32328.378
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PTLib Static", "src\ptlib\msos\Console_2019.vcxproj", "{D11E1C9D-406C-4D7C-8F37-913C0BFD9E0D}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PTLib Static", "src\ptlib\msos\Console_2022.vcxproj", "{D11E1C9D-406C-4D7C-8F37-913C0BFD9E0D}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PTLib DLL", "src\ptlib\msos\PTLib_2019.vcxproj", "{85F4F26A-1A5D-4685-A48A-448102C5C5BC}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PTLib DLL", "src\ptlib\msos\PTLib_2022.vcxproj", "{85F4F26A-1A5D-4685-A48A-448102C5C5BC}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MergeSym", "tools\MergeSym\MergeSym_2019.vcxproj", "{F34BE504-015A-42E6-9342-3800EAD5F561}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MergeSym", "tools\MergeSym\MergeSym_2022.vcxproj", "{F34BE504-015A-42E6-9342-3800EAD5F561}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "configure", "tools\configure\configure_2019.vcxproj", "{9C8D0100-6709-4628-9993-69F443AF69E8}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "configure", "tools\configure\configure_2022.vcxproj", "{9C8D0100-6709-4628-9993-69F443AF69E8}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Hello World Static", "samples\hello_world\hello_2019.vcxproj", "{D38CA533-D522-4D9E-B2C9-D59F6C415268}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Hello World Static", "samples\hello_world\hello_2022.vcxproj", "{D38CA533-D522-4D9E-B2C9-D59F6C415268}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Hello World DLL", "samples\hello_world\helloDLL_2019.vcxproj", "{86680AA2-ACF3-4247-AF25-8E3D80855868}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Hello World DLL", "samples\hello_world\helloDLL_2022.vcxproj", "{86680AA2-ACF3-4247-AF25-8E3D80855868}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -90,6 +90,6 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {C2E0B745-8C3A-447A-B6A1-24CE4F68C07E}
+		SolutionGuid = {7FF8D3CF-6F46-4271-8679-BB8D7CC8D8FD}
 	EndGlobalSection
 EndGlobal

@@ -933,10 +933,11 @@ bool PVXMLPlayableHTTP::OnStart()
     return false;
 
   // open the resource
-  PHTTPClient * client = new PHTTPClient;
+  PVXMLSession & session = m_vxmlChannel->GetSession();
+  PHTTPClient * client = session.CreateHTTPClient();
   client->SetPersistent(false);
   PMIMEInfo outMIME, replyMIME;
-  m_vxmlChannel->GetSession().AddCookie(outMIME, m_url);
+  session.AddCookie(outMIME, m_url);
   int code = client->GetDocument(m_url, outMIME, replyMIME);
   if ((code != 200) || (replyMIME(PHTTP::TransferEncodingTag()) *= PHTTP::ChunkedTag())) {
     delete client;
@@ -1276,12 +1277,12 @@ bool PVXMLSession::LoadResource(const PURL & url, PBYTEArray & data)
   if (url.GetScheme().NumCompare("http") != EqualTo)
     return url.LoadResource(data);
 
-  PHTTPClient http;
+  PAutoPtr<PHTTPClient> http(CreateHTTPClient());
   PMIMEInfo outMIME, replyMIME;
 
   AddCookie(outMIME, url);
 
-  if (!http.GetDocument(url, outMIME, replyMIME))
+  if (!http->GetDocument(url, outMIME, replyMIME))
     return false;
 
   m_cookieMutex.Wait();
@@ -1291,7 +1292,31 @@ bool PVXMLSession::LoadResource(const PURL & url, PBYTEArray & data)
   }
   m_cookieMutex.Signal();
 
-  return http.ReadContentBody(replyMIME, data);
+  return http->ReadContentBody(replyMIME, data);
+}
+
+
+#if P_SSL
+void PVXMLSession::SetSSLCredentials(const PString & authority,
+                                     const PString & certificate,
+                                     const PString & privateKey)
+{
+  PWaitAndSignal lock(m_httpMutex);
+  m_httpAuthority = authority;
+  m_httpCertificate = certificate;
+  m_httpPrivateKey = privateKey;
+}
+#endif
+
+
+PHTTPClient * PVXMLSession::CreateHTTPClient() const
+{
+  PHTTPClient * http = new PHTTPClient("PTLib VXML Client");
+#if P_SSL
+  PWaitAndSignal lock(m_httpMutex);
+  http->SetSSLCredentials(m_httpAuthority, m_httpCertificate, m_httpPrivateKey);
+#endif
+  return http;
 }
 
 
@@ -2864,8 +2889,8 @@ PBoolean PVXMLSession::TraverseSubmit(PXMLElement & element)
     return GoToEventHandler(element, ErrorBadFetch, true);
   }
 
-  PHTTPClient client("PTLib VXML");
-  client.SetReadTimeout(StringToTime(element.GetAttribute("fetchtimeout"), 10000));
+  PAutoPtr<PHTTPClient> http(CreateHTTPClient());
+  http->SetReadTimeout(StringToTime(element.GetAttribute("fetchtimeout"), 10000));
 
   PStringSet namelist = element.GetAttribute("namelist").Tokenise(" \t", false);
   if (namelist.IsEmpty())
@@ -2879,13 +2904,13 @@ PBoolean PVXMLSession::TraverseSubmit(PXMLElement & element)
       url.SetQueryVar(*it, GetVar(*it));
 
     PString body;
-    if (client.GetDocument(url, sendMIME, replyMIME) && client.ReadContentBody(replyMIME, body)) {
+    if (http->GetDocument(url, sendMIME, replyMIME) && http->ReadContentBody(replyMIME, body)) {
       PTRACE(4, "<submit> GET " << url << " succeeded and returned body size=" << body.length());
       return InternalLoadVXML(body, PString::Empty());
     }
 
     PTRACE(1, "<submit> GET " << url << " failed with "
-           << client.GetLastResponseCode() << ' ' << client.GetLastResponseInfo());
+           << http->GetLastResponseCode() << ' ' << http->GetLastResponseInfo());
     return GoToEventHandler(element, ErrorBadFetch, true);
   }
 
@@ -2895,14 +2920,14 @@ PBoolean PVXMLSession::TraverseSubmit(PXMLElement & element)
       vars.SetAt(*it, GetVar(*it));
 
     PString replyBody;
-    if (client.PostData(url, sendMIME, vars, replyMIME, replyBody)) {
+    if (http->PostData(url, sendMIME, vars, replyMIME, replyBody)) {
       PTRACE(4, "<submit> POST " << url << " succeeded and returned body:\n" << replyBody);
       return InternalLoadVXML(replyBody, PString::Empty());
     }
 
     PTRACE(1, "<submit> POST " << url << " failed with "
-           << client.GetLastResponseCode() << ' ' << client.GetLastResponseInfo());
-    return GoToEventHandler(element, PSTRSTRM(ErrorBadFetch << '.' << url.GetScheme() << '.' << client.GetLastResponseCode()), true);
+           << http->GetLastResponseCode() << ' ' << http->GetLastResponseInfo());
+    return GoToEventHandler(element, PSTRSTRM(ErrorBadFetch << '.' << url.GetScheme() << '.' << http->GetLastResponseCode()), true);
   }
 
   // Put in boundary
@@ -2961,13 +2986,13 @@ PBoolean PVXMLSession::TraverseSubmit(PXMLElement & element)
   }
 
   PString replyBody;
-  if (client.PostData(url, sendMIME, entityBody, replyMIME, replyBody)) {
+  if (http->PostData(url, sendMIME, entityBody, replyMIME, replyBody)) {
     PTRACE(1, "<submit> POST " << url << " succeeded and returned body:\n" << replyBody);
     return InternalLoadVXML(replyBody, PString::Empty());
   }
 
   PTRACE(1, "<submit> POST " << url << " failed with "
-         << client.GetLastResponseCode() << ' ' << client.GetLastResponseInfo());
+         << http->GetLastResponseCode() << ' ' << http->GetLastResponseInfo());
   return false;
 }
 
@@ -4283,9 +4308,8 @@ PBoolean PVXMLChannel::QueuePlayable(const PString & type,
 
   PVXMLPlayable * item = PFactory<PVXMLPlayable>::CreateInstance(type);
   if (item == NULL) {
-    PURL url(arg);
     PBYTEArray data;
-    if (!url.LoadResource(data)) {
+    if (!m_vxmlSession->LoadResource(arg, data)) {
       PTRACE(2, "Cannot find playable of type " << type << " - \"" << arg << '"');
       return false;
     }
