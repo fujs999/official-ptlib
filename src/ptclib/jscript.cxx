@@ -56,7 +56,7 @@ unpack to somehere, e.g. C:\tools\depot_tools
 
 Set up the environment in CMD:
 set DEPOT_TOOLS_WIN_TOOLCHAIN=0
-set vs2019_install=C:\Program Files (x86)\Microsoft Visual Studio\2019\Community
+set vs2019_install="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community"
 PATH=C:\tools\depot_tools;%PATH%
 
 or for PowerShell:
