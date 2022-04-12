@@ -1117,7 +1117,7 @@ template <class Collection> class PSafeColl : public PSafeCollection
   See the PSafeObject class for more details. Especially in regard to
   enumeration of collections.
  */
-template <class Base> class PSafeArray : public PSafeColl<PArray<Base>>
+template <class Base> class PSafeArray : public PSafeColl< PArray<Base> >
 {
   public:
     typedef PSafePtr<Base> value_type;
@@ -1128,7 +1128,7 @@ template <class Base> class PSafeArray : public PSafeColl<PArray<Base>>
   See the PSafeObject class for more details. Especially in regard to
   enumeration of collections.
  */
-template <class Base> class PSafeList : public PSafeColl<PList<Base>>
+template <class Base> class PSafeList : public PSafeColl< PList<Base> >
 {
   public:
     typedef PSafePtr<Base> value_type;
@@ -1139,7 +1139,7 @@ template <class Base> class PSafeList : public PSafeColl<PList<Base>>
   See the PSafeObject class for more details. Especially in regard to
   enumeration of collections.
  */
-template <class Base> class PSafeSortedList : public PSafeColl<PSortedList<Base>>
+template <class Base> class PSafeSortedList : public PSafeColl< PSortedList<Base> >
 {
   public:
     typedef PSafePtr<Base> value_type;
