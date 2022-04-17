@@ -1572,24 +1572,41 @@ PBoolean PVXMLSession::Close()
 /* These functions will add in the owner composite structures in the scripting language,
 so session.connection.redirect.ani = "1234" will work even if session.connection.redirect,
 or session.connection, do not yet exist. */
-static bool SetScriptVariableOrComposite(PScriptLanguage & scriptContext, const PString & fullVarName, const char * value)
+static bool CreateComposites(PScriptLanguage & scriptContext, const PString & fullVarName)
 {
-  return value != NULL ? scriptContext.SetString(fullVarName, value) : scriptContext.CreateComposite(fullVarName);
+  PStringArray tokens = fullVarName.Tokenise(".");
+  PString composite;
+  for (size_t i = 0; i < tokens.size()-1; ++i) {
+    PString token = tokens[i];
+    PINDEX bracket = token.Find('[');
+    if (bracket != P_MAX_INDEX) {
+      if (!scriptContext.CreateComposite(composite + token.Left(bracket),
+                                         token.Mid(bracket+1).AsUnsigned()+1))
+        return false;
+    }
+    composite += token;
+    if (!scriptContext.CreateComposite(composite))
+      return false;
+    composite += '.';
+  }
+  return true;
 }
 
-static bool SetScriptVariableRecursive(PScriptLanguage & scriptContext, const PString & fullVarName, const char * value)
+static bool CreateScriptVariable(PScriptLanguage & scriptContext, const PString & fullVarName, const PString & value)
 {
-  if (SetScriptVariableOrComposite(scriptContext, fullVarName, value))
+  if (!CreateComposites(scriptContext, fullVarName))
+    return false;
+
+  if (fullVarName.Right(2) == ".$")
     return true;
 
-  PINDEX dot = fullVarName.FindLast('.');
-  if (dot == P_MAX_INDEX)
+  if (value.Right(2) != ".$")
+    return scriptContext.SetString(fullVarName, value);
+
+  if (!CreateComposites(scriptContext, value))
     return false;
 
-  if (!SetScriptVariableRecursive(scriptContext, fullVarName.Left(dot), NULL))
-    return false;
-
-  return SetScriptVariableOrComposite(scriptContext, fullVarName, value);
+  return scriptContext.Run(PSTRSTRM(fullVarName << '=' << value.Left(value.length()-2)));
 }
 
 
@@ -1616,7 +1633,7 @@ void PVXMLSession::InternalThreadMain()
       if (simpleScript != NULL) {
         PStringToString variables = simpleScript->GetAllVariables();
         for (PStringToString::iterator it = variables.begin(); it != variables.end(); ++it)
-          SetScriptVariableRecursive(*m_scriptContext, it->first, it->second);
+          CreateScriptVariable(*newScript, it->first, it->second);
       }
       m_scriptContext.reset(newScript);
     }
@@ -2122,7 +2139,38 @@ PCaselessString PVXMLSession::GetVar(const PString & varName) const
 
 bool PVXMLSession::SetVar(const PString & varName, const PString & value)
 {
-  return m_scriptContext->Run(PSTRSTRM(varName << '=' << value.ToLiteral()));
+  return CreateScriptVariable(*m_scriptContext, varName, value);
+}
+
+
+void PVXMLSession::SetConnectionVars(const PString & localURI,
+                                     const PString & remoteURI,
+                                     const PString & protocolName,
+                                     const PString & protocolVersion,
+                                     const PArray<PStringToString> & redirects,
+                                     const PStringToString & aai,
+                                     bool originator)
+{
+  m_scriptContext->CreateComposite(SessionScope);
+  m_scriptContext->CreateComposite("session.connection");
+  m_scriptContext->CreateComposite("session.connection.local");
+  m_scriptContext->CreateComposite("session.connection.remote");
+  m_scriptContext->CreateComposite("session.connection.protocol");
+  m_scriptContext->CreateComposite("session.connection.aai");
+
+  m_scriptContext->SetString("session.connection.local.uri", localURI);
+  m_scriptContext->SetString("session.connection.remote.uri", remoteURI);
+  m_scriptContext->SetString("session.connection.protocol.name", protocolName);
+  m_scriptContext->SetString("session.connection.protocol.version", protocolVersion);
+  for (size_t i = 0; i < redirects.size(); ++i) {
+    m_scriptContext->CreateComposite(PSTRSTRM("session.connection.redirect[" << i << ']'));
+    for (PStringToString::iterator it = redirects[i].begin(); it != redirects[i].end(); ++it)
+      m_scriptContext->SetString(PSTRSTRM("session.connection.redirect[" << i << "]." << it->first), it->second);
+  }
+  for (PStringToString::const_iterator it = aai.begin(); it != aai.end(); ++it)
+    m_scriptContext->SetString("session.connection.aai." + it->first, it->second);
+  m_scriptContext->SetString("session.connection.originator",
+                             originator ? "session.connection.local.$" : "session.connection.remote.$");
 }
 
 

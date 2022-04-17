@@ -241,6 +241,19 @@ bool TestInstance::Initialise(unsigned instance, const PArgList & args)
 {
   m_instance = instance;
 
+  PArray<PStringToString> redirects;
+  redirects.Append(new PStringToString("uri=vxml:origin\nreason=Unknown"));
+  redirects.Append(new PStringToString("uri=vxml:redirect\nreason=Unknown"));
+  SetConnectionVars(
+    "vxml:local",
+    "vxml:remote",
+    "vxml",
+    "Unknown",
+    redirects,
+    PStringToString("mode=test"),
+    true
+  );
+
   PSoundChannel::Params audioParams;
   audioParams.m_direction = PSoundChannel::Player;
   audioParams.m_driver = args.GetOptionString("player-driver");

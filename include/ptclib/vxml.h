@@ -432,6 +432,16 @@ class PVXMLSession : public PIndirectChannel
     PCaselessString GetProperty(const PString & propName) const;
     void SetDialogVar(const PString & varName, const PString & value);
 
+    void SetConnectionVars(
+      const PString & localURI,
+      const PString & remoteURI,
+      const PString & protocolName,
+      const PString & protocolVersion,
+      const PArray<PStringToString> & redirects,
+      const PStringToString & aai,
+      bool originator
+    );
+
     static PTimeInterval StringToTime(const PString & str, int dflt = 0);
 
     bool SetCurrentForm(const PString & id, bool fullURI);
