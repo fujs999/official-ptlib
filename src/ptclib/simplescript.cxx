@@ -79,7 +79,7 @@ bool PSimpleScript::LoadText(const PString &)
 }
 
 
-static PConstString const LegalVariableChars("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_.$");
+static PConstString const LegalVariableChars("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_.$[]");
 
 bool PSimpleScript::Run(const char * script)
 {
@@ -200,9 +200,14 @@ PString PSimpleScript::InternalEvaluateExpr(const PString & expr)
 }
 
 
-bool PSimpleScript::CreateComposite(const PString & name)
+bool PSimpleScript::CreateComposite(const PString & name, unsigned sequenceSize)
 {
-  m_variables.SetAt(name+".$", "");
+  if (sequenceSize == 0)
+    m_variables.SetAt(name+".$", "");
+  else {
+    for (unsigned i = 0; i < sequenceSize; ++i)
+      m_variables.SetAt(PSTRSTRM(name<< '[' << i << ']'), "");
+  }
   return true;
 }
 

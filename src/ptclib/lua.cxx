@@ -224,7 +224,7 @@ bool PLua::DeleteTable(const PString & name, bool metaTable)
 }
 
 
-bool PLua::CreateComposite(const PString & name)
+bool PLua::CreateComposite(const PString & name, unsigned /*sequenceSize*/)
 {
   return CreateTable(name);
 }
