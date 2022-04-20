@@ -120,6 +120,11 @@ class PScriptLanguage : public PObject
       bool release  ///< Release the composite
     );
 
+    /**Get the composite name space scope chain.
+       @return The composite names in reverse scope order.
+      */
+    virtual PStringList GetScopeChain() const { return m_scopeChain; }
+
     P_DECLARE_ENUM(
       VarTypes,
       NullType,

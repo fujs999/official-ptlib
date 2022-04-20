@@ -1152,6 +1152,9 @@ PVXMLSession::PVXMLSession()
   m_videoSender.SetActualDevice(PVideoInputDevice::CreateOpenedDevice(videoArgs));
 #endif // P_VXML_VIDEO
 
+  // Point dialog scope to same object as application scope
+  m_scriptContext->SetString(DocumentScope, ApplicationScope + ".$");
+
   PTRACE(4, "Created session: " << this);
 }
 
@@ -1640,12 +1643,21 @@ void PVXMLSession::InternalThreadMain()
 
     m_scriptContext->PushScopeChain(SessionScope, false);
     m_scriptContext->PushScopeChain(ApplicationScope, false);
-    m_scriptContext->PushScopeChain(DocumentScope, false);
 
     PTime now;
     InternalSetVar(SessionScope, "time", now.AsString());
     InternalSetVar(SessionScope, "timeISO8601", now.AsString(PTime::ShortISO8601));
     InternalSetVar(SessionScope, "timeEpoch", now.GetTimeInSeconds());
+
+    InternalSetVar(PropertyScope, TimeoutProperty , "10s");
+    InternalSetVar(PropertyScope, BargeInProperty, true);
+    InternalSetVar(PropertyScope, CachingProperty, SafeKeyword);
+    InternalSetVar(PropertyScope, InputModesProperty, DtmfAttribute & VoiceAttribute);
+    InternalSetVar(PropertyScope, InterDigitTimeoutProperty, "5s");
+    InternalSetVar(PropertyScope, TermTimeoutProperty, "0");
+    InternalSetVar(PropertyScope, TermCharProperty, "#");
+    InternalSetVar(PropertyScope, CompleteTimeoutProperty, "2s");
+    InternalSetVar(PropertyScope, IncompleteTimeoutProperty, "5s");
   }
 
   InternalStartVXML();
@@ -1794,15 +1806,6 @@ bool PVXMLSession::ProcessEvents()
 void PVXMLSession::InternalStartVXML()
 {
   ClearGrammars();
-  InternalSetVar(PropertyScope, TimeoutProperty , "10s");
-  InternalSetVar(PropertyScope, BargeInProperty, true);
-  InternalSetVar(PropertyScope, CachingProperty, SafeKeyword);
-  InternalSetVar(PropertyScope, InputModesProperty, DtmfAttribute & VoiceAttribute);
-  InternalSetVar(PropertyScope, InterDigitTimeoutProperty, "5s");
-  InternalSetVar(PropertyScope, TermTimeoutProperty, "0");
-  InternalSetVar(PropertyScope, TermCharProperty, "#");
-  InternalSetVar(PropertyScope, CompleteTimeoutProperty, "2s");
-  InternalSetVar(PropertyScope, IncompleteTimeoutProperty, "5s");
 
   PTRACE(4, "Processing global elements.");
   m_currentNode = m_currentXML->GetRootElement()->GetElement(0);
@@ -3194,7 +3197,8 @@ PBoolean PVXMLSession::TraverseVar(PXMLElement & element)
   if (name.empty())
     return ThrowSemanticError(element, "No name");
 
-  return RunScript(element, PSTRSTRM(name << '=' << element.GetAttribute(ExprAttribute)));
+  return RunScript(element, PSTRSTRM(m_scriptContext->GetScopeChain().back() << '.' << name
+                                     << '=' << element.GetAttribute(ExprAttribute)));
 }
 
 

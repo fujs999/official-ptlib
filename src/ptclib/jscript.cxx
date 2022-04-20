@@ -856,7 +856,8 @@ public:
     }
 
     resultText = ToPString(result);
-    PTRACE(4, "Script execution returned " << resultText.Ellipsis(100).ToLiteral());
+    PTRACE(4, "Script execution of " << text.Ellipsis(100).ToLiteral()
+           << " returned " << resultText.Ellipsis(100).ToLiteral());
 
     return true;
   }
