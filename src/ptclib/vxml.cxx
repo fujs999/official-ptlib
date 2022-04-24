@@ -1152,6 +1152,10 @@ PVXMLSession::PVXMLSession()
   m_videoSender.SetActualDevice(PVideoInputDevice::CreateOpenedDevice(videoArgs));
 #endif // P_VXML_VIDEO
 
+  // Create always present objects
+  m_scriptContext->CreateComposite(PropertyScope);
+  m_scriptContext->CreateComposite(SessionScope);
+  m_scriptContext->CreateComposite(ApplicationScope);
   // Point dialog scope to same object as application scope
   m_scriptContext->SetString(DocumentScope, ApplicationScope + ".$");
 
@@ -1619,46 +1623,43 @@ void PVXMLSession::InternalThreadMain()
 
   m_sessionMutex.Wait();
 
-  {
-    const char * Languages[] = { "JavaScript", "Lua" };
-    PScriptLanguage * newScript = PScriptLanguage::CreateOne(PStringArray(PARRAYSIZE(Languages), Languages));
-    if (newScript != NULL) {
-      newScript->CreateComposite(PropertyScope);
-      newScript->CreateComposite(SessionScope);
-      newScript->CreateComposite(ApplicationScope);
-      newScript->CreateComposite(DocumentScope);
-      #if P_VXML_VIDEO
-        newScript->SetFunction(SIGN_LANGUAGE_PREVIEW_SCRIPT_FUNCTION, PCREATE_NOTIFIER(SignLanguagePreviewFunction));
-        newScript->SetFunction(SIGN_LANGUAGE_CONTROL_SCRIPT_FUNCTION, PCREATE_NOTIFIER(SignLanguageControlFunction));
-      #endif
+  static const char * Languages[] = { "JavaScript", "Lua" };
+  PScriptLanguage * newScript = PScriptLanguage::CreateOne(PStringArray(PARRAYSIZE(Languages), Languages));
+  if (newScript != NULL) {
+    newScript->CreateComposite(PropertyScope);
+    newScript->CreateComposite(SessionScope);
+    newScript->CreateComposite(ApplicationScope);
+    #if P_VXML_VIDEO
+      newScript->SetFunction(SIGN_LANGUAGE_PREVIEW_SCRIPT_FUNCTION, PCREATE_NOTIFIER(SignLanguagePreviewFunction));
+      newScript->SetFunction(SIGN_LANGUAGE_CONTROL_SCRIPT_FUNCTION, PCREATE_NOTIFIER(SignLanguageControlFunction));
+    #endif
 
-      PSimpleScript * simpleScript = dynamic_cast<PSimpleScript *>(m_scriptContext.get());
-      if (simpleScript != NULL) {
-        PStringToString variables = simpleScript->GetAllVariables();
-        for (PStringToString::iterator it = variables.begin(); it != variables.end(); ++it)
-          CreateScriptVariable(*newScript, it->first, it->second);
-      }
-      m_scriptContext.reset(newScript);
+    PSimpleScript * simpleScript = dynamic_cast<PSimpleScript *>(m_scriptContext.get());
+    if (simpleScript != NULL) {
+      PStringToString variables = simpleScript->GetAllVariables();
+      for (PStringToString::iterator it = variables.begin(); it != variables.end(); ++it)
+        CreateScriptVariable(*newScript, it->first, it->second);
     }
-
-    m_scriptContext->PushScopeChain(SessionScope, false);
-    m_scriptContext->PushScopeChain(ApplicationScope, false);
-
-    PTime now;
-    InternalSetVar(SessionScope, "time", now.AsString());
-    InternalSetVar(SessionScope, "timeISO8601", now.AsString(PTime::ShortISO8601));
-    InternalSetVar(SessionScope, "timeEpoch", now.GetTimeInSeconds());
-
-    InternalSetVar(PropertyScope, TimeoutProperty , "10s");
-    InternalSetVar(PropertyScope, BargeInProperty, true);
-    InternalSetVar(PropertyScope, CachingProperty, SafeKeyword);
-    InternalSetVar(PropertyScope, InputModesProperty, DtmfAttribute & VoiceAttribute);
-    InternalSetVar(PropertyScope, InterDigitTimeoutProperty, "5s");
-    InternalSetVar(PropertyScope, TermTimeoutProperty, "0");
-    InternalSetVar(PropertyScope, TermCharProperty, "#");
-    InternalSetVar(PropertyScope, CompleteTimeoutProperty, "2s");
-    InternalSetVar(PropertyScope, IncompleteTimeoutProperty, "5s");
+    m_scriptContext.reset(newScript);
   }
+
+  m_scriptContext->PushScopeChain(SessionScope, false);
+  m_scriptContext->PushScopeChain(ApplicationScope, false);
+
+  PTime now;
+  InternalSetVar(SessionScope, "time", now.AsString());
+  InternalSetVar(SessionScope, "timeISO8601", now.AsString(PTime::ShortISO8601));
+  InternalSetVar(SessionScope, "timeEpoch", now.GetTimeInSeconds());
+
+  InternalSetVar(PropertyScope, TimeoutProperty , "10s");
+  InternalSetVar(PropertyScope, BargeInProperty, true);
+  InternalSetVar(PropertyScope, CachingProperty, SafeKeyword);
+  InternalSetVar(PropertyScope, InputModesProperty, DtmfAttribute & VoiceAttribute);
+  InternalSetVar(PropertyScope, InterDigitTimeoutProperty, "5s");
+  InternalSetVar(PropertyScope, TermTimeoutProperty, "0");
+  InternalSetVar(PropertyScope, TermCharProperty, "#");
+  InternalSetVar(PropertyScope, CompleteTimeoutProperty, "2s");
+  InternalSetVar(PropertyScope, IncompleteTimeoutProperty, "5s");
 
   InternalStartVXML();
 
@@ -1822,6 +1823,13 @@ void PVXMLSession::InternalStartVXML()
 
   PTRACE(4, "Setting initial form \"" << m_newFormName << '"');
   SetCurrentForm(m_newFormName, false);
+
+  if (m_scriptContext->GetScopeChain().back() == DocumentScope)
+    m_scriptContext->PopScopeChain(true);
+  if (m_documentURL != m_rootURL)
+    m_scriptContext->PushScopeChain(DocumentScope, true);
+  else
+    m_scriptContext->Run(PSTRSTRM(DocumentScope << '=' << ApplicationScope));
 }
 
 
