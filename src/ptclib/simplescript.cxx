@@ -96,6 +96,11 @@ bool PSimpleScript::Run(const char * script)
     return false;
   }
 
+  if (expr.FindSpan(LegalVariableChars) == P_MAX_INDEX && GetVarType(expr) == CompositeType) {
+    m_variables.SetAt(varName + ".$", expr + ".$");
+    return true;
+  }
+
   PINDEX comparison;
   if ((comparison = expr.Find("==")) != P_MAX_INDEX)
     return SetString(varName, PString(InternalEvaluateExpr(expr.Left(comparison)) == InternalEvaluateExpr(expr.Mid(comparison+2))));
@@ -226,9 +231,17 @@ PScriptLanguage::VarTypes PSimpleScript::GetVarType(const PString & name)
 }
 
 
-bool PSimpleScript::GetVar(const PString & name, PVarType & var)
+bool PSimpleScript::GetVar(const PString & varName, PVarType & var)
 {
   PWaitAndSignal mutex(m_mutex);
+
+  PString name = varName;
+  PINDEX dot = name.Find('.');
+  if (dot != P_MAX_INDEX) {
+    PString * reference = m_variables.GetAt(name.Left(dot) + ".$");
+    if (reference != NULL && !reference->empty())
+      name = reference->Left(reference->Find('.')) + name.Mid(dot);
+  }
 
   PString * value;
   for (PStringList::iterator it = m_scopeChain.rbegin(); it != m_scopeChain.rend(); --it) {

@@ -1157,7 +1157,7 @@ PVXMLSession::PVXMLSession()
   m_scriptContext->CreateComposite(SessionScope);
   m_scriptContext->CreateComposite(ApplicationScope);
   // Point dialog scope to same object as application scope
-  m_scriptContext->SetString(DocumentScope, ApplicationScope + ".$");
+  m_scriptContext->Run(PSTRSTRM(DocumentScope << '=' << ApplicationScope));
 
   PTRACE(4, "Created session: " << this);
 }
@@ -1604,16 +1604,19 @@ static bool CreateScriptVariable(PScriptLanguage & scriptContext, const PString 
   if (!CreateComposites(scriptContext, fullVarName))
     return false;
 
-  if (fullVarName.Right(2) == ".$")
-    return true;
-
-  if (value.Right(2) != ".$")
+  size_t nameLen = fullVarName.length();
+  size_t valueLen = value.length();
+  if (fullVarName.NumCompare(".$", 2, nameLen-2) != PObject::EqualTo &&
+      value.NumCompare(".$", 2, valueLen-2) != PObject::EqualTo)
     return scriptContext.SetString(fullVarName, value);
+
+  if (value.empty())
+    return true;
 
   if (!CreateComposites(scriptContext, value))
     return false;
 
-  return scriptContext.Run(PSTRSTRM(fullVarName << '=' << value.Left(value.length()-2)));
+  return scriptContext.Run(PSTRSTRM(fullVarName.Left(nameLen-2) << '=' << value.Left(valueLen-2)));
 }
 
 
