@@ -506,7 +506,7 @@ class PVXMLSession : public PIndirectChannel
     virtual bool InternalLoadVXML(const PString & xml, const PString & firstForm);
     virtual void InternalStartThread();
     virtual void InternalThreadMain();
-    virtual void InternalStartVXML();
+    virtual void InternalStartVXML(bool leafDocument);
     virtual PString InternalGetName(PXMLElement & element, bool allowScope);
     virtual PCaselessString InternalGetVar(const PString & scope, const PString & varName) const;
     virtual void InternalSetVar(const PString & scope, const PString & varName, const PString & value);
@@ -518,6 +518,7 @@ class PVXMLSession : public PIndirectChannel
     virtual bool NextNode(bool processChildren);
     bool ExecuteCondition(PXMLElement & element);
     void ClearBargeIn();
+    void ClearScopes();
     void FlushInput();
 
     void SayAs(const PString & className, const PString & text);

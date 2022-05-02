@@ -1448,6 +1448,17 @@ PURL PVXMLSession::NormaliseResourceName(const PString & src)
 }
 
 
+void PVXMLSession::ClearScopes()
+{
+  for (;;) {
+    PString topScope = m_scriptContext->GetScopeChain().back();
+    if (topScope == ApplicationScope || topScope == DocumentScope)
+      break;
+    m_scriptContext->PopScopeChain(true);
+  }
+}
+
+
 bool PVXMLSession::SetCurrentForm(const PString & searchId, bool fullURI)
 {
   ClearBargeIn();
@@ -1459,6 +1470,8 @@ bool PVXMLSession::SetCurrentForm(const PString & searchId, bool fullURI)
   PString id = searchId;
 
   if (fullURI) {
+    ClearScopes();
+
     if (searchId.IsEmpty()) {
       PTRACE(3, "Full URI required for this form/menu search");
       return false;
@@ -1664,7 +1677,7 @@ void PVXMLSession::InternalThreadMain()
   InternalSetVar(PropertyScope, CompleteTimeoutProperty, "2s");
   InternalSetVar(PropertyScope, IncompleteTimeoutProperty, "5s");
 
-  InternalStartVXML();
+  InternalStartVXML(false);
 
   while (!m_abortVXML) {
     // process current node in the VXML script
@@ -1683,8 +1696,7 @@ void PVXMLSession::InternalThreadMain()
     if (m_newXML.get() != NULL) {
       /* Replace old XML with new, now it is safe to do so and no XML elements
          pointers are being referenced by the code any more */
-      m_currentXML.transfer(m_newXML);
-      InternalStartVXML();
+      InternalStartVXML(true);
     }
 
     // Determine if we should quit
@@ -1703,8 +1715,7 @@ void PVXMLSession::InternalThreadMain()
 
     if (m_newXML.get() != NULL) {
       // OnEndDialog() loaded some more XML to do.
-      m_currentXML.transfer(m_newXML);
-      InternalStartVXML();
+      InternalStartVXML(true);
     }
 
     if (m_currentNode == NULL)
@@ -1807,9 +1818,26 @@ bool PVXMLSession::ProcessEvents()
 }
 
 
-void PVXMLSession::InternalStartVXML()
+void PVXMLSession::InternalStartVXML(bool leafDocument)
 {
   ClearGrammars();
+
+  if (leafDocument) {
+    PURL appURL = NormaliseResourceName(m_newXML->GetRootElement()->GetAttribute("application"));
+    if (appURL.IsEmpty() || appURL != m_rootURL)
+      m_rootURL = m_documentURL;
+    m_currentXML.transfer(m_newXML);
+  }
+
+  if (m_scriptContext->GetScopeChain().back() == DocumentScope)
+    m_scriptContext->PopScopeChain(true);
+  else
+    m_scriptContext->ReleaseVariable(DocumentScope);
+
+  if (m_rootURL == m_documentURL)
+    m_scriptContext->Run(PSTRSTRM(DocumentScope << '=' << ApplicationScope));
+  else
+    m_scriptContext->PushScopeChain(DocumentScope, true);
 
   PTRACE(4, "Processing global elements.");
   m_currentNode = m_currentXML->GetRootElement()->GetElement(0);
@@ -1826,13 +1854,6 @@ void PVXMLSession::InternalStartVXML()
 
   PTRACE(4, "Setting initial form \"" << m_newFormName << '"');
   SetCurrentForm(m_newFormName, false);
-
-  if (m_scriptContext->GetScopeChain().back() == DocumentScope)
-    m_scriptContext->PopScopeChain(true);
-  if (m_documentURL != m_rootURL)
-    m_scriptContext->PushScopeChain(DocumentScope, true);
-  else
-    m_scriptContext->Run(PSTRSTRM(DocumentScope << '=' << ApplicationScope));
 }
 
 
@@ -3186,7 +3207,7 @@ PBoolean PVXMLSession::TraverseMenu(PXMLElement & element)
 PBoolean PVXMLSession::TraversedMenu(PXMLElement &)
 {
   StartGrammars();
-  m_scriptContext->PopScopeChain(true);
+  ClearScopes();
   return false;
 }
 
@@ -3240,7 +3261,7 @@ PBoolean PVXMLSession::TraverseForm(PXMLElement &)
 
 PBoolean PVXMLSession::TraversedForm(PXMLElement &)
 {
-  m_scriptContext->PopScopeChain(true);
+  ClearScopes();
   return true;
 }
 
