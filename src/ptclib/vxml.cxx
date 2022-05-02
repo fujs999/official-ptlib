@@ -1844,8 +1844,12 @@ void PVXMLSession::InternalStartVXML(bool leafDocument)
   do {
     PXMLElement * element;
     while ((element = dynamic_cast<PXMLElement *>(m_currentNode)) != NULL &&
-           (element->GetName() == MenuElement || element->GetName() == FormElement))
-      m_currentNode = m_currentNode->GetNextObject();
+           (element->GetName() == MenuElement || element->GetName() == FormElement)) {
+      if (m_newFormName.empty() || m_newFormName == element->GetAttribute("id"))
+        m_currentNode = NULL;
+      else
+        m_currentNode = m_currentNode->GetNextObject();
+    }
 
     bool processGlobalChildren = ProcessNode();
     while (NextNode(processGlobalChildren))
