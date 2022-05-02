@@ -56,7 +56,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "E-Mail Test", "samples\emai
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "JSON Test", "samples\json\json_2019.vcxproj", "{8298F530-F757-4E34-A6A5-DCCEEF9FC842}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "VXML Sign Language DLL", "samples\vxmltest\SLAnalyserTest\SLAnalyserTest.vcxproj", "{84F81908-A9A8-41EF-A14C-1665E22ACEAC}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "VXML Sign Language DLL", "samples\vxmltest\SLAnalyserTest\SLAnalyserTest_2019.vcxproj", "{84F81908-A9A8-41EF-A14C-1665E22ACEAC}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PXML Test", "samples\pxml\PxmlTest_2019.vcxproj", "{D1A52BAD-27C1-4F0C-8FA9-81542272911A}"
 EndProject

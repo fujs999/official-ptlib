@@ -95,12 +95,15 @@ class PScriptLanguage : public PObject
     ) = 0;
 
     /**Create a composite structure.
-       The exact semantics is language dependant. For Lua this is a table.
+       The exact semantics is language dependant.
+       For Lua this is always a table.
+       For JavaScript it is either an object or an array.
 
        See class description for how \p name is parsed.
       */
     virtual bool CreateComposite(
-      const PString & name   ///< Name of new composite structure
+      const PString & name,       ///< Name of new composite structure
+      unsigned sequenceSize = 0   ///< Size of sequence, 0 means object
     ) = 0;
 
     /**Push a composite name space to the scope chain.
@@ -117,7 +120,22 @@ class PScriptLanguage : public PObject
       bool release  ///< Release the composite
     );
 
-    P_DECLARE_ENUM(VarTypes, NullType, BooleanType, IntegerType, NumberType, StringType, CompositeType, UndefinedType);
+    /**Get the composite name space scope chain.
+       @return The composite names in reverse scope order.
+      */
+    virtual PStringList GetScopeChain() const { return m_scopeChain; }
+
+    P_DECLARE_ENUM(
+      VarTypes,
+      NullType,
+      BooleanType,
+      IntegerType,
+      NumberType,
+      StringType,
+      CompositeType,
+      SequenceType,
+      UndefinedType
+    );
 
     /**Get the type of the variable.
       */

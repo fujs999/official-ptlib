@@ -23,9 +23,6 @@
             <?define LuaDir = "" ?>
         <?endif?>
     <?endif?>
-    <?ifndef V8SubDir ?>
-        <?define V8SubDir = "\v8\out.gn\ia32.release" ?>
-    <?endif?>
     <?ifndef FFMPEGDir ?>
         <?ifdef env.FFMPEG32DIR ?>
             <?define FFMPEGDir = "$(env.FFMPEG32DIR)" ?>
@@ -38,6 +35,13 @@
             <?define JPEGDir = "$(env.JPEG32DIR)" ?>
         <?else ?>
             <?define JPEGDir = "" ?>
+        <?endif?>
+    <?endif?>
+    <?ifndef AWSDir ?>
+        <?ifdef env.AWS32RELDIR ?>
+            <?define AWSDir = "$(env.AWS32RELDIR)" ?>
+        <?else ?>
+            <?define AWSDir = "" ?>
         <?endif?>
     <?endif?>
 <?else?>
@@ -61,9 +65,6 @@
             <?define LuaDir = "" ?>
         <?endif?>
     <?endif?>
-    <?ifndef V8SubDir ?>
-        <?define V8SubDir = "\v8\out.gn\x64.release" ?>
-    <?endif?>
     <?ifndef FFMPEGDir ?>
         <?ifdef env.FFMPEG64DIR ?>
             <?define FFMPEGDir = "$(env.FFMPEG64DIR)" ?>
@@ -78,18 +79,17 @@
             <?define JPEGDir = "" ?>
         <?endif?>
     <?endif?>
+    <?ifndef AWSDir ?>
+        <?ifdef env.AWS64RELDIR ?>
+            <?define AWSDir = "$(env.AWS64RELDIR)" ?>
+        <?else ?>
+            <?define AWSDir = "" ?>
+        <?endif?>
+    <?endif?>
 <?endif?>
 
 <?ifndef SSLSubDir ?>
     <?define SSLSubDir = "\bin" ?>
-<?endif?>
-
-<?ifndef V8Dir ?>
-    <?ifdef env.V8_DIR ?>
-        <?define V8Dir = "$(env.V8_DIR)" ?>
-    <?else ?>
-        <?define V8Dir = "" ?>
-    <?endif?>
 <?endif?>
 
 <?ifndef FFMPEGSubDir ?>
@@ -125,7 +125,7 @@
 <?endif?>
 <?if $(var.WxDir) != "" ?>
     <?ifndef WxVer ?>
-        <?define WxVer = "314" ?>
+        <?define WxVer = "315" ?>
     <?endif?>
     <?ifndef WxCustom ?>
         <?define WxCustom = "no" ?>
@@ -262,21 +262,125 @@
                                       KeyPath='yes' />
                             </Component>
                         <?endif?>
-                        <?if $(var.V8Dir) != "" ?>
-                            <Component Id='V8_snapshot_blob'
+                        <?if $(var.AWSDir) != "" ?>
+                            <Component Id='aws_crt_cpp'
                                        Win64="$(var.IsWin64)"
                                        Guid='*'>
-                                <File Id='V8_snapshot_blob_bin'
-                                      Name='snapshot_blob.bin'
-                                      Source='$(var.V8Dir)$(var.V8SubDir)\snapshot_blob.bin'
+                                <File Id='aws_crt_cpp_dll'
+                                      Name='aws-crt-cpp.dll'
+                                      Source='$(var.AWSDir)\aws-crt-cpp.dll'
                                       KeyPath='yes' />
                             </Component>
-                            <Component Id='V8_natives_blob'
+                            <Component Id='aws_c_auth'
                                        Win64="$(var.IsWin64)"
                                        Guid='*'>
-                                <File Id='V8_natives_blob_bin'
-                                      Name='natives_blob.bin'
-                                      Source='$(var.V8Dir)$(var.V8SubDir)\natives_blob.bin'
+                                <File Id='aws_c_auth_dll'
+                                      Name='aws-c-auth.dll'
+                                      Source='$(var.AWSDir)\aws-c-auth.dll'
+                                      KeyPath='yes' />
+                            </Component>
+                            <Component Id='aws_c_cal'
+                                       Win64="$(var.IsWin64)"
+                                       Guid='*'>
+                                <File Id='aws_c_cal_dll'
+                                      Name='aws-c-cal.dll'
+                                      Source='$(var.AWSDir)\aws-c-cal.dll'
+                                      KeyPath='yes' />
+                            </Component>
+                            <Component Id='aws_c_common'
+                                       Win64="$(var.IsWin64)"
+                                       Guid='*'>
+                                <File Id='aws_c_common_dll'
+                                      Name='aws-c-common.dll'
+                                      Source='$(var.AWSDir)\aws-c-common.dll'
+                                      KeyPath='yes' />
+                            </Component>
+                            <Component Id='aws_c_compression'
+                                       Win64="$(var.IsWin64)"
+                                       Guid='*'>
+                                <File Id='aws_c_compression_dll'
+                                      Name='aws-c-compression.dll'
+                                      Source='$(var.AWSDir)\aws-c-compression.dll'
+                                      KeyPath='yes' />
+                            </Component>
+                            <Component Id='aws_c_event_stream'
+                                       Win64="$(var.IsWin64)"
+                                       Guid='*'>
+                                <File Id='aws_c_event_stream_dll'
+                                      Name='aws-c-event-stream.dll'
+                                      Source='$(var.AWSDir)\aws-c-event-stream.dll'
+                                      KeyPath='yes' />
+                            </Component>
+                            <Component Id='aws_c_http'
+                                       Win64="$(var.IsWin64)"
+                                       Guid='*'>
+                                <File Id='aws_c_http_dll'
+                                      Name='aws-c-http.dll'
+                                      Source='$(var.AWSDir)\aws-c-http.dll'
+                                      KeyPath='yes' />
+                            </Component>
+                            <Component Id='aws_c_io'
+                                       Win64="$(var.IsWin64)"
+                                       Guid='*'>
+                                <File Id='aws_c_io_dll'
+                                      Name='aws-c-io.dll'
+                                      Source='$(var.AWSDir)\aws-c-io.dll'
+                                      KeyPath='yes' />
+                            </Component>
+                            <Component Id='aws_c_mqtt'
+                                       Win64="$(var.IsWin64)"
+                                       Guid='*'>
+                                <File Id='aws_c_mqtt_dll'
+                                      Name='aws-c-mqtt.dll'
+                                      Source='$(var.AWSDir)\aws-c-mqtt.dll'
+                                      KeyPath='yes' />
+                            </Component>
+                            <Component Id='aws_c_s3'
+                                       Win64="$(var.IsWin64)"
+                                       Guid='*'>
+                                <File Id='aws_c_s3_dll'
+                                      Name='aws-c-s3.dll'
+                                      Source='$(var.AWSDir)\aws-c-s3.dll'
+                                      KeyPath='yes' />
+                            </Component>
+                            <Component Id='aws_cpp_sdk_core'
+                                       Win64="$(var.IsWin64)"
+                                       Guid='*'>
+                                <File Id='aws_cpp_sdk_core_dll'
+                                      Name='aws-cpp-sdk-core.dll'
+                                      Source='$(var.AWSDir)\aws-cpp-sdk-core.dll'
+                                      KeyPath='yes' />
+                            </Component>
+                            <Component Id='aws_cpp_sdk_polly'
+                                       Win64="$(var.IsWin64)"
+                                       Guid='*'>
+                                <File Id='aws_cpp_sdk_polly_dll'
+                                      Name='aws-cpp-sdk-polly.dll'
+                                      Source='$(var.AWSDir)\aws-cpp-sdk-polly.dll'
+                                      KeyPath='yes' />
+                            </Component>
+                            <Component Id='aws_cpp_sdk_text_to_speech'
+                                       Win64="$(var.IsWin64)"
+                                       Guid='*'>
+                                <File Id='aws_cpp_sdk_text_to_speech_dll'
+                                      Name='aws-cpp-sdk-text-to-speech.dll'
+                                      Source='$(var.AWSDir)\aws-cpp-sdk-text-to-speech.dll'
+                                      KeyPath='yes' />
+                            </Component>
+                            <Component Id='aws_cpp_sdk_transcribe'
+                                       Win64="$(var.IsWin64)"
+                                       Guid='*'>
+                                <File Id='aws_cpp_sdk_transcribe_dll'
+                                      Name='aws-cpp-sdk-transcribe.dll'
+                                      Source='$(var.AWSDir)\aws-cpp-sdk-transcribe.dll'
+                                      KeyPath='yes' />
+                            </Component>
+                            <Component Id='aws_checksums'
+                                       Win64="$(var.IsWin64)"
+                                       Guid='*'>
+                                <File Id='aws_checksums_dll'
+                                      Name='aws-checksums.dll'
+                                      Source='$(var.AWSDir)\aws-checksums.dll'
                                       KeyPath='yes' />
                             </Component>
                         <?endif?>
@@ -323,14 +427,14 @@
                             </Component>
                         <?endif?>
                         <?if $(var.JPEGDir) != "" ?>
-                            <Component Id='JPEG'
-                                       Win64="$(var.IsWin64)"
-                                       Guid='*'>
-                                <File Id='JPEG_DLL'
-                                      Name='JPEG62.DLL'
-                                      Source='$(var.JPEGDir)$(var.JPEGSubDir)\JPEG62.DLL'
-                                      KeyPath='yes' />
-                            </Component>
+                        <Component Id='JPEG'
+                                   Win64="$(var.IsWin64)"
+                                   Guid='*'>
+                            <File Id='JPEG_DLL'
+                                  Name='JPEG62.DLL'
+                                  Source='$(var.JPEGDir)$(var.JPEGSubDir)\JPEG62.DLL'
+                                  KeyPath='yes' />
+                        </Component>
                         <?endif?>
                         <?if $(var.WxDir) != "" ?>
                             <Component Id='WxXRC'
@@ -447,9 +551,22 @@
             <?if $(var.LuaDir) != "" ?>
                 <ComponentRef Id='Lua' />
             <?endif?>
-            <?if $(var.V8Dir) != "" ?>
-                <ComponentRef Id='V8_snapshot_blob' />
-                <ComponentRef Id='V8_natives_blob' />
+            <?if $(var.AWSDir) != "" ?>
+                <ComponentRef Id='aws_crt_cpp' />
+                <ComponentRef Id='aws_c_auth' />
+                <ComponentRef Id='aws_c_cal' />
+                <ComponentRef Id='aws_c_common' />
+                <ComponentRef Id='aws_c_compression' />
+                <ComponentRef Id='aws_c_event_stream' />
+                <ComponentRef Id='aws_c_http' />
+                <ComponentRef Id='aws_c_io' />
+                <ComponentRef Id='aws_c_mqtt' />
+                <ComponentRef Id='aws_c_s3' />
+                <ComponentRef Id='aws_cpp_sdk_core' />
+                <ComponentRef Id='aws_cpp_sdk_polly' />
+                <ComponentRef Id='aws_cpp_sdk_text_to_speech' />
+                <ComponentRef Id='aws_cpp_sdk_transcribe' />
+                <ComponentRef Id='aws_checksums' />
             <?endif?>
             <?if $(var.FFMPEGDir) != "" ?>
                 <ComponentRef Id='AVFORMAT' />

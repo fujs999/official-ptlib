@@ -85,12 +85,15 @@ class PSimpleScript : public PScriptLanguage
     );
 
     /**Create a composite structure.
-       The exact semantics is language dependant. For Lua this is a table.
+       The exact semantics is language dependant.
+       For Lua this is always a table.
+       For JavaScript it is either an object or an array.
 
        See class description for how \p name is parsed.
       */
     virtual bool CreateComposite(
-      const PString & name   ///< Name of new composite structure
+      const PString & name,       ///< Name of new composite structure
+      unsigned sequenceSize = 0   ///< Size of sequence, 0 means object
     );
 
     /**Get the type of the variable.
@@ -172,6 +175,7 @@ class PSimpleScript : public PScriptLanguage
     const PStringToString & GetAllVariables() const { return m_variables; }
 
   protected:
+    PString * InternalFindVar(const PString & varName) const;
     PString InternalEvaluateExpr(const PString & expr);
     PStringToString m_variables;
 };

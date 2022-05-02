@@ -1152,6 +1152,13 @@ PVXMLSession::PVXMLSession()
   m_videoSender.SetActualDevice(PVideoInputDevice::CreateOpenedDevice(videoArgs));
 #endif // P_VXML_VIDEO
 
+  // Create always present objects
+  m_scriptContext->CreateComposite(PropertyScope);
+  m_scriptContext->CreateComposite(SessionScope);
+  m_scriptContext->CreateComposite(ApplicationScope);
+  // Point dialog scope to same object as application scope
+  m_scriptContext->Run(PSTRSTRM(DocumentScope << '=' << ApplicationScope));
+
   PTRACE(4, "Created session: " << this);
 }
 
@@ -1441,6 +1448,17 @@ PURL PVXMLSession::NormaliseResourceName(const PString & src)
 }
 
 
+void PVXMLSession::ClearScopes()
+{
+  for (;;) {
+    PString topScope = m_scriptContext->GetScopeChain().back();
+    if (topScope == ApplicationScope || topScope == DocumentScope)
+      break;
+    m_scriptContext->PopScopeChain(true);
+  }
+}
+
+
 bool PVXMLSession::SetCurrentForm(const PString & searchId, bool fullURI)
 {
   ClearBargeIn();
@@ -1452,6 +1470,8 @@ bool PVXMLSession::SetCurrentForm(const PString & searchId, bool fullURI)
   PString id = searchId;
 
   if (fullURI) {
+    ClearScopes();
+
     if (searchId.IsEmpty()) {
       PTRACE(3, "Full URI required for this form/menu search");
       return false;
@@ -1572,24 +1592,44 @@ PBoolean PVXMLSession::Close()
 /* These functions will add in the owner composite structures in the scripting language,
 so session.connection.redirect.ani = "1234" will work even if session.connection.redirect,
 or session.connection, do not yet exist. */
-static bool SetScriptVariableOrComposite(PScriptLanguage & scriptContext, const PString & fullVarName, const char * value)
+static bool CreateComposites(PScriptLanguage & scriptContext, const PString & fullVarName)
 {
-  return value != NULL ? scriptContext.SetString(fullVarName, value) : scriptContext.CreateComposite(fullVarName);
+  PStringArray tokens = fullVarName.Tokenise(".");
+  PString composite;
+  for (size_t i = 0; i < tokens.size()-1; ++i) {
+    PString token = tokens[i];
+    PINDEX bracket = token.Find('[');
+    if (bracket != P_MAX_INDEX) {
+      if (!scriptContext.CreateComposite(composite + token.Left(bracket),
+                                         token.Mid(bracket+1).AsUnsigned()+1))
+        return false;
+    }
+    composite += token;
+    if (!scriptContext.CreateComposite(composite))
+      return false;
+    composite += '.';
+  }
+  return true;
 }
 
-static bool SetScriptVariableRecursive(PScriptLanguage & scriptContext, const PString & fullVarName, const char * value)
+static bool CreateScriptVariable(PScriptLanguage & scriptContext, const PString & fullVarName, const PString & value)
 {
-  if (SetScriptVariableOrComposite(scriptContext, fullVarName, value))
+  if (!CreateComposites(scriptContext, fullVarName))
+    return false;
+
+  size_t nameLen = fullVarName.length();
+  size_t valueLen = value.length();
+  if (fullVarName.NumCompare(".$", 2, nameLen-2) != PObject::EqualTo &&
+      value.NumCompare(".$", 2, valueLen-2) != PObject::EqualTo)
+    return scriptContext.SetString(fullVarName, value);
+
+  if (value.empty())
     return true;
 
-  PINDEX dot = fullVarName.FindLast('.');
-  if (dot == P_MAX_INDEX)
+  if (!CreateComposites(scriptContext, value))
     return false;
 
-  if (!SetScriptVariableRecursive(scriptContext, fullVarName.Left(dot), NULL))
-    return false;
-
-  return SetScriptVariableOrComposite(scriptContext, fullVarName, value);
+  return scriptContext.Run(PSTRSTRM(fullVarName.Left(nameLen-2) << '=' << value.Left(valueLen-2)));
 }
 
 
@@ -1599,39 +1639,45 @@ void PVXMLSession::InternalThreadMain()
 
   m_sessionMutex.Wait();
 
-  {
-    const char * Languages[] = { "JavaScript", "Lua" };
-    PScriptLanguage * newScript = PScriptLanguage::CreateOne(PStringArray(PARRAYSIZE(Languages), Languages));
-    if (newScript != NULL) {
-      newScript->CreateComposite(PropertyScope);
-      newScript->CreateComposite(SessionScope);
-      newScript->CreateComposite(ApplicationScope);
-      newScript->CreateComposite(DocumentScope);
-      #if P_VXML_VIDEO
-        newScript->SetFunction(SIGN_LANGUAGE_PREVIEW_SCRIPT_FUNCTION, PCREATE_NOTIFIER(SignLanguagePreviewFunction));
-        newScript->SetFunction(SIGN_LANGUAGE_CONTROL_SCRIPT_FUNCTION, PCREATE_NOTIFIER(SignLanguageControlFunction));
-      #endif
+  static const char * Languages[] = { "JavaScript", "Lua" };
+  PScriptLanguage * newScript = PScriptLanguage::CreateOne(PStringArray(PARRAYSIZE(Languages), Languages));
+  if (newScript != NULL) {
+    newScript->CreateComposite(PropertyScope);
+    newScript->CreateComposite(SessionScope);
+    newScript->CreateComposite(ApplicationScope);
+    #if P_VXML_VIDEO
+      newScript->SetFunction(SIGN_LANGUAGE_PREVIEW_SCRIPT_FUNCTION, PCREATE_NOTIFIER(SignLanguagePreviewFunction));
+      newScript->SetFunction(SIGN_LANGUAGE_CONTROL_SCRIPT_FUNCTION, PCREATE_NOTIFIER(SignLanguageControlFunction));
+    #endif
 
-      PSimpleScript * simpleScript = dynamic_cast<PSimpleScript *>(m_scriptContext.get());
-      if (simpleScript != NULL) {
-        PStringToString variables = simpleScript->GetAllVariables();
-        for (PStringToString::iterator it = variables.begin(); it != variables.end(); ++it)
-          SetScriptVariableRecursive(*m_scriptContext, it->first, it->second);
-      }
-      m_scriptContext.reset(newScript);
+    PSimpleScript * simpleScript = dynamic_cast<PSimpleScript *>(m_scriptContext.get());
+    if (simpleScript != NULL) {
+      PStringToString variables = simpleScript->GetAllVariables();
+      for (PStringToString::iterator it = variables.begin(); it != variables.end(); ++it)
+        CreateScriptVariable(*newScript, it->first, it->second);
     }
-
-    m_scriptContext->PushScopeChain(SessionScope, false);
-    m_scriptContext->PushScopeChain(ApplicationScope, false);
-    m_scriptContext->PushScopeChain(DocumentScope, false);
-
-    PTime now;
-    InternalSetVar(SessionScope, "time", now.AsString());
-    InternalSetVar(SessionScope, "timeISO8601", now.AsString(PTime::ShortISO8601));
-    InternalSetVar(SessionScope, "timeEpoch", now.GetTimeInSeconds());
+    m_scriptContext.reset(newScript);
   }
 
-  InternalStartVXML();
+  m_scriptContext->PushScopeChain(SessionScope, false);
+  m_scriptContext->PushScopeChain(ApplicationScope, false);
+
+  PTime now;
+  InternalSetVar(SessionScope, "time", now.AsString());
+  InternalSetVar(SessionScope, "timeISO8601", now.AsString(PTime::ShortISO8601));
+  InternalSetVar(SessionScope, "timeEpoch", now.GetTimeInSeconds());
+
+  InternalSetVar(PropertyScope, TimeoutProperty , "10s");
+  InternalSetVar(PropertyScope, BargeInProperty, true);
+  InternalSetVar(PropertyScope, CachingProperty, SafeKeyword);
+  InternalSetVar(PropertyScope, InputModesProperty, DtmfAttribute & VoiceAttribute);
+  InternalSetVar(PropertyScope, InterDigitTimeoutProperty, "5s");
+  InternalSetVar(PropertyScope, TermTimeoutProperty, "0");
+  InternalSetVar(PropertyScope, TermCharProperty, "#");
+  InternalSetVar(PropertyScope, CompleteTimeoutProperty, "2s");
+  InternalSetVar(PropertyScope, IncompleteTimeoutProperty, "5s");
+
+  InternalStartVXML(false);
 
   while (!m_abortVXML) {
     // process current node in the VXML script
@@ -1650,8 +1696,7 @@ void PVXMLSession::InternalThreadMain()
     if (m_newXML.get() != NULL) {
       /* Replace old XML with new, now it is safe to do so and no XML elements
          pointers are being referenced by the code any more */
-      m_currentXML.transfer(m_newXML);
-      InternalStartVXML();
+      InternalStartVXML(true);
     }
 
     // Determine if we should quit
@@ -1670,8 +1715,7 @@ void PVXMLSession::InternalThreadMain()
 
     if (m_newXML.get() != NULL) {
       // OnEndDialog() loaded some more XML to do.
-      m_currentXML.transfer(m_newXML);
-      InternalStartVXML();
+      InternalStartVXML(true);
     }
 
     if (m_currentNode == NULL)
@@ -1774,26 +1818,38 @@ bool PVXMLSession::ProcessEvents()
 }
 
 
-void PVXMLSession::InternalStartVXML()
+void PVXMLSession::InternalStartVXML(bool leafDocument)
 {
   ClearGrammars();
-  InternalSetVar(PropertyScope, TimeoutProperty , "10s");
-  InternalSetVar(PropertyScope, BargeInProperty, true);
-  InternalSetVar(PropertyScope, CachingProperty, SafeKeyword);
-  InternalSetVar(PropertyScope, InputModesProperty, DtmfAttribute & VoiceAttribute);
-  InternalSetVar(PropertyScope, InterDigitTimeoutProperty, "5s");
-  InternalSetVar(PropertyScope, TermTimeoutProperty, "0");
-  InternalSetVar(PropertyScope, TermCharProperty, "#");
-  InternalSetVar(PropertyScope, CompleteTimeoutProperty, "2s");
-  InternalSetVar(PropertyScope, IncompleteTimeoutProperty, "5s");
+
+  if (leafDocument) {
+    PURL appURL = NormaliseResourceName(m_newXML->GetRootElement()->GetAttribute("application"));
+    if (appURL.IsEmpty() || appURL != m_rootURL)
+      m_rootURL = m_documentURL;
+    m_currentXML.transfer(m_newXML);
+  }
+
+  if (m_scriptContext->GetScopeChain().back() == DocumentScope)
+    m_scriptContext->PopScopeChain(true);
+  else
+    m_scriptContext->ReleaseVariable(DocumentScope);
+
+  if (m_rootURL == m_documentURL)
+    m_scriptContext->Run(PSTRSTRM(DocumentScope << '=' << ApplicationScope));
+  else
+    m_scriptContext->PushScopeChain(DocumentScope, true);
 
   PTRACE(4, "Processing global elements.");
   m_currentNode = m_currentXML->GetRootElement()->GetElement(0);
   do {
     PXMLElement * element;
     while ((element = dynamic_cast<PXMLElement *>(m_currentNode)) != NULL &&
-           (element->GetName() == MenuElement || element->GetName() == FormElement))
-      m_currentNode = m_currentNode->GetNextObject();
+           (element->GetName() == MenuElement || element->GetName() == FormElement)) {
+      if (m_newFormName.empty() || m_newFormName == element->GetAttribute("id"))
+        m_currentNode = NULL;
+      else
+        m_currentNode = m_currentNode->GetNextObject();
+    }
 
     bool processGlobalChildren = ProcessNode();
     while (NextNode(processGlobalChildren))
@@ -2122,7 +2178,38 @@ PCaselessString PVXMLSession::GetVar(const PString & varName) const
 
 bool PVXMLSession::SetVar(const PString & varName, const PString & value)
 {
-  return m_scriptContext->Run(PSTRSTRM(varName << '=' << value.ToLiteral()));
+  return CreateScriptVariable(*m_scriptContext, varName, value);
+}
+
+
+void PVXMLSession::SetConnectionVars(const PString & localURI,
+                                     const PString & remoteURI,
+                                     const PString & protocolName,
+                                     const PString & protocolVersion,
+                                     const PArray<PStringToString> & redirects,
+                                     const PStringToString & aai,
+                                     bool originator)
+{
+  m_scriptContext->CreateComposite(SessionScope);
+  m_scriptContext->CreateComposite("session.connection");
+  m_scriptContext->CreateComposite("session.connection.local");
+  m_scriptContext->CreateComposite("session.connection.remote");
+  m_scriptContext->CreateComposite("session.connection.protocol");
+  m_scriptContext->CreateComposite("session.connection.aai");
+
+  m_scriptContext->SetString("session.connection.local.uri", localURI);
+  m_scriptContext->SetString("session.connection.remote.uri", remoteURI);
+  m_scriptContext->SetString("session.connection.protocol.name", protocolName);
+  m_scriptContext->SetString("session.connection.protocol.version", protocolVersion);
+  for (size_t i = 0; i < redirects.size(); ++i) {
+    m_scriptContext->CreateComposite(PSTRSTRM("session.connection.redirect[" << i << ']'));
+    for (PStringToString::iterator it = redirects[i].begin(); it != redirects[i].end(); ++it)
+      m_scriptContext->SetString(PSTRSTRM("session.connection.redirect[" << i << "]." << it->first), it->second);
+  }
+  for (PStringToString::const_iterator it = aai.begin(); it != aai.end(); ++it)
+    m_scriptContext->SetString("session.connection.aai." + it->first, it->second);
+  m_scriptContext->SetString("session.connection.originator",
+                             originator ? "session.connection.local.$" : "session.connection.remote.$");
 }
 
 
@@ -3124,7 +3211,7 @@ PBoolean PVXMLSession::TraverseMenu(PXMLElement & element)
 PBoolean PVXMLSession::TraversedMenu(PXMLElement &)
 {
   StartGrammars();
-  m_scriptContext->PopScopeChain(true);
+  ClearScopes();
   return false;
 }
 
@@ -3146,7 +3233,8 @@ PBoolean PVXMLSession::TraverseVar(PXMLElement & element)
   if (name.empty())
     return ThrowSemanticError(element, "No name");
 
-  return RunScript(element, PSTRSTRM(name << '=' << element.GetAttribute(ExprAttribute)));
+  return RunScript(element, PSTRSTRM(m_scriptContext->GetScopeChain().back() << '.' << name
+                                     << '=' << element.GetAttribute(ExprAttribute)));
 }
 
 
@@ -3177,7 +3265,7 @@ PBoolean PVXMLSession::TraverseForm(PXMLElement &)
 
 PBoolean PVXMLSession::TraversedForm(PXMLElement &)
 {
-  m_scriptContext->PopScopeChain(true);
+  ClearScopes();
   return true;
 }
 

@@ -56,7 +56,7 @@ unpack to somehere, e.g. C:\tools\depot_tools
 
 Set up the environment in CMD:
 set DEPOT_TOOLS_WIN_TOOLCHAIN=0
-set vs2019_install=C:\Program Files (x86)\Microsoft Visual Studio\2019\Community
+set vs2019_install="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community"
 PATH=C:\tools\depot_tools;%PATH%
 
 or for PowerShell:
@@ -529,6 +529,8 @@ public:
       return StringType;
     if (member->IsObject())
       return CompositeType;
+    if (member->IsArray())
+      return SequenceType;
     return NumVarTypes;
 }
 
@@ -557,9 +559,6 @@ public:
   v8::Local<v8::Value> SetVarValue(const PVarType & var)
   {
     switch (var.GetType()) {
-      case PVarType::VarNULL:
-        return v8::Local<v8::Value>();
-
       case PVarType::VarBoolean:
 #if V8_MAJOR_VERSION > 3
         return NewObject<v8::Boolean>(var.AsBoolean());
@@ -593,11 +592,8 @@ public:
       case PVarType::VarFloatExtended:
         return NewObject<v8::Number>(var.AsFloat());
 
-      case PVarType::VarTime:
-      case PVarType::VarStaticBinary:
-      case PVarType::VarDynamicBinary:
       default:
-        return NewObject<v8::Object>();
+        return v8::Local<v8::Value>();
     }
   }
 
@@ -628,12 +624,66 @@ public:
     if (varName[0] != '[' ? object->Set(NewString(varName), value) : object->Set(varName.Mid(1).AsInteger(), value))
 #endif
     {
-      PTRACE(4, "Set \"" << key << "\" to " <<
-             (var.GetType() == PVarType::VarStaticBinary ? PConstString("composite") : var.AsString().Left(100).ToLiteral()));
+      PTRACE(4, "Set \"" << key << "\" to " << var.AsString().Left(100).ToLiteral());
       return true;
     }
 
     m_owner.OnError(107, PSTRSTRM("Could not set \"" << key << "\" to " << var.AsString().Left(100).ToLiteral()));
+    return false;
+  }
+
+
+  bool CreateComposite(const PString & key, int sequenceSize)
+  {
+    if (m_isolate == NULL) {
+      m_owner.OnError(100, "Uninitialised");
+      return false;
+    }
+
+    v8::Isolate::Scope isolateScope(m_isolate);
+    HandleScope handleScope(this);
+    v8::Local<v8::Context> context = GetContext();
+    v8::Context::Scope contextScope(context);
+
+    PString varName;
+    v8::Local<v8::Object> object = GetObjectHandle(context, key, varName, true);
+    if (object.IsEmpty())
+      return false;
+
+    v8::Local<v8::Value> member = GetMember(context, object, varName);
+    if (!member.IsEmpty() && !member->IsUndefined()) {
+      if (sequenceSize == 0) {
+        if (member->IsObject())
+          return true;
+        m_owner.OnError(107, PSTRSTRM("Could not set \"" << key << "\" to an object, already set"));
+        return false;
+      }
+      if (!member->IsArray()) {
+        m_owner.OnError(107, PSTRSTRM("Could not set \"" << key << "\" to array, already set"));
+        return false;
+      }
+      v8::Local<v8::Array> sequence = member.As<v8::Array>();
+      return true;
+    }
+
+    v8::Local<v8::Value> value;
+    if (sequenceSize > 0)
+      value = NewObject<v8::Array>(sequenceSize);
+    else
+      value = NewObject<v8::Object>();
+#if V8_MAJOR_VERSION > 3
+    v8::Maybe<bool> result = varName[0] != '[' ? object->Set(context, NewString(varName), value)
+      : object->Set(context, varName.Mid(1).AsUnsigned(), value);
+    if (result.FromMaybe(false))
+#else
+    if (varName[0] != '[' ? object->Set(NewString(varName), value) : object->Set(varName.Mid(1).AsInteger(), value))
+#endif
+    {
+      PTRACE(4, "Set \"" << key << "\" to " << (sequenceSize > 0 ? "array" : "object"));
+      return true;
+    }
+
+    m_owner.OnError(107, PSTRSTRM("Could not set \"" << key << "\" to " << (sequenceSize > 0 ? "array" : "object")));
     return false;
   }
 
@@ -806,7 +856,8 @@ public:
     }
 
     resultText = ToPString(result);
-    PTRACE(4, "Script execution returned " << resultText.Ellipsis(100).ToLiteral());
+    PTRACE(4, "Script execution of " << text.Ellipsis(100).ToLiteral()
+           << " returned " << resultText.Ellipsis(100).ToLiteral());
 
     return true;
   }
@@ -881,13 +932,10 @@ bool PJavaScript::Run(const char * text)
 }
 
 
-bool PJavaScript::CreateComposite(const PString & name)
+bool PJavaScript::CreateComposite(const PString & name, unsigned sequenceSize)
 {
   PWaitAndSignal mutex(m_mutex);
-
-  PVarType dummy;
-  dummy.SetType(PVarType::VarStaticBinary);
-  return m_private->SetVar(name, dummy);
+  return m_private->CreateComposite(name, sequenceSize);
 }
 
 

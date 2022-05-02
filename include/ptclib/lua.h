@@ -122,12 +122,14 @@ class PLua : public PScriptLanguage
 
 
     /**Create a composite structure.
-       For Lua this creates a table.
+       The exact semantics is language dependant.
+       For Lua this is always a table.
 
        See class description for how \p name is parsed.
       */
     virtual bool CreateComposite(
-      const PString & name   ///< Name of new table
+      const PString & name,       ///< Name of new composite structure
+      unsigned sequenceSize = 0   ///< Size of sequence, 0 means object
     );
 
     /**Get the type of the variable.

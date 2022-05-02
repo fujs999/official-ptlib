@@ -87,10 +87,14 @@ class PJavaScript : public PScriptLanguage
 
 
     /**Create a composite structure.
+       The exact semantics is language dependant.
+       For JavaScript it is either an object or an array.
+
        See class description for how \p name is parsed.
       */
     virtual bool CreateComposite(
-      const PString & name   ///< Name of new composite structure
+      const PString & name,       ///< Name of new composite structure
+      unsigned sequenceSize = 0   ///< Size of sequence, 0 means object
     );
 
     /**Get the type of the variable.

@@ -79,7 +79,7 @@ bool PSimpleScript::LoadText(const PString &)
 }
 
 
-static PConstString const LegalVariableChars("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_.$");
+static PConstString const LegalVariableChars("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_.$[]");
 
 bool PSimpleScript::Run(const char * script)
 {
@@ -94,6 +94,11 @@ bool PSimpleScript::Run(const char * script)
   if (varName.FindSpan(LegalVariableChars) != P_MAX_INDEX) {
     OnError(1, "Illegal assignment variable name");
     return false;
+  }
+
+  if (expr.FindSpan(LegalVariableChars) == P_MAX_INDEX && GetVarType(expr) == CompositeType) {
+    m_variables.SetAt(varName + ".$", expr + ".$");
+    return true;
   }
 
   PINDEX comparison;
@@ -200,9 +205,14 @@ PString PSimpleScript::InternalEvaluateExpr(const PString & expr)
 }
 
 
-bool PSimpleScript::CreateComposite(const PString & name)
+bool PSimpleScript::CreateComposite(const PString & name, unsigned sequenceSize)
 {
-  m_variables.SetAt(name+".$", "");
+  if (sequenceSize == 0)
+    m_variables.SetAt(name+".$", "");
+  else {
+    for (unsigned i = 0; i < sequenceSize; ++i)
+      m_variables.SetAt(PSTRSTRM(name<< '[' << i << ']'), "");
+  }
   return true;
 }
 
@@ -221,19 +231,32 @@ PScriptLanguage::VarTypes PSimpleScript::GetVarType(const PString & name)
 }
 
 
-bool PSimpleScript::GetVar(const PString & name, PVarType & var)
+PString * PSimpleScript::InternalFindVar(const PString & varName) const
+{
+  PString name = varName;
+  PINDEX dot = name.Find('.');
+  if (dot != P_MAX_INDEX) {
+    PString * reference = m_variables.GetAt(name.Left(dot) + ".$");
+    if (reference != NULL && !reference->empty())
+      name = reference->Left(reference->Find('.')) + name.Mid(dot);
+  }
+
+  PString * value;
+  for (PStringList::const_iterator it = m_scopeChain.rbegin(); it != m_scopeChain.rend(); --it) {
+    if ((value = m_variables.GetAt(PSTRSTRM(*it << '.' << name))) != NULL)
+      return value;
+  }
+
+  return m_variables.GetAt(name);
+}
+
+
+bool PSimpleScript::GetVar(const PString & varName, PVarType & var)
 {
   PWaitAndSignal mutex(m_mutex);
 
-  PString * value;
-  for (PStringList::iterator it = m_scopeChain.rbegin(); it != m_scopeChain.rend(); --it) {
-    if ((value = m_variables.GetAt(PSTRSTRM(*it << '.' << name))) != NULL) {
-      var = *value;
-      return true;
-    }
-  }
-
-  if ((value = m_variables.GetAt(name)) == NULL)
+  PString * value = InternalFindVar(varName);
+  if (value == NULL)
     return false;
 
   var = *value;
@@ -241,11 +264,15 @@ bool PSimpleScript::GetVar(const PString & name, PVarType & var)
 }
 
 
-bool PSimpleScript::SetVar(const PString & name, const PVarType & var)
+bool PSimpleScript::SetVar(const PString & varName, const PVarType & var)
 {
   PWaitAndSignal mutex(m_mutex);
 
-  m_variables.SetAt(name, var.AsString());
+  PString * value = InternalFindVar(varName);
+  if (value != NULL)
+    *value = var.AsString();
+  else
+    m_variables.SetAt(varName, var.AsString());
   return true;
 }
 
