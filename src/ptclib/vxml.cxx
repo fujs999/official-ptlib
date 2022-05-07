@@ -1429,22 +1429,25 @@ bool PVXMLSession::InternalLoadVXML(const PString & xmlText, const PString & fir
 
 PURL PVXMLSession::NormaliseResourceName(const PString & src)
 {
+  if (src.empty())
+    return src;
+
   PURL url;
-  if (url.Parse(src, NULL))
+  if (url.Parse(src, NULL) && !url.GetRelativePath())
     return url;
 
-  PString path = InternalGetVar(DocumentScope, "path");
-  if (path.empty()) {
+  PURL path = InternalGetVar(DocumentScope, "path");
+  if (path.IsEmpty()) {
     url.Parse(src, "file");
     return url;
   }
 
-  if (path[path.length()-1] != '/')
-    path += '/';
-  if (url.Parse(path + src, NULL))
-    return url;
+  if (url.IsEmpty())
+    path.AppendPathStr(src);
+  else
+    path.AppendPath(url.GetPath());
 
-  return PString::Empty();
+  return path;
 }
 
 

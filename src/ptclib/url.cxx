@@ -810,20 +810,8 @@ PString PURL::GetHostPort() const
 
 void PURL::SetPathStr(const PString & pathStr)
 {
-  m_path = pathStr.Tokenise("/", true);
-
-  if (m_path.GetSize() > 0 && m_path[0].IsEmpty()) 
-    m_path.RemoveAt(0);
-
-  for (PINDEX i = 0; i < m_path.GetSize(); i++) {
-    m_path[i] = UntranslateString(m_path[i], PathTranslation);
-    if (i > 0 && m_path[i] == ".." && m_path[i-1] != "..") {
-      m_path.RemoveAt(i--);
-      m_path.RemoveAt(i--);
-    }
-  }
-
-  Recalculate();
+  m_path = PStringArray();
+  AppendPathStr(pathStr);
 }
 
 
@@ -851,6 +839,24 @@ void PURL::AppendPath(const PString & segment)
 {
   m_path.MakeUnique();
   m_path.AppendString(segment);
+  Recalculate();
+}
+
+
+void PURL::AppendPath(const PStringArray & segments)
+{
+  m_path.MakeUnique();
+  m_path += segments;
+  Recalculate();
+}
+
+
+void PURL::AppendPathStr(const PString & segments)
+{
+  m_path.MakeUnique();
+  PStringArray segmentStrings = segments.Tokenise("/", true);
+  for (PINDEX i = 0; i < segmentStrings.GetSize(); ++i)
+    m_path.AppendString(UntranslateString(segmentStrings[i], PathTranslation));
   Recalculate();
 }
 
@@ -990,6 +996,18 @@ bool PURL::OpenBrowser(const PString & url)
 
 void PURL::Recalculate()
 {
+  if (!m_path.empty() && m_path[0].IsEmpty())
+    m_path.RemoveAt(0);
+
+  for (PINDEX i = 1; i < m_path.GetSize(); i++) {    
+    if (m_path[i] == ".")
+      m_path.RemoveAt(i--);
+    else if (m_path[i] == ".." && m_path[i-1] != "..") {
+      m_path.RemoveAt(i--);
+      m_path.RemoveAt(i--);
+    }
+  }
+
   if (m_schemeInfo != NULL)
     m_urlString = m_schemeInfo->AsString(FullURL, *this);
   else
