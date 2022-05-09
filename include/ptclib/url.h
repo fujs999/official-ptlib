@@ -280,7 +280,7 @@ class PURL : public PObject
     void AppendPath(const PString & segment);
 
     /// Append segments to the path field of the URL.
-    void AppendPath(const PStringArray & segments);
+    void AppendPathSegments(const PStringArray & segments);
 
     /// Append segments to the path field of the URL.
     void AppendPathStr(const PString & segments);

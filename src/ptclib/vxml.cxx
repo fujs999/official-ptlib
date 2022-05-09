@@ -1445,7 +1445,7 @@ PURL PVXMLSession::NormaliseResourceName(const PString & src)
   if (url.IsEmpty())
     path.AppendPathStr(src);
   else if (path.GetScheme() == url.GetScheme())
-    path.AppendPath(url.GetPath());
+    path.AppendPathSegments(url.GetPath());
   else
     return url;
 

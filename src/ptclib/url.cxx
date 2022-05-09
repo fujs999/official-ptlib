@@ -843,7 +843,7 @@ void PURL::AppendPath(const PString & segment)
 }
 
 
-void PURL::AppendPath(const PStringArray & segments)
+void PURL::AppendPathSegments(const PStringArray & segments)
 {
   m_path.MakeUnique();
   m_path += segments;
