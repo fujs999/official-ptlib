@@ -1412,11 +1412,6 @@ bool PVXMLSession::InternalLoadVXML(const PString & xmlText, const PString & fir
   if (m_rootURL.IsEmpty())
     m_rootURL = m_documentURL;
 
-  PURL pathURL = m_documentURL;
-  pathURL.ChangePath(PString::Empty()); // Remove last element of root URL
-  InternalSetVar(DocumentScope, "path", pathURL);
-  InternalSetVar(DocumentScope, "uri", m_documentURL);
-
   if (m_currentXML.get() == NULL)
     m_currentXML.transfer(xml);
   else
@@ -1436,11 +1431,8 @@ PURL PVXMLSession::NormaliseResourceName(const PString & src)
   if (url.Parse(src, NULL) && !url.GetRelativePath())
     return url;
 
-  PURL path = InternalGetVar(DocumentScope, "path");
-  if (path.IsEmpty()) {
-    url.Parse(src, "file");
-    return url;
-  }
+  PURL path = m_documentURL;
+  path.ChangePath(PString::Empty()); // Remove last element of document URL
 
   if (url.IsEmpty())
     path.AppendPathStr(src);
@@ -1843,6 +1835,8 @@ void PVXMLSession::InternalStartVXML(bool leafDocument)
     m_scriptContext->Run(PSTRSTRM(DocumentScope << '=' << ApplicationScope));
   else
     m_scriptContext->PushScopeChain(DocumentScope, true);
+
+  InternalSetVar(DocumentScope, "uri", m_documentURL);  // Non-standard but potentially useful
 
   PTRACE(4, "Processing global elements.");
   m_currentNode = m_currentXML->GetRootElement()->GetElement(0);
