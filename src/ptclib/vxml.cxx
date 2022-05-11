@@ -1447,9 +1447,10 @@ PURL PVXMLSession::NormaliseResourceName(const PString & src)
 
 void PVXMLSession::ClearScopes()
 {
-  for (;;) {
-    PString topScope = m_scriptContext->GetScopeChain().back();
-    if (topScope == ApplicationScope || topScope == DocumentScope)
+  static char const * const keeperScopeNames[] = { SessionScope, ApplicationScope, DocumentScope };
+  static PStringSet const keeperScopes(PARRAYSIZE(keeperScopeNames), keeperScopeNames);
+  while (!m_scriptContext->GetScopeChain().empty()) {
+    if (keeperScopes.Contains(m_scriptContext->GetScopeChain().back()))
       break;
     m_scriptContext->PopScopeChain(true);
   }
