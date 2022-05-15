@@ -3513,29 +3513,6 @@ PVXMLGrammar::PVXMLGrammar(const PVXMLGrammarInit & init)
   , m_noInputTimeout(PVXMLSession::StringToTime(m_session.GetProperty(TimeoutProperty)))
   , m_partFillTimeout(PVXMLSession::StringToTime(m_session.GetProperty(InterDigitTimeoutProperty)))
 {
-  PString inputModes = m_session.GetProperty(InputModesProperty);
-  if (!inputModes.empty()) {
-    m_allowDTMF = inputModes.Find(DtmfAttribute) != P_MAX_INDEX;
-
-    bool allowVoice = inputModes.Find(VoiceAttribute) != P_MAX_INDEX;
-    if (init.m_grammarElement != NULL) {
-      PCaselessString attrib = init.m_grammarElement->GetAttribute("mode");
-      if (!attrib.empty())
-        allowVoice = attrib == VoiceAttribute;
-    }
-
-    if (allowVoice) {
-      m_recogniser = m_session.CreateSpeechRecognition();
-      if (m_recogniser == NULL)
-        m_allowDTMF = true; // Turn on despite element indication, as no other way for input!
-      else {
-        PTimeInterval incomplete = PVXMLSession::StringToTime(m_session.GetProperty(IncompleteTimeoutProperty));
-        if (incomplete < m_partFillTimeout)
-          m_partFillTimeout = incomplete;
-      }
-    }
-  }
-
   m_timer.SetNotifier(PCREATE_NOTIFIER(OnTimeout), "VXMLGrammar");
 }
 
@@ -3592,6 +3569,36 @@ bool PVXMLGrammar::Start()
   if (!m_state.compare_exchange_strong(prev, Started))
     return prev == Started || prev == PartFill;
 
+  PString inputModes = m_session.GetProperty(InputModesProperty);
+  if (inputModes.empty())
+    inputModes = DtmfAttribute; // Can't really be empty
+
+  if (m_grammarElement != NULL) {
+    PCaselessString attrib = m_grammarElement->GetAttribute("mode");
+    if (!attrib.empty())
+      inputModes = attrib;  // Overrides property
+  }
+
+  m_allowDTMF = inputModes.Find(DtmfAttribute) != P_MAX_INDEX;
+
+  bool allowVoice = inputModes.Find(VoiceAttribute) != P_MAX_INDEX;
+  if (m_grammarElement != NULL) {
+    PCaselessString attrib = m_grammarElement->GetAttribute("mode");
+    if (!attrib.empty())
+      allowVoice = attrib == VoiceAttribute;
+  }
+
+  if (allowVoice) {
+    m_recogniser = m_session.CreateSpeechRecognition();
+    if (m_recogniser == NULL)
+      m_allowDTMF = true; // Turn on despite element indication, as no other way for input!
+    else {
+      PTimeInterval incomplete = PVXMLSession::StringToTime(m_session.GetProperty(IncompleteTimeoutProperty));
+      if (incomplete < m_partFillTimeout)
+        m_partFillTimeout = incomplete;
+    }
+  }
+
   m_timer = m_noInputTimeout;
 
   if (m_recogniser != NULL) {
@@ -3615,6 +3622,8 @@ bool PVXMLGrammar::Start()
   }
 
   PTRACE(3, "Grammar " << *this << " started:"
+         " dtmf=" << boolalpha << m_allowDTMF << ","
+         " voice=" << (m_recogniser != NULL) << ","
          " noInputTimeout=" << m_noInputTimeout << ","
          " partFillTimeout=" << m_partFillTimeout);
   return true;
