@@ -1352,7 +1352,7 @@ PBoolean PVXMLSession::LoadURL(const PURL & url)
 
 PBoolean PVXMLSession::LoadVXML(const PString & xmlText, const PString & firstForm)
 {
-  m_documentURL = PString::Empty();
+  m_documentURL.Parse("text/xml;charset=UTF-8," + xmlText, "data");
   return InternalLoadVXML(xmlText, firstForm);
 }
 
