@@ -482,7 +482,7 @@ PBoolean PURL::InternalParse(const char * cstr, const char * defaultScheme)
 }
 
 
-bool PURL::LegacyParse(const char * cstr, const PURLLegacyScheme * schemeInfo)
+bool PURL::LegacyParse(const char * cstr, const PURLLegacyScheme & schemeInfo)
 {
   const PConstCaselessString str(cstr);
   PINDEX start = 0;
@@ -490,28 +490,28 @@ bool PURL::LegacyParse(const char * cstr, const PURLLegacyScheme * schemeInfo)
   PINDEX pos;
 
   // if the URL should have leading slash, then remove it if it has one
-  if (schemeInfo != NULL && schemeInfo->hasHostPort && schemeInfo->hasPath) {
+  if (schemeInfo.hasHostPort && schemeInfo.hasPath) {
     if (str.GetLength() > 2 && str[0] == '/' && str[1] == '/')
       start = 2;
     else
-      m_relativePath = schemeInfo->relativeImpliesScheme || str[0] != '/';
+      m_relativePath = schemeInfo.relativeImpliesScheme || str[0] != '/';
   }
 
   // parse user/password/host/port
-  if (!m_relativePath && schemeInfo->hasHostPort) {
+  if (!m_relativePath && schemeInfo.hasHostPort) {
     PString endHostChars;
-    if (schemeInfo->hasPath)
+    if (schemeInfo.hasPath)
       endHostChars += '/';
-    if (schemeInfo->hasQuery)
+    if (schemeInfo.hasQuery)
       endHostChars += '?';
-    if (schemeInfo->hasParameters)
+    if (schemeInfo.hasParameters)
       endHostChars += ';';
-    if (schemeInfo->hasFragments)
+    if (schemeInfo.hasFragments)
       endHostChars += '#';
 
     if (endHostChars.IsEmpty())
       pos = P_MAX_INDEX;
-    else if (schemeInfo->hasUsername) {
+    else if (schemeInfo.hasUsername) {
       //';' showing in the username field should be valid.
       // Looking for ';' after the '@' for the parameters.
       PINDEX posAt = str.Find('@', start);
@@ -530,16 +530,16 @@ bool PURL::LegacyParse(const char * cstr, const PURLLegacyScheme * schemeInfo)
     }
 
     // if the URL is of type UserPasswordHostPort, then parse it
-    if (schemeInfo->hasUsername) {
+    if (schemeInfo.hasUsername) {
       // extract username and password
       PINDEX pos2 = uphp.Find('@');
       PINDEX pos3 = P_MAX_INDEX;
-      if (schemeInfo->hasPassword)
+      if (schemeInfo.hasPassword)
         pos3 = uphp.Find(':');
       if (pos2 == 0)
         uphp.Delete(0, 1);
       else if (pos2 == P_MAX_INDEX) {
-        if (schemeInfo->defaultToUserIfNoAt) {
+        if (schemeInfo.defaultToUserIfNoAt) {
           if (pos3 == P_MAX_INDEX)
             m_username = UntranslateString(uphp, LoginTranslation);
           else {
@@ -561,7 +561,7 @@ bool PURL::LegacyParse(const char * cstr, const PURLLegacyScheme * schemeInfo)
     }
 
     // if the URL does not have a port, then this is the hostname
-    if (schemeInfo->defaultPort == 0)
+    if (schemeInfo.defaultPort == 0)
       m_hostname = UntranslateString(uphp, LoginTranslation);
     else {
       // determine if the URL has a port number
@@ -580,25 +580,25 @@ bool PURL::LegacyParse(const char * cstr, const PURLLegacyScheme * schemeInfo)
         m_portSupplied = true;
       }
 
-      if (m_hostname.IsEmpty() && schemeInfo->defaultHostToLocal)
+      if (m_hostname.IsEmpty() && schemeInfo.defaultHostToLocal)
         m_hostname = PIPSocket::GetHostName();
     }
   }
 
   // chop off any trailing query
-  if (schemeInfo->hasQuery && (pos = str.Find('?', start)) < end) {
+  if (schemeInfo.hasQuery && (pos = str.Find('?', start)) < end) {
     SplitQueryVars(str(pos+1, end), m_queryVars);
     end = pos-1;
   }
 
   // chop off any trailing parameters
-  if (schemeInfo->hasParameters && (pos = str.Find(';', start)) < end) {
+  if (schemeInfo.hasParameters && (pos = str.Find(';', start)) < end) {
     SplitVars(str(pos+1, end), m_paramVars);
     end = pos-1;
   }
 
   // chop off any trailing fragment
-  if (schemeInfo->hasFragments && (pos = str.Find('#', start)) < end) {
+  if (schemeInfo.hasFragments && (pos = str.Find('#', start)) < end) {
     m_fragment = UntranslateString(str(pos+1, end), PathTranslation);
     end = pos-1;
   }
@@ -608,10 +608,10 @@ bool PURL::LegacyParse(const char * cstr, const PURLLegacyScheme * schemeInfo)
     if (m_scheme == "h323" && m_paramVars("type") == "gk")
       m_port = DEFAULT_H323RAS_PORT;
     else
-      m_port = schemeInfo->defaultPort;
+      m_port = schemeInfo.defaultPort;
   }
 
-  if (schemeInfo->hasPath) {
+  if (schemeInfo.hasPath) {
     if (str[start] == '/')
       ++start;
     SetPathStr(str(start, end));   // the hierarchy is what is left

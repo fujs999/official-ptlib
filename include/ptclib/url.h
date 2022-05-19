@@ -402,7 +402,7 @@ class PURL : public PObject
     );
   //@}
 
-    bool LegacyParse(const char * str, const PURLLegacyScheme * schemeInfo);
+    bool LegacyParse(const char * str, const PURLLegacyScheme & schemeInfo);
     PString LegacyAsString(PURL::UrlFormat fmt, const PURLLegacyScheme * schemeInfo) const;
 
   protected:
@@ -480,7 +480,7 @@ class PURLLegacyScheme : public PURLScheme
 
     bool Parse(const char * cstr, PURL & url) const
     {
-      return url.LegacyParse(cstr, this);
+      return url.LegacyParse(cstr, *this);
     }
 
     PString AsString(PURL::UrlFormat fmt, const PURL & url) const
