@@ -53,6 +53,9 @@ static PConstString const DialogScope("dialog");
 static PConstString const PropertyScope("property");
 static PConstString const SessionScope("session");
 
+static PConstString const RootURIVar("root_uri");
+static PConstString const DocumentURIVar("uri");
+
 static PConstString const TimeoutProperty("timeout");
 static PConstString const BargeInProperty("bargein");
 static PConstString const CachingProperty("caching");
@@ -1267,13 +1270,11 @@ PBoolean PVXMLSession::LoadFile(const PFilePath & filename, const PString & firs
   PTRACE(4, "Loading file: " << filename);
 
   PTextFile file(filename, PFile::ReadOnly);
-  if (!file.IsOpen()) {
-    PTRACE(1, "Cannot open " << filename);
-    return false;
-  }
+  if (file.IsOpen())
+    return InternalLoadVXML(filename, file.ReadString(P_MAX_INDEX), firstForm);
 
-  m_documentURL = PURL(filename);
-  return InternalLoadVXML(file.ReadString(P_MAX_INDEX), firstForm);
+  PTRACE(1, "Cannot open " << filename);
+  return false;
 }
 
 
@@ -1340,10 +1341,8 @@ PBoolean PVXMLSession::LoadURL(const PURL & url)
 
   // retreive the document (may be a HTTP get)
   PBYTEArray xmlData;
-  if (LoadResource(url, xmlData)) {
-    m_documentURL = url;
-    return InternalLoadVXML(PString(xmlData), url.GetFragment());
-  }
+  if (LoadResource(url, xmlData))
+    return InternalLoadVXML(url, PString(xmlData), url.GetFragment());
 
   PTRACE(1, "Cannot load document " << url);
   return false;
@@ -1352,12 +1351,13 @@ PBoolean PVXMLSession::LoadURL(const PURL & url)
 
 PBoolean PVXMLSession::LoadVXML(const PString & xmlText, const PString & firstForm)
 {
-  m_documentURL = PString::Empty();
-  return InternalLoadVXML(xmlText, firstForm);
+  PURL url("data:text/xml;charset=utf-8,placeholder");
+  url.SetContents(xmlText);
+  return InternalLoadVXML(url, xmlText, firstForm);
 }
 
 
-bool PVXMLSession::InternalLoadVXML(const PString & xmlText, const PString & firstForm)
+bool PVXMLSession::InternalLoadVXML(const PURL & url, const PString & xmlText, const PString & firstForm)
 {
   PTRACE(4, "Loading VXML: " << xmlText.length() << " bytes\n" << xmlText);
 
@@ -1375,7 +1375,7 @@ bool PVXMLSession::InternalLoadVXML(const PString & xmlText, const PString & fir
   // parse the XML
   PAutoPtr<PXML> xml(new PXML);
   if (!xml->Load(xmlText)) {
-    m_lastXMLError = PSTRSTRM(m_documentURL <<
+    m_lastXMLError = PSTRSTRM(url.AsString().Left(100) <<
                               '(' << xml->GetErrorLine() <<
                               ':' << xml->GetErrorColumn() << ")"
                               " " << xml->GetErrorString());
@@ -1409,18 +1409,8 @@ bool PVXMLSession::InternalLoadVXML(const PString & xmlText, const PString & fir
     }
   }
 
-  if (m_rootURL.IsEmpty())
-    m_rootURL = m_documentURL;
-
-  PURL pathURL = m_documentURL;
-  pathURL.ChangePath(PString::Empty()); // Remove last element of root URL
-  InternalSetVar(DocumentScope, "path", pathURL);
-  InternalSetVar(DocumentScope, "uri", m_documentURL);
-
-  if (m_currentXML.get() == NULL)
-    m_currentXML.transfer(xml);
-  else
-    m_newXML.transfer(xml);
+  m_newURL = url;
+  m_newXML.transfer(xml);
   m_newFormName = firstForm;
   InternalStartThread();
   return true;
@@ -1429,30 +1419,33 @@ bool PVXMLSession::InternalLoadVXML(const PString & xmlText, const PString & fir
 
 PURL PVXMLSession::NormaliseResourceName(const PString & src)
 {
+  if (src.empty())
+    return src;
+
   PURL url;
-  if (url.Parse(src, NULL))
+  if (url.Parse(src, NULL) && !url.GetRelativePath())
     return url;
 
-  PString path = InternalGetVar(DocumentScope, "path");
-  if (path.empty()) {
-    url.Parse(src, "file");
-    return url;
-  }
+  PURL path = InternalGetVar(DocumentScope, DocumentURIVar);
+  path.ChangePath(PString::Empty()); // Remove last element of document URL
 
-  if (path[path.length()-1] != '/')
-    path += '/';
-  if (url.Parse(path + src, NULL))
+  if (url.IsEmpty())
+    path.AppendPathStr(src);
+  else if (path.GetScheme() == url.GetScheme())
+    path.AppendPathSegments(url.GetPath());
+  else
     return url;
 
-  return PString::Empty();
+  return path;
 }
 
 
 void PVXMLSession::ClearScopes()
 {
-  for (;;) {
-    PString topScope = m_scriptContext->GetScopeChain().back();
-    if (topScope == ApplicationScope || topScope == DocumentScope)
+  static char const * const keeperScopeNames[] = { SessionScope, ApplicationScope, DocumentScope };
+  static PStringSet const keeperScopes(PARRAYSIZE(keeperScopeNames), keeperScopeNames);
+  while (!m_scriptContext->GetScopeChain().empty()) {
+    if (keeperScopes.Contains(m_scriptContext->GetScopeChain().back()))
       break;
     m_scriptContext->PopScopeChain(true);
   }
@@ -1560,7 +1553,7 @@ void PVXMLSession::InternalStartThread()
 {
   PWaitAndSignal mutex(m_sessionMutex);
 
-  if (IsOpen() && IsLoaded()) {
+  if (IsOpen() && (m_currentXML.get() != NULL || m_newXML.get() != NULL)) {
     if (m_vxmlThread == NULL)
       m_vxmlThread = new PThreadObj<PVXMLSession>(*this, &PVXMLSession::InternalThreadMain, false, "VXML");
     else
@@ -1677,7 +1670,7 @@ void PVXMLSession::InternalThreadMain()
   InternalSetVar(PropertyScope, CompleteTimeoutProperty, "2s");
   InternalSetVar(PropertyScope, IncompleteTimeoutProperty, "5s");
 
-  InternalStartVXML(false);
+  InternalStartVXML();
 
   while (!m_abortVXML) {
     // process current node in the VXML script
@@ -1696,7 +1689,7 @@ void PVXMLSession::InternalThreadMain()
     if (m_newXML.get() != NULL) {
       /* Replace old XML with new, now it is safe to do so and no XML elements
          pointers are being referenced by the code any more */
-      InternalStartVXML(true);
+      InternalStartVXML();
     }
 
     // Determine if we should quit
@@ -1715,7 +1708,7 @@ void PVXMLSession::InternalThreadMain()
 
     if (m_newXML.get() != NULL) {
       // OnEndDialog() loaded some more XML to do.
-      InternalStartVXML(true);
+      InternalStartVXML();
     }
 
     if (m_currentNode == NULL)
@@ -1818,15 +1811,15 @@ bool PVXMLSession::ProcessEvents()
 }
 
 
-void PVXMLSession::InternalStartVXML(bool leafDocument)
+void PVXMLSession::InternalStartVXML()
 {
   ClearGrammars();
 
-  if (leafDocument) {
-    PURL appURL = NormaliseResourceName(m_newXML->GetRootElement()->GetAttribute("application"));
-    if (appURL.IsEmpty() || appURL != m_rootURL)
-      m_rootURL = m_documentURL;
-    m_currentXML.transfer(m_newXML);
+  PURL rootURL = InternalGetVar(ApplicationScope, RootURIVar);
+  PURL appURL = NormaliseResourceName(m_newXML->GetRootElement()->GetAttribute("application"));
+  if (appURL.IsEmpty() || appURL != rootURL) {
+    rootURL = m_newURL;
+    InternalSetVar(ApplicationScope, RootURIVar, rootURL);
   }
 
   if (m_scriptContext->GetScopeChain().back() == DocumentScope)
@@ -1834,12 +1827,15 @@ void PVXMLSession::InternalStartVXML(bool leafDocument)
   else
     m_scriptContext->ReleaseVariable(DocumentScope);
 
-  if (m_rootURL == m_documentURL)
+  if (rootURL == m_newURL)
     m_scriptContext->Run(PSTRSTRM(DocumentScope << '=' << ApplicationScope));
   else
     m_scriptContext->PushScopeChain(DocumentScope, true);
 
+  InternalSetVar(DocumentScope, DocumentURIVar, m_newURL);  // Non-standard but potentially useful
+
   PTRACE(4, "Processing global elements.");
+  m_currentXML.transfer(m_newXML);
   m_currentNode = m_currentXML->GetRootElement()->GetElement(0);
   do {
     PXMLElement * element;
@@ -2565,9 +2561,9 @@ PBoolean PVXMLSession::TraverseValue(PXMLElement & element)
   bool retval = EvaluateExpr(element, ExprAttribute, value);
   if (value.IsEmpty())
     return retval;
-  PString voice = element.GetAttribute("voice");
+  PString voice = element.GetAttribute(VoiceAttribute);
   if (voice.IsEmpty())
-    voice = InternalGetVar(PropertyScope, "voice");
+    voice = InternalGetVar(PropertyScope, VoiceAttribute);
   SayAs(className, value, voice);
   return true;
 }
@@ -2771,7 +2767,7 @@ PXMLElement * PVXMLSession::FindElementWithCount(PXMLElement & parent, const PSt
 
 void PVXMLSession::SayAs(const PString & className, const PString & text)
 {
-  SayAs(className, text, InternalGetVar(PropertyScope, "voice"));
+  SayAs(className, text, InternalGetVar(PropertyScope, VoiceAttribute));
 }
 
 
@@ -2993,7 +2989,7 @@ PBoolean PVXMLSession::TraverseSubmit(PXMLElement & element)
     PString body;
     if (http->GetDocument(url, sendMIME, replyMIME) && http->ReadContentBody(replyMIME, body)) {
       PTRACE(4, "<submit> GET " << url << " succeeded and returned body size=" << body.length());
-      return InternalLoadVXML(body, PString::Empty());
+      return InternalLoadVXML(url, body, PString::Empty());
     }
 
     PTRACE(1, "<submit> GET " << url << " failed with "
@@ -3009,7 +3005,7 @@ PBoolean PVXMLSession::TraverseSubmit(PXMLElement & element)
     PString replyBody;
     if (http->PostData(url, sendMIME, vars, replyMIME, replyBody)) {
       PTRACE(4, "<submit> POST " << url << " succeeded and returned body:\n" << replyBody);
-      return InternalLoadVXML(replyBody, PString::Empty());
+      return InternalLoadVXML(url, replyBody, PString::Empty());
     }
 
     PTRACE(1, "<submit> POST " << url << " failed with "
@@ -3075,7 +3071,7 @@ PBoolean PVXMLSession::TraverseSubmit(PXMLElement & element)
   PString replyBody;
   if (http->PostData(url, sendMIME, entityBody, replyMIME, replyBody)) {
     PTRACE(1, "<submit> POST " << url << " succeeded and returned body:\n" << replyBody);
-    return InternalLoadVXML(replyBody, PString::Empty());
+    return InternalLoadVXML(url, replyBody, PString::Empty());
   }
 
   PTRACE(1, "<submit> POST " << url << " failed with "
@@ -3513,29 +3509,6 @@ PVXMLGrammar::PVXMLGrammar(const PVXMLGrammarInit & init)
   , m_noInputTimeout(PVXMLSession::StringToTime(m_session.GetProperty(TimeoutProperty)))
   , m_partFillTimeout(PVXMLSession::StringToTime(m_session.GetProperty(InterDigitTimeoutProperty)))
 {
-  PString inputModes = m_session.GetProperty(InputModesProperty);
-  if (!inputModes.empty()) {
-    m_allowDTMF = inputModes.Find(DtmfAttribute) != P_MAX_INDEX;
-
-    bool allowVoice = inputModes.Find(VoiceAttribute) != P_MAX_INDEX;
-    if (init.m_grammarElement != NULL) {
-      PCaselessString attrib = init.m_grammarElement->GetAttribute("mode");
-      if (!attrib.empty())
-        allowVoice = attrib == VoiceAttribute;
-    }
-
-    if (allowVoice) {
-      m_recogniser = m_session.CreateSpeechRecognition();
-      if (m_recogniser == NULL)
-        m_allowDTMF = true; // Turn on despite element indication, as no other way for input!
-      else {
-        PTimeInterval incomplete = PVXMLSession::StringToTime(m_session.GetProperty(IncompleteTimeoutProperty));
-        if (incomplete < m_partFillTimeout)
-          m_partFillTimeout = incomplete;
-      }
-    }
-  }
-
   m_timer.SetNotifier(PCREATE_NOTIFIER(OnTimeout), "VXMLGrammar");
 }
 
@@ -3592,6 +3565,36 @@ bool PVXMLGrammar::Start()
   if (!m_state.compare_exchange_strong(prev, Started))
     return prev == Started || prev == PartFill;
 
+  PString inputModes = m_session.GetProperty(InputModesProperty);
+  if (inputModes.empty())
+    inputModes = DtmfAttribute; // Can't really be empty
+
+  if (m_grammarElement != NULL) {
+    PCaselessString attrib = m_grammarElement->GetAttribute("mode");
+    if (!attrib.empty())
+      inputModes = attrib;  // Overrides property
+  }
+
+  m_allowDTMF = inputModes.Find(DtmfAttribute) != P_MAX_INDEX;
+
+  bool allowVoice = inputModes.Find(VoiceAttribute) != P_MAX_INDEX;
+  if (m_grammarElement != NULL) {
+    PCaselessString attrib = m_grammarElement->GetAttribute("mode");
+    if (!attrib.empty())
+      allowVoice = attrib == VoiceAttribute;
+  }
+
+  if (allowVoice) {
+    m_recogniser = m_session.CreateSpeechRecognition();
+    if (m_recogniser == NULL)
+      m_allowDTMF = true; // Turn on despite element indication, as no other way for input!
+    else {
+      PTimeInterval incomplete = PVXMLSession::StringToTime(m_session.GetProperty(IncompleteTimeoutProperty));
+      if (incomplete < m_partFillTimeout)
+        m_partFillTimeout = incomplete;
+    }
+  }
+
   m_timer = m_noInputTimeout;
 
   if (m_recogniser != NULL) {
@@ -3615,6 +3618,8 @@ bool PVXMLGrammar::Start()
   }
 
   PTRACE(3, "Grammar " << *this << " started:"
+         " dtmf=" << boolalpha << m_allowDTMF << ","
+         " voice=" << (m_recogniser != NULL) << ","
          " noInputTimeout=" << m_noInputTimeout << ","
          " partFillTimeout=" << m_partFillTimeout);
   return true;

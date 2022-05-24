@@ -503,10 +503,10 @@ class PVXMLSession : public PIndirectChannel
     const PString & GetLanguage() const { return m_xmlLanguage; }
 
   protected:
-    virtual bool InternalLoadVXML(const PString & xml, const PString & firstForm);
+    virtual bool InternalLoadVXML(const PURL & url, const PString & xml, const PString & firstForm);
     virtual void InternalStartThread();
     virtual void InternalThreadMain();
-    virtual void InternalStartVXML(bool leafDocument);
+    virtual void InternalStartVXML();
     virtual PString InternalGetName(PXMLElement & element, bool allowScope);
     virtual PCaselessString InternalGetVar(const PString & scope, const PString & varName) const;
     virtual void InternalSetVar(const PString & scope, const PString & varName, const PString & value);
@@ -528,8 +528,6 @@ class PVXMLSession : public PIndirectChannel
 
     PDECLARE_MUTEX(m_sessionMutex);
 
-    PURL             m_rootURL;
-    PURL             m_documentURL;
     PString          m_xmlLanguage;
     PHTTPCookies     m_cookies;
     PDECLARE_MUTEX(  m_cookieMutex);
@@ -590,6 +588,7 @@ class PVXMLSession : public PIndirectChannel
     PThread     *    m_vxmlThread;
     bool             m_abortVXML;
     PSyncPoint       m_waitForEvent;
+    PURL             m_newURL;
     PAutoPtr<PXML>   m_newXML;
     PString          m_lastXMLError;
     PString          m_newFormName;

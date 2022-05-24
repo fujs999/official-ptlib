@@ -157,7 +157,7 @@ bool PHTTPCookies::Info::operator<(const Info & other) const
 bool PHTTPCookies::Parse(const PString & strCookies,const PURL & url, const PTime & now)
 {
   PStringArray cookies = strCookies.Lines();
-  for (PINDEX i = 0; i < cookies.size(); ++i) {
+  for (PINDEX i = 0; i < cookies.GetSize(); ++i) {
     PString cookie = cookies[i];
     PString nameValue, attributes;
     if (!cookie.Split(';', nameValue, attributes, PString::SplitBeforeNonEmpty)) {
@@ -174,7 +174,7 @@ bool PHTTPCookies::Parse(const PString & strCookies,const PURL & url, const PTim
     int maxAge = INT_MAX;
     PStringArray fields = attributes.Tokenise(';');
     PINDEX fldIdx;
-    for (fldIdx = 0; fldIdx < fields.size(); ++fldIdx) {
+    for (fldIdx = 0; fldIdx < fields.GetSize(); ++fldIdx) {
       PCaselessString attrName, attrValue;
       fields[fldIdx].Split('=', attrName, attrValue, PString::SplitTrim|PString::SplitDefaultToBefore);
 

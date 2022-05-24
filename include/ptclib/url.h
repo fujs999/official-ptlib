@@ -279,6 +279,12 @@ class PURL : public PObject
     /// Append segment to the path field of the URL.
     void AppendPath(const PString & segment);
 
+    /// Append segments to the path field of the URL.
+    void AppendPathSegments(const PStringArray & segments);
+
+    /// Append segments to the path field of the URL.
+    void AppendPathStr(const PString & segments);
+
     /// Change segment in the path field of the URL.
     void ChangePath(
       const PString & segment, ///< New value for segment, empty means remove
@@ -396,7 +402,7 @@ class PURL : public PObject
     );
   //@}
 
-    bool LegacyParse(const char * str, const PURLLegacyScheme * schemeInfo);
+    bool LegacyParse(const char * str, const PURLLegacyScheme & schemeInfo);
     PString LegacyAsString(PURL::UrlFormat fmt, const PURLLegacyScheme * schemeInfo) const;
 
   protected:
@@ -474,7 +480,7 @@ class PURLLegacyScheme : public PURLScheme
 
     bool Parse(const char * cstr, PURL & url) const
     {
-      return url.LegacyParse(cstr, this);
+      return url.LegacyParse(cstr, *this);
     }
 
     PString AsString(PURL::UrlFormat fmt, const PURL & url) const
