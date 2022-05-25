@@ -1814,6 +1814,7 @@ bool PVXMLSession::ProcessEvents()
 void PVXMLSession::InternalStartVXML()
 {
   ClearGrammars();
+  ClearScopes();
 
   PURL rootURL = InternalGetVar(ApplicationScope, RootURIVar);
   PURL appURL = NormaliseResourceName(m_newXML->GetRootElement()->GetAttribute("application"));
