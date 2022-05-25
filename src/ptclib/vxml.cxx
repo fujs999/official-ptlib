@@ -1130,6 +1130,7 @@ PVXMLSession::PVXMLSession()
   : m_textToSpeech(NULL)
   , m_ttsCache(NULL)
   , m_autoDeleteTextToSpeech(false)
+  , m_speechRecognition(NULL)
 #if P_VXML_VIDEO
   , m_videoReceiver(*this)
 #endif
@@ -1185,6 +1186,7 @@ PTextToSpeech * PVXMLSession::SetTextToSpeech(PTextToSpeech * tts, PBoolean auto
     delete m_textToSpeech;
 
   m_autoDeleteTextToSpeech = autoDelete;
+  PTRACE_IF(4, tts != NULL, "Text to Speech set: " << *tts);
   return m_textToSpeech = tts;
 }
 
@@ -1204,19 +1206,24 @@ PTextToSpeech * PVXMLSession::SetTextToSpeech(const PString & ttsName)
       name = engines[0];
   }
 
-  return SetTextToSpeech(PFactory<PTextToSpeech>::CreateInstance(name), true);
+  PTextToSpeech * tts = PFactory<PTextToSpeech>::CreateInstance(name);
+  PTRACE_IF(2, tts == NULL && !(ttsName *= "none"), "Could not create TextToSpeech for \"" << ttsName << '"');
+  return SetTextToSpeech(tts, true);
 }
 
 
 bool PVXMLSession::SetSpeechRecognition(const PString & srName)
 {
-  PSpeechRecognition * sr = PSpeechRecognition::Create(srName);
-  if (sr == NULL) {
-    PTRACE(2, "Cannot use Speech Recognition \"" << srName << '"');
-    return false;
+  if (!(srName *= "none")) {
+    PSpeechRecognition * sr = PSpeechRecognition::Create(srName);
+    if (sr == NULL) {
+      PTRACE(2, "Cannot use Speech Recognition \"" << srName << '"');
+      return false;
+    }
+    delete sr;
   }
-  delete sr;
 
+  PTRACE(4, "Speech Recognition set to \"" << srName << '"');
   PWaitAndSignal lock(m_grammersMutex);
   m_speechRecognition = srName;
   return true;
@@ -2477,7 +2484,8 @@ PBoolean PVXMLSession::PlayText(const PString & textToPlay,
     // So close file and just use filename.
     wavFile.Close();
 
-    bool ok = m_textToSpeech->SetSampleRate(GetVXMLChannel()->GetSampleRate()) &&
+    bool ok = m_textToSpeech != NULL &&
+              m_textToSpeech->SetSampleRate(GetVXMLChannel()->GetSampleRate()) &&
               m_textToSpeech->SetChannels(GetVXMLChannel()->GetChannels()) &&
               m_textToSpeech->OpenFile(wavFile.GetFilePath()) &&
               m_textToSpeech->Speak(line, type) &&
