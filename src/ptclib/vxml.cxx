@@ -2500,11 +2500,13 @@ void PVXMLSession::SetPause(PBoolean pause)
 }
 
 
+static PConstString const AnonymousPrefix("anonymous_");
+
 PBoolean PVXMLSession::TraverseBlock(PXMLElement & element)
 {
   unsigned col, line;
   element.GetFilePosition(col, line);
-  PString anonymous = PSTRSTRM("anonymous_" << line << '_' << col);
+  PString anonymous = PSTRSTRM(AnonymousPrefix << line << '_' << col);
   m_scriptContext->PushScopeChain(anonymous, true);
   return ExecuteCondition(element);
 }
@@ -2512,7 +2514,8 @@ PBoolean PVXMLSession::TraverseBlock(PXMLElement & element)
 
 PBoolean PVXMLSession::TraversedBlock(PXMLElement & element)
 {
-  m_scriptContext->PopScopeChain(true);
+  if (m_scriptContext->GetScopeChain().back().NumCompare(AnonymousPrefix) == EqualTo)
+    m_scriptContext->PopScopeChain(true);
   return ExecuteCondition(element);
 }
 
