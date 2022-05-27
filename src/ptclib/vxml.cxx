@@ -1434,16 +1434,19 @@ PURL PVXMLSession::NormaliseResourceName(const PString & src)
     return url;
 
   PURL path = InternalGetVar(DocumentScope, DocumentURIVar);
+
+  if (!url.IsEmpty() && path.GetScheme() != url.GetScheme()) {
+    PTRACE(3, "NormaliseResourceName: doc-scheme=" << path.GetScheme() << ", url=" << url);
+    return url;
+  }
+
   path.ChangePath(PString::Empty()); // Remove last element of document URL
 
-  if (url.IsEmpty())
-    return PURL(PSTRSTRM(path.AsString() << '/' << src), path.GetScheme());
-
-  if (path.GetScheme() != url.GetScheme())
+  if (url.Parse(PSTRSTRM(path.AsString(PURL::PathOnly) << '/' << src), path.GetScheme()))
     return url;
 
-  path.AppendPathSegments(url.GetPath());
-  return path;
+  PTRACE(2, "NormaliseResourceName failed: path=" << path << ", src=\"" << src << '"');
+  return src;
 }
 
 
