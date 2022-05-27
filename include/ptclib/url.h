@@ -319,6 +319,9 @@ class PURL : public PObject
     /// Get the fragment (\#) field of the URL.
     const PString & GetFragment() const { return m_fragment; }
 
+    /// Set the fragment (\#) field of the URL.
+    void SetFragment(const PString & fragment);
+
     /// Get the Query (?) field of the URL as a string.
     PString GetQuery() const;
 

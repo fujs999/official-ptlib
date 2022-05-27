@@ -919,6 +919,13 @@ void PURL::SetParamVar(const PString & key, const PString & data, bool emptyData
 }
 
 
+void PURL::SetFragment(const PString & fragment)
+{
+  m_fragment = fragment;
+  Recalculate();
+}
+
+
 PString PURL::GetQuery() const
 {
   PStringStream strm;
