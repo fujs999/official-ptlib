@@ -1437,12 +1437,12 @@ PURL PVXMLSession::NormaliseResourceName(const PString & src)
   path.ChangePath(PString::Empty()); // Remove last element of document URL
 
   if (url.IsEmpty())
-    path.AppendPathStr(src);
-  else if (path.GetScheme() == url.GetScheme())
-    path.AppendPathSegments(url.GetPath());
-  else
+    return PURL(PSTRSTRM(path.AsString() << '/' << src), path.GetScheme());
+
+  if (path.GetScheme() != url.GetScheme())
     return url;
 
+  path.AppendPathSegments(url.GetPath());
   return path;
 }
 
