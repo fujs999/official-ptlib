@@ -2487,17 +2487,19 @@ PBoolean PVXMLSession::PlayText(const PString & textToPlay,
     // So close file and just use filename.
     wavFile.Close();
 
-    bool ok = m_textToSpeech != NULL &&
-              m_textToSpeech->SetSampleRate(GetVXMLChannel()->GetSampleRate()) &&
-              m_textToSpeech->SetChannels(GetVXMLChannel()->GetChannels()) &&
-              m_textToSpeech->OpenFile(wavFile.GetFilePath()) &&
-              m_textToSpeech->Speak(line, type) &&
-              m_textToSpeech->Close();
+    if (m_textToSpeech != NULL &&
+        m_textToSpeech->SetSampleRate(GetVXMLChannel()->GetSampleRate()) &&
+        m_textToSpeech->SetChannels(GetVXMLChannel()->GetChannels()) &&
+        m_textToSpeech->OpenFile(wavFile.GetFilePath()) &&
+        m_textToSpeech->Speak(line, type) &&
+        m_textToSpeech->Close())
+      fileList += wavFile.GetFilePath() + '\n';
+    else {
+      PFilePath dummy;
+      GetCache().Get(prefix, line, suffix, dummy); // This deletes the half baked cache
+    }
 
     GetCache().UnlockReadWrite();
-
-    if (ok)
-        fileList += wavFile.GetFilePath() + '\n';
   }
 
   return GetVXMLChannel()->QueuePlayable("FileList", fileList, repeat, delay, !useCache);
