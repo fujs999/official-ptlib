@@ -72,6 +72,10 @@ static PConstString const FormElement("form");
 static PConstString const MenuElement("menu");
 static PConstString const PromptElement("prompt");
 static PConstString const FilledElement("filled");
+static PConstString const NoInputElement("noinput");
+static PConstString const NoMatchElement("nomatch");
+static PConstString const ErrorElement("error");
+static PConstString const CatchElement("catch");
 static PConstString const NameAttribute("name");
 static PConstString const IdAttribute("id");
 static PConstString const ExprAttribute("expr");
@@ -226,11 +230,11 @@ class PVXMLTraverseEvent : public PVXMLNodeHandler
     return false;
   }
 };
-PFACTORY_CREATE(PVXMLNodeFactory, PVXMLTraverseEvent, "Filled", true);
-PFACTORY_SYNONYM(PVXMLNodeFactory, PVXMLTraverseEvent, NoInput, "NoInput");
-PFACTORY_SYNONYM(PVXMLNodeFactory, PVXMLTraverseEvent, NoMatch, "NoMatch");
-PFACTORY_SYNONYM(PVXMLNodeFactory, PVXMLTraverseEvent, Error, "Error");
-PFACTORY_SYNONYM(PVXMLNodeFactory, PVXMLTraverseEvent, Catch, "Catch");
+PFACTORY_CREATE( PVXMLNodeFactory, PVXMLTraverseEvent, FilledElement, true);
+PFACTORY_SYNONYM(PVXMLNodeFactory, PVXMLTraverseEvent, NoInput, NoInputElement);
+PFACTORY_SYNONYM(PVXMLNodeFactory, PVXMLTraverseEvent, NoMatch, NoMatchElement);
+PFACTORY_SYNONYM(PVXMLNodeFactory, PVXMLTraverseEvent, Error, ErrorElement);
+PFACTORY_SYNONYM(PVXMLNodeFactory, PVXMLTraverseEvent, Catch, CatchElement);
 
 #if PTRACING
 class PVXMLTraverseLog : public PVXMLNodeHandler {
@@ -2757,7 +2761,7 @@ PXMLElement * PVXMLSession::FindElementWithCount(PXMLElement & parent, const PSt
   while ((element = parent.GetElement(idx++)) != NULL) {
     if (element->GetName() == name)
       elements[GetCountAttribute(*element)] = element;
-    else if (element->GetName() == "catch") {
+    else if (element->GetName() == CatchElement) {
       PStringArray events = element->GetAttribute("event").Tokenise(" ", false);
       for (size_t i = 0; i < events.size(); ++i) {
         if (events[i] *= name) {
@@ -3199,7 +3203,7 @@ PBoolean PVXMLSession::TraversedTransfer(PXMLElement & element)
 
   m_transferStatus = TransferCompleted;
 
-  return !GoToEventHandler(element, error ? "error" : FilledElement, error);
+  return !GoToEventHandler(element, error ? ErrorElement : FilledElement, error);
 }
 
 
@@ -3731,18 +3735,18 @@ bool PVXMLGrammar::Process()
       break;
 
     case NoInput:
-      handler = "noinput";
+      handler = NoInputElement;
       break;
 
     case NoMatch:
-      handler = "nomatch";
+      handler = NoMatchElement;
       break;
 
     default:
       return false;
   }
 
-  if (m_session.GoToEventHandler(m_field, FilledElement, false))
+  if (m_session.GoToEventHandler(m_field, handler, false))
     return true;
 
   PTRACE(2, "Grammar: " << *this << ", restarting node " << PXMLObject::PrintTrace(&m_field));
@@ -3839,7 +3843,10 @@ PVXMLDigitsGrammar::PVXMLDigitsGrammar(const PVXMLGrammarInit & init)
   m_maxDigits = tokens.GetInteger("maxDigits", 10),
   m_terminators = tokens.GetString("terminators", m_terminators);
 
-  PAssert(m_minDigits <= m_maxDigits, PInvalidParameter);
+  if (m_minDigits == 0)
+    m_minDigits = 1;
+  if (m_maxDigits < m_minDigits)
+    m_maxDigits = m_minDigits;
 }
 
 
