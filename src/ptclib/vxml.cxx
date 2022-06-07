@@ -2963,8 +2963,8 @@ PBoolean PVXMLSession::TraverseSubmit(PXMLElement & element)
   else
     return ThrowSemanticError(element, "<submit> does not contain \"next\" or \"expr\" attribute.");
 
-  PURL url;
-  if (!url.Parse(urlStr)) {
+  PURL url = NormaliseResourceName(urlStr);
+  if (url.IsEmpty()) {
     PTRACE(1, "<submit> has an invalid URL.");
     return GoToEventHandler(element, ErrorBadFetch, true);
   }
