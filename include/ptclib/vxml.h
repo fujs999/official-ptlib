@@ -600,6 +600,7 @@ class PVXMLSession : public PIndirectChannel
     PStringSet       m_dialogFieldNames;
     unsigned         m_promptCount;
     std::map<std::string, unsigned> m_eventCount;
+    std::list<PStringToString> m_properties;
 
     virtual void LoadGrammar(const PString & type, const PVXMLGrammarInit & init);
     void ClearGrammars();
@@ -916,10 +917,10 @@ class PVXMLNodeHandler : public PObject
     PCLASSINFO(PVXMLNodeHandler, PObject);
   public:
     // Return true for process node, false to skip and move to next sibling
-    virtual bool Start(PVXMLSession & /*session*/, PXMLElement & /*node*/) const { return true; }
+    virtual bool Start(PVXMLSession & /*session*/, PXMLElement & /*node*/) const;
 
     // Return true to move to next sibling, false to stay at this node.
-    virtual bool Finish(PVXMLSession & /*session*/, PXMLElement & /*node*/) const { return true; }
+    virtual bool Finish(PVXMLSession & /*session*/, PXMLElement & /*node*/) const;
 };
 
 

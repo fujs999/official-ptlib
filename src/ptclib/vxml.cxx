@@ -50,7 +50,6 @@
 static PConstString const ApplicationScope("application");
 static PConstString const DocumentScope("document");
 static PConstString const DialogScope("dialog");
-static PConstString const PropertyScope("property");
 static PConstString const SessionScope("session");
 
 static PConstString const RootURIVar("root_uri");
@@ -155,10 +154,23 @@ class PVXMLChannelG729 : public PVXMLChannel
 };
 
 
+bool PVXMLNodeHandler::Start(PVXMLSession & /*session*/, PXMLElement & PTRACE_PARAM(node)) const
+{
+  PTRACE(4, "Starting " << node.PrintTrace());
+  return true;
+}
+
+bool PVXMLNodeHandler::Finish(PVXMLSession & /*session*/, PXMLElement & PTRACE_PARAM(node)) const
+{
+  PTRACE(4, "Finishing " << node.PrintTrace());
+  return true;
+}
+
+
 #define TRAVERSE_NODE(name) \
   class PVXMLTraverse##name : public PVXMLNodeHandler { \
     virtual bool Start(PVXMLSession & session, PXMLElement & element) const \
-    { return session.Traverse##name(element); } \
+    { PTRACE(4, "Starting unary " << element.PrintTrace()); return session.Traverse##name(element); } \
   }; \
   PFACTORY_CREATE(PVXMLNodeFactory, PVXMLTraverse##name, #name, true)
 
@@ -183,9 +195,9 @@ TRAVERSE_NODE(Script);
 #define TRAVERSE_NODE2(name) \
   class PVXMLTraverse##name : public PVXMLNodeHandler { \
     virtual bool Start(PVXMLSession & session, PXMLElement & element) const \
-    { return session.Traverse##name(element); } \
+    { PTRACE(4, "Starting binary " << element.PrintTrace()); return session.Traverse##name(element); } \
     virtual bool Finish(PVXMLSession & session, PXMLElement & element) const \
-    { return session.Traversed##name(element); } \
+    { PTRACE(4, "Finishing binary " << element.PrintTrace()); return session.Traversed##name(element); } \
   }; \
   PFACTORY_CREATE(PVXMLNodeFactory, PVXMLTraverse##name, #name, true)
 
@@ -1219,8 +1231,19 @@ PVXMLSession::PVXMLSession()
   m_videoSender.SetActualDevice(PVideoInputDevice::CreateOpenedDevice(videoArgs));
 #endif // P_VXML_VIDEO
 
+  PStringToString props;
+  props.SetAt(TimeoutProperty, "10s");
+  props.SetAt(BargeInProperty, true);
+  props.SetAt(CachingProperty, SafeKeyword);
+  props.SetAt(InputModesProperty, DtmfAttribute & VoiceAttribute);
+  props.SetAt(InterDigitTimeoutProperty, "5s");
+  props.SetAt(TermTimeoutProperty, "0");
+  props.SetAt(TermCharProperty, "#");
+  props.SetAt(CompleteTimeoutProperty, "2s");
+  props.SetAt(IncompleteTimeoutProperty, "5s");
+  m_properties.push_back(props);
+
   // Create always present objects
-  m_scriptContext->CreateComposite(PropertyScope);
   m_scriptContext->CreateComposite(SessionScope);
   m_scriptContext->CreateComposite(ApplicationScope);
   // Point dialog scope to same object as application scope
@@ -1522,6 +1545,10 @@ void PVXMLSession::ClearScopes()
       break;
     m_scriptContext->PopScopeChain(true);
   }
+
+  size_t count = m_scriptContext->GetScopeChain().back() == DocumentScope ? 2 : 1;
+  while (m_properties.size() > count)
+    m_properties.pop_back();
 }
 
 
@@ -1569,10 +1596,8 @@ bool PVXMLSession::SetCurrentForm(const PString & searchId, bool fullURI)
             PXMLElement * element = m_currentNode->GetParent();
             while (element != NULL) {
               PVXMLNodeHandler * handler = PVXMLNodeFactory::CreateInstance(element->GetName());
-              if (handler != NULL) {
+              if (handler != NULL)
                 handler->Finish(*this, *element);
-                PTRACE(4, "Processed VoiceXML element: " << element->PrintTrace());
-              }
               element = element->GetParent();
             }
           }
@@ -1708,7 +1733,6 @@ void PVXMLSession::InternalThreadMain()
   static const char * Languages[] = { "JavaScript", "Lua" };
   PScriptLanguage * newScript = PScriptLanguage::CreateOne(PStringArray(PARRAYSIZE(Languages), Languages));
   if (newScript != NULL) {
-    newScript->CreateComposite(PropertyScope);
     newScript->CreateComposite(SessionScope);
     newScript->CreateComposite(ApplicationScope);
     #if P_VXML_VIDEO
@@ -1732,16 +1756,6 @@ void PVXMLSession::InternalThreadMain()
   InternalSetVar(SessionScope, "time", now.AsString());
   InternalSetVar(SessionScope, "timeISO8601", now.AsString(PTime::ShortISO8601));
   InternalSetVar(SessionScope, "timeEpoch", now.GetTimeInSeconds());
-
-  InternalSetVar(PropertyScope, TimeoutProperty , "10s");
-  InternalSetVar(PropertyScope, BargeInProperty, true);
-  InternalSetVar(PropertyScope, CachingProperty, SafeKeyword);
-  InternalSetVar(PropertyScope, InputModesProperty, DtmfAttribute & VoiceAttribute);
-  InternalSetVar(PropertyScope, InterDigitTimeoutProperty, "5s");
-  InternalSetVar(PropertyScope, TermTimeoutProperty, "0");
-  InternalSetVar(PropertyScope, TermCharProperty, "#");
-  InternalSetVar(PropertyScope, CompleteTimeoutProperty, "2s");
-  InternalSetVar(PropertyScope, IncompleteTimeoutProperty, "5s");
 
   InternalStartVXML();
 
@@ -1901,10 +1915,15 @@ void PVXMLSession::InternalStartVXML()
   else
     m_scriptContext->ReleaseVariable(DocumentScope);
 
+  while (m_properties.size() > 1)
+    m_properties.pop_back();
+
   if (rootURL == m_newURL)
     m_scriptContext->Run(PSTRSTRM(DocumentScope << '=' << ApplicationScope));
-  else
+  else {
     m_scriptContext->PushScopeChain(DocumentScope, true);
+    m_properties.push_back(PStringToString());
+  }
 
   InternalSetVar(DocumentScope, DocumentURIVar, m_newURL);  // Non-standard but potentially useful
 
@@ -1982,7 +2001,6 @@ bool PVXMLSession::NextNode(bool processChildren)
   do {
     PVXMLNodeHandler * handler = PVXMLNodeFactory::CreateInstance(element->GetName());
     if (handler != NULL) {
-      PTRACE(4, "Finish processing VoiceXML element: " << element->PrintTrace());
       if (!handler->Finish(*this, *element)) {
         if (m_currentNode != NULL) {
           PTRACE(4, "Moved node after processing VoiceXML element:"
@@ -2049,7 +2067,6 @@ bool PVXMLSession::ProcessNode()
     return false;
   }
 
-  PTRACE(3, "Processing VoiceXML element: " << element->PrintTrace());
   bool started = handler->Start(*this, *element);
   PTRACE_IF(4, !started, "Skipping VoiceXML element: " << element->PrintTrace());
   return started;
@@ -2071,12 +2088,15 @@ PBoolean PVXMLSession::TraverseRecord(PXMLElement & element)
     return false;
 
   m_recordingStatus = NotRecording;
+  m_properties.push_back(PStringToString());
   return true;
 }
 
 
 PBoolean PVXMLSession::TraversedRecord(PXMLElement & element)
 {
+  m_properties.pop_back();
+
   if (m_abortVXML)
     return true; // True is not "good" but "done", that is move to next element in VXML.
 
@@ -2285,7 +2305,12 @@ void PVXMLSession::SetConnectionVars(const PString & localURI,
 
 PCaselessString PVXMLSession::GetProperty(const PString & propName) const
 {
-  return InternalGetVar(PropertyScope, propName);
+  for (std::list<PStringToString>::const_reverse_iterator it = m_properties.rbegin(); it != m_properties.rend(); ++it) {
+    PString * value = it->GetAt(propName);
+    if (value != NULL)
+      return *value;
+  }
+  return PString::Empty();
 }
 
 
@@ -2354,7 +2379,7 @@ PBoolean PVXMLSession::PlayElement(PXMLElement & element)
     return PlayFile(url.AsFilePath(), repeat);
 
   // get a normalised name for the resource
-  bool safe = SafeKeyword == InternalGetVar(PropertyScope, CachingProperty) || SafeKeyword == element.GetAttribute(CachingProperty);
+  bool safe = SafeKeyword == GetProperty(CachingProperty) || SafeKeyword == element.GetAttribute(CachingProperty);
 
   PString fileType;
   {
@@ -2520,7 +2545,7 @@ PBoolean PVXMLSession::PlayText(const PString & textToPlay,
   PTRACE(4, "Converting " << textToPlay.ToLiteral() << " to speech");
 
   PString prefix(PString::Printf, "tts%i", type);
-  bool useCache = SafeKeyword != InternalGetVar(PropertyScope, CachingProperty);
+  bool useCache = SafeKeyword != GetProperty(CachingProperty);
 
   PString fileList;
 
@@ -2584,12 +2609,14 @@ PBoolean PVXMLSession::TraverseBlock(PXMLElement & element)
   element.GetFilePosition(col, line);
   PString anonymous = PSTRSTRM(AnonymousPrefix << line << '_' << col);
   m_scriptContext->PushScopeChain(anonymous, true);
+  m_properties.push_back(PStringToString());
   return ExecuteCondition(element);
 }
 
 
 PBoolean PVXMLSession::TraversedBlock(PXMLElement & element)
 {
+  m_properties.pop_back();
   if (m_scriptContext->GetScopeChain().back().NumCompare(AnonymousPrefix) == EqualTo)
     m_scriptContext->PopScopeChain(true);
   return ExecuteCondition(element);
@@ -2643,7 +2670,7 @@ PBoolean PVXMLSession::TraverseValue(PXMLElement & element)
     return retval;
   PString voice = element.GetAttribute(VoiceAttribute);
   if (voice.IsEmpty())
-    voice = InternalGetVar(PropertyScope, VoiceAttribute);
+    voice = GetProperty(VoiceAttribute);
   SayAs(className, value, voice);
   return true;
 }
@@ -2847,7 +2874,7 @@ PXMLElement * PVXMLSession::FindElementWithCount(PXMLElement & parent, const PSt
 
 void PVXMLSession::SayAs(const PString & className, const PString & text)
 {
-  SayAs(className, text, InternalGetVar(PropertyScope, VoiceAttribute));
+  SayAs(className, text, GetProperty(VoiceAttribute));
 }
 
 
@@ -3192,7 +3219,7 @@ PBoolean PVXMLSession::TraverseProperty(PXMLElement & element)
   if (name.empty())
     return false;
 
-  InternalSetVar(PropertyScope, name, element.GetAttribute("value"));
+  m_properties.back().SetAt(name, element.GetAttribute("value"));
   return true;
 }
 
@@ -3203,12 +3230,15 @@ PBoolean PVXMLSession::TraverseTransfer(PXMLElement & element)
     return false;
 
   m_transferStatus = NotTransfering;
+  m_properties.push_back(PStringToString());
   return true;
 }
 
 
 PBoolean PVXMLSession::TraversedTransfer(PXMLElement & element)
 {
+  m_properties.pop_back();
+
   PString elementName = InternalGetName(element, false);
   if (elementName.empty())
     return false;
@@ -3276,6 +3306,7 @@ void PVXMLSession::SetTransferComplete(bool state)
 
 PBoolean PVXMLSession::TraverseMenu(PXMLElement & element)
 {
+  m_properties.push_back(PStringToString());
   m_scriptContext->PushScopeChain(DialogScope, true);
   LoadGrammar(MenuElement, PVXMLGrammarInit(*this, element));
   m_defaultMenuDTMF = element.GetAttribute(DtmfAttribute).IsTrue() ? '1' : 'N';
@@ -3333,6 +3364,7 @@ PBoolean PVXMLSession::TraverseDisconnect(PXMLElement & element)
 PBoolean PVXMLSession::TraverseForm(PXMLElement &)
 {
   m_dialogFieldNames.clear();
+  m_properties.push_back(PStringToString());
   m_scriptContext->PushScopeChain(DialogScope, true);
   ++m_promptCount;
   return true;
@@ -3354,25 +3386,29 @@ PBoolean PVXMLSession::TraversePrompt(PXMLElement & element)
     return false;
   }
 
-  if (element.GetAttribute(BargeInProperty).IsFalse() || InternalGetVar(PropertyScope, BargeInProperty).IsFalse()) {
+  if (element.GetAttribute(BargeInProperty).IsFalse() || GetProperty(BargeInProperty).IsFalse()) {
     PTRACE(3, "Prompt bargein disabled.");
     m_bargeIn = false;
     ClearBargeIn();
     FlushInput();
   }
+
+  m_properties.push_back(PStringToString());
   return true;
 }
 
 
 PBoolean PVXMLSession::TraversedPrompt(PXMLElement& element)
 {
+  m_properties.pop_back();
+
   // Update timeout of current recognition (if 'timeout' attribute is set)
   m_grammersMutex.Wait();
   for (Grammars::iterator it = m_grammars.begin(); it != m_grammars.end(); ++it)
     it->SetTimeout(element.GetAttribute(TimeoutProperty));
   m_grammersMutex.Signal();
 
-  m_bargeIn = !InternalGetVar(PropertyScope, BargeInProperty).IsFalse();
+  m_bargeIn = !GetProperty(BargeInProperty).IsFalse();
   return true;
 }
 
@@ -3399,12 +3435,16 @@ PBoolean PVXMLSession::TraverseField(PXMLElement & element)
   PString type = element.GetAttribute("type");
   if (!type.empty())
     LoadGrammar(type, PVXMLGrammarInit(*this, element));
+
+  m_properties.push_back(PStringToString());
   return true;
 }
 
 
 PBoolean PVXMLSession::TraversedField(PXMLElement &)
 {
+  m_properties.pop_back();
+
   StartGrammars();
   return false;
 }
