@@ -641,6 +641,7 @@ class PVXMLSession : public PIndirectChannel
     friend class PVXMLGrammar;
     friend class VideoReceiverDevice;
     friend class PVXMLTraverseEvent;
+    friend class PVXMLTraverseFilled;
     friend class PVXMLTraverseLog;
 };
 

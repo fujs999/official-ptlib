@@ -69,6 +69,7 @@ static PConstString const IncompleteTimeoutProperty("incompletetimeout");
 static PConstCaselessString const SafeKeyword("safe");
 
 static PConstString const FormElement("form");
+static PConstString const FieldElement("field");
 static PConstString const MenuElement("menu");
 static PConstString const PromptElement("prompt");
 static PConstString const FilledElement("filled");
@@ -199,9 +200,11 @@ TRAVERSE_NODE2(Block);
 
 
 static PConstString const InternalEventStateAttribute("PTLibInternalEventState");
+static PConstString const InternalFilledStateAttribute("PTLibInternalFilledState");
 
 class PVXMLTraverseEvent : public PVXMLNodeHandler
 {
+protected:
   virtual bool Start(PVXMLSession &, PXMLElement & element) const
   {
     return element.GetAttribute(InternalEventStateAttribute).IsTrue();
@@ -230,11 +233,67 @@ class PVXMLTraverseEvent : public PVXMLNodeHandler
     return false;
   }
 };
-PFACTORY_CREATE( PVXMLNodeFactory, PVXMLTraverseEvent, FilledElement, true);
+PFACTORY_CREATE( PVXMLNodeFactory, PVXMLTraverseEvent, CatchElement, true);
 PFACTORY_SYNONYM(PVXMLNodeFactory, PVXMLTraverseEvent, NoInput, NoInputElement);
 PFACTORY_SYNONYM(PVXMLNodeFactory, PVXMLTraverseEvent, NoMatch, NoMatchElement);
 PFACTORY_SYNONYM(PVXMLNodeFactory, PVXMLTraverseEvent, Error, ErrorElement);
-PFACTORY_SYNONYM(PVXMLNodeFactory, PVXMLTraverseEvent, Catch, CatchElement);
+
+class PVXMLTraverseFilled : public PVXMLTraverseEvent
+{
+  virtual bool Start(PVXMLSession & session, PXMLElement & element) const
+  {
+    if (!element.GetAttribute(InternalEventStateAttribute).IsTrue())
+      return false;
+
+    if (element.GetName() != FilledElement)
+      return true;
+
+    PXMLElement * parent = element.GetParent();
+    if (parent == NULL)
+      return session.GoToEventHandler(element, ErrorBadFetch, true);
+
+    PCaselessString mode = element.GetAttribute("mode");
+    PStringArray namelist = element.GetAttribute("namelist").Tokenise(" ", false);
+
+    if (parent->GetName() != "form") {
+      // Filled a field so mark it as such
+      parent->SetAttribute(InternalFilledStateAttribute, true);
+      if (mode.empty() && namelist.empty())
+        return true;
+
+      // Having a mode or namelist for other then <form> is illegal
+      return session.GoToEventHandler(element, ErrorBadFetch, true);
+    }
+
+    // Validate the mode and nodelist
+    if ((!mode.empty() && mode != "all" && mode != "any") || (mode == "all" && !namelist.empty()) || (mode == "any" && namelist.empty()))
+      return session.ThrowSemanticError(element PTRACE_PARAM(, "Invalid mode/nodelist on <filled>"));
+
+    // Move to next unfilled field
+    PXMLElement * nextField = NULL;
+    if (mode == "all")
+      nextField = parent->GetElement(FieldElement, InternalFilledStateAttribute, "");
+    else {
+      for (PINDEX i = 0; i < namelist.GetSize(); ++i) {
+        PXMLElement * namedField = parent->GetElement(FieldElement, NameAttribute, namelist[i]);
+        if (namedField != NULL && namedField->GetAttribute(InternalFilledStateAttribute).empty()) {
+          nextField = namedField;
+          break;
+        }
+      }
+    }
+    if (nextField == NULL) {
+      PTRACE(4, "All required input fields filled for " << parent->PrintTrace());
+      return true;
+    }
+
+    session.m_currentNode = nextField;
+    PTRACE(4, "Setting next input field " << nextField->PrintTrace() << " for " << parent->PrintTrace());
+    return true;
+  }
+};
+
+PFACTORY_CREATE(PVXMLNodeFactory, PVXMLTraverseFilled, FilledElement, true);
 
 #if PTRACING
 class PVXMLTraverseLog : public PVXMLNodeHandler {
