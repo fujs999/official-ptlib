@@ -1533,26 +1533,27 @@ bool PVXMLSession::InternalLoadVXML(const PURL & url, const PString & xmlText, c
 PURL PVXMLSession::NormaliseResourceName(const PString & src)
 {
   if (src.empty())
-    return src;
+    return PURL();  // Throw error.badfetch
 
-  PURL url;
-  if (url.Parse(src, NULL) && !url.GetRelativePath())
-    return url;
+  PURL srcURL;
+  if (srcURL.Parse(src, NULL) && !srcURL.GetRelativePath())
+    return srcURL;
 
-  PURL path = InternalGetVar(DocumentScope, DocumentURIVar);
+  PURL documentURI = InternalGetVar(DocumentScope, DocumentURIVar);
+  documentURI.ChangePath(PString::Empty()); // Remove last element of document URL
 
-  if (!url.IsEmpty() && path.GetScheme() != url.GetScheme()) {
-    PTRACE(3, "NormaliseResourceName: doc-scheme=" << path.GetScheme() << ", url=" << url);
-    return url;
+  if (srcURL.IsEmpty()) {
+    // Use PathOnly as we don't want all the query argements etc
+    if (srcURL.Parse(PSTRSTRM(documentURI.AsString(PURL::PathOnly) << '/' << src), documentURI.GetScheme()))
+      return srcURL;
+  }
+  else if (documentURI.GetScheme() == srcURL.GetScheme()) {
+    srcURL.SetPath(documentURI.GetPath() + srcURL.GetPath());
+    return srcURL;
   }
 
-  path.ChangePath(PString::Empty()); // Remove last element of document URL
-
-  if (url.Parse(PSTRSTRM(path.AsString(PURL::PathOnly) << '/' << src), path.GetScheme()))
-    return url;
-
-  PTRACE(2, "NormaliseResourceName failed: path=" << path << ", src=\"" << src << '"');
-  return src;
+  PTRACE(2, "NormaliseResourceName failed: document=" << documentURI << ", src=\"" << src << '"');
+  return PURL();  // Throw error.badfetch
 }
 
 
