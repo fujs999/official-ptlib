@@ -49,7 +49,6 @@
 
 class PVXMLSession;
 class PVXMLDialog;
-class PVXMLSession;
 
 
 // these are the same strings as the Opal equivalents, but as this is PWLib, we can't use Opal contants
@@ -518,7 +517,6 @@ class PVXMLSession : public PIndirectChannel
     virtual bool NextNode(bool processChildren);
     bool ExecuteCondition(PXMLElement & element);
     void ClearBargeIn();
-    void ClearScopes();
     void FlushInput();
 
     void SayAs(const PString & className, const PString & text);
@@ -600,7 +598,18 @@ class PVXMLSession : public PIndirectChannel
     PStringSet       m_dialogFieldNames;
     unsigned         m_promptCount;
     std::map<std::string, unsigned> m_eventCount;
-    std::list<PStringToString> m_properties;
+
+    struct Properties : PStringToString
+    {
+#if PTRACING
+      PString m_node;
+      Properties(const char * node) : m_node(node) { }
+      Properties(const PXMLElement & node) { m_node = PSTRSTRM(node.PrintTrace()); }
+#else
+      Properties() { }
+#endif
+    };
+    std::list<Properties> m_properties;
 
     virtual void LoadGrammar(const PString & type, const PVXMLGrammarInit & init);
     void ClearGrammars();
@@ -641,6 +650,7 @@ class PVXMLSession : public PIndirectChannel
     friend class PVXMLMenuGrammar;
     friend class PVXMLGrammar;
     friend class VideoReceiverDevice;
+    friend class PVXMLNodeHandler;
     friend class PVXMLTraverseEvent;
     friend class PVXMLTraverseFilled;
     friend class PVXMLTraverseLog;
@@ -921,6 +931,54 @@ class PVXMLNodeHandler : public PObject
 
     // Return true to move to next sibling, false to stay at this node.
     virtual bool Finish(PVXMLSession & /*session*/, PXMLElement & /*node*/) const;
+
+#if PTRACING
+    virtual const char * GetDescription() const = 0;
+#endif
+
+    static bool IsTraversing(PXMLElement & node);
+};
+
+
+template <PBoolean(PVXMLSession::*traversing)(PXMLElement &)>
+class PVXMLSinglePhaseNodeHandler : public PVXMLNodeHandler
+{
+  PCLASSINFO(PVXMLSinglePhaseNodeHandler, PVXMLNodeHandler);
+public:
+  virtual bool Start(PVXMLSession & session, PXMLElement & node) const
+  {
+    PVXMLNodeHandler::Start(session, node);
+    return (session.*traversing)(node);
+  }
+#if PTRACING
+  virtual const char * GetDescription() const { return "single phase"; }
+#endif
+};
+
+
+template <
+  PBoolean(PVXMLSession::*traversing)(PXMLElement &),
+  PBoolean(PVXMLSession::*traversed)(PXMLElement &)
+> class PVXMLDualPhaseNodeHandler : public PVXMLNodeHandler
+{
+  PCLASSINFO(PVXMLDualPhaseNodeHandler, PVXMLNodeHandler);
+public:
+  virtual bool Start(PVXMLSession & session, PXMLElement & node) const
+  {
+    PVXMLNodeHandler::Start(session, node);
+    return (session.*traversing)(node);
+  }
+  virtual bool Finish(PVXMLSession & session, PXMLElement & node) const
+  {
+    bool nextNode = true;
+    if (IsTraversing(node))
+      nextNode = (session.*traversed)(node);
+    PVXMLNodeHandler::Finish(session, node);
+    return nextNode;
+  }
+#if PTRACING
+  virtual const char * GetDescription() const { return "dual phase"; }
+#endif
 };
 
 
