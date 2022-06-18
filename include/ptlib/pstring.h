@@ -2562,8 +2562,8 @@ class PStringArray : public PArray<PString>
        @return
        A new PStringArray with the additional elements(s)
      */
-    PStringArray operator + (const PStringArray & array);
-    PStringArray operator + (const PString & str);
+    PStringArray operator+(const PStringArray & array) const;
+    PStringArray operator+(const PString & str) const;
 
     /**Create an array of C strings.
        If storage is NULL then this returns a single pointer that must be

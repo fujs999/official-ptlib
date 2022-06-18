@@ -2746,6 +2746,24 @@ PStringArray & PStringArray::operator+=(const PStringArray & v)
 }
 
 
+PStringArray PStringArray::operator+(const PStringArray & v) const
+{
+  PStringArray arr = *this;
+  arr.MakeUnique();
+  arr += v;
+  return arr;
+}
+
+
+PStringArray PStringArray::operator+(const PString & v) const
+{
+  PStringArray arr = *this;
+  arr.MakeUnique();
+  arr += v;
+  return arr;
+}
+
+
 void PStringArray::ReadFrom(istream & strm)
 {
   while (strm.good()) {
