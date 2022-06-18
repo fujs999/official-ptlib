@@ -347,8 +347,8 @@ class PXMLObject : public PObject
       PrintTraceClass(const PXMLObject * object) : m_object(object) { }
     };
     friend ostream & operator<<(ostream & strm, const PrintTraceClass & e);
-    PrintTraceClass PrintTrace() { return PXMLObject::PrintTraceClass(this); }
-    static PrintTraceClass PrintTrace(PXMLObject * obj) { return PrintTraceClass(obj); }
+    PrintTraceClass PrintTrace() const { return PXMLObject::PrintTraceClass(this); }
+    static PrintTraceClass PrintTrace(const PXMLObject * obj) { return PrintTraceClass(obj); }
 #endif
 
   protected:
