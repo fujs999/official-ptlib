@@ -138,6 +138,10 @@ Finally, reconfigure PTLib and rebuild.
 
 
 #ifdef _MSC_VER
+  #if _MSC_VER >= 1932 // Visual Studio 2022 version 17.2+
+    #pragma comment(linker, "/alternatename:__imp___std_init_once_complete=__imp_InitOnceComplete")
+    #pragma comment(linker, "/alternatename:__imp___std_init_once_begin_initialize=__imp_InitOnceBeginInitialize")
+  #endif
   #pragma comment(lib, "winmm.lib")
   #pragma comment(lib, "dbghelp.lib")
   #pragma comment(lib, "shlwapi.lib")

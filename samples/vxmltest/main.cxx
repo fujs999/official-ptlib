@@ -343,8 +343,8 @@ bool TestInstance::Initialise(unsigned instance, const PArgList & args)
     return false;
   }
 
-  if (args.HasOption('C'))
-    GetCache().SetDirectory(args.GetOptionString('C'));
+  if (args.HasOption("cache"))
+    GetCache().SetDirectory(args.GetOptionString("cache"));
 
   if (!Open(VXML_PCM16, audioParams.m_sampleRate, audioParams.m_channels)) {
     cerr << "Instance " << m_instance << " error: cannot open VXML device in PCM mode" << endl;
