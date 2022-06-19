@@ -2305,8 +2305,8 @@ PBoolean PVXMLSession::TraversedRecord(PXMLElement & element)
     return true;
   }
 
-  recordable->SetFinalSilence(StringToTime(element.GetAttribute("finalsilence"), 3000));
-  recordable->SetMaxDuration(StringToTime(element.GetAttribute("maxtime"), INT_MAX));
+  recordable->SetFinalSilence(PTimeInterval(element.GetAttribute("finalsilence")));
+  recordable->SetMaxDuration(PTimeInterval(element.GetAttribute("maxtime")));
 
   if (!GetVXMLChannel()->QueueRecordable(recordable))
     return true;
@@ -2687,7 +2687,7 @@ PBoolean PVXMLSession::PlayText(const PString & textToPlay,
   PVXMLCache::Params cacheParams;
   cacheParams.m_prefix.sprintf("tts%i", type);
   cacheParams.m_suffix = GetVXMLChannel()->GetMediaFileSuffix() + ".wav";
-  cacheParams.m_maxAge = StringToTime(caching);
+  cacheParams.m_maxAge = PTimeInterval(caching);
 
   // Convert each line into it's own cached WAV file.
   PStringArray lines = textToPlay.Lines();
@@ -2770,8 +2770,9 @@ PBoolean PVXMLSession::TraverseBreak(PXMLElement & element)
     return PlaySilence(element.GetAttribute("msecs").AsInteger());
 
   // time is VXML 2.0
-  if (element.HasAttribute("time"))
-    return PlaySilence(StringToTime(element.GetAttribute("time"), 1000));
+  PString time = element.GetAttribute("time");
+  if (!time.empty())
+    return PlaySilence(PTimeInterval(time));
 
   if (element.HasAttribute("size")) {
     PString size = element.GetAttribute("size");
@@ -3042,23 +3043,6 @@ void PVXMLSession::SayAs(const PString & className, const PString & textToSay, c
 
     PlayText(text, type);
   }
-}
-
-
-PTimeInterval PVXMLSession::StringToTime(const PString & str, int dflt)
-{
-  if (str.IsEmpty())
-    return dflt;
-
-  PCaselessString units = str.Mid(str.FindSpan("0123456789")).Trim();
-  if (units ==  "s")
-    return PTimeInterval(0, str.AsInteger());
-  else if (units ==  "m")
-    return PTimeInterval(0, 0, str.AsInteger());
-  else if (units ==  "h")
-    return PTimeInterval(0, 0, 0, str.AsInteger());
-
-  return str.AsInt64();
 }
 
 
@@ -3782,9 +3766,8 @@ void PVXMLGrammar::OnAudioInput(const short * samples, size_t count)
 }
 
 
-void PVXMLGrammar::SetTimeout(const PString & timeoutStr)
+void PVXMLGrammar::SetTimeout(const PTimeInterval & timeout)
 {
-  PTimeInterval timeout = PVXMLSession::StringToTime(timeoutStr);
   if (timeout > 0) {
     m_noInputTimeout = timeout;
     PTRACE(4, "Grammar " << *this << " set timeout=" << m_noInputTimeout << ", state=" << m_state);
