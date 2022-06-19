@@ -1269,7 +1269,6 @@ bool PVXMLCache::Finish(Params & params, bool success)
 PVXMLSession::PVXMLSession()
   : m_textToSpeech(NULL)
   , m_autoDeleteTextToSpeech(false)
-  , m_speechRecognition(NULL)
   , m_resourceCache(&DefaultCache)
 #if P_VXML_VIDEO
   , m_videoReceiver(*this)
