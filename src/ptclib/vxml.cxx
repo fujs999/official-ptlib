@@ -64,6 +64,15 @@ static PConstString const TermTimeoutProperty("termtimeout");
 static PConstString const TermCharProperty("termchar");
 static PConstString const CompleteTimeoutProperty("completetimeout");
 static PConstString const IncompleteTimeoutProperty("incompletetimeout");
+static PConstString const FetchTimeoutProperty("fetchtimeout");
+static PConstString const DocumentMaxAgeProperty("documentmaxage");
+static PConstString const DocumentMaxStaleProperty("documentmaxstale");
+static PConstString const AudioMaxAgeProperty("audiomaxage");
+static PConstString const AudioMaxStaleProperty("audiomaxstale");
+static PConstString const GrammarMaxAgeProperty("grammarmaxage");
+static PConstString const GrammarMaxStaleProperty("grammarmaxstale");
+static PConstString const ScriptMaxAgeProperty("scriptmaxage");
+static PConstString const ScriptMaxStaleProperty("scriptmaxstale");
 
 static PConstCaselessString const SafeKeyword("safe");
 
@@ -85,6 +94,8 @@ static PConstString const DtmfAttribute("dtmf");
 static PConstString const VoiceAttribute("voice");
 static PConstString const DestAttribute("dest");
 static PConstString const DestExprAttribute("destexpr");
+static PConstString const MaxAgeAttribute("maxage");
+static PConstString const MaxStaleAttribute("maxstale");
 static PConstString const ErrorSemantic("error.semantic");
 static PConstString const ErrorBadFetch("error.badfetch");
 
@@ -1123,7 +1134,7 @@ void PVXMLCache::SetDirectory(const PDirectory & directory)
 }
 
 
-PFilePath PVXMLCache::CreateFilename(const PString & prefix, const PString & key, const PString & suffix)
+PFilePath PVXMLCache::CreateFilename(const Params & params)
 {
   if (!m_directory.Exists()) {
     if (!m_directory.Create()) {
@@ -1132,100 +1143,134 @@ PFilePath PVXMLCache::CreateFilename(const PString & prefix, const PString & key
   }
 
   PMessageDigest5::Result digest;
-  PMessageDigest5::Encode(key, digest);
+  PMessageDigest5::Encode(params.m_key, digest);
 
-  return PSTRSTRM(m_directory << prefix << '_' << hex << digest << suffix);
+  return PSTRSTRM(m_directory << params.m_prefix << '_' << hex << digest << params.m_suffix);
 }
 
 
-bool PVXMLCache::Get(const PString & prefix,
-                     const PString & key,
-                     const PString & suffix,
-                         PFilePath & filename)
+static PTime GetTimeFromElement(PXMLElement * root, const char * name)
 {
-  PAssert(!prefix.IsEmpty() && !key.IsEmpty(), PInvalidParameter);
+  PXMLElement * element = root->GetElement(name);
+  return element != NULL ? PTime(element->GetData()) : PTime(0);
+}
 
-  PSafeLockReadOnly mutex(*this);
 
-  PTextFile keyFile(CreateFilename(prefix, key, KeyFileType), PFile::ReadOnly);
-  PFile dataFile(CreateFilename(prefix, key, suffix), PFile::ReadOnly);
+bool PVXMLCache::Start(Params & params)
+{
+  PAssert(!params.m_prefix.IsEmpty() && !params.m_key.IsEmpty(), PInvalidParameter);
 
-  if (dataFile.Open()) {
-    if (keyFile.Open()) {
-      if (keyFile.ReadString(P_MAX_INDEX) == key) {
-        if (dataFile.GetLength() != 0) {
-          PTRACE(5, "Cache data found for \"" << key << '"');
-          filename = dataFile.GetFilePath();
-          return true;
-        }
-        else {
-          PTRACE(2, "Cached data empty for \"" << key << '"');
-        }
+  if (!LockReadWrite())
+    return false;
+
+  params.m_file.SetFilePath(CreateFilename(params));
+  PFilePath keyFilePath = params.m_file.GetFilePath();
+  keyFilePath.SetType(KeyFileType);
+
+  if (PFile::Exists(keyFilePath) && params.m_maxAge > 0) {
+    PXML xml;
+    if (!xml.LoadFile(keyFilePath)) {
+      PTRACE(2, "Cannot open cache key file"
+                " \"" << keyFilePath << "\""
+                " (" << xml.GetErrorLine() << ':' << xml.GetErrorColumn() << ")"
+                " " << xml.GetErrorString());
+    }
+    else if (!params.m_file.Open(PFile::ReadOnly)) {
+      PTRACE(2, "Cannot open cache data file \"" << params.m_file.GetFilePath() << "\""
+             " for \"" << params.m_key << "\", error: " << params.m_file.GetErrorText());
+    }
+    else if ((params.m_size = params.m_file.GetLength()) == 0) {
+      PTRACE(2, "Cached data empty for \"" << params.m_key << '"');
+    }
+    else {
+      PTime now;
+      PXMLElement * root = xml.GetRootElement();
+      PXMLElement * key = root->GetElement("key");
+      PTime date = GetTimeFromElement(root, "date");
+      PTime expires = GetTimeFromElement(root, "expires");
+
+      if (key == NULL || key->GetData() != params.m_key) {
+        PTRACE(2, "Cache coherence problem for \"" << params.m_key << '"');
+      }
+      else if (params.m_maxAge >= 0 && date.IsValid() && now > date + params.m_maxAge) {
+        PTRACE(2, "Cache age reached for \"" << params.m_key << '"');
+      }
+      else if (params.m_maxStale >= 0 && expires.IsValid() && now > expires + params.m_maxStale) {
+        PTRACE(2, "Cache stale reached for \"" << params.m_key << '"');
       }
       else {
-        PTRACE(2, "Cache coherence problem for \"" << key << '"');
+        PTRACE(4, "Cache data found for \"" << params.m_key << '"');
+        // Leave locked, if return true, Finish must be called.
+        return true;
       }
     }
-    else {
-      PTRACE(2, "Cannot open cache key file \"" << keyFile.GetFilePath() << "\""
-                " for \"" << key << "\", error: " << keyFile.GetErrorText());
-    }
-  }
-  else {
-    PTRACE(2, "Cannot open cache data file \"" << dataFile.GetFilePath() << "\""
-              " for \"" << key << "\", error: " << dataFile.GetErrorText());
+    PFile::Remove(keyFilePath); // Is bad
   }
 
-  keyFile.Remove(true);
-  dataFile.Remove(true);
+  params.m_file.Remove(true); // Just in case
+  params.m_size = 0; // indicate needs writing
+
+  // create the file for the cached resource
+  if (params.m_file.Open(PFile::WriteOnly, PFile::Create|PFile::Truncate))
+    return true;
+
+  // Can't cache at all!
+  UnlockReadWrite();
+  PTRACE(2, "Cannot create cache data file \"" << params.m_file.GetFilePath() << "\""
+            " for \"" << params.m_key << "\", error: " << params.m_file.GetErrorText());
   return false;
 }
 
 
-bool PVXMLCache::PutWithLock(const PString & prefix,
-                             const PString & key,
-                             const PString & suffix,
-                                     PFile & dataFile)
+bool PVXMLCache::Finish(Params & params, bool success)
 {
-  PSafeLockReadWrite mutex(*this);
+  PFilePath keyFilePath = params.m_file.GetFilePath();
+  keyFilePath.SetType(KeyFileType);
 
-  // create the filename for the cache files
-  if (!dataFile.Open(CreateFilename(prefix, key, suffix), PFile::WriteOnly, PFile::Create|PFile::Truncate)) {
-    PTRACE(2, "Cannot create cache data file \"" << dataFile.GetFilePath() << "\""
-              " for \"" << key << "\", error: " << dataFile.GetErrorText());
-    return false;
-  }
-
-  // write the content type file
-  PTextFile keyFile(CreateFilename(prefix, key, KeyFileType), PFile::WriteOnly, PFile::Create|PFile::Truncate);
-  if (keyFile.IsOpen()) {
-    if (keyFile.WriteString(key)) {
-      LockReadWrite();
-      PTRACE(5, "Cache data created for \"" << key << '"');
-      return true;
+  if (success && params.m_size == 0) {
+    if (params.m_file.GetLength() <= 0) {
+      PTRACE(2, "Cannot cache zero length file \"" << params.m_file.GetFilePath() << '"');
+      success = false;
     }
-    else {
-      PTRACE(2, "Cannot write cache key file \"" << keyFile.GetFilePath() << "\""
-                " for \"" << key << "\", error: " << keyFile.GetErrorText());
+
+    if (!params.m_file.Close()) {
+      PTRACE(2, "Could not close cache file \"" << params.m_file.GetFilePath() << '"');
+      success = false;
+    }
+
+    if (success) {
+      PXML xml(PXML::Indent|PXML::NewLineAfterElement);
+      PXMLRootElement * root = new PXMLRootElement(xml, "cache");
+      xml.SetRootElement(root);
+
+      root->AddElement("key")->SetData(params.m_key);
+      if (params.m_expires.IsValid())
+        root->AddElement("expires")->SetData(params.m_expires.AsString(PTime::LongISO8601));
+      root->AddElement("date")->SetData(params.m_date.AsString(PTime::LongISO8601));
+
+      if (!xml.SaveFile(keyFilePath)) {
+        PTRACE(2, "Cannot write cache key file \"" << keyFilePath << '"');
+        success = false;
+      }
     }
   }
-  else {
-    PTRACE(2, "Cannot create cache key file \"" << keyFile.GetFilePath() << "\""
-              " for \"" << key << "\", error: " << keyFile.GetErrorText());
+
+  if (!success) {
+    params.m_file.Remove(true);
+    PFile::Remove(keyFilePath);
   }
 
-  dataFile.Remove(true);
-  return false;
+  UnlockReadWrite();
+  return success;
 }
-
 
 //////////////////////////////////////////////////////////
 
 PVXMLSession::PVXMLSession()
   : m_textToSpeech(NULL)
-  , m_ttsCache(NULL)
   , m_autoDeleteTextToSpeech(false)
   , m_speechRecognition(NULL)
+  , m_resourceCache(&DefaultCache)
 #if P_VXML_VIDEO
   , m_videoReceiver(*this)
 #endif
@@ -1254,13 +1299,22 @@ PVXMLSession::PVXMLSession()
   Properties props(PTRACE_PARAM("application"));
   props.SetAt(TimeoutProperty, "10s");
   props.SetAt(BargeInProperty, true);
-  props.SetAt(CachingProperty, SafeKeyword);
+  props.SetAt(CachingProperty, "86400s");
   props.SetAt(InputModesProperty, DtmfAttribute & VoiceAttribute);
   props.SetAt(InterDigitTimeoutProperty, "5s");
   props.SetAt(TermTimeoutProperty, "0");
   props.SetAt(TermCharProperty, "#");
   props.SetAt(CompleteTimeoutProperty, "2s");
   props.SetAt(IncompleteTimeoutProperty, "5s");
+  props.SetAt(FetchTimeoutProperty, "15s");
+  props.SetAt(DocumentMaxAgeProperty, "86400s");
+  props.SetAt(DocumentMaxStaleProperty, "1s");
+  props.SetAt(AudioMaxAgeProperty, "86400s");
+  props.SetAt(AudioMaxStaleProperty, "1s");
+  props.SetAt(GrammarMaxAgeProperty, "86400s");
+  props.SetAt(GrammarMaxStaleProperty, "1s");
+  props.SetAt(ScriptMaxAgeProperty, "86400s");
+  props.SetAt(ScriptMaxStaleProperty, "1");
   m_properties.push_back(props);
 
   // Create always present objects
@@ -1345,19 +1399,14 @@ PSpeechRecognition * PVXMLSession::CreateSpeechRecognition()
 void PVXMLSession::SetCache(PVXMLCache & cache)
 {
   m_sessionMutex.Wait();
-  m_ttsCache = &cache;
+  m_resourceCache = &cache;
   m_sessionMutex.Signal();
 }
 
 
 PVXMLCache & PVXMLSession::GetCache()
 {
-  PWaitAndSignal mutex(m_sessionMutex);
-
-  if (m_ttsCache == NULL)
-    m_ttsCache = &DefaultCache;
-
-  return *m_ttsCache;
+  return *m_resourceCache;
 }
 
 
@@ -1391,20 +1440,36 @@ PBoolean PVXMLSession::LoadFile(const PFilePath & filename, const PString & firs
 }
 
 
-bool PVXMLSession::LoadResource(const PURL & url, PBYTEArray & data)
+bool PVXMLSession::LoadActualResource(const PURL & url,
+                                      const PTimeInterval & timeout,
+                                      PBYTEArray & data,
+                                      PVXMLCache::Params & cacheParams)
 {
-  PTRACE(4, "LoadResource " << url);
-
-  if (url.GetScheme().NumCompare("http") != EqualTo)
-    return url.LoadResource(data);
-
   PAutoPtr<PHTTPClient> http(CreateHTTPClient());
-  PMIMEInfo outMIME, replyMIME;
 
+  http->SetReadTimeout(timeout);
+
+  PMIMEInfo outMIME, replyMIME;
   AddCookie(outMIME, url);
 
-  if (!http->GetDocument(url, outMIME, replyMIME))
+  if (!http->GetDocument(url, outMIME, replyMIME)) {
+    PTRACE(2, "GET " << url << " failed with "
+           << http->GetLastResponseCode() << ' ' << http->GetLastResponseInfo());
     return false;
+  }
+
+  cacheParams.m_date = replyMIME.GetVar(PHTTP::DateTag, PTime());
+  cacheParams.m_expires = replyMIME.GetVar(PHTTP::ExpiresTag, PTime(0));
+  PStringOptions cacheControl(replyMIME.GetString("Cache-Control"));
+  if (!cacheControl.empty()) {
+    static PConstCaselessString const nocache("no-cache");
+    static PConstCaselessString const nostore("no-store");
+    static PConstCaselessString const maxage("max-age");
+    if (cacheControl.Contains(nocache) || cacheControl.Contains(nostore))
+      cacheParams.m_maxAge = 0;
+    else if (cacheControl.Contains(maxage))
+      cacheParams.m_maxAge = PTimeInterval(cacheControl.GetInteger(maxage));
+  }
 
   m_cookieMutex.Wait();
   if (m_cookies.Parse(replyMIME, url)) {
@@ -1413,7 +1478,53 @@ bool PVXMLSession::LoadResource(const PURL & url, PBYTEArray & data)
   }
   m_cookieMutex.Signal();
 
-  return http->ReadContentBody(replyMIME, data);
+  if (!http->ReadContentBody(replyMIME, data)) {
+    PTRACE(2, "GET " << url << " read body failed with "
+           << http->GetLastResponseCode() << ' ' << http->GetLastResponseInfo());
+    return false;
+  }
+
+  PTRACE(4, "GET " << url << " succeeded: " << data.size());
+  return true;
+}
+
+
+bool PVXMLSession::LoadCachedResource(const PURL & url,
+                                      PXMLElement * overrideElement,
+                                      const PString & maxagePropName,
+                                      const PString & maxstalePropName,
+                                      PBYTEArray & data)
+{
+  PTRACE(4, "LoadCachedResource " << url);
+
+  PTimeInterval timeout = GetTimeProperty(FetchTimeoutProperty, overrideElement);
+
+  if (url.GetScheme().NumCompare("http") != EqualTo)
+    return url.LoadResource(data, PURL::LoadParams(PString::Empty(), timeout));
+
+  PVXMLCache::Params cacheParams;
+  cacheParams.m_prefix = "url";
+  cacheParams.m_key = url.AsString();
+  cacheParams.m_maxAge = GetTimeProperty(maxagePropName, overrideElement, MaxAgeAttribute);
+  cacheParams.m_maxStale = GetTimeProperty(maxstalePropName, overrideElement, MaxStaleAttribute);
+
+  const PStringArray & path = url.GetPath();
+  if (!path.empty())
+    cacheParams.m_suffix = PFilePath(path[path.GetSize() - 1]).GetType();
+  if (cacheParams.m_suffix.empty())
+    cacheParams.m_suffix = ".dat";
+
+  CachePtr cache = m_resourceCache;
+
+  if (!cache->Start(cacheParams))
+    return LoadActualResource(url, timeout, data, cacheParams);
+
+  if (cacheParams.m_size > 0)
+    return cache->Finish(cacheParams, cacheParams.m_file.Read(data.GetPointer(cacheParams.m_size), cacheParams.m_size));
+
+  return cache->Finish(cacheParams,
+                       LoadActualResource(url, timeout, data, cacheParams) &&
+                       cacheParams.m_file.Write(data, data.GetSize()));
 }
 
 
@@ -1454,7 +1565,7 @@ PBoolean PVXMLSession::LoadURL(const PURL & url)
 
   // retreive the document (may be a HTTP get)
   PBYTEArray xmlData;
-  if (LoadResource(url, xmlData))
+  if (LoadCachedResource(url, NULL, DocumentMaxAgeProperty, DocumentMaxStaleProperty, xmlData))
     return InternalLoadVXML(url, PString(xmlData), url.GetFragment());
 
   PTRACE(1, "Cannot load document " << url);
@@ -2210,10 +2321,23 @@ PBoolean PVXMLSession::TraversedRecord(PXMLElement & element)
 PBoolean PVXMLSession::TraverseScript(PXMLElement & element)
 {
   PString src = element.GetAttribute(SrcAttribute);
-  PString script = src.empty() ? element.GetData() : src;
+  if (src.empty()) {
+    PString script = element.GetData();
+    PTRACE(4, "Executing script " << script.ToLiteral());
+    return RunScript(element, script);
+  }
 
-  PTRACE(4, "Traverse <script> " << script.ToLiteral());
-  return RunScript(element, script);
+  PBYTEArray data;
+  if (LoadCachedResource(NormaliseResourceName(src),
+                         &element,
+                         ScriptMaxAgeProperty,
+                         ScriptMaxStaleProperty,
+                         data)) {
+    PTRACE(4, "Executing script of " << data.size() << " bytes");
+    return RunScript(element, PString(data));
+  }
+
+  return GoToEventHandler(element, ErrorBadFetch, true);
 }
 
 
@@ -2318,8 +2442,16 @@ void PVXMLSession::SetConnectionVars(const PString & localURI,
 }
 
 
-PCaselessString PVXMLSession::GetProperty(const PString & propName) const
+PCaselessString PVXMLSession::GetProperty(const PString & propName,
+                                          PXMLElement * overrideElement,
+                                          const PString & attrName) const
 {
+  if (overrideElement != NULL) {
+    PString value = overrideElement->GetAttribute(attrName.empty() ? propName : attrName);
+    if (!value.empty())
+      return value;
+  }
+
   for (std::list<Properties>::const_reverse_iterator it = m_properties.rbegin(); it != m_properties.rend(); ++it) {
     PString * value = it->GetAt(propName);
     if (value != NULL) {
@@ -2396,39 +2528,15 @@ PBoolean PVXMLSession::PlayElement(PXMLElement & element)
   if (url.GetScheme() == "file" && url.GetHostName().IsEmpty())
     return PlayFile(url.AsFilePath(), repeat);
 
-  // get a normalised name for the resource
-  bool safe = SafeKeyword == GetProperty(CachingProperty) || SafeKeyword == element.GetAttribute(CachingProperty);
-
-  PString fileType;
-  {
-    const PStringArray & path = url.GetPath();
-    if (!path.IsEmpty())
-      fileType = PFilePath(path[path.GetSize() - 1]).GetType();
-    else
-      fileType = ".dat";
-  }
-
-  if (!safe) {
-    PFilePath filename;
-    if (GetCache().Get("url", url.AsString(), fileType, filename))
-      return PlayFile(filename, repeat);
-  }
-
   PBYTEArray data;
-  if (!LoadResource(url, data)) {
-    PTRACE(2, "Cannot load resource " << url);
-    return false;
-  }
+  if (LoadCachedResource(url,
+                         &element,
+                         AudioMaxAgeProperty,
+                         AudioMaxStaleProperty,
+                         data))
+    return PlayData(data, repeat);
 
-  PFile cacheFile;
-  if (!GetCache().PutWithLock("url", url.AsString(), fileType, cacheFile))
-    return false;
-
-  // write the data in the file
-  cacheFile.Write(data.GetPointer(), data.GetSize());
-
-  GetCache().UnlockReadWrite();
-  return PlayFile(cacheFile.GetFilePath(), repeat, 0, safe); // make sure we delete the file if not cacheing
+  return GoToEventHandler(element, ErrorBadFetch, true);
 }
 
 
@@ -2562,53 +2670,59 @@ PBoolean PVXMLSession::PlayText(const PString & textToPlay,
 
   PTRACE(4, "Converting " << textToPlay.ToLiteral() << " to speech");
 
-  PString prefix(PString::Printf, "tts%i", type);
-  bool useCache = SafeKeyword != GetProperty(CachingProperty);
+  PCaselessString caching = GetProperty(CachingProperty);
+  if (caching == SafeKeyword) {
+    PFilePath fn("tts", NULL, ".wav");
+    return m_textToSpeech != NULL &&
+           m_textToSpeech->SetSampleRate(GetVXMLChannel()->GetSampleRate()) &&
+           m_textToSpeech->SetChannels(GetVXMLChannel()->GetChannels()) &&
+           m_textToSpeech->OpenFile(fn) &&
+           m_textToSpeech->Speak(textToPlay, type) &&
+           m_textToSpeech->Close() &&
+           PlayFile(fn, repeat, delay, true);
+  }
 
   PString fileList;
+  CachePtr cache = m_resourceCache;
 
-  PString suffix = GetVXMLChannel()->GetMediaFileSuffix() + ".wav";
+  PVXMLCache::Params cacheParams;
+  cacheParams.m_prefix.sprintf("tts%i", type);
+  cacheParams.m_suffix = GetVXMLChannel()->GetMediaFileSuffix() + ".wav";
+  cacheParams.m_maxAge = StringToTime(caching);
 
   // Convert each line into it's own cached WAV file.
   PStringArray lines = textToPlay.Lines();
   for (PINDEX i = 0; i < lines.GetSize(); i++) {
-    PString line = lines[i].Trim();
-    if (line.IsEmpty())
+    cacheParams.m_key = lines[i].Trim();
+    if (cacheParams.m_key.IsEmpty())
       continue;
 
     // see if we have converted this text before
-    if (useCache) {
-      PFilePath cachedFilename;
-      if (GetCache().Get(prefix, line, suffix, cachedFilename)) {
-        fileList += cachedFilename + '\n';
-        continue;
-      }
-    }
-
-    PFile wavFile;
-    if (!GetCache().PutWithLock(prefix, line, suffix, wavFile))
+    if (!cache->Start(cacheParams))
       continue;
+
+    if (cacheParams.m_size > 0) {
+      fileList += cacheParams.m_file.GetFilePath() + '\n';
+      cache->Finish(cacheParams, true);
+      continue;
+    }
 
     // Really want to use OpenChannel() but it isn't implemented yet.
     // So close file and just use filename.
-    wavFile.Close();
+    cacheParams.m_file.Close();
 
-    if (m_textToSpeech != NULL &&
-        m_textToSpeech->SetSampleRate(GetVXMLChannel()->GetSampleRate()) &&
-        m_textToSpeech->SetChannels(GetVXMLChannel()->GetChannels()) &&
-        m_textToSpeech->OpenFile(wavFile.GetFilePath()) &&
-        m_textToSpeech->Speak(line, type) &&
-        m_textToSpeech->Close())
-      fileList += wavFile.GetFilePath() + '\n';
-    else {
-      PFilePath dummy;
-      GetCache().Get(prefix, line, suffix, dummy); // This deletes the half baked cache
-    }
-
-    GetCache().UnlockReadWrite();
+    cache->Finish(cacheParams,
+                  m_textToSpeech != NULL &&
+                  m_textToSpeech->SetSampleRate(GetVXMLChannel()->GetSampleRate()) &&
+                  m_textToSpeech->SetChannels(GetVXMLChannel()->GetChannels()) &&
+                  m_textToSpeech->OpenFile(cacheParams.m_file.GetFilePath()) &&
+                  m_textToSpeech->Speak(cacheParams.m_key, type) &&
+                  m_textToSpeech->Close() &&
+                  cacheParams.m_file.Open(PFile::ReadOnly));
+    fileList += cacheParams.m_file.GetFilePath() + '\n';
   }
 
-  return GetVXMLChannel()->QueuePlayable("FileList", fileList, repeat, delay, !useCache);
+  return GetVXMLChannel()->QueuePlayable("FileList", fileList, repeat, delay);
 }
 
 
@@ -2683,10 +2797,8 @@ PBoolean PVXMLSession::TraverseValue(PXMLElement & element)
   bool retval = EvaluateExpr(element, ExprAttribute, value);
   if (value.IsEmpty())
     return retval;
-  PString voice = element.GetAttribute(VoiceAttribute);
-  if (voice.IsEmpty())
-    voice = GetProperty(VoiceAttribute);
-  SayAs(className, value, voice);
+
+  SayAs(className, value, GetProperty(VoiceAttribute, &element));
   return true;
 }
 
@@ -3066,7 +3178,7 @@ PBoolean PVXMLSession::TraverseSubmit(PXMLElement & element)
 
   PURL url = NormaliseResourceName(urlStr);
   if (url.IsEmpty()) {
-    PTRACE(1, "<submit> has an invalid URL.");
+    PTRACE(2, "<submit> has an invalid URL.");
     return GoToEventHandler(element, ErrorBadFetch, true);
   }
 
@@ -3077,7 +3189,7 @@ PBoolean PVXMLSession::TraverseSubmit(PXMLElement & element)
   else if (str == "multipart/form-data")
     urlencoded = false;
   else {
-    PTRACE(1, "<submit> has unknown \"enctype\" attribute of \"" << str << '"');
+    PTRACE(2, "<submit> has unknown \"enctype\" attribute of \"" << str << '"');
     return GoToEventHandler(element, ErrorBadFetch, true);
   }
 
@@ -3090,34 +3202,29 @@ PBoolean PVXMLSession::TraverseSubmit(PXMLElement & element)
   else if (str == "POST")
     get = false;
   else {
-    PTRACE(1, "<submit> has unknown \"method\" attribute of \"" << str << '"');
+    PTRACE(2, "<submit> has unknown \"method\" attribute of \"" << str << '"');
     return GoToEventHandler(element, ErrorBadFetch, true);
   }
-
-  PAutoPtr<PHTTPClient> http(CreateHTTPClient());
-  http->SetReadTimeout(StringToTime(element.GetAttribute("fetchtimeout"), 10000));
 
   PStringSet namelist = element.GetAttribute("namelist").Tokenise(" \t", false);
   if (namelist.IsEmpty())
     namelist = m_dialogFieldNames;
 
-  PMIMEInfo sendMIME, replyMIME;
-  AddCookie(sendMIME, url);
-
   if (get) {
     for (PStringSet::iterator it = namelist.begin(); it != namelist.end(); ++it)
       url.SetQueryVar(*it, GetVar(*it));
 
-    PString body;
-    if (http->GetDocument(url, sendMIME, replyMIME) && http->ReadContentBody(replyMIME, body)) {
-      PTRACE(4, "<submit> GET " << url << " succeeded and returned body size=" << body.length());
-      return InternalLoadVXML(url, body, PString::Empty());
-    }
-
-    PTRACE(1, "<submit> GET " << url << " failed with "
-           << http->GetLastResponseCode() << ' ' << http->GetLastResponseInfo());
+    PBYTEArray body;
+    if (LoadCachedResource(url, &element, DocumentMaxAgeProperty, DocumentMaxStaleProperty, body))
+      return InternalLoadVXML(url, PString(body), PString::Empty());
     return GoToEventHandler(element, ErrorBadFetch, true);
   }
+
+  PAutoPtr<PHTTPClient> http(CreateHTTPClient());
+  http->SetReadTimeout(GetTimeProperty(FetchTimeoutProperty, &element));
+
+  PMIMEInfo sendMIME, replyMIME;
+  AddCookie(sendMIME, url);
 
   if (urlencoded) {
     PStringToString vars;
@@ -3130,7 +3237,7 @@ PBoolean PVXMLSession::TraverseSubmit(PXMLElement & element)
       return InternalLoadVXML(url, replyBody, PString::Empty());
     }
 
-    PTRACE(1, "<submit> POST " << url << " failed with "
+    PTRACE(2, "<submit> POST " << url << " failed with "
            << http->GetLastResponseCode() << ' ' << http->GetLastResponseInfo());
     return GoToEventHandler(element, PSTRSTRM(ErrorBadFetch << '.' << url.GetScheme() << '.' << http->GetLastResponseCode()), true);
   }
@@ -3159,13 +3266,13 @@ PBoolean PVXMLSession::TraverseSubmit(PXMLElement & element)
     }
 
     if (GetVar(*itName + ".type") != "audio/wav" ) {
-      PTRACE(1, "<submit> does not (yet) support submissions of types other than \"audio/wav\"");
+      PTRACE(2, "<submit> does not (yet) support submissions of types other than \"audio/wav\"");
       continue;
     }
 
     PFile file(GetVar(*itName + ".filename"), PFile::ReadOnly);
     if (!file.IsOpen()) {
-      PTRACE(1, "<submit> could not find file \"" << file.GetFilePath() << '"');
+      PTRACE(2, "<submit> could not find file \"" << file.GetFilePath() << '"');
       continue;
     }
 
@@ -3186,17 +3293,17 @@ PBoolean PVXMLSession::TraverseSubmit(PXMLElement & element)
   }
 
   if (entityBody.IsEmpty()) {
-    PTRACE(1, "<submit> could not find anything to send using \"" << setfill(',') << namelist << '"');
+    PTRACE(2, "<submit> could not find anything to send using \"" << setfill(',') << namelist << '"');
     return false;
   }
 
   PString replyBody;
   if (http->PostData(url, sendMIME, entityBody, replyMIME, replyBody)) {
-    PTRACE(1, "<submit> POST " << url << " succeeded and returned body:\n" << replyBody);
+    PTRACE(2, "<submit> POST " << url << " succeeded and returned body:\n" << replyBody);
     return InternalLoadVXML(url, replyBody, PString::Empty());
   }
 
-  PTRACE(1, "<submit> POST " << url << " failed with "
+  PTRACE(2, "<submit> POST " << url << " failed with "
          << http->GetLastResponseCode() << ' ' << http->GetLastResponseInfo());
   return false;
 }
@@ -3401,7 +3508,7 @@ PBoolean PVXMLSession::TraversePrompt(PXMLElement & element)
     return false;
   }
 
-  if (element.GetAttribute(BargeInProperty).IsFalse() || GetProperty(BargeInProperty).IsFalse()) {
+  if (GetProperty(BargeInProperty, &element).IsFalse()) {
     PTRACE(3, "Prompt bargein disabled.");
     m_bargeIn = false;
     ClearBargeIn();
@@ -3635,8 +3742,8 @@ PVXMLGrammar::PVXMLGrammar(const PVXMLGrammarInit & init)
   , m_fieldName(m_field.GetAttribute(NameAttribute))
   , m_terminators(m_session.GetProperty(TermCharProperty))
   , m_state(Idle)
-  , m_noInputTimeout(PVXMLSession::StringToTime(m_session.GetProperty(TimeoutProperty)))
-  , m_partFillTimeout(PVXMLSession::StringToTime(m_session.GetProperty(InterDigitTimeoutProperty)))
+  , m_noInputTimeout(m_session.GetTimeProperty(TimeoutProperty))
+  , m_partFillTimeout(m_session.GetTimeProperty(InterDigitTimeoutProperty))
 {
   m_timer.SetNotifier(PCREATE_NOTIFIER(OnTimeout), "VXMLGrammar");
 }
@@ -3694,17 +3801,10 @@ bool PVXMLGrammar::Start()
   if (!m_state.compare_exchange_strong(prev, Started))
     return prev == Started || prev == PartFill;
 
-  PString inputModes = m_session.GetProperty(InputModesProperty);
-  if (inputModes.empty())
-    inputModes = DtmfAttribute; // Can't really be empty
+  PString inputModes = m_session.GetProperty(InputModesProperty, m_grammarElement, "mode");
 
-  if (m_grammarElement != NULL) {
-    PCaselessString attrib = m_grammarElement->GetAttribute("mode");
-    if (!attrib.empty())
-      inputModes = attrib;  // Overrides property
-  }
-
-  m_allowDTMF = inputModes.Find(DtmfAttribute) != P_MAX_INDEX;
+  // Can't be empty, default to DTMF
+  m_allowDTMF = inputModes.empty() || inputModes.Find(DtmfAttribute) != P_MAX_INDEX;
 
   bool allowVoice = inputModes.Find(VoiceAttribute) != P_MAX_INDEX;
   if (m_grammarElement != NULL) {
@@ -3720,7 +3820,7 @@ bool PVXMLGrammar::Start()
       m_allowDTMF = true; // Turn on despite element indication, as no other way for input!
     }
     else {
-      PTimeInterval incomplete = PVXMLSession::StringToTime(m_session.GetProperty(IncompleteTimeoutProperty));
+      PTimeInterval incomplete = m_session.GetTimeProperty(IncompleteTimeoutProperty);
       if (incomplete < m_partFillTimeout)
         m_partFillTimeout = incomplete;
     }
@@ -4080,7 +4180,12 @@ PVXMLGrammarSRGS::PVXMLGrammarSRGS(const PVXMLGrammarInit & init)
   else {
     loadedXML.reset(new PXML);
     PBYTEArray xmlText;
-    if (!m_session.LoadResource(src, xmlText) || !loadedXML->Load(xmlText)) {
+    if (!m_session.LoadCachedResource(src,
+                                      init.m_grammarElement,
+                                      GrammarMaxAgeProperty,
+                                      GrammarMaxStaleProperty,
+                                      xmlText) ||
+        !loadedXML->Load(xmlText)) {
       PTRACE(2, "Could not load external <grammar> from " << src);
       m_state = BadFetch;
       return;
@@ -4541,7 +4646,7 @@ PBoolean PVXMLChannel::QueuePlayable(const PString & type,
   PVXMLPlayable * item = PFactory<PVXMLPlayable>::CreateInstance(type);
   if (item == NULL) {
     PBYTEArray data;
-    if (!m_vxmlSession->LoadResource(arg, data)) {
+    if (!m_vxmlSession->LoadCachedResource(arg, NULL,AudioMaxAgeProperty, AudioMaxStaleProperty, data)) {
       PTRACE(2, "Cannot find playable of type " << type << " - \"" << arg << '"');
       return false;
     }

@@ -313,35 +313,36 @@ class PVXMLCache : public PSafeObject
   public:
     PVXMLCache();
 
-    virtual bool Get(
-      const PString & prefix,
-      const PString & key,
-      const PString & suffix,
-      PFilePath     & filename
-    );
+    struct Params
+    {
+      Params() : m_size(0), m_expires(0) { }
 
-    virtual bool PutWithLock(
-      const PString   & prefix,
-      const PString   & key,
-      const PString   & suffix,
-      PFile           & file
-    );
+      PString       m_prefix;
+      PString       m_key;
+      PString       m_suffix;
+      PTimeInterval m_maxAge;
+      PTimeInterval m_maxStale;
 
-    void SetDirectory(
-      const PDirectory & directory
-    );
+      PFile         m_file;    // Cached file
+      size_t        m_size;    // If zero then there is a cache miss, m_file must be written
+      PTime         m_expires; // Expiry time of loaded resource for max stale
+      PTime         m_date;    // Date of the loaded resource for max age
+    };
+    // Start cache operation, if return true, Finish must be called.
+    virtual bool Start(Params & params);
+    virtual bool Finish(Params & params, bool success);
 
-    const PDirectory & GetDirectory() const
-    { return m_directory; }
+    void SetDirectory(const PDirectory & directory);
+    const PDirectory & GetDirectory() const { return m_directory; }
 
   protected:
-    virtual PFilePath CreateFilename(
-      const PString & prefix,
-      const PString & key,
-      const PString & suffix
-    );
+    virtual PFilePath CreateFilename(const Params & params);
 
     PDirectory m_directory;
+
+  P_REMOVE_VIRTUAL(bool, Get(const PString &, const PString &, const PString &, PFilePath &), false);
+  P_REMOVE_VIRTUAL(bool, PutWithLock(const PString &, const PString &, const PString &, PFile &), false);
+  P_REMOVE_VIRTUAL(PFilePath, CreateFilename(const PString &, const PString &, const PString &), "");
 };
 
 //////////////////////////////////////////////////////////////////
@@ -383,7 +384,6 @@ class PVXMLSession : public PIndirectChannel
     virtual PBoolean LoadURL(const PURL & url);
     virtual PBoolean LoadVXML(const PString & xml, const PString & firstForm = PString::Empty());
     virtual PBoolean IsLoaded() const { return m_currentXML.get() != NULL; }
-    bool LoadResource(const PURL & url, PBYTEArray & data);
 
     virtual bool Open(const PString & mediaFormat, unsigned sampleRate = 8000, unsigned channels = 1);
     virtual PBoolean Close();
@@ -428,7 +428,21 @@ class PVXMLSession : public PIndirectChannel
     PStringToString GetVariables() const;
     virtual PCaselessString GetVar(const PString & varName) const;
     virtual bool SetVar(const PString & varName, const PString & val);
-    PCaselessString GetProperty(const PString & propName) const;
+
+    PCaselessString GetProperty(
+      const PString & propName,
+      PXMLElement * overrideElement = NULL,
+      const PString & attrName = PString::Empty()
+    ) const;
+    PTimeInterval GetTimeProperty(
+      const PString & propName,
+      PXMLElement * overrideElement = NULL,
+      const PString & attrName = PString::Empty()
+    ) const
+    {
+      return StringToTime(GetProperty(propName, overrideElement, attrName));
+    }
+
     void SetDialogVar(const PString & varName, const PString & value);
 
     void SetConnectionVars(
@@ -485,7 +499,7 @@ class PVXMLSession : public PIndirectChannel
     virtual PBoolean TraversedField(PXMLElement & element);
     virtual PBoolean TraverseTransfer(PXMLElement & element);
     virtual PBoolean TraversedTransfer(PXMLElement & element);
-	virtual PBoolean TraverseScript(PXMLElement & element);
+    virtual PBoolean TraverseScript(PXMLElement & element);
 
     __inline PVXMLChannel * GetVXMLChannel() const { return (PVXMLChannel *)readChannel; }
 #if P_VXML_VIDEO
@@ -531,9 +545,11 @@ class PVXMLSession : public PIndirectChannel
     PDECLARE_MUTEX(  m_cookieMutex);
 
     PTextToSpeech  * m_textToSpeech;
-    PVXMLCache     * m_ttsCache;
     bool             m_autoDeleteTextToSpeech;
     PString          m_speechRecognition;
+
+    typedef PSafePtr<PVXMLCache, PSafePtrMultiThreaded> CachePtr;
+    CachePtr m_resourceCache;
 
 #if P_SSL
     PString m_httpAuthority;
@@ -611,6 +627,19 @@ class PVXMLSession : public PIndirectChannel
     };
     std::list<Properties> m_properties;
 
+    bool LoadCachedResource(
+      const PURL & url,
+      PXMLElement * element,
+      const PString & maxagePropName,
+      const PString & maxstalePropName,
+      PBYTEArray & data
+    );
+    bool LoadActualResource(
+      const PURL & url,
+      const PTimeInterval & timeout,
+      PBYTEArray & data,
+      PVXMLCache::Params & cacheParams
+    );
     virtual void LoadGrammar(const PString & type, const PVXMLGrammarInit & init);
     void ClearGrammars();
     void StartGrammars();
@@ -649,6 +678,7 @@ class PVXMLSession : public PIndirectChannel
     friend class PVXMLChannel;
     friend class PVXMLMenuGrammar;
     friend class PVXMLGrammar;
+    friend class PVXMLGrammarSRGS;
     friend class VideoReceiverDevice;
     friend class PVXMLNodeHandler;
     friend class PVXMLTraverseEvent;
