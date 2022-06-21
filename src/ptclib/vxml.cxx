@@ -1117,7 +1117,6 @@ PBoolean PVXMLRecordableFilename::OnFrame(PBoolean isSilence)
 
 ///////////////////////////////////////////////////////////////
 
-static PVXMLCache DefaultCache;
 static const PConstString KeyFileType(".key");
 
 PVXMLCache::PVXMLCache()
@@ -1269,7 +1268,6 @@ bool PVXMLCache::Finish(Params & params, bool success)
 PVXMLSession::PVXMLSession()
   : m_textToSpeech(NULL)
   , m_autoDeleteTextToSpeech(false)
-  , m_resourceCache(&DefaultCache)
 #if P_VXML_VIDEO
   , m_videoReceiver(*this)
 #endif
@@ -1288,6 +1286,9 @@ PVXMLSession::PVXMLSession()
   , m_transferStatus(NotTransfering)
   , m_transferStartTime(0)
 {
+  static PVXMLSession::CachePtr DefaultCache(new PVXMLCache);
+  SetCache(DefaultCache);
+
 #if P_VXML_VIDEO
   PVideoInputDevice::OpenArgs videoArgs;
   videoArgs.driverName = P_FAKE_VIDEO_DRIVER;
@@ -1392,20 +1393,6 @@ bool PVXMLSession::SetSpeechRecognition(const PString & srName)
 PSpeechRecognition * PVXMLSession::CreateSpeechRecognition()
 {
   return PSpeechRecognition::Create(m_speechRecognition);
-}
-
-
-void PVXMLSession::SetCache(PVXMLCache & cache)
-{
-  m_sessionMutex.Wait();
-  m_resourceCache = &cache;
-  m_sessionMutex.Signal();
-}
-
-
-PVXMLCache & PVXMLSession::GetCache()
-{
-  return *m_resourceCache;
 }
 
 
