@@ -1334,13 +1334,13 @@ PVXMLSession::PVXMLSession()
   props.SetAt(CompleteTimeoutProperty, "2s");
   props.SetAt(IncompleteTimeoutProperty, "5s");
   props.SetAt(FetchTimeoutProperty, "15s");
-  props.SetAt(DocumentMaxAgeProperty, "86400s");
+  props.SetAt(DocumentMaxAgeProperty, "3600s");
   props.SetAt(DocumentMaxStaleProperty, "1s");
-  props.SetAt(AudioMaxAgeProperty, "86400s");
+  props.SetAt(AudioMaxAgeProperty, "3600s");
   props.SetAt(AudioMaxStaleProperty, "1s");
-  props.SetAt(GrammarMaxAgeProperty, "86400s");
+  props.SetAt(GrammarMaxAgeProperty, "3600s");
   props.SetAt(GrammarMaxStaleProperty, "1s");
-  props.SetAt(ScriptMaxAgeProperty, "86400s");
+  props.SetAt(ScriptMaxAgeProperty, "3600s");
   props.SetAt(ScriptMaxStaleProperty, "1");
   m_properties.push_back(props);
 
@@ -1529,7 +1529,7 @@ bool PVXMLSession::LoadCachedResource(const PURL & url,
 
   CachePtr cache = m_resourceCache;
 
-  if (!cache->Start(cacheParams))
+  if (cache == NULL || !cache->Start(cacheParams))
     return LoadActualResource(url, timeout, data, cacheParams);
 
   if (cacheParams.m_size > 0)
@@ -2685,8 +2685,9 @@ PBoolean PVXMLSession::PlayText(const PString & textToPlay,
 
   PTRACE(4, "Converting " << textToPlay.ToLiteral() << " to speech");
 
-  PCaselessString caching = GetProperty(CachingProperty);
-  if (caching == SafeKeyword) {
+  CachePtr cache = m_resourceCache;
+
+  if (cache == NULL || GetProperty(CachingProperty) == SafeKeyword) {
     PFilePath fn("tts", NULL, ".wav");
     return m_textToSpeech != NULL &&
       m_textToSpeech->SetSampleRate(GetVXMLChannel()->GetSampleRate()) &&
@@ -2698,12 +2699,11 @@ PBoolean PVXMLSession::PlayText(const PString & textToPlay,
   }
 
   PString fileList;
-  CachePtr cache = m_resourceCache;
 
   PVXMLCache::Params cacheParams;
   cacheParams.m_prefix.sprintf("tts%i", type);
   cacheParams.m_suffix = GetVXMLChannel()->GetMediaFileSuffix() + ".wav";
-  cacheParams.m_maxAge = PTimeInterval(caching);
+  cacheParams.m_maxAge = GetTimeProperty(AudioMaxAgeProperty);
 
   // Convert each line into it's own cached WAV file.
   PStringArray lines = textToPlay.Lines();
