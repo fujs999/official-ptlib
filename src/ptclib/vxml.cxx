@@ -309,8 +309,6 @@ class PVXMLTraverseFilled : public PVXMLTraverseEvent
 
     PCaselessString mode = element.GetAttribute("mode");
     PStringSet namelist = element.GetAttribute("namelist").Tokenise(" \t", false);
-    if (namelist.IsEmpty())
-      namelist = session.m_dialogFieldNames;
 
     if (parent->GetName() != "form") {
       if (mode.empty() && namelist.empty())
@@ -319,6 +317,9 @@ class PVXMLTraverseFilled : public PVXMLTraverseEvent
       // Having a mode or namelist for other then <form> is illegal
       return ThrowBadFetchError2(session, element, "mode/nodelist on <filled> in " << parent->PrintTrace());
     }
+
+    if (namelist.IsEmpty())
+      namelist = session.m_dialogFieldNames;
 
     // Validate the mode and nodelist
     if (!mode.empty() && mode != "all" && mode != "any")
