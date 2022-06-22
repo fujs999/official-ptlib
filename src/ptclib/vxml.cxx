@@ -1155,6 +1155,7 @@ PVXMLCache::PVXMLCache()
 
 void PVXMLCache::SetDirectory(const PDirectory & directory)
 {
+  PTRACE(3, "Cache directory set to " << directory);
   LockReadWrite();
   m_directory = directory;
   UnlockReadWrite();
@@ -1324,7 +1325,7 @@ PVXMLSession::PVXMLSession()
   m_videoSender.SetActualDevice(PVideoInputDevice::CreateOpenedDevice(videoArgs));
 #endif // P_VXML_VIDEO
 
-  Properties props(PTRACE_PARAM("application"));
+  Properties props(PTRACE_PARAM(SessionScope));
   props.SetAt(TimeoutProperty, "10s");
   props.SetAt(BargeInProperty, true);
   props.SetAt(CachingProperty, "86400s");
@@ -2050,7 +2051,7 @@ void PVXMLSession::InternalStartVXML()
     m_scriptContext->Run(PSTRSTRM(DocumentScope << '=' << ApplicationScope));
   else {
     m_scriptContext->PushScopeChain(DocumentScope, true);
-    m_properties.push_back(Properties(PTRACE_PARAM("document")));
+    m_properties.push_back(Properties(PTRACE_PARAM(DocumentScope)));
   }
 
   InternalSetVar(DocumentScope, DocumentURIVar, m_newURL);  // Non-standard but potentially useful
@@ -2477,6 +2478,15 @@ PCaselessString PVXMLSession::GetProperty(const PString & propName,
   }
   PTRACE(4, "No property " << propName << " in stack of " << m_properties.size());
   return PString::Empty();
+}
+
+
+void PVXMLSession::SetProperty(const PString & name, const PString & value, bool session)
+{
+  PWaitAndSignal lock(m_sessionMutex);
+  Properties & props = session ? m_properties.front() : m_properties.back();
+  props.SetAt(name, value);
+  PTRACE(3, "Set property " << props.m_node << ' ' << name << " to \"" << value << '"');
 }
 
 
@@ -3330,10 +3340,7 @@ PBoolean PVXMLSession::TraverseProperty(PXMLElement & element)
   if (name.empty())
     return false;
 
-  PString value = element.GetAttribute("value");
-  Properties & props = m_properties.back();
-  props.SetAt(name, value);
-  PTRACE(4, "Set property " << props.m_node << ' ' << name << " to \"" << value << '"');
+  SetProperty(name, element.GetAttribute("value"));
   return true;
 }
 

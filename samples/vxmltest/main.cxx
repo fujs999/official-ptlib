@@ -54,6 +54,7 @@ void VxmlTest::Main()
                   "T-tts: Text to speech method\n"
                   "S-sr: Speech recognition method\n"
                   "c-cache: Text to speech cache directory\n"
+                  "r-property: Set default property value: name=value\n"
 #if P_VXML_VIDEO
                   "V-video. Enabled video support\n"
                   "L-sign-language: Set sign language analyser library (implicit -V)\n"
@@ -342,6 +343,10 @@ bool TestInstance::Initialise(unsigned instance, const PArgList & args)
     cerr << "Instance " << m_instance << " error: cannot loading VXML document \"" << args[0] << "\" - " << GetXMLError() << endl;
     return false;
   }
+
+  PStringToString properties(args.GetOptionString("property"));
+  for (PStringToString::iterator it = properties.begin(); it != properties.end(); ++it)
+    SetProperty(it->first, it->second);
 
   if (args.HasOption("cache"))
     GetCache().SetDirectory(args.GetOptionString("cache"));

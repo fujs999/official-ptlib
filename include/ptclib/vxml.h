@@ -444,6 +444,11 @@ class PVXMLSession : public PIndirectChannel
     {
       return PTimeInterval(GetProperty(propName, overrideElement, attrName));
     }
+    void SetProperty(
+      const PString & name,
+      const PString & value,
+      bool session = false
+    );
 
     void SetDialogVar(const PString & varName, const PString & value);
 
