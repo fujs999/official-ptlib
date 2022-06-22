@@ -289,7 +289,9 @@ class PVXMLTraverseFilled : public PVXMLTraverseEvent
       return session.GoToEventHandler(element, ErrorBadFetch, true);
 
     PCaselessString mode = element.GetAttribute("mode");
-    PStringArray namelist = element.GetAttribute("namelist").Tokenise(" ", false);
+    PStringSet namelist = element.GetAttribute("namelist").Tokenise(" \t", false);
+    if (namelist.IsEmpty())
+      namelist = session.m_dialogFieldNames;
 
     if (parent->GetName() != "form") {
       // Filled a field so mark it as such
@@ -302,20 +304,18 @@ class PVXMLTraverseFilled : public PVXMLTraverseEvent
     }
 
     // Validate the mode and nodelist
-    if ((!mode.empty() && mode != "all" && mode != "any") || (mode == "all" && !namelist.empty()) || (mode == "any" && namelist.empty()))
+    if (!mode.empty() && mode != "all" && mode != "any")
       return session.ThrowSemanticError(element PTRACE_PARAM(, "Invalid mode/nodelist on <filled>"));
 
     // Move to next unfilled field
     PXMLElement * nextField = NULL;
-    if (mode == "all")
-      nextField = parent->GetElement(FieldElement, InternalFilledStateAttribute, "");
-    else {
-      for (PINDEX i = 0; i < namelist.GetSize(); ++i) {
-        PXMLElement * namedField = parent->GetElement(FieldElement, NameAttribute, namelist[i]);
-        if (namedField != NULL && namedField->GetAttribute(InternalFilledStateAttribute).empty()) {
-          nextField = namedField;
-          break;
-        }
+    for (PINDEX i = 0; i < namelist.GetSize(); ++i) {
+      PXMLElement * namedField = parent->GetElement(FieldElement, NameAttribute, namelist[i]);
+      if (namedField == NULL)
+        return session.ThrowSemanticError(element PTRACE_PARAM(, "Invalid field name on <filled> nodelist"));
+      if (mode == "all" && namedField->GetAttribute(InternalFilledStateAttribute).empty()) {
+        nextField = namedField;
+        break;
       }
     }
     if (nextField == NULL) {
@@ -2759,7 +2759,7 @@ PBoolean PVXMLSession::TraverseBreak(PXMLElement & element)
   // time is VXML 2.0
   PString time = element.GetAttribute("time");
   if (!time.empty())
-    return PlaySilence(PTimeInterval(time));
+    return PlaySilence(PTimeInterval(time+"ms"));
 
   if (element.HasAttribute("size")) {
     PString size = element.GetAttribute("size");
