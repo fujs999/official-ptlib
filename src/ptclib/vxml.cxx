@@ -104,11 +104,11 @@ static PConstCaselessString const SRGS("application/srgs");
 
 #if PTRACING
   #define ThrowSemanticError2(session, element, reason) ( \
-      PTRACE(2, "Semantic error thown in " << (element).PrintTrace() << " - " << reason), \
+      PTRACE(2, "Semantic error thrown in " << (element).PrintTrace() << " - " << reason), \
       (session).GoToEventHandler(element, ErrorSemantic, true) \
     )
   #define ThrowBadFetchError2(session, element, reason) ( \
-      PTRACE(2, "Bad fetch error thown in " << (element).PrintTrace() << " - " << reason), \
+      PTRACE(2, "Bad fetch error thrown in " << (element).PrintTrace() << " - " << reason), \
       (session).GoToEventHandler(element, ErrorBadFetch, true) \
     )
 #else
@@ -279,7 +279,7 @@ protected:
       return false;
 
     // No other handler continue with the aprent
-    session.m_currentNode = parent;
+    session.SetCurrentNode(parent);
     return false;
   }
 
@@ -351,9 +351,8 @@ class PVXMLTraverseFilled : public PVXMLTraverseEvent
       return true;
     }
 
-    session.m_currentNode = nextField;
     PTRACE(4, "Setting next input field " << nextField->PrintTrace() << " for " << parent->PrintTrace());
-    return true;
+    return session.SetCurrentNode(nextField);
   }
 };
 
@@ -1720,19 +1719,7 @@ bool PVXMLSession::SetCurrentForm(const PString & searchId, bool fullURI)
           (id.IsEmpty() || (xmlElement->GetAttribute(IdAttribute) *= id))
           ) {
           PTRACE(3, "Found <" << xmlElement->GetName() << " id=\"" << xmlElement->GetAttribute(IdAttribute) << "\">");
-
-          if (m_currentNode != NULL) {
-            PXMLElement * element = m_currentNode->GetParent();
-            while (element != NULL) {
-              PVXMLNodeHandler * handler = PVXMLNodeFactory::CreateInstance(element->GetName());
-              if (handler != NULL)
-                handler->Finish(*this, *element);
-              element = element->GetParent();
-            }
-          }
-
-          m_currentNode = xmlObject;
-          return true;
+          return SetCurrentNode(xmlElement);
         }
       }
     }
@@ -1740,6 +1727,23 @@ bool PVXMLSession::SetCurrentForm(const PString & searchId, bool fullURI)
 
   PTRACE(3, "No form/menu with id \"" << searchId << '"');
   return false;
+}
+
+
+bool PVXMLSession::SetCurrentNode(PXMLObject * newNode)
+{
+  if (m_currentNode != NULL && dynamic_cast<PXMLElement *>(newNode) != NULL) {
+    PXMLElement * element = m_currentNode->GetParent();
+    while (element != NULL) {
+      PVXMLNodeHandler * handler = PVXMLNodeFactory::CreateInstance(element->GetName());
+      if (handler != NULL)
+        handler->Finish(*this, *element);
+      element = element->GetParent();
+    }
+  }
+
+  m_currentNode = newNode;
+  return newNode != NULL;
 }
 
 
@@ -2966,16 +2970,15 @@ bool PVXMLSession::GoToEventHandler(PXMLElement & element, const PString & event
 
       if (exitIfNotFound) {
         PTRACE(3, "Exiting script.");
-        m_currentNode = NULL;
+        SetCurrentNode(NULL);
       }
       return false;
     }
   }
 
   handler->SetAttribute(InternalEventStateAttribute, true);
-  m_currentNode = handler;
   PTRACE(4, "Setting event handler to node " << handler->PrintTrace() << " for \"" << eventName << '"');
-  return true;
+  return SetCurrentNode(handler);
 }
 
 
@@ -3115,8 +3118,7 @@ PBoolean PVXMLSession::TraverseIf(PXMLElement & element)
   if (nextNode == NULL)
     return false; // Skip if subelements
 
-  m_currentNode = nextNode;
-  return true; // Do subelements
+  return SetCurrentNode(nextNode); // Do subelements
 }
 
 
@@ -3132,7 +3134,7 @@ PBoolean PVXMLSession::TraverseElseIf(PXMLElement & element)
   PXMLElement * ifElement = element.GetParent();
   PString state = ifElement->GetAttribute(IfStateAttributeName);
   if (state == "done") {
-    m_currentNode = element.GetParent();
+    SetCurrentNode(element.GetParent());
     return false;
   }
 
@@ -3145,14 +3147,13 @@ PBoolean PVXMLSession::TraverseElseIf(PXMLElement & element)
   if (nextNode == NULL)
     return false; // Skip if subelements
 
-  m_currentNode = nextNode;
-  return true; // Do subelements
+  return SetCurrentNode(nextNode); // Do subelements
 }
 
 
 PBoolean PVXMLSession::TraverseElse(PXMLElement & element)
 {
-  m_currentNode = element.GetParent();
+  SetCurrentNode(element.GetParent());
   return false;
 }
 
@@ -3424,6 +3425,9 @@ void PVXMLSession::SetTransferComplete(bool state)
 
 PBoolean PVXMLSession::TraverseMenu(PXMLElement & element)
 {
+  if (element.GetParent() && element.GetParent()->GetName() != "vxml")
+    return ThrowSemanticError(element, "<menu> must be at top level.");
+
   m_scriptContext->PushScopeChain(DialogScope, true);
   LoadGrammar(MenuElement, PVXMLGrammarInit(*this, element));
   m_defaultMenuDTMF = element.GetAttribute(DtmfAttribute).IsTrue() ? '1' : 'N';
@@ -3480,6 +3484,9 @@ PBoolean PVXMLSession::TraverseDisconnect(PXMLElement & element)
 
 PBoolean PVXMLSession::TraverseForm(PXMLElement & element)
 {
+  if (element.GetParent() && element.GetParent()->GetName() != "vxml")
+    return ThrowSemanticError(element, "<form> must be at top level.");
+
   m_dialogFieldNames.clear();
 
   PXMLElement * field;

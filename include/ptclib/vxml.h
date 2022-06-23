@@ -530,6 +530,7 @@ class PVXMLSession : public PIndirectChannel
     virtual bool RunScript(PXMLElement & element, const PString & script);
     virtual bool EvaluateExpr(PXMLElement & element, const PString & attrib, PString & result, bool allowEmpty = false);
 
+    virtual bool SetCurrentNode(PXMLObject * newNode);
     virtual bool ProcessNode();
     virtual bool ProcessEvents();
     virtual bool NextNode(bool processChildren);
