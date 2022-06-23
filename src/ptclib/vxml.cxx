@@ -2043,10 +2043,8 @@ void PVXMLSession::InternalStartVXML()
     InternalSetVar(ApplicationScope, RootURIVar, rootURL);
   }
 
-  if (m_scriptContext->GetScopeChain().back() == DocumentScope)
+  while (m_scriptContext->GetScopeChain().back() != ApplicationScope)
     m_scriptContext->PopScopeChain(true);
-  else
-    m_scriptContext->ReleaseVariable(DocumentScope);
 
   while (m_properties.size() > 1)
     m_properties.pop_back();
@@ -2763,14 +2761,11 @@ void PVXMLSession::SetPause(PBoolean pause)
 }
 
 
-static PConstString const AnonymousPrefix("anonymous_");
-
 PBoolean PVXMLSession::TraverseBlock(PXMLElement & element)
 {
   unsigned col, line;
   element.GetFilePosition(col, line);
-  PString anonymous = PSTRSTRM(AnonymousPrefix << line << '_' << col);
-  m_scriptContext->PushScopeChain(anonymous, true);
+  m_scriptContext->PushScopeChain(PSTRSTRM("anonymous_" << line << '_' << col), true);
   return ExecuteCondition(element);
 }
 
@@ -3428,7 +3423,10 @@ PBoolean PVXMLSession::TraverseMenu(PXMLElement & element)
   if (element.GetParent() && element.GetParent()->GetName() != "vxml")
     return ThrowSemanticError(element, "<menu> must be at top level.");
 
+  while (m_scriptContext->GetScopeChain().back() != ApplicationScope && m_scriptContext->GetScopeChain().back() != DocumentScope)
+    m_scriptContext->PopScopeChain(true);
   m_scriptContext->PushScopeChain(DialogScope, true);
+
   LoadGrammar(MenuElement, PVXMLGrammarInit(*this, element));
   m_defaultMenuDTMF = element.GetAttribute(DtmfAttribute).IsTrue() ? '1' : 'N';
   ++m_promptCount;
@@ -3438,7 +3436,6 @@ PBoolean PVXMLSession::TraverseMenu(PXMLElement & element)
 
 PBoolean PVXMLSession::TraversedMenu(PXMLElement &)
 {
-  m_scriptContext->PopScopeChain(true);
   StartGrammars();
   return false;
 }
@@ -3499,6 +3496,8 @@ PBoolean PVXMLSession::TraverseForm(PXMLElement & element)
     m_dialogFieldNames += name;
   }
 
+  while (m_scriptContext->GetScopeChain().back() != ApplicationScope && m_scriptContext->GetScopeChain().back() != DocumentScope)
+    m_scriptContext->PopScopeChain(true);
   m_scriptContext->PushScopeChain(DialogScope, true);
   ++m_promptCount;
   return true;
@@ -3507,7 +3506,6 @@ PBoolean PVXMLSession::TraverseForm(PXMLElement & element)
 
 PBoolean PVXMLSession::TraversedForm(PXMLElement &)
 {
-  m_scriptContext->PopScopeChain(true);
   return true;
 }
 
