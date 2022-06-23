@@ -102,66 +102,85 @@ static PConstString const ErrorBadFetch("error.badfetch");
 static PConstCaselessString const SRGS("application/srgs");
 
 
+#if PTRACING
+  #define ThrowSemanticError2(session, element, reason) ( \
+      PTRACE(2, "Semantic error thrown in " << (element).PrintTrace() << " - " << reason), \
+      (session).GoToEventHandler(element, ErrorSemantic, true) \
+    )
+  #define ThrowBadFetchError2(session, element, reason) ( \
+      PTRACE(2, "Bad fetch error thrown in " << (element).PrintTrace() << " - " << reason), \
+      (session).GoToEventHandler(element, ErrorBadFetch, true) \
+    )
+#else
+  #define ThrowSemanticError2(element, reason) (session).GoToEventHandler(element, ErrorSemantic, true)
+  #define ThrowBadFetchError2(element, reason) (session).GoToEventHandler(element, ErrorBadFetch, true)
+#endif
+
+#define ThrowSemanticError(element, reason) ThrowSemanticError2(*this, element, reason)
+#define ThrowBadFetchError(element, reason) ThrowBadFetchError2(*this, element, reason)
+
+
+
 class PVXMLChannelPCM : public PVXMLChannel
 {
   PCLASSINFO(PVXMLChannelPCM, PVXMLChannel);
 
-  public:
-    PVXMLChannelPCM();
+public:
+  PVXMLChannelPCM();
 
-    // overrides from PVXMLChannel
-    virtual PString GetAudioFormat() const;
-    virtual unsigned GetSampleRate() const;
-    virtual bool SetSampleRate(unsigned rate);
-    virtual unsigned GetChannels() const;
-    virtual bool SetChannels(unsigned channels);
-    virtual PBoolean WriteFrame(const void * buf, PINDEX len);
-    virtual PBoolean ReadFrame(void * buffer, PINDEX amount);
-    virtual PINDEX CreateSilenceFrame(void * buffer, PINDEX amount);
-    virtual PBoolean IsSilenceFrame(const void * buf, PINDEX len) const;
-    virtual void GetBeepData(PBYTEArray & data, unsigned ms);
+  // overrides from PVXMLChannel
+  virtual PString GetAudioFormat() const;
+  virtual unsigned GetSampleRate() const;
+  virtual bool SetSampleRate(unsigned rate);
+  virtual unsigned GetChannels() const;
+  virtual bool SetChannels(unsigned channels);
+  virtual PBoolean WriteFrame(const void * buf, PINDEX len);
+  virtual PBoolean ReadFrame(void * buffer, PINDEX amount);
+  virtual PINDEX CreateSilenceFrame(void * buffer, PINDEX amount);
+  virtual PBoolean IsSilenceFrame(const void * buf, PINDEX len) const;
+  virtual void GetBeepData(PBYTEArray & data, unsigned ms);
 
-  protected:
-    unsigned m_sampleRate;
-    unsigned m_channels;
+protected:
+  unsigned m_sampleRate;
+  unsigned m_channels;
 };
 
 
 class PVXMLChannelG7231 : public PVXMLChannel
 {
   PCLASSINFO(PVXMLChannelG7231, PVXMLChannel);
-  public:
-    PVXMLChannelG7231();
+public:
+  PVXMLChannelG7231();
 
-    // overrides from PVXMLChannel
-    virtual PString GetAudioFormat() const;
-    virtual unsigned GetSampleRate() const;
-    virtual bool SetSampleRate(unsigned rate);
-    virtual unsigned GetChannels() const;
-    virtual bool SetChannels(unsigned channels);
-    virtual PBoolean WriteFrame(const void * buf, PINDEX len);
-    virtual PBoolean ReadFrame(void * buffer, PINDEX amount);
-    virtual PINDEX CreateSilenceFrame(void * buffer, PINDEX amount);
-    virtual PBoolean IsSilenceFrame(const void * buf, PINDEX len) const;
+  // overrides from PVXMLChannel
+  virtual PString GetAudioFormat() const;
+  virtual unsigned GetSampleRate() const;
+  virtual bool SetSampleRate(unsigned rate);
+  virtual unsigned GetChannels() const;
+  virtual bool SetChannels(unsigned channels);
+  virtual PBoolean WriteFrame(const void * buf, PINDEX len);
+  virtual PBoolean ReadFrame(void * buffer, PINDEX amount);
+  virtual PINDEX CreateSilenceFrame(void * buffer, PINDEX amount);
+  virtual PBoolean IsSilenceFrame(const void * buf, PINDEX len) const;
 };
 
 
 class PVXMLChannelG729 : public PVXMLChannel
 {
   PCLASSINFO(PVXMLChannelG729, PVXMLChannel);
-  public:
-    PVXMLChannelG729();
+public:
+  PVXMLChannelG729();
 
-    // overrides from PVXMLChannel
-    virtual PString GetAudioFormat() const;
-    virtual unsigned GetSampleRate() const;
-    virtual bool SetSampleRate(unsigned rate);
-    virtual unsigned GetChannels() const;
-    virtual bool SetChannels(unsigned channels);
-    virtual PBoolean WriteFrame(const void * buf, PINDEX len);
-    virtual PBoolean ReadFrame(void * buffer, PINDEX amount);
-    virtual PINDEX CreateSilenceFrame(void * buffer, PINDEX amount);
-    virtual PBoolean IsSilenceFrame(const void * buf, PINDEX len) const;
+  // overrides from PVXMLChannel
+  virtual PString GetAudioFormat() const;
+  virtual unsigned GetSampleRate() const;
+  virtual bool SetSampleRate(unsigned rate);
+  virtual unsigned GetChannels() const;
+  virtual bool SetChannels(unsigned channels);
+  virtual PBoolean WriteFrame(const void * buf, PINDEX len);
+  virtual PBoolean ReadFrame(void * buffer, PINDEX amount);
+  virtual PINDEX CreateSilenceFrame(void * buffer, PINDEX amount);
+  virtual PBoolean IsSilenceFrame(const void * buf, PINDEX len) const;
 };
 
 
@@ -260,7 +279,7 @@ protected:
       return false;
 
     // No other handler continue with the aprent
-    session.m_currentNode = parent;
+    session.SetCurrentNode(parent);
     return false;
   }
 
@@ -268,7 +287,7 @@ protected:
   virtual const char * GetDescription() const { return "event"; }
 #endif
 };
-PFACTORY_CREATE( PVXMLNodeFactory, PVXMLTraverseEvent, CatchElement, true);
+PFACTORY_CREATE(PVXMLNodeFactory, PVXMLTraverseEvent, CatchElement, true);
 PFACTORY_SYNONYM(PVXMLNodeFactory, PVXMLTraverseEvent, NoInput, NoInputElement);
 PFACTORY_SYNONYM(PVXMLNodeFactory, PVXMLTraverseEvent, NoMatch, NoMatchElement);
 PFACTORY_SYNONYM(PVXMLNodeFactory, PVXMLTraverseEvent, Error, ErrorElement);
@@ -286,46 +305,54 @@ class PVXMLTraverseFilled : public PVXMLTraverseEvent
 
     PXMLElement * parent = element.GetParent();
     if (parent == NULL)
-      return session.GoToEventHandler(element, ErrorBadFetch, true);
+      return ThrowBadFetchError2(session, element, "No parent on <filled>");
 
     PCaselessString mode = element.GetAttribute("mode");
-    PStringArray namelist = element.GetAttribute("namelist").Tokenise(" ", false);
+    PStringSet namelist = element.GetAttribute("namelist").Tokenise(" \t", false);
 
     if (parent->GetName() != "form") {
-      // Filled a field so mark it as such
-      parent->SetAttribute(InternalFilledStateAttribute, true);
       if (mode.empty() && namelist.empty())
         return true;
 
       // Having a mode or namelist for other then <form> is illegal
-      return session.GoToEventHandler(element, ErrorBadFetch, true);
+      return ThrowBadFetchError2(session, element, "mode/nodelist on <filled> in " << parent->PrintTrace());
     }
 
+    if (namelist.IsEmpty())
+      namelist = session.m_dialogFieldNames;
+
     // Validate the mode and nodelist
-    if ((!mode.empty() && mode != "all" && mode != "any") || (mode == "all" && !namelist.empty()) || (mode == "any" && namelist.empty()))
-      return session.ThrowSemanticError(element PTRACE_PARAM(, "Invalid mode/nodelist on <filled>"));
+    if (!mode.empty() && mode != "all" && mode != "any")
+      return ThrowSemanticError2(session, element, "Invalid mode/nodelist on <filled>");
 
     // Move to next unfilled field
     PXMLElement * nextField = NULL;
-    if (mode == "all")
-      nextField = parent->GetElement(FieldElement, InternalFilledStateAttribute, "");
-    else {
-      for (PINDEX i = 0; i < namelist.GetSize(); ++i) {
-        PXMLElement * namedField = parent->GetElement(FieldElement, NameAttribute, namelist[i]);
-        if (namedField != NULL && namedField->GetAttribute(InternalFilledStateAttribute).empty()) {
-          nextField = namedField;
-          break;
-        }
+    for (PStringSet::iterator it = namelist.begin(); it != namelist.end(); ++it) {
+      PXMLElement * namedField = parent->GetElement(FieldElement, NameAttribute, *it);
+      if (namedField == NULL)
+        return ThrowSemanticError2(session, element, "Invalid field name on <filled> nodelist");
+
+      if (namedField->GetAttribute(InternalFilledStateAttribute).IsTrue()) {
+        if (mode == "all")
+          continue;
+        PTRACE(4, "An input " << namedField->PrintTrace() << " was filled for " << parent->PrintTrace());
+        return true;
       }
+
+      if (mode == "any")
+        continue;
+
+      nextField = namedField;
+      break;
     }
+
     if (nextField == NULL) {
       PTRACE(4, "All required input fields filled for " << parent->PrintTrace());
       return true;
     }
 
-    session.m_currentNode = nextField;
     PTRACE(4, "Setting next input field " << nextField->PrintTrace() << " for " << parent->PrintTrace());
-    return true;
+    return session.SetCurrentNode(nextField);
   }
 };
 
@@ -402,7 +429,7 @@ class PVXMLSignLanguageAnalyser : public PProcessStartup
       if (SLRelease.IsPresent()) {
         PTRACE_PARAM(int result =) SLRelease();
         PTRACE(result < 0 ? 2 : 3, "Released Sign Language Analyser dynamic library"
-                                  " \"" << GetName(true) << "\", result=" << result);
+               " \"" << GetName(true) << "\", result=" << result);
       }
     }
   } *m_library;
@@ -449,8 +476,8 @@ public:
           trace << " \"" << errorData.m_text << '"';
       }
       trace << ' ' << msg
-            << " Sign Language Analyser dynamic library \"" << m_library->GetName(true) << '"'
-            << PTrace::End;
+        << " Sign Language Analyser dynamic library \"" << m_library->GetName(true) << '"'
+        << PTrace::End;
     }
 #endif
     return false;
@@ -499,8 +526,8 @@ public:
           m_instancesInUse.resize(init.m_maxInstances);
 
           PTRACE(3, "Loaded Sign Language Analyser dynamic library"
-                    " \"" << m_library->GetName(true) << "\","
-                    " required format: " << m_colourFormat << " (" << init.m_videoFormat << ')');
+                 " \"" << m_library->GetName(true) << "\","
+                 " required format: " << m_colourFormat << " (" << init.m_videoFormat << ')');
           return true;
         }
       }
@@ -563,9 +590,9 @@ public:
     data.m_pixels = pixels;
 
     PTRACE(5, "Sign Language Analyse of video frame:"
-              " " << width << 'x' << height << ","
-              " ts=" << timestamp << ","
-              " instance=" << instance);
+           " " << width << 'x' << height << ","
+           " ts=" << timestamp << ","
+           " instance=" << instance);
     int result = m_library->SLAnalyse(&data);
     CheckError(result PTRACE_PARAM(, "analysing"));
     return result;
@@ -578,9 +605,9 @@ public:
   {
     PReadWaitAndSignal lock(m_mutex);
     return m_library != NULL &&
-           m_library->SLPreview.IsPresent() &&
-           instance >= 0 &&
-           instance < (int)m_instancesInUse.size();
+      m_library->SLPreview.IsPresent() &&
+      instance >= 0 &&
+      instance < (int)m_instancesInUse.size();
   }
 
   bool Preview(int instance, unsigned width, unsigned height, uint8_t * pixels)
@@ -590,8 +617,8 @@ public:
       return false;
 
     PTRACE(5, "Sign Language Preview video frame:"
-              " " << width << 'x' << height << ","
-              " instance=" << instance);
+           " " << width << 'x' << height << ","
+           " instance=" << instance);
     SLPreviewData data;
     memset(&data, 0, sizeof(data));
     data.m_instance = instance;
@@ -1086,7 +1113,7 @@ bool PVXMLRecordableFilename::OnStart(PVXMLChannel & outgoingChannel)
     return false;
 
   PTRACE(3, "Recording to file \"" << m_fileName << "\","
-            " duration=" << m_maxDuration << ", silence=" << m_finalSilence);
+         " duration=" << m_maxDuration << ", silence=" << m_finalSilence);
   outgoingChannel.SetWriteChannel(file, true);
 
   m_silenceTimer = m_finalSilence;
@@ -1117,7 +1144,6 @@ PBoolean PVXMLRecordableFilename::OnFrame(PBoolean isSilence)
 
 ///////////////////////////////////////////////////////////////
 
-static PVXMLCache DefaultCache;
 static const PConstString KeyFileType(".key");
 
 PVXMLCache::PVXMLCache()
@@ -1128,6 +1154,7 @@ PVXMLCache::PVXMLCache()
 
 void PVXMLCache::SetDirectory(const PDirectory & directory)
 {
+  PTRACE(3, "Cache directory set to " << directory);
   LockReadWrite();
   m_directory = directory;
   UnlockReadWrite();
@@ -1171,9 +1198,9 @@ bool PVXMLCache::Start(Params & params)
     PXML xml;
     if (!xml.LoadFile(keyFilePath)) {
       PTRACE(2, "Cannot open cache key file"
-                " \"" << keyFilePath << "\""
-                " (" << xml.GetErrorLine() << ':' << xml.GetErrorColumn() << ")"
-                " " << xml.GetErrorString());
+             " \"" << keyFilePath << "\""
+             " (" << xml.GetErrorLine() << ':' << xml.GetErrorColumn() << ")"
+             " " << xml.GetErrorString());
     }
     else if (!params.m_file.Open(PFile::ReadOnly)) {
       PTRACE(2, "Cannot open cache data file \"" << params.m_file.GetFilePath() << "\""
@@ -1217,7 +1244,7 @@ bool PVXMLCache::Start(Params & params)
   // Can't cache at all!
   UnlockReadWrite();
   PTRACE(2, "Cannot create cache data file \"" << params.m_file.GetFilePath() << "\""
-            " for \"" << params.m_key << "\", error: " << params.m_file.GetErrorText());
+         " for \"" << params.m_key << "\", error: " << params.m_file.GetErrorText());
   return false;
 }
 
@@ -1269,8 +1296,6 @@ bool PVXMLCache::Finish(Params & params, bool success)
 PVXMLSession::PVXMLSession()
   : m_textToSpeech(NULL)
   , m_autoDeleteTextToSpeech(false)
-  , m_speechRecognition(NULL)
-  , m_resourceCache(&DefaultCache)
 #if P_VXML_VIDEO
   , m_videoReceiver(*this)
 #endif
@@ -1289,6 +1314,9 @@ PVXMLSession::PVXMLSession()
   , m_transferStatus(NotTransfering)
   , m_transferStartTime(0)
 {
+  static PVXMLSession::CachePtr DefaultCache(new PVXMLCache);
+  SetCache(DefaultCache);
+
 #if P_VXML_VIDEO
   PVideoInputDevice::OpenArgs videoArgs;
   videoArgs.driverName = P_FAKE_VIDEO_DRIVER;
@@ -1296,7 +1324,7 @@ PVXMLSession::PVXMLSession()
   m_videoSender.SetActualDevice(PVideoInputDevice::CreateOpenedDevice(videoArgs));
 #endif // P_VXML_VIDEO
 
-  Properties props(PTRACE_PARAM("application"));
+  Properties props(PTRACE_PARAM(SessionScope));
   props.SetAt(TimeoutProperty, "10s");
   props.SetAt(BargeInProperty, true);
   props.SetAt(CachingProperty, "86400s");
@@ -1307,13 +1335,13 @@ PVXMLSession::PVXMLSession()
   props.SetAt(CompleteTimeoutProperty, "2s");
   props.SetAt(IncompleteTimeoutProperty, "5s");
   props.SetAt(FetchTimeoutProperty, "15s");
-  props.SetAt(DocumentMaxAgeProperty, "86400s");
+  props.SetAt(DocumentMaxAgeProperty, "3600s");
   props.SetAt(DocumentMaxStaleProperty, "1s");
-  props.SetAt(AudioMaxAgeProperty, "86400s");
+  props.SetAt(AudioMaxAgeProperty, "3600s");
   props.SetAt(AudioMaxStaleProperty, "1s");
-  props.SetAt(GrammarMaxAgeProperty, "86400s");
+  props.SetAt(GrammarMaxAgeProperty, "3600s");
   props.SetAt(GrammarMaxStaleProperty, "1s");
-  props.SetAt(ScriptMaxAgeProperty, "86400s");
+  props.SetAt(ScriptMaxAgeProperty, "3600s");
   props.SetAt(ScriptMaxStaleProperty, "1");
   m_properties.push_back(props);
 
@@ -1393,20 +1421,6 @@ bool PVXMLSession::SetSpeechRecognition(const PString & srName)
 PSpeechRecognition * PVXMLSession::CreateSpeechRecognition()
 {
   return PSpeechRecognition::Create(m_speechRecognition);
-}
-
-
-void PVXMLSession::SetCache(PVXMLCache & cache)
-{
-  m_sessionMutex.Wait();
-  m_resourceCache = &cache;
-  m_sessionMutex.Signal();
-}
-
-
-PVXMLCache & PVXMLSession::GetCache()
-{
-  return *m_resourceCache;
 }
 
 
@@ -1516,7 +1530,7 @@ bool PVXMLSession::LoadCachedResource(const PURL & url,
 
   CachePtr cache = m_resourceCache;
 
-  if (!cache->Start(cacheParams))
+  if (cache == NULL || !cache->Start(cacheParams))
     return LoadActualResource(url, timeout, data, cacheParams);
 
   if (cacheParams.m_size > 0)
@@ -1701,23 +1715,11 @@ bool PVXMLSession::SetCurrentForm(const PString & searchId, bool fullURI)
       if (xmlObject->IsElement()) {
         PXMLElement * xmlElement = (PXMLElement*)xmlObject;
         if (
-              (xmlElement->GetName() == FormElement || xmlElement->GetName() == MenuElement) &&
-              (id.IsEmpty() || (xmlElement->GetAttribute(IdAttribute) *= id))
-           ) {
+          (xmlElement->GetName() == FormElement || xmlElement->GetName() == MenuElement) &&
+          (id.IsEmpty() || (xmlElement->GetAttribute(IdAttribute) *= id))
+          ) {
           PTRACE(3, "Found <" << xmlElement->GetName() << " id=\"" << xmlElement->GetAttribute(IdAttribute) << "\">");
-
-          if (m_currentNode != NULL) {
-            PXMLElement * element = m_currentNode->GetParent();
-            while (element != NULL) {
-              PVXMLNodeHandler * handler = PVXMLNodeFactory::CreateInstance(element->GetName());
-              if (handler != NULL)
-                handler->Finish(*this, *element);
-              element = element->GetParent();
-            }
-          }
-
-          m_currentNode = xmlObject;
-          return true;
+          return SetCurrentNode(xmlElement);
         }
       }
     }
@@ -1725,6 +1727,23 @@ bool PVXMLSession::SetCurrentForm(const PString & searchId, bool fullURI)
 
   PTRACE(3, "No form/menu with id \"" << searchId << '"');
   return false;
+}
+
+
+bool PVXMLSession::SetCurrentNode(PXMLObject * newNode)
+{
+  if (m_currentNode != NULL && dynamic_cast<PXMLElement *>(newNode) != NULL) {
+    PXMLElement * element = m_currentNode->GetParent();
+    while (element != NULL) {
+      PVXMLNodeHandler * handler = PVXMLNodeFactory::CreateInstance(element->GetName());
+      if (handler != NULL)
+        handler->Finish(*this, *element);
+      element = element->GetParent();
+    }
+  }
+
+  m_currentNode = newNode;
+  return newNode != NULL;
 }
 
 
@@ -1851,9 +1870,9 @@ void PVXMLSession::InternalThreadMain()
     newScript->CreateComposite(ApplicationScope);
     InternalSetVar(ApplicationScope, RootURIVar, PString::Empty());
 #if P_VXML_VIDEO
-      newScript->SetFunction(SIGN_LANGUAGE_PREVIEW_SCRIPT_FUNCTION, PCREATE_NOTIFIER(SignLanguagePreviewFunction));
-      newScript->SetFunction(SIGN_LANGUAGE_CONTROL_SCRIPT_FUNCTION, PCREATE_NOTIFIER(SignLanguageControlFunction));
-    #endif
+    newScript->SetFunction(SIGN_LANGUAGE_PREVIEW_SCRIPT_FUNCTION, PCREATE_NOTIFIER(SignLanguagePreviewFunction));
+    newScript->SetFunction(SIGN_LANGUAGE_CONTROL_SCRIPT_FUNCTION, PCREATE_NOTIFIER(SignLanguageControlFunction));
+#endif
 
     PSimpleScript * simpleScript = dynamic_cast<PSimpleScript *>(m_scriptContext.get());
     if (simpleScript != NULL) {
@@ -2024,10 +2043,8 @@ void PVXMLSession::InternalStartVXML()
     InternalSetVar(ApplicationScope, RootURIVar, rootURL);
   }
 
-  if (m_scriptContext->GetScopeChain().back() == DocumentScope)
+  while (m_scriptContext->GetScopeChain().back() != ApplicationScope)
     m_scriptContext->PopScopeChain(true);
-  else
-    m_scriptContext->ReleaseVariable(DocumentScope);
 
   while (m_properties.size() > 1)
     m_properties.pop_back();
@@ -2036,7 +2053,7 @@ void PVXMLSession::InternalStartVXML()
     m_scriptContext->Run(PSTRSTRM(DocumentScope << '=' << ApplicationScope));
   else {
     m_scriptContext->PushScopeChain(DocumentScope, true);
-    m_properties.push_back(Properties(PTRACE_PARAM("document")));
+    m_properties.push_back(Properties(PTRACE_PARAM(DocumentScope)));
   }
 
   InternalSetVar(DocumentScope, DocumentURIVar, m_newURL);  // Non-standard but potentially useful
@@ -2118,8 +2135,8 @@ bool PVXMLSession::NextNode(bool processChildren)
       if (!handler->Finish(*this, *element)) {
         if (m_currentNode != NULL) {
           PTRACE(4, "Moved node after processing VoiceXML element:"
-                    " from=" << element->PrintTrace() << ","
-                    " to=" << m_currentNode->PrintTrace());
+                 " from=" << element->PrintTrace() << ","
+                 " to=" << m_currentNode->PrintTrace());
           return false;
         }
 
@@ -2306,8 +2323,8 @@ PBoolean PVXMLSession::TraversedRecord(PXMLElement & element)
     return true;
   }
 
-  recordable->SetFinalSilence(StringToTime(element.GetAttribute("finalsilence"), 3000));
-  recordable->SetMaxDuration(StringToTime(element.GetAttribute("maxtime"), INT_MAX));
+  recordable->SetFinalSilence(PTimeInterval(element.GetAttribute("finalsilence")));
+  recordable->SetMaxDuration(PTimeInterval(element.GetAttribute("maxtime")));
 
   if (!GetVXMLChannel()->QueueRecordable(recordable))
     return true;
@@ -2337,7 +2354,7 @@ PBoolean PVXMLSession::TraverseScript(PXMLElement & element)
     return RunScript(element, PString(data));
   }
 
-  return GoToEventHandler(element, ErrorBadFetch, true);
+  return ThrowBadFetchError(element, "Could not load <script> from \"" << src << '"');
 }
 
 
@@ -2346,9 +2363,10 @@ bool PVXMLSession::RunScript(PXMLElement & element, const PString & script)
   if (m_scriptContext->Run(script))
     return false;
 
-  return ThrowSemanticError(element, PSTRSTRM(m_scriptContext->GetLanguageName()
-                                              << " error \"" << m_scriptContext->GetLastErrorText()
-                                              << "\" executing " << script.ToLiteral()));
+  return ThrowSemanticError(element,
+                            m_scriptContext->GetLanguageName()
+                            << " error \"" << m_scriptContext->GetLastErrorText()
+                            << "\" executing " << script.ToLiteral());
 }
 
 
@@ -2376,9 +2394,10 @@ bool PVXMLSession::EvaluateExpr(PXMLElement & element, const PString & attrib, P
   }
 
   PTRACE(2, "Could not evaluate expression \"" << expr << "\" with script language " << m_scriptContext->GetLanguageName());
-  return ThrowSemanticError(element, PSTRSTRM(m_scriptContext->GetLanguageName()
-                                              << " error \"" << m_scriptContext->GetLastErrorText()
-                                              << "\" evaluating " << expr.ToLiteral()));
+  return ThrowSemanticError(element, 
+                            m_scriptContext->GetLanguageName()
+                            << " error \"" << m_scriptContext->GetLastErrorText()
+                            << "\" evaluating " << expr.ToLiteral());
 }
 
 
@@ -2464,6 +2483,15 @@ PCaselessString PVXMLSession::GetProperty(const PString & propName,
 }
 
 
+void PVXMLSession::SetProperty(const PString & name, const PString & value, bool session)
+{
+  PWaitAndSignal lock(m_sessionMutex);
+  Properties & props = session ? m_properties.front() : m_properties.back();
+  props.SetAt(name, value);
+  PTRACE(3, "Set property " << props.m_node << ' ' << name << " to \"" << value << '"');
+}
+
+
 void PVXMLSession::SetDialogVar(const PString & varName, const PString & value)
 {
   InternalSetVar(DialogScope, varName, value);
@@ -2536,7 +2564,7 @@ PBoolean PVXMLSession::PlayElement(PXMLElement & element)
                          data))
     return PlayData(data, repeat);
 
-  return GoToEventHandler(element, ErrorBadFetch, true);
+  return ThrowBadFetchError(element, "Could not load audio from " << url);
 }
 
 
@@ -2586,7 +2614,7 @@ void PVXMLSession::LoadGrammar(const PString & type, const PVXMLGrammarInit & in
   if (state != PVXMLGrammar::Idle) {
     delete grammar;
     if (state == PVXMLGrammar::BadFetch)
-      GoToEventHandler(init.m_field, ErrorBadFetch, true);
+      ThrowBadFetchError(init.m_field, "Bad fetch in grammar " << *grammar);
     else {
       PTRACE(2, "Illegal/unsupported grammar of type \"" << adjustedType << '"');
       GoToEventHandler(init.m_field, "error.unsupported.format", true);
@@ -2661,34 +2689,34 @@ bool PVXMLSession::IsGrammarRunning() const
 
 
 PBoolean PVXMLSession::PlayText(const PString & textToPlay,
-                    PTextToSpeech::TextType type,
-                                     PINDEX repeat,
-                                     PINDEX delay)
+                                PTextToSpeech::TextType type,
+                                PINDEX repeat,
+                                PINDEX delay)
 {
   if (!IsOpen() || textToPlay.IsEmpty() || m_bargingIn)
     return false;
 
   PTRACE(4, "Converting " << textToPlay.ToLiteral() << " to speech");
 
-  PCaselessString caching = GetProperty(CachingProperty);
-  if (caching == SafeKeyword) {
+  CachePtr cache = m_resourceCache;
+
+  if (cache == NULL || GetProperty(CachingProperty) == SafeKeyword) {
     PFilePath fn("tts", NULL, ".wav");
     return m_textToSpeech != NULL &&
-           m_textToSpeech->SetSampleRate(GetVXMLChannel()->GetSampleRate()) &&
-           m_textToSpeech->SetChannels(GetVXMLChannel()->GetChannels()) &&
-           m_textToSpeech->OpenFile(fn) &&
-           m_textToSpeech->Speak(textToPlay, type) &&
-           m_textToSpeech->Close() &&
-           PlayFile(fn, repeat, delay, true);
+      m_textToSpeech->SetSampleRate(GetVXMLChannel()->GetSampleRate()) &&
+      m_textToSpeech->SetChannels(GetVXMLChannel()->GetChannels()) &&
+      m_textToSpeech->OpenFile(fn) &&
+      m_textToSpeech->Speak(textToPlay, type) &&
+      m_textToSpeech->Close() &&
+      PlayFile(fn, repeat, delay, true);
   }
 
   PString fileList;
-  CachePtr cache = m_resourceCache;
 
   PVXMLCache::Params cacheParams;
   cacheParams.m_prefix.sprintf("tts%i", type);
   cacheParams.m_suffix = GetVXMLChannel()->GetMediaFileSuffix() + ".wav";
-  cacheParams.m_maxAge = StringToTime(caching);
+  cacheParams.m_maxAge = GetTimeProperty(AudioMaxAgeProperty);
 
   // Convert each line into it's own cached WAV file.
   PStringArray lines = textToPlay.Lines();
@@ -2733,14 +2761,11 @@ void PVXMLSession::SetPause(PBoolean pause)
 }
 
 
-static PConstString const AnonymousPrefix("anonymous_");
-
 PBoolean PVXMLSession::TraverseBlock(PXMLElement & element)
 {
   unsigned col, line;
   element.GetFilePosition(col, line);
-  PString anonymous = PSTRSTRM(AnonymousPrefix << line << '_' << col);
-  m_scriptContext->PushScopeChain(anonymous, true);
+  m_scriptContext->PushScopeChain(PSTRSTRM("anonymous_" << line << '_' << col), true);
   return ExecuteCondition(element);
 }
 
@@ -2771,8 +2796,9 @@ PBoolean PVXMLSession::TraverseBreak(PXMLElement & element)
     return PlaySilence(element.GetAttribute("msecs").AsInteger());
 
   // time is VXML 2.0
-  if (element.HasAttribute("time"))
-    return PlaySilence(StringToTime(element.GetAttribute("time"), 1000));
+  PString time = element.GetAttribute("time");
+  if (!time.empty())
+    return PlaySilence(PTimeInterval(time+"ms"));
 
   if (element.HasAttribute("size")) {
     PString size = element.GetAttribute("size");
@@ -2817,7 +2843,7 @@ static bool UnsupportedVoiceAttribute(const PStringArray & attr)
     if (a != "name" || a != "languages")
       return true;
   }
-    return false;
+  return false;
 }
 
 
@@ -2905,7 +2931,7 @@ PBoolean PVXMLSession::TraverseGoto(PXMLElement & element)
   if (SetCurrentForm(target, fullURI))
     return ProcessNode();
 
-  return GoToEventHandler(element, ErrorBadFetch, true);
+  return ThrowBadFetchError(element, "<goto> has invalid URI \"" << target << '"');
 }
 
 
@@ -2939,23 +2965,15 @@ bool PVXMLSession::GoToEventHandler(PXMLElement & element, const PString & event
 
       if (exitIfNotFound) {
         PTRACE(3, "Exiting script.");
-        m_currentNode = NULL;
+        SetCurrentNode(NULL);
       }
       return false;
     }
   }
 
   handler->SetAttribute(InternalEventStateAttribute, true);
-  m_currentNode = handler;
   PTRACE(4, "Setting event handler to node " << handler->PrintTrace() << " for \"" << eventName << '"');
-  return true;
-}
-
-
-bool PVXMLSession::ThrowSemanticError(PXMLElement & element, const PString & PTRACE_PARAM(reason))
-{
-  PTRACE(2, "Semantic error thown in " << element.PrintTrace() << " - " << reason);
-  return GoToEventHandler(element, ErrorSemantic, true);
+  return SetCurrentNode(handler);
 }
 
 
@@ -3046,23 +3064,6 @@ void PVXMLSession::SayAs(const PString & className, const PString & textToSay, c
 }
 
 
-PTimeInterval PVXMLSession::StringToTime(const PString & str, int dflt)
-{
-  if (str.IsEmpty())
-    return dflt;
-
-  PCaselessString units = str.Mid(str.FindSpan("0123456789")).Trim();
-  if (units ==  "s")
-    return PTimeInterval(0, str.AsInteger());
-  else if (units ==  "m")
-    return PTimeInterval(0, 0, str.AsInteger());
-  else if (units ==  "h")
-    return PTimeInterval(0, 0, 0, str.AsInteger());
-
-  return str.AsInt64();
-}
-
-
 bool PVXMLSession::ExecuteCondition(PXMLElement & element)
 {
   PString result;
@@ -3112,8 +3113,7 @@ PBoolean PVXMLSession::TraverseIf(PXMLElement & element)
   if (nextNode == NULL)
     return false; // Skip if subelements
 
-  m_currentNode = nextNode;
-  return true; // Do subelements
+  return SetCurrentNode(nextNode); // Do subelements
 }
 
 
@@ -3129,7 +3129,7 @@ PBoolean PVXMLSession::TraverseElseIf(PXMLElement & element)
   PXMLElement * ifElement = element.GetParent();
   PString state = ifElement->GetAttribute(IfStateAttributeName);
   if (state == "done") {
-    m_currentNode = element.GetParent();
+    SetCurrentNode(element.GetParent());
     return false;
   }
 
@@ -3142,14 +3142,13 @@ PBoolean PVXMLSession::TraverseElseIf(PXMLElement & element)
   if (nextNode == NULL)
     return false; // Skip if subelements
 
-  m_currentNode = nextNode;
-  return true; // Do subelements
+  return SetCurrentNode(nextNode); // Do subelements
 }
 
 
 PBoolean PVXMLSession::TraverseElse(PXMLElement & element)
 {
-  m_currentNode = element.GetParent();
+  SetCurrentNode(element.GetParent());
   return false;
 }
 
@@ -3177,10 +3176,8 @@ PBoolean PVXMLSession::TraverseSubmit(PXMLElement & element)
     return ThrowSemanticError(element, "<submit> does not contain \"next\" or \"expr\" attribute.");
 
   PURL url = NormaliseResourceName(urlStr);
-  if (url.IsEmpty()) {
-    PTRACE(2, "<submit> has an invalid URL.");
-    return GoToEventHandler(element, ErrorBadFetch, true);
-  }
+  if (url.IsEmpty())
+    return ThrowBadFetchError(element, "<submit> has an invalid URL \"" << urlStr << '"');
 
   bool urlencoded;
   PCaselessString str = element.GetAttribute("enctype");
@@ -3188,10 +3185,8 @@ PBoolean PVXMLSession::TraverseSubmit(PXMLElement & element)
     urlencoded = true;
   else if (str == "multipart/form-data")
     urlencoded = false;
-  else {
-    PTRACE(2, "<submit> has unknown \"enctype\" attribute of \"" << str << '"');
-    return GoToEventHandler(element, ErrorBadFetch, true);
-  }
+  else
+    return ThrowBadFetchError(element, "<submit> has unknown \"enctype\" attribute of \"" << str << '"');
 
   bool get;
   str = element.GetAttribute("method");
@@ -3201,10 +3196,8 @@ PBoolean PVXMLSession::TraverseSubmit(PXMLElement & element)
     get = true;
   else if (str == "POST")
     get = false;
-  else {
-    PTRACE(2, "<submit> has unknown \"method\" attribute of \"" << str << '"');
-    return GoToEventHandler(element, ErrorBadFetch, true);
-  }
+  else
+    return ThrowBadFetchError(element, "<submit> has unknown \"method\" attribute of \"" << str << '"');
 
   PStringSet namelist = element.GetAttribute("namelist").Tokenise(" \t", false);
   if (namelist.IsEmpty())
@@ -3217,7 +3210,7 @@ PBoolean PVXMLSession::TraverseSubmit(PXMLElement & element)
     PBYTEArray body;
     if (LoadCachedResource(url, &element, DocumentMaxAgeProperty, DocumentMaxStaleProperty, body))
       return InternalLoadVXML(url, PString(body), PString::Empty());
-    return GoToEventHandler(element, ErrorBadFetch, true);
+    return ThrowBadFetchError(element, "Could not GET " << url);
   }
 
   PAutoPtr<PHTTPClient> http(CreateHTTPClient());
@@ -3260,7 +3253,7 @@ PBoolean PVXMLSession::TraverseSubmit(PXMLElement & element)
       part1.Set(PMIMEInfo::ContentDispositionTag, PSTRSTRM("form-data; name=\"" << *itName << "\"; "));
 
       entityBody << "--" << boundary << "\r\n"
-                 << part1 << GetVar(*itName) << "\r\n";
+        << part1 << GetVar(*itName) << "\r\n";
 
       continue;
     }
@@ -3285,11 +3278,11 @@ PBoolean PVXMLSession::TraverseSubmit(PXMLElement & element)
     part2.Set(PMIMEInfo::ContentDispositionTag, "form-data; name=\"MAX_FILE_SIZE\"\r\n\r\n3000000");
 
     entityBody << "--" << boundary << "\r\n"
-               << part1 << "\r\n"
-               << file.ReadString(file.GetLength())
-               << "--" << boundary << "\r\n"
-               << part2
-               << "\r\n";
+      << part1 << "\r\n"
+      << file.ReadString(file.GetLength())
+      << "--" << boundary << "\r\n"
+      << part2
+      << "\r\n";
   }
 
   if (entityBody.IsEmpty()) {
@@ -3321,7 +3314,7 @@ PString PVXMLSession::InternalGetName(PXMLElement & element, bool allowScope)
   if (!isalpha(name[0]) ||
       name.FindOneOf("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_.$") == P_MAX_INDEX ||
       name[name.length()-1] == '$') {
-    ThrowSemanticError(element, PSTRSTRM("Illegal \"name\" attribute \"" << name << '"'));
+    ThrowSemanticError(element, "Illegal \"name\" attribute \"" << name << '"');
     return PString::Empty();
   }
 
@@ -3329,7 +3322,7 @@ PString PVXMLSession::InternalGetName(PXMLElement & element, bool allowScope)
     return name;
 
   if (name.find('.') != string::npos) {
-    ThrowSemanticError(element, PSTRSTRM("Scope not allowed in \"name\" attribute \"" << name << '"'));
+    ThrowSemanticError(element, "Scope not allowed in \"name\" attribute \"" << name << '"');
     return PString::Empty();
   }
 
@@ -3343,10 +3336,7 @@ PBoolean PVXMLSession::TraverseProperty(PXMLElement & element)
   if (name.empty())
     return false;
 
-  PString value = element.GetAttribute("value");
-  Properties & props = m_properties.back();
-  props.SetAt(name, value);
-  PTRACE(4, "Set property " << props.m_node << ' ' << name << " to \"" << value << '"');
+  SetProperty(name, element.GetAttribute("value"));
   return true;
 }
 
@@ -3430,7 +3420,13 @@ void PVXMLSession::SetTransferComplete(bool state)
 
 PBoolean PVXMLSession::TraverseMenu(PXMLElement & element)
 {
+  if (element.GetParent() && element.GetParent()->GetName() != "vxml")
+    return ThrowSemanticError(element, "<menu> must be at top level.");
+
+  while (m_scriptContext->GetScopeChain().back() != ApplicationScope && m_scriptContext->GetScopeChain().back() != DocumentScope)
+    m_scriptContext->PopScopeChain(true);
   m_scriptContext->PushScopeChain(DialogScope, true);
+
   LoadGrammar(MenuElement, PVXMLGrammarInit(*this, element));
   m_defaultMenuDTMF = element.GetAttribute(DtmfAttribute).IsTrue() ? '1' : 'N';
   ++m_promptCount;
@@ -3440,7 +3436,6 @@ PBoolean PVXMLSession::TraverseMenu(PXMLElement & element)
 
 PBoolean PVXMLSession::TraversedMenu(PXMLElement &)
 {
-  m_scriptContext->PopScopeChain(true);
   StartGrammars();
   return false;
 }
@@ -3484,9 +3479,25 @@ PBoolean PVXMLSession::TraverseDisconnect(PXMLElement & element)
 }
 
 
-PBoolean PVXMLSession::TraverseForm(PXMLElement &)
+PBoolean PVXMLSession::TraverseForm(PXMLElement & element)
 {
+  if (element.GetParent() && element.GetParent()->GetName() != "vxml")
+    return ThrowSemanticError(element, "<form> must be at top level.");
+
   m_dialogFieldNames.clear();
+
+  PXMLElement * field;
+  for (PINDEX i = 0; (field = element.GetElement(FieldElement, i)) != NULL; ++i) {
+    PString name = field->GetAttribute(NameAttribute);
+    if (m_dialogFieldNames.Contains(name)) {
+      ThrowSemanticError(*field, PSTRSTRM("Already has name \"" << name << '"'));
+      return false;
+    }
+    m_dialogFieldNames += name;
+  }
+
+  while (m_scriptContext->GetScopeChain().back() != ApplicationScope && m_scriptContext->GetScopeChain().back() != DocumentScope)
+    m_scriptContext->PopScopeChain(true);
   m_scriptContext->PushScopeChain(DialogScope, true);
   ++m_promptCount;
   return true;
@@ -3495,7 +3506,6 @@ PBoolean PVXMLSession::TraverseForm(PXMLElement &)
 
 PBoolean PVXMLSession::TraversedForm(PXMLElement &)
 {
-  m_scriptContext->PopScopeChain(true);
   return true;
 }
 
@@ -3540,13 +3550,6 @@ PBoolean PVXMLSession::TraverseField(PXMLElement & element)
   PString name = InternalGetName(element, false);
   if (name.empty())
     return false;
-
-  if (m_dialogFieldNames.Contains(name)) {
-    ThrowSemanticError(element, PSTRSTRM("Already has name \"" << name << '"'));
-    return false;
-  }
-
-  m_dialogFieldNames += name;
 
   m_scriptContext->CreateComposite(PSTRSTRM(DialogScope << '.' << name << '$'));
   SetDialogVar(name, PString::Empty());
@@ -3783,9 +3786,8 @@ void PVXMLGrammar::OnAudioInput(const short * samples, size_t count)
 }
 
 
-void PVXMLGrammar::SetTimeout(const PString & timeoutStr)
+void PVXMLGrammar::SetTimeout(const PTimeInterval & timeout)
 {
-  PTimeInterval timeout = PVXMLSession::StringToTime(timeoutStr);
   if (timeout > 0) {
     m_noInputTimeout = timeout;
     PTRACE(4, "Grammar " << *this << " set timeout=" << m_noInputTimeout << ", state=" << m_state);
@@ -3946,6 +3948,7 @@ bool PVXMLGrammar::Process()
     case Filled:
       m_timer.Stop(false);
       m_session.SetDialogVar(m_fieldName, m_value);
+      m_field.SetAttribute(InternalFilledStateAttribute, true);
       handler = FilledElement;
       break;
 
@@ -4056,7 +4059,7 @@ PVXMLDigitsGrammar::PVXMLDigitsGrammar(const PVXMLGrammarInit & init)
   PURL::SplitVars(init.m_grammarElement->GetData(), tokens, ';', '=');
   m_minDigits = tokens.GetInteger("minDigits", 1);
   m_maxDigits = tokens.GetInteger("maxDigits", 10),
-  m_terminators = tokens.GetString("terminators", m_terminators);
+    m_terminators = tokens.GetString("terminators", m_terminators);
 
   if (m_minDigits == 0)
     m_minDigits = 1;
@@ -4202,7 +4205,7 @@ PVXMLGrammarSRGS::PVXMLGrammarSRGS(const PVXMLGrammarInit & init)
   PString rootName = grammar->GetAttribute("root");
   if (m_rule.Parse(*grammar,
                    rootName.empty() ? grammar->GetElement("rule")
-                                    : grammar->GetElement("rule", "id", rootName)))
+                   : grammar->GetElement("rule", "id", rootName)))
     return;
 
   PTRACE(2, "Could not parse SRGS <grammar>");
@@ -4219,7 +4222,7 @@ bool PVXMLGrammarSRGS::Item::Parse(PXMLElement & grammar, PXMLElement * element)
     m_token = element->GetData();
     PString minRepeat, maxRepeat;
     if (element->GetAttribute("repeat").Split('-', minRepeat, maxRepeat,
-                  PString::SplitDefaultToBefore|PString::SplitBeforeNonEmpty|PString::SplitTrim)) {
+                                              PString::SplitDefaultToBefore|PString::SplitBeforeNonEmpty|PString::SplitTrim)) {
       m_minRepeat = minRepeat.AsUnsigned();
       m_maxRepeat = std::max(m_minRepeat, (unsigned)maxRepeat.AsUnsigned());
     }
@@ -4330,11 +4333,11 @@ PVXMLChannel::PVXMLChannel(unsigned frameDelay, PINDEX frameSize)
 PBoolean PVXMLChannel::Open(PVXMLSession * session, unsigned sampleRate, unsigned channels)
 {
   PTRACE(4, "Opening channel:"
-            " this=" << this << ","
-            " session=" << session << ","
-            " format=" << GetAudioFormat() << ","
-            " rate=" << sampleRate << ","
-            " channels=" << channels);
+         " this=" << this << ","
+         " session=" << session << ","
+         " format=" << GetAudioFormat() << ","
+         " rate=" << sampleRate << ","
+         " channels=" << channels);
 
   m_currentPlayItem = NULL;
   m_vxmlSession = session;
@@ -4589,7 +4592,7 @@ PBoolean PVXMLChannel::Read(void * buffer, PINDEX amount)
         continue;
 
       // see if end of queue delay specified
-      if (m_currentPlayItem->OnDelay()) 
+      if (m_currentPlayItem->OnDelay())
         break;
 
       // stop the current item
@@ -4635,10 +4638,10 @@ void PVXMLChannel::SetSilence(unsigned msecs)
 
 
 PBoolean PVXMLChannel::QueuePlayable(const PString & type,
-                                 const PString & arg,
-                                 PINDEX repeat,
-                                 PINDEX delay,
-                                 PBoolean autoDelete)
+                                     const PString & arg,
+                                     PINDEX repeat,
+                                     PINDEX delay,
+                                     PBoolean autoDelete)
 {
   if (repeat <= 0)
     repeat = 1;

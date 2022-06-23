@@ -189,7 +189,7 @@ class PVXMLGrammar : public PObject, protected PVXMLGrammarInit
     virtual void Stop();
     virtual bool Process();
 
-    void SetTimeout(const PString & timeout);
+    void SetTimeout(const PTimeInterval & timeout);
 
   protected:
     PDECLARE_NOTIFIER(PTimer, PVXMLGrammar, OnTimeout);
@@ -364,8 +364,10 @@ class PVXMLSession : public PIndirectChannel
     PString GetSpeechRecognition() const { PWaitAndSignal lock(m_grammersMutex); return m_speechRecognition.c_str(); }
     virtual PSpeechRecognition * CreateSpeechRecognition();
 
-    void SetCache(PVXMLCache & cache);
-    PVXMLCache & GetCache();
+    typedef PSafePtr<PVXMLCache, PSafePtrMultiThreaded> CachePtr;
+    void SetCache(const CachePtr & cache) { m_resourceCache = cache; }
+    PVXMLCache & GetCache() { return *m_resourceCache; }
+    const PVXMLCache & GetCache() const { return *m_resourceCache; }
 
     void SetRecordDirectory(const PDirectory & dir) { m_recordDirectory = dir; }
     const PDirectory & GetRecordDirectory() const { return m_recordDirectory; }
@@ -440,8 +442,13 @@ class PVXMLSession : public PIndirectChannel
       const PString & attrName = PString::Empty()
     ) const
     {
-      return StringToTime(GetProperty(propName, overrideElement, attrName));
+      return PTimeInterval(GetProperty(propName, overrideElement, attrName));
     }
+    void SetProperty(
+      const PString & name,
+      const PString & value,
+      bool session = false
+    );
 
     void SetDialogVar(const PString & varName, const PString & value);
 
@@ -455,11 +462,8 @@ class PVXMLSession : public PIndirectChannel
       bool originator
     );
 
-    static PTimeInterval StringToTime(const PString & str, int dflt = 0);
-
     bool SetCurrentForm(const PString & id, bool fullURI);
     bool GoToEventHandler(PXMLElement & element, const PString & eventName, bool exitIfNotFound);
-    bool ThrowSemanticError(PXMLElement & element, const PString & reason);
     PXMLElement * FindElementWithCount(PXMLElement & parent, const PString & name, unsigned count);
 
     // overrides from VXMLChannelInterface
@@ -526,6 +530,7 @@ class PVXMLSession : public PIndirectChannel
     virtual bool RunScript(PXMLElement & element, const PString & script);
     virtual bool EvaluateExpr(PXMLElement & element, const PString & attrib, PString & result, bool allowEmpty = false);
 
+    virtual bool SetCurrentNode(PXMLObject * newNode);
     virtual bool ProcessNode();
     virtual bool ProcessEvents();
     virtual bool NextNode(bool processChildren);
@@ -548,7 +553,6 @@ class PVXMLSession : public PIndirectChannel
     bool             m_autoDeleteTextToSpeech;
     PString          m_speechRecognition;
 
-    typedef PSafePtr<PVXMLCache, PSafePtrMultiThreaded> CachePtr;
     CachePtr m_resourceCache;
 
 #if P_SSL
@@ -703,7 +707,7 @@ class PVXMLRecordable : public PObject
     virtual PBoolean OnFrame(PBoolean /*isSilence*/) { return false; }
 
     const PTimeInterval & GetFinalSilence() const { return m_finalSilence; }
-    void SetFinalSilence(const PTimeInterval & v) { m_finalSilence = v > 0 ? v : 60000; }
+    void SetFinalSilence(const PTimeInterval & v) { m_finalSilence = v > 0 ? v : 5000; }
 
     const PTimeInterval & GetMaxDuration() const { return m_maxDuration; }
     void SetMaxDuration(const PTimeInterval & v) { m_maxDuration = v > 0 ? v : 86400000; }

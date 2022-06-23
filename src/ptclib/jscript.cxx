@@ -666,7 +666,6 @@ public:
         m_owner.OnError(107, PSTRSTRM("Could not set \"" << key << "\" to array, already set"));
         return false;
       }
-      v8::Local<v8::Array> sequence = member.As<v8::Array>();
       return true;
     }
 

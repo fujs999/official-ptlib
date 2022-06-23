@@ -95,7 +95,7 @@ void PTimeInterval::PrintOn(ostream & strm) const
   strm << right;
 
   if (includeDays && (ns > DaysToNano || width > (decimalsWidth + 9))) {
-    strm << setw(width-decimalsWidth-9) << ns/DaysToNano << 'd' << setfill('0');
+    strm << setw(width-decimalsWidth-9) << ns/DaysToNano << ':' << setfill('0');
     if (ns < 0)
       ns = -ns;
     ns = ns % DaysToNano;
@@ -140,12 +140,49 @@ void PTimeInterval::ReadFrom(istream &strm)
   long min = 0;
   double sec;
   strm >> sec;
-  while (strm.good() && strm.peek() == ':') {
-    day = hour;
-    hour = min;
-    min = (long)sec;
-    strm.get();
-    strm >> sec;
+  if (strm.good()) {
+    switch (tolower(strm.peek())) {
+      case 'd':
+        strm.get();
+        sec *= 86400;
+        break;
+      case 'h':
+        strm.get();
+        sec *= 3600;
+        break;
+      case 's':
+        strm.get();
+        break;
+      case 'm':
+        strm.get();
+        if (strm.peek() != 's')
+          sec *= 60;
+        else {
+          strm.get();
+          sec /= 1000;
+        }
+        break;
+      case 'u':
+        strm.get();
+        if (strm.peek() == 's')
+          strm.get();
+        sec /= 1000000;
+        break;
+      case 'n':
+        strm.get();
+        if (strm.peek() == 's')
+          strm.get();
+        sec /= 1000000000;
+        break;
+      case ':' :
+        do {
+          day = hour;
+          hour = min;
+          min = (long)sec;
+          strm.get();
+          strm >> sec;
+        } while (strm.good() && strm.peek() == ':');
+    }
   }
 
   InternalSet((int64_t)((((day*24 + hour)*60 + min)*60 + sec)*1000000000));
