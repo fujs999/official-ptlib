@@ -329,8 +329,8 @@ class PVXMLCache : public PSafeObject
       PTime         m_date;    // Date of the loaded resource for max age
     };
     // Start cache operation, if return true, Finish must be called.
-    virtual bool Start(Params & params);
-    virtual bool Finish(Params & params, bool success);
+    virtual bool StartCache(Params & params);
+    virtual bool FinishCache(Params & params, bool success);
 
     void SetDirectory(const PDirectory & directory);
     const PDirectory & GetDirectory() const { return m_directory; }
@@ -426,6 +426,7 @@ class PVXMLSession : public PIndirectChannel
     };
     virtual bool OnTransfer(const PString & /*destination*/, TransferType /*type*/) { return false; }
     void SetTransferComplete(bool state);
+    void CompletedTransfer(PXMLElement * element = NULL);
 
     PStringToString GetVariables() const;
     virtual PCaselessString GetVar(const PString & varName) const;
@@ -961,10 +962,10 @@ class PVXMLNodeHandler : public PObject
     PCLASSINFO(PVXMLNodeHandler, PObject);
   public:
     // Return true for process node, false to skip and move to next sibling
-    virtual bool Start(PVXMLSession & /*session*/, PXMLElement & /*node*/) const;
+    virtual bool StartTraversal(PVXMLSession & /*session*/, PXMLElement & /*node*/) const;
 
     // Return true to move to next sibling, false to stay at this node.
-    virtual bool Finish(PVXMLSession & /*session*/, PXMLElement & /*node*/) const;
+    virtual bool FinishTraversal(PVXMLSession & /*session*/, PXMLElement & /*node*/) const;
 
 #if PTRACING
     virtual const char * GetDescription() const = 0;
@@ -981,7 +982,7 @@ class PVXMLSinglePhaseNodeHandler : public PVXMLNodeHandler
 public:
   virtual bool Start(PVXMLSession & session, PXMLElement & node) const
   {
-    PVXMLNodeHandler::Start(session, node);
+    PVXMLNodeHandler::StartTraversal(session, node);
     return (session.*traversing)(node);
   }
 #if PTRACING
@@ -997,17 +998,17 @@ template <
 {
   PCLASSINFO(PVXMLDualPhaseNodeHandler, PVXMLNodeHandler);
 public:
-  virtual bool Start(PVXMLSession & session, PXMLElement & node) const
+  virtual bool StartTraversal(PVXMLSession & session, PXMLElement & node) const
   {
-    PVXMLNodeHandler::Start(session, node);
+    PVXMLNodeHandler::StartTraversal(session, node);
     return (session.*traversing)(node);
   }
-  virtual bool Finish(PVXMLSession & session, PXMLElement & node) const
+  virtual bool FinishTraversal(PVXMLSession & session, PXMLElement & node) const
   {
     bool nextNode = true;
     if (IsTraversing(node))
       nextNode = (session.*traversed)(node);
-    PVXMLNodeHandler::Finish(session, node);
+    PVXMLNodeHandler::FinishTraversal(session, node);
     return nextNode;
   }
 #if PTRACING

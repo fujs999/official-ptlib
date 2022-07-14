@@ -186,7 +186,7 @@ public:
 
 static PConstString const InternalTraversingNodeAttribute("PTLibInternalTraversingNode");
 
-bool PVXMLNodeHandler::Start(PVXMLSession & session, PXMLElement & node) const
+bool PVXMLNodeHandler::StartTraversal(PVXMLSession & session, PXMLElement & node) const
 {
   PTRACE(4, &session, "Traversing " << GetDescription() << ' ' << node.PrintTrace());
   node.SetAttribute(InternalTraversingNodeAttribute, true);
@@ -195,7 +195,7 @@ bool PVXMLNodeHandler::Start(PVXMLSession & session, PXMLElement & node) const
   return true;
 }
 
-bool PVXMLNodeHandler::Finish(PVXMLSession & session, PXMLElement & node) const
+bool PVXMLNodeHandler::FinishTraversal(PVXMLSession & session, PXMLElement & node) const
 {
   bool traversing = IsTraversing(node);
   if (traversing && node.GetName() != "property")
@@ -253,15 +253,15 @@ static PConstString const InternalFilledStateAttribute("PTLibInternalFilledState
 class PVXMLTraverseEvent : public PVXMLNodeHandler
 {
 protected:
-  virtual bool Start(PVXMLSession & session, PXMLElement & element) const
+  virtual bool StartTraversal(PVXMLSession & session, PXMLElement & element) const
   {
-    PVXMLNodeHandler::Start(session, element);
+    PVXMLNodeHandler::StartTraversal(session, element);
     return element.GetAttribute(InternalEventStateAttribute).IsTrue();
   }
 
-  virtual bool Finish(PVXMLSession & session, PXMLElement & element) const
+  virtual bool FinishTraversal(PVXMLSession & session, PXMLElement & element) const
   {
-    PVXMLNodeHandler::Finish(session, element);
+    PVXMLNodeHandler::FinishTraversal(session, element);
     if (!element.GetAttribute(InternalEventStateAttribute).IsTrue())
       return true;
 
@@ -294,9 +294,9 @@ PFACTORY_SYNONYM(PVXMLNodeFactory, PVXMLTraverseEvent, Error, ErrorElement);
 
 class PVXMLTraverseFilled : public PVXMLTraverseEvent
 {
-  virtual bool Start(PVXMLSession & session, PXMLElement & element) const
+  virtual bool StartTraversal(PVXMLSession & session, PXMLElement & element) const
   {
-    PVXMLNodeHandler::Start(session, element);
+    PVXMLNodeHandler::StartTraversal(session, element);
     if (!element.GetAttribute(InternalEventStateAttribute).IsTrue())
       return false;
 
@@ -360,7 +360,7 @@ PFACTORY_CREATE(PVXMLNodeFactory, PVXMLTraverseFilled, FilledElement, true);
 
 #if PTRACING
 class PVXMLTraverseLog : public PVXMLNodeHandler {
-  virtual bool Start(PVXMLSession & session, PXMLElement & node) const
+  virtual bool StartTraversal(PVXMLSession & session, PXMLElement & node) const
   {
     unsigned level = node.GetAttribute("level").AsUnsigned();
     if (level == 0)
@@ -370,7 +370,7 @@ class PVXMLTraverseLog : public PVXMLNodeHandler {
     PTRACE_IF(level, !log.IsEmpty(), "VXML-Log", log);
     return true;
   }
-  virtual bool Finish(PVXMLSession &, PXMLElement &) const
+  virtual bool FinishTraversal(PVXMLSession &, PXMLElement &) const
   {
     return true;
   }
@@ -1183,7 +1183,7 @@ static PTime GetTimeFromElement(PXMLElement * root, const char * name)
 }
 
 
-bool PVXMLCache::Start(Params & params)
+bool PVXMLCache::StartCache(Params & params)
 {
   PAssert(!params.m_prefix.IsEmpty() && !params.m_key.IsEmpty(), PInvalidParameter);
 
@@ -1249,7 +1249,7 @@ bool PVXMLCache::Start(Params & params)
 }
 
 
-bool PVXMLCache::Finish(Params & params, bool success)
+bool PVXMLCache::FinishCache(Params & params, bool success)
 {
   PFilePath keyFilePath = params.m_file.GetFilePath();
   keyFilePath.SetType(KeyFileType);
@@ -1530,15 +1530,15 @@ bool PVXMLSession::LoadCachedResource(const PURL & url,
 
   CachePtr cache = m_resourceCache;
 
-  if (cache == NULL || !cache->Start(cacheParams))
+  if (cache == NULL || !cache->StartCache(cacheParams))
     return LoadActualResource(url, timeout, data, cacheParams);
 
   if (cacheParams.m_size > 0)
-    return cache->Finish(cacheParams, cacheParams.m_file.Read(data.GetPointer(cacheParams.m_size), cacheParams.m_size));
+    return cache->FinishCache(cacheParams, cacheParams.m_file.Read(data.GetPointer(cacheParams.m_size), cacheParams.m_size));
 
-  return cache->Finish(cacheParams,
-                       LoadActualResource(url, timeout, data, cacheParams) &&
-                       cacheParams.m_file.Write(data, data.GetSize()));
+  return cache->FinishCache(cacheParams,
+                            LoadActualResource(url, timeout, data, cacheParams) &&
+                            cacheParams.m_file.Write(data, data.GetSize()));
 }
 
 
@@ -1737,7 +1737,7 @@ bool PVXMLSession::SetCurrentNode(PXMLObject * newNode)
     while (element != NULL) {
       PVXMLNodeHandler * handler = PVXMLNodeFactory::CreateInstance(element->GetName());
       if (handler != NULL)
-        handler->Finish(*this, *element);
+        handler->FinishTraversal(*this, *element);
       element = element->GetParent();
     }
   }
@@ -2007,12 +2007,19 @@ bool PVXMLSession::ProcessEvents()
   else if (IsGrammarRunning()) {
     PTRACE(4, "Grammar awaiting input, awaiting event");
   }
-  else if (m_transferStatus == TransferInProgress) {
-    PTRACE(4, "Transfer in progress, awaiting event");
-  }
   else {
-    PTRACE(4, "Nothing happening, processing next node");
-    return false;
+    switch (m_transferStatus) {
+      case TransferInProgress:
+        PTRACE(4, "Transfer in progress, awaiting event");
+        break;
+      case TransferSuccessful :
+      case TransferFailed:
+        CompletedTransfer();
+        return false;
+      default :
+        PTRACE(4, "Nothing happening, processing next node");
+        return false;
+    }
   }
 
   m_sessionMutex.Signal();
@@ -2132,7 +2139,7 @@ bool PVXMLSession::NextNode(bool processChildren)
   do {
     PVXMLNodeHandler * handler = PVXMLNodeFactory::CreateInstance(element->GetName());
     if (handler != NULL) {
-      if (!handler->Finish(*this, *element)) {
+      if (!handler->FinishTraversal(*this, *element)) {
         if (m_currentNode != NULL) {
           PTRACE(4, "Moved node after processing VoiceXML element:"
                  " from=" << element->PrintTrace() << ","
@@ -2199,7 +2206,7 @@ bool PVXMLSession::ProcessNode()
       return false;
     }
 
-    bool started = handler->Start(*this, *element);
+    bool started = handler->StartTraversal(*this, *element);
     if (element == m_currentNode) {
       PTRACE_IF(4, !started, "Skipping VoiceXML element: " << element->PrintTrace());
       return started;
@@ -2209,7 +2216,7 @@ bool PVXMLSession::ProcessNode()
            " from=" << element->PrintTrace() << ","
            " to=" << m_currentNode->PrintTrace());
 
-    handler->Finish(*this, *element);
+    handler->FinishTraversal(*this, *element);
     if (m_currentNode == NULL)
       return false;
   }
@@ -2726,12 +2733,12 @@ PBoolean PVXMLSession::PlayText(const PString & textToPlay,
       continue;
 
     // see if we have converted this text before
-    if (!cache->Start(cacheParams))
+    if (!cache->StartCache(cacheParams))
       continue;
 
     if (cacheParams.m_size > 0) {
       fileList += cacheParams.m_file.GetFilePath() + '\n';
-      cache->Finish(cacheParams, true);
+      cache->FinishCache(cacheParams, true);
       continue;
     }
 
@@ -2739,14 +2746,14 @@ PBoolean PVXMLSession::PlayText(const PString & textToPlay,
     // So close file and just use filename.
     cacheParams.m_file.Close();
 
-    cache->Finish(cacheParams,
-                  m_textToSpeech != NULL &&
-                  m_textToSpeech->SetSampleRate(GetVXMLChannel()->GetSampleRate()) &&
-                  m_textToSpeech->SetChannels(GetVXMLChannel()->GetChannels()) &&
-                  m_textToSpeech->OpenFile(cacheParams.m_file.GetFilePath()) &&
-                  m_textToSpeech->Speak(cacheParams.m_key, type) &&
-                  m_textToSpeech->Close() &&
-                  cacheParams.m_file.Open(PFile::ReadOnly));
+    cache->FinishCache(cacheParams,
+                       m_textToSpeech != NULL &&
+                       m_textToSpeech->SetSampleRate(GetVXMLChannel()->GetSampleRate()) &&
+                       m_textToSpeech->SetChannels(GetVXMLChannel()->GetChannels()) &&
+                       m_textToSpeech->OpenFile(cacheParams.m_file.GetFilePath()) &&
+                       m_textToSpeech->Speak(cacheParams.m_key, type) &&
+                       m_textToSpeech->Close() &&
+                       cacheParams.m_file.Open(PFile::ReadOnly));
     fileList += cacheParams.m_file.GetFilePath() + '\n';
   }
 
@@ -3355,58 +3362,37 @@ PBoolean PVXMLSession::TraversedTransfer(PXMLElement & element)
 {
   PString elementName = InternalGetName(element, false);
   if (elementName.empty())
-    return false;
+    return ThrowSemanticError(element, "<transfer> must have a name");
 
-  bool error = true;
+  if (!PAssert(m_transferStatus == NotTransfering, PLogicError))
+    return true;
 
-  switch (m_transferStatus) {
-    case TransferCompleted :
-      return true;
-
-    case NotTransfering :
-    {
-      TransferType type = BridgedTransfer;
-      if (element.GetAttribute("bridge").IsFalse())
-        type = BlindTransfer;
-      else {
-        PCaselessString typeStr = element.GetAttribute("type");
-        if (typeStr == "blind")
-          type = BlindTransfer;
-        else if (typeStr == "consultation")
-          type = ConsultationTransfer;
-      }
-
-      m_transferStartTime.SetCurrentTime();
-
-      bool started = false;
-      if (element.HasAttribute(DestAttribute))
-        started = OnTransfer(element.GetAttribute(DestAttribute), type);
-      else if (element.HasAttribute(DestExprAttribute)) {
-        PString str;
-        bool retval = EvaluateExpr(element, DestExprAttribute, str);
-        if (str.IsEmpty())
-          return retval;
-        started = OnTransfer(str, type);
-      }
-
-      if (started) {
-        m_transferStatus = TransferInProgress;
-        return false;
-      }
-      break;
-    }
-
-    case TransferSuccessful :
-      error = false;
-      // Do default case
-
-    default :
-      InternalSetVar(elementName + '$', "duration", (PTime() - m_transferStartTime).AsString(0, PTimeInterval::SecondsOnly));
+  TransferType type = BridgedTransfer;
+  if (element.GetAttribute("bridge").IsFalse())
+    type = BlindTransfer;
+  else {
+    PCaselessString typeStr = element.GetAttribute("type");
+    if (typeStr == "blind")
+      type = BlindTransfer;
+    else if (typeStr == "consultation")
+      type = ConsultationTransfer;
   }
 
-  m_transferStatus = TransferCompleted;
+  m_transferStartTime.SetCurrentTime();
 
-  return !GoToEventHandler(element, error ? ErrorElement : FilledElement, error);
+  PString dest = element.GetAttribute(DestAttribute);
+  if (dest.empty()) {
+    if (EvaluateExpr(element, DestExprAttribute, dest))
+      return true;
+  }
+
+  if (OnTransfer(dest, type)) {
+    m_transferStatus = TransferInProgress;
+    return false;
+  }
+
+  CompletedTransfer(&element);
+  return true;
 }
 
 
@@ -3415,6 +3401,22 @@ void PVXMLSession::SetTransferComplete(bool state)
   PTRACE(3, "Transfer " << (state ? "completed" : "failed"));
   m_transferStatus = state ? TransferSuccessful : TransferFailed;
   Trigger();
+}
+
+
+void PVXMLSession::CompletedTransfer(PXMLElement * element)
+{
+  if (element == NULL)
+    element = dynamic_cast<PXMLElement *>(m_currentNode);
+  bool error = m_transferStatus != TransferSuccessful;
+  PTRACE(4, "Transfer " << (error ? "failed" : "successful") << " in " << element->PrintTrace());
+
+  InternalSetVar(element->GetAttribute(NameAttribute) + '$',
+                 "duration",
+                 (PTime() - m_transferStartTime).AsString(0, PTimeInterval::SecondsOnly));
+
+  m_transferStatus = TransferCompleted;
+  GoToEventHandler(*element, error ? ErrorElement : FilledElement, error);
 }
 
 
