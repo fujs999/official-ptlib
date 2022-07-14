@@ -980,7 +980,7 @@ class PVXMLSinglePhaseNodeHandler : public PVXMLNodeHandler
 {
   PCLASSINFO(PVXMLSinglePhaseNodeHandler, PVXMLNodeHandler);
 public:
-  virtual bool Start(PVXMLSession & session, PXMLElement & node) const
+  virtual bool StartTraversal(PVXMLSession & session, PXMLElement & node) const
   {
     PVXMLNodeHandler::StartTraversal(session, node);
     return (session.*traversing)(node);

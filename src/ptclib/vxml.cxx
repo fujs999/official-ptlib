@@ -2078,6 +2078,7 @@ void PVXMLSession::InternalStartVXML()
         m_currentNode = m_currentNode->GetNextObject();
     }
 
+    m_speakNodeData = false;
     bool processGlobalChildren = ProcessNode();
     while (NextNode(processGlobalChildren))
       ;
@@ -4088,12 +4089,15 @@ void PVXMLDigitsGrammar::OnInput(const PString & input)
       m_session.Trigger();
     }
   }
-  else if (len >= m_maxDigits)
-    SetFilled(input);
-  else if (len >= m_minDigits)
-    SetPartFilled(input);
-  else
-    m_value += input; // Add to collected digits string
+  else {
+    len += input.length();
+    if (len >= m_maxDigits)
+      SetFilled(input);
+    else if (len >= m_minDigits)
+      SetPartFilled(input);
+    else
+      m_value += input; // Add to collected digits string
+  }
 }
 
 
