@@ -1397,6 +1397,17 @@ template <class K, class D>
   //@{
     class iterator;
     class const_iterator;
+
+    class iterator_pair
+    {
+    public:
+      const K & first;
+      value_type second;
+
+    private:
+      iterator_pair() : first(reinterpret_cast<const K &>(0)) { }
+    };
+
     class iterator_base {
       protected:
         K * m_internal_first;  // Must be first two members
@@ -1447,20 +1458,17 @@ template <class K, class D>
         void Prev() { while (this->SetPosition(this->m_position > 0 ? this->m_position+1 : P_MAX_INDEX)) { } }
 
       public:
+        typedef std::forward_iterator_tag iterator_category;
+        typedef iterator_pair value_type;
+        typedef ptrdiff_t difference_type;
+        typedef value_type * pointer;
+        typedef value_type & reference;
+
         bool operator==(const iterator_base & it) const { return this->m_position == it.m_position; }
         bool operator!=(const iterator_base & it) const { return this->m_position != it.m_position; }
     };
 
-    class iterator_pair {
-      public:
-        const K & first;
-        value_type second;
-
-      private:
-        iterator_pair() : first(reinterpret_cast<const K &>(0)) { }
-    };
-
-    class iterator : public iterator_base, public std::iterator<std::forward_iterator_tag, iterator_pair> {
+    class iterator : public iterator_base {
       protected:
         iterator(dict_type * dict) : iterator_base(dict) { }
         iterator(dict_type * dict, const K & key) : iterator_base(dict, key) { }
@@ -1484,7 +1492,7 @@ template <class K, class D>
     iterator find(const K & key) { return iterator(this, key); }
 
 
-    class const_iterator : public iterator_base, public std::iterator<std::forward_iterator_tag, iterator_pair> {
+    class const_iterator : public iterator_base {
       protected:
         const_iterator(const dict_type * dict) : iterator_base(dict) { }
         const_iterator(const dict_type * dict, const K & key) : iterator_base(dict, key) { }

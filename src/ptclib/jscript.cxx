@@ -120,6 +120,7 @@ Finally, reconfigure PTLib and rebuild.
 #define V8_DEPRECATION_WARNINGS 1
 #define V8_IMMINENT_DEPRECATION_WARNINGS 1
 #define V8_COMPRESS_POINTERS 1
+#define V8_ENABLE_SANDBOX 1
 #pragma warning(push)
 #pragma warning(disable:4996)
 #include <v8.h>
