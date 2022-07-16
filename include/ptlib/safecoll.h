@@ -1343,7 +1343,7 @@ template <class Coll, class Key, class Base> class PSafeDictionaryBase : public 
       PWaitAndSignal mutex(this->m_collectionMutex);
       if (dynamic_cast<Coll &>(*this->m_collection).GetAt(to) != NULL)
         return false;
-      dynamic_cast<Coll &>(*this->m_collection).SetAt(to, dynamic_cast<Coll &>(*this->m_collection).GetAt(from));
+      dynamic_cast<Coll &>(*this->m_collection).SetAt(to, dynamic_cast<Coll &>(*this->m_collection).RemoveAt(from));
       return true;
     }
 
