@@ -92,7 +92,7 @@ private:
       }
     }
 
-    virtual void Flush()
+    virtual void Flush() override
     { }
   };
 
@@ -162,7 +162,7 @@ PAwsClientBase::PAwsClientBase()
   }
   else {
     PTRACE(4, "Client config for \"" << wrap.GetProfile() << '"');
-    m_clientConfig = std::make_shared<Aws::Client::ClientConfiguration>(wrap.GetProfile());
+    m_clientConfig = std::make_shared<Aws::Client::ClientConfiguration>(wrap.GetProfile().c_str());
   }
 #ifdef _WIN32
   m_clientConfig->httpLibOverride = Aws::Http::TransferLibType::WIN_INET_CLIENT;

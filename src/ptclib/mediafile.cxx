@@ -631,6 +631,7 @@ PFACTORY_CREATE(PMediaFile::Factory, PMediaFile_WAV, ".wav");
 extern "C" {
   P_PUSH_MSVC_WARNINGS(4244)
   #include <libavformat/avformat.h>
+  #include <libavcodec/avcodec.h>
   #include <libavutil/imgutils.h>
   #include <libavutil/audio_fifo.h>
   #include <libswresample/swresample.h>
