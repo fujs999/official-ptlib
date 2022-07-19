@@ -3806,6 +3806,10 @@ bool PVXMLGrammar::Start()
   if (!m_state.compare_exchange_strong(prev, Started))
     return prev == Started || prev == PartFill;
 
+  m_terminators = m_session.GetProperty(TermCharProperty);
+  m_noInputTimeout = m_session.GetTimeProperty(TimeoutProperty);
+  m_partFillTimeout = m_session.GetTimeProperty(InterDigitTimeoutProperty);
+
   PString inputModes = m_session.GetProperty(InputModesProperty, m_grammarElement, "mode");
 
   // Can't be empty, default to DTMF
