@@ -1841,19 +1841,23 @@ static bool CreateScriptVariable(PScriptLanguage & scriptContext, const PString 
   if (!CreateComposites(scriptContext, fullVarName))
     return false;
 
-  size_t nameLen = fullVarName.length();
-  size_t valueLen = value.length();
-  if (fullVarName.NumCompare(".$", 2, nameLen-2) != PObject::EqualTo &&
-      value.NumCompare(".$", 2, valueLen-2) != PObject::EqualTo)
+  // Check for PSimpleScript object reference assignment
+  bool varComposite = fullVarName.Right(2) == ".$";
+  bool valComposite = value.Right(2) == ".$";
+  if (!(varComposite || valComposite))
     return scriptContext.SetString(fullVarName, value);
 
   if (value.empty())
     return true;
 
-  if (!CreateComposites(scriptContext, value))
+  PString adjustedValue = valComposite ? value.Left(value.length()-2) : value;
+  PString adjustedVarName = varComposite ? fullVarName.Left(fullVarName.length()-2) : fullVarName;
+
+  // Make sure right hand side of reference assignment exists as a composite
+  if (!CreateComposites(scriptContext, adjustedValue + ".placeholder"))
     return false;
 
-  return scriptContext.Run(PSTRSTRM(fullVarName.Left(nameLen-2) << '=' << value.Left(valueLen-2)));
+  return scriptContext.Run(PSTRSTRM(adjustedVarName << '=' << adjustedValue));
 }
 
 
@@ -2464,8 +2468,8 @@ void PVXMLSession::SetConnectionVars(const PString & localURI,
   }
   for (PStringToString::const_iterator it = aai.begin(); it != aai.end(); ++it)
     m_scriptContext->SetString("session.connection.aai." + it->first, it->second);
-  m_scriptContext->SetString("session.connection.originator",
-                             originator ? "session.connection.local.$" : "session.connection.remote.$");
+  m_scriptContext->Run(originator ? "session.connection.originator=session.connection.local"
+                                  : "session.connection.originator=session.connection.remote");
 }
 
 
