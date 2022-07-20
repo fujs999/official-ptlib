@@ -1673,7 +1673,12 @@ PURL PVXMLSession::NormaliseResourceName(const PString & src)
       return srcURL;
   }
   else if (documentURI.GetScheme() == srcURL.GetScheme()) {
+    srcURL.SetHostName(documentURI.GetHostName());
+    srcURL.SetPort(documentURI.GetPort());
+    srcURL.SetUserName(documentURI.GetUserName());
+    srcURL.SetPassword(documentURI.GetPassword());
     srcURL.SetPath(documentURI.GetPath() + srcURL.GetPath());
+    srcURL.SetRelativePath(documentURI.GetRelativePath());
     return srcURL;
   }
 
@@ -2050,6 +2055,7 @@ void PVXMLSession::InternalStartVXML()
   PURL rootURL = InternalGetVar(ApplicationScope, RootURIVar);
   PURL appURL = NormaliseResourceName(m_newXML->GetRootElement()->GetAttribute("application"));
   if (appURL.IsEmpty() || appURL != rootURL) {
+    PTRACE(4, "New root: application=" << appURL << ", rootURI=" << rootURL);
     rootURL = m_newURL;
     InternalSetVar(ApplicationScope, RootURIVar, rootURL);
   }
