@@ -1780,6 +1780,7 @@ bool PVXMLSession::Open(const PString & mediaFormat, unsigned sampleRate, unsign
   if (!PIndirectChannel::Open(chan, chan))
     return false;
 
+  PTRACE(4, "VXML Session opened");
   InternalStartThread();
   return true;
 }
@@ -1789,8 +1790,8 @@ void PVXMLSession::InternalStartThread()
 {
   PWaitAndSignal mutex(m_sessionMutex);
 
-  if (IsOpen() && (m_currentXML.get() != NULL || m_newXML.get() != NULL)) {
-    if (m_vxmlThread == NULL)
+  if (IsOpen()) {
+    if (m_vxmlThread == NULL && m_newXML.get() != NULL)
       m_vxmlThread = new PThreadObj<PVXMLSession>(*this, &PVXMLSession::InternalThreadMain, false, "VXML");
     else
       Trigger();
@@ -1800,6 +1801,7 @@ void PVXMLSession::InternalStartThread()
 
 PBoolean PVXMLSession::Close()
 {
+  PTRACE(4, "VXML Session closing");
   m_sessionMutex.Wait();
 
   ClearGrammars();
@@ -1868,6 +1870,11 @@ static bool CreateScriptVariable(PScriptLanguage & scriptContext, const PString 
 
 void PVXMLSession::InternalThreadMain()
 {
+  if (m_newXML.get() == NULL) {
+    PTRACE(2, "Execution thread started unexpectedly, exiting.");
+    return;
+  }
+
   PTRACE(4, "Execution thread started.");
 
   m_sessionMutex.Wait();
