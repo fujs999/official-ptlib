@@ -2061,8 +2061,8 @@ void PVXMLSession::InternalStartVXML()
 
   PURL rootURL = InternalGetVar(ApplicationScope, RootURIVar);
   PURL appURL = NormaliseResourceName(m_newXML->GetRootElement()->GetAttribute("application"));
+  PTRACE(4, "InternalStartVXML: rootURI=" << rootURL << ", application=" << appURL);
   if (appURL.IsEmpty() || appURL != rootURL) {
-    PTRACE(4, "New root: application=" << appURL << ", rootURI=" << rootURL);
     rootURL = m_newURL;
     InternalSetVar(ApplicationScope, RootURIVar, rootURL);
   }
