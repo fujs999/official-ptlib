@@ -424,9 +424,8 @@ class PVXMLSession : public PIndirectChannel
       BlindTransfer,
       ConsultationTransfer
     };
-    virtual bool OnTransfer(const PString & /*destination*/, TransferType /*type*/) { return false; }
+    virtual bool OnTransfer(const PString & destination, TransferType type);
     void SetTransferComplete(bool state);
-    void CompletedTransfer(PXMLElement * element = NULL);
 
     PStringToString GetVariables() const;
     virtual PCaselessString GetVar(const PString & varName) const;
@@ -679,6 +678,9 @@ class PVXMLSession : public PIndirectChannel
       TransferCompleted
     }     m_transferStatus;
     PTime m_transferStartTime;
+    PTimer m_transferTimeout;
+    PDECLARE_NOTIFIER(PTimer, PVXMLSession, OnTransferTimeout);
+    bool CompletedTransfer(PXMLElement & element);
 
     friend class PVXMLChannel;
     friend class PVXMLMenuGrammar;

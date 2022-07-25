@@ -1351,6 +1351,8 @@ PVXMLSession::PVXMLSession()
   // Point dialog scope to same object as application scope
   m_scriptContext->Run(PSTRSTRM(DocumentScope << '=' << ApplicationScope));
 
+  m_transferTimeout.SetNotifier(PCREATE_NOTIFIER(OnTransferTimeout));
+
   PTRACE(4, "Created session: " << this);
 }
 
@@ -2029,8 +2031,10 @@ bool PVXMLSession::ProcessEvents()
         PTRACE(4, "Transfer in progress, awaiting event");
         break;
       case TransferSuccessful :
+        PTRACE(4, "Transfer successful");
+        return false;
       case TransferFailed:
-        CompletedTransfer();
+        PTRACE(4, "Transfer failed");
         return false;
       default :
         PTRACE(4, "Nothing happening, processing next node");
@@ -2137,7 +2141,10 @@ bool PVXMLSession::NextNode(bool processChildren)
 
   PXMLElement * element = dynamic_cast<PXMLElement *>(m_currentNode);
   if (element != NULL) {
-    // if the current node has children, then process the first child
+    if ((m_transferStatus == TransferSuccessful || m_transferStatus == TransferFailed) && CompletedTransfer(*element))
+      return false;
+
+      // if the current node has children, then process the first child
     if (processChildren && (m_currentNode = element->GetSubObject(0)) != NULL)
       return false;
   }
@@ -3406,12 +3413,30 @@ PBoolean PVXMLSession::TraversedTransfer(PXMLElement & element)
   }
 
   if (OnTransfer(dest, type)) {
+    if (type == BlindTransfer) {
+      if (element.HasAttribute("connecttimeout"))
+        m_transferTimeout = PTimeInterval(element.GetAttribute("connecttimeout"));
+      else
+        m_transferTimeout.SetInterval(0, 0, 1);
+    }
     m_transferStatus = TransferInProgress;
     return false;
   }
 
-  CompletedTransfer(&element);
-  return true;
+  CompletedTransfer(element);
+  return false;
+}
+
+
+bool PVXMLSession::OnTransfer(const PString & /*destination*/, TransferType /*type*/)
+{
+  return true;//false;
+}
+
+
+void PVXMLSession::OnTransferTimeout(PTimer&, P_INT_PTR)
+{
+  SetTransferComplete(false);
 }
 
 
@@ -3423,19 +3448,17 @@ void PVXMLSession::SetTransferComplete(bool state)
 }
 
 
-void PVXMLSession::CompletedTransfer(PXMLElement * element)
+bool PVXMLSession::CompletedTransfer(PXMLElement & element)
 {
-  if (element == NULL)
-    element = dynamic_cast<PXMLElement *>(m_currentNode);
   bool error = m_transferStatus != TransferSuccessful;
-  PTRACE(4, "Transfer " << (error ? "failed" : "successful") << " in " << element->PrintTrace());
+  PTRACE(4, "Transfer " << (error ? "failed" : "successful") << " in " << element.PrintTrace());
 
-  InternalSetVar(element->GetAttribute(NameAttribute) + '$',
+  InternalSetVar(element.GetAttribute(NameAttribute) + '$',
                  "duration",
                  (PTime() - m_transferStartTime).AsString(0, PTimeInterval::SecondsOnly));
 
   m_transferStatus = TransferCompleted;
-  GoToEventHandler(*element, error ? ErrorElement : FilledElement, error);
+  return GoToEventHandler(element, error ? ErrorElement : FilledElement, error);
 }
 
 
