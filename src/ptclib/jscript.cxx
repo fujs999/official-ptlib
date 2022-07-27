@@ -40,38 +40,51 @@
 Requires Google's V8 version 6 or later
 
 For Unix variants, follow build instructions for v8 or just use distro.
-Note most distro's use a very early version of V8 (3.14 typical) so if
-you need advanced features you need to build it.
+Note some distro's use a very early version of V8, so you may need to
+build it.
 
 For Windows the following commands was used to build V8:
 
-Install Visual Studio 2015, note you should do a full isntallation, in
-particular the "Windows SDK" component.
+* Install Visual Studio 2019, note you should do a full installation, in
+  particular the "Windows SDK" component.
 
-Install Windows 10 SDK (yes, in addition to the above) from
-https://developer.microsoft.com/en-us/windows/downloads/windows-10-sdk
+* Install Windows 10 SDK 10.0.20348 (yes, in addition to the above) from
+  https://developer.microsoft.com/en-us/windows/downloads/windows-10-sdk
 
-Download https://storage.googleapis.com/chrome-infra/depot_tools.zip and
-unpack to somehere, e.g. C:\tools\depot_tools
+* Download https://storage.googleapis.com/chrome-infra/depot_tools.zip and
+  unpack to somehere, e.g. C:\tools\depot_tools
 
-Set up the environment in CMD:
+* Set up the environment in CMD:
+
 set DEPOT_TOOLS_WIN_TOOLCHAIN=0
 set vs2019_install="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community"
 PATH=C:\tools\depot_tools;%PATH%
 
-or for PowerShell:
+* Or for PowerShell:
+
 $env:DEPOT_TOOLS_WIN_TOOLCHAIN=0
 $env:vs2019_install="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community"
 $env:PATH="C:\tools\depot_tools;$env:PATH"
 
-Get the source to somewhere e.g. if PTLib is in C:\Work\ptlib, C:\Work\external\v8:
-mkdir <v8-dir>   ;
+* Get the source to somewhere e.g. if PTLib is in C:\Work\ptlib then
+  C:\Work\external\v8 would work "out of the box". The following gets the
+  source as per the V8 instructions:
+
+mkdir <v8-dir>
 cd <v8-dir>
 fetch v8
 cd v8
 gclient sync
 
-Apply the following patch:
+* The V8 system changes rapidly, and often has API breakages. It is advisable to
+  checkout the last known working branch:
+
+git checkout breach-heads/10.4
+
+more information on versions is available at https://v8.dev/docs/version-numbers
+
+* Now apply the following patch:
+
 diff --git a/build/config/win/BUILD.gn b/config/win/BUILD.gn
 index 1e76a54cc..cc92f23bf 100644
 --- a/build/config/win/BUILD.gn
@@ -86,23 +99,35 @@ index 1e76a54cc..cc92f23bf 100644
    }
  }
 
-Set up the builds:
+* Set up the build directories you need:
+
 python tools/dev/v8gen.py x64.release
 python tools/dev/v8gen.py x64.debug
 python tools/dev/v8gen.py ia32.release
 python tools/dev/v8gen.py ia32.debug
 
-In each of the builds chosen, go to it's subdirectory(e.g. out.gn/x64-release),
-and add to the existing args.gn file:
+* In each of the release builds chosen, go to it's subdirectory
+  (e.g. out.gn/x64-release), and add to the existing args.gn file:
+
 v8_use_external_startup_data = false
 is_component_build = false
+v8_enable_sandbox = false
 v8_monolithic = true
 is_clang = false
 
-in the debug directories also include:
+* Do the same in the debug directories (if required) using:
+v8_enable_slow_dchecks = false
+v8_use_external_startup_data = false
 enable_iterator_debugging = true
+is_component_build = false
+v8_enable_sandbox = false
+v8_monolithic = true
+is_clang = false
 
-Then build each directory as a separate command e.g.
+note v8_enable_slow_dchecks may already be in the args.gn.
+
+* Then build each directory as a separate command e.g.
+
 ninja -C out.gn/x64.release v8_monolith
 ninja -C out.gn/x64.debug v8_monolith
 
@@ -120,7 +145,6 @@ Finally, reconfigure PTLib and rebuild.
 #define V8_DEPRECATION_WARNINGS 1
 #define V8_IMMINENT_DEPRECATION_WARNINGS 1
 #define V8_COMPRESS_POINTERS 1
-#define V8_ENABLE_SANDBOX 1
 #pragma warning(push)
 #pragma warning(disable:4996)
 #include <v8.h>
