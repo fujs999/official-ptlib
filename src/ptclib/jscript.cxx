@@ -79,7 +79,7 @@ gclient sync
 * The V8 system changes rapidly, and often has API breakages. It is advisable to
   checkout the last known working branch:
 
-git checkout breach-heads/10.4
+git checkout branch-heads/10.5
 
 more information on versions is available at https://v8.dev/docs/version-numbers
 
