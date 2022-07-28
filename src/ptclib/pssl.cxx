@@ -23,6 +23,8 @@
  *
  * Contributor(s): ______________________________________.
  *
+ * Get windows binaries from http://slproweb.com/products/Win32OpenSSL.html
+ * 
  * Portions bsed upon the file crypto/buffer/bss_sock.c 
  * Original copyright notice appears below
  */
@@ -624,7 +626,11 @@ bool PSSLCertificate::CreateRoot(const PString & subject,
 
   const EVP_MD * pDigest;
   if (digest == NULL)
+#if (OPENSSL_VERSION_NUMBER < 0x10101000L)
     pDigest = EVP_sha1();
+#else
+    pDigest = EVP_sha256();
+#endif
   else {
     pDigest = EVP_get_digestbyname(digest);
     if (pDigest == NULL) {
