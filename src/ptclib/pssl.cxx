@@ -90,6 +90,7 @@
 #define USE_SOCKETS
 
 extern "C" {
+#define OPENSSL_SUPPRESS_DEPRECATED 1
 
 #include <openssl/ssl.h>
 #include <openssl/err.h>
@@ -103,8 +104,8 @@ extern "C" {
 #endif
 };
 
-#if (OPENSSL_VERSION_NUMBER < 0x0090819fL)
-  #error OpenSSL too old!
+#if (OPENSSL_VERSION_NUMBER < 0x10002000L)
+  #error OpenSSL too old! Use at least 1.0.2
 #endif
 
 #ifdef _MSC_VER
@@ -2116,23 +2117,25 @@ void PSSLContext::Construct(const void * sessionId, PINDEX idSize)
       meth = SSLv23_method();
       break;
 
-#if OPENSSL_VERSION_NUMBER > 0x0090819fL
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
     case TLSv1_1 :
       meth = TLSv1_1_method(); 
       break;
     case TLSv1_2 :
       meth = TLSv1_2_method(); 
       break;
+    case TLSv1_3:
+      meth = TLS_method();
 #else
   #pragma message ("Using " OPENSSL_VERSION_TEXT " - TLS 1.1 & 1.2 not available, using 1.0")
     case TLSv1_1 :
     case TLSv1_2 :
 #endif
     case TLSv1:
-      meth = TLSv1_method(); 
+      meth = TLSv1_method();
       break;
 
-#if OPENSSL_VERSION_NUMBER > 0x10002000L
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
     case DTLSv1_2 :
       meth = DTLSv1_2_method(); 
       break;
@@ -2140,7 +2143,7 @@ void PSSLContext::Construct(const void * sessionId, PINDEX idSize)
       meth = DTLS_method(); 
       break;
 #else
-  #pragma message ("Using " OPENSSL_VERSION_TEXT " - DTLS 1.2 not available, using 1.0")
+#pragma message ("Using " OPENSSL_VERSION_TEXT " - DTLS 1.2 not available, using 1.0")
     case DTLSv1_2 :
     case DTLSv1_2_v1_0 :
 #endif
@@ -2172,16 +2175,7 @@ void PSSLContext::Construct(const void * sessionId, PINDEX idSize)
   /* Specify an ECDH group for ECDHE ciphers, otherwise they cannot be
      negotiated when acting as the server. Use NIST's P-256 which is commonly
      supported. */
-#if OPENSSL_VERSION_NUMBER >= 0x10002000L
   SSL_CTX_set_ecdh_auto(m_context, 1);
-#else
-  EC_KEY* ecdh = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
-  if (ecdh != NULL) {
-    SSL_CTX_set_options(m_context, SSL_OP_SINGLE_ECDH_USE);
-    SSL_CTX_set_tmp_ecdh(m_context, ecdh);
-    EC_KEY_free(ecdh);
-  }
-#endif
 
   PTRACE(4, "Constructed context: method=" << m_method << " ctx=" << m_context);
 }
@@ -2372,19 +2366,11 @@ bool PSSLContext::UseCertificate(const PSSLCertificate & certificate)
 
   const PSSLCertificate::X509_Chain & chain = certificate.GetChain();
 
-#if OPENSSL_VERSION_NUMBER >= 0x10002000L
   SSL_CTX_clear_chain_certs(m_context);
-#else
-  SSL_CTX_clear_extra_chain_certs(m_context);
-#endif
 
   for (PSSLCertificate::X509_Chain::const_iterator it = chain.begin(); it != chain.end(); ++it) {
     X509 * ca = X509_dup(*it);
-#if OPENSSL_VERSION_NUMBER >= 0x10002000L
     if (!SSL_CTX_add0_chain_cert(m_context, ca)) {
-#else
-    if (!SSL_CTX_add_extra_chain_cert(m_context, ca)) {
-#endif
       PTRACE(2, "Could not use certificate chain: " << PSSLError());
       X509_free(ca);
       return false;
