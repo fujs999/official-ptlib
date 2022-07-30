@@ -2123,15 +2123,11 @@ void PSSLContext::Construct(const void * sessionId, PINDEX idSize)
   const SSL_METHOD * meth;
 
   switch (m_method) {
-    case SSLv3:
 #ifndef OPENSSL_NO_SSL3
-      // fall through to SSLv23_method if unsupported
+    case SSLv3:
       meth = SSLv3_method();
       break;
 #endif
-    case SSLv23:
-      meth = SSLv23_method();
-      break;
 
   #pragma message ("Using " OPENSSL_VERSION_TEXT " - TLS 1.1 & 1.2 not available, using 1.0")
     case TLSv1:

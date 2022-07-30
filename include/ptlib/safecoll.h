@@ -1409,6 +1409,13 @@ template <class K, class D>
     };
 
     class iterator_base {
+      public:
+        typedef std::forward_iterator_tag iterator_category;
+        typedef iterator_pair value_type;
+        typedef ptrdiff_t difference_type;
+        typedef value_type * pointer;
+        typedef value_type & reference;
+
       protected:
         K * m_internal_first;  // Must be first two members
         value_type m_internal_second;
@@ -1458,12 +1465,6 @@ template <class K, class D>
         void Prev() { while (this->SetPosition(this->m_position > 0 ? this->m_position+1 : P_MAX_INDEX)) { } }
 
       public:
-        typedef std::forward_iterator_tag iterator_category;
-        typedef iterator_pair value_type;
-        typedef ptrdiff_t difference_type;
-        typedef value_type * pointer;
-        typedef value_type & reference;
-
         bool operator==(const iterator_base & it) const { return this->m_position == it.m_position; }
         bool operator!=(const iterator_base & it) const { return this->m_position != it.m_position; }
     };

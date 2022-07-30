@@ -628,6 +628,13 @@ template <class T> class PSet : public PAbstractSet
     class iterator;
     class const_iterator;
     class iterator_base {
+      public:
+        typedef std::forward_iterator_tag iterator_category;
+        typedef T value_type;
+        typedef ptrdiff_t difference_type;
+        typedef value_type * pointer;
+        typedef value_type & reference;
+
       protected:
         iterator_base()
           : table(NULL)
@@ -651,12 +658,6 @@ template <class T> class PSet : public PAbstractSet
         T * Ptr() const { return PAssertNULL(this->element) ? dynamic_cast<T *>(this->element->m_key) : NULL; }
 
       public:
-        typedef std::forward_iterator_tag iterator_category;
-        typedef T value_type;
-        typedef ptrdiff_t difference_type;
-        typedef value_type * pointer;
-        typedef value_type & reference;
-
         bool operator==(const iterator_base & it) const { return this->element == it.element; }
         bool operator!=(const iterator_base & it) const { return this->element != it.element; }
     };
@@ -1194,10 +1195,6 @@ template <class K, class D> class PDictionary : public PAbstractDictionary
     };
 
     class iterator : public iterator_base {
-      protected:
-        iterator(dict_type * dict) : iterator_base(dict) { }
-        iterator(dict_type * dict, const K & key) : iterator_base(dict, key) { }
-
       public:
         typedef std::forward_iterator_tag iterator_category;
         typedef iterator_pair<const K, const D> value_type;
@@ -1216,6 +1213,10 @@ template <class K, class D> class PDictionary : public PAbstractDictionary
         const pair * operator->() const { return  reinterpret_cast<const pair *>(this); }
         const pair & operator* () const { return *reinterpret_cast<const pair *>(this); }
 
+      protected:
+        iterator(dict_type * dict) : iterator_base(dict) { }
+        iterator(dict_type * dict, const K & key) : iterator_base(dict, key) { }
+
       friend class PDictionary<K, D>;
     };
 
@@ -1225,10 +1226,6 @@ template <class K, class D> class PDictionary : public PAbstractDictionary
 
 
     class const_iterator : public iterator_base {
-      protected:
-        const_iterator(const dict_type * dict) : iterator_base(dict) { }
-        const_iterator(const dict_type * dict, const K & key) : iterator_base(dict, key) { }
-
       public:
         typedef std::forward_iterator_tag iterator_category;
         typedef iterator_pair<const K, const D> value_type;
@@ -1247,6 +1244,10 @@ template <class K, class D> class PDictionary : public PAbstractDictionary
         typedef iterator_pair<const K, const D> pair;
         const pair * operator->() const { return  reinterpret_cast<const pair *>(this); }
         const pair & operator* () const { return *reinterpret_cast<const pair *>(this); }
+
+      protected:
+        const_iterator(const dict_type * dict) : iterator_base(dict) { }
+        const_iterator(const dict_type * dict, const K & key) : iterator_base(dict, key) { }
 
       friend class PDictionary<K, D>;
     };

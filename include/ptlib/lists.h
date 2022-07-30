@@ -349,6 +349,12 @@ template <class T> class PList : public PAbstractList
     typedef T value_type;
 
     class iterator_base {
+      public:
+        typedef std::bidirectional_iterator_tag iterator_category;
+        typedef ptrdiff_t difference_type;
+        typedef value_type * pointer;
+        typedef value_type & reference;
+
       protected:
         iterator_base(PListElement * e) : element(e) { }
         PListElement * element;
@@ -358,12 +364,6 @@ template <class T> class PList : public PAbstractList
         value_type * Ptr() const { return PAssertNULL(this->element) ? dynamic_cast<value_type *>(PAssertNULL(this->element)->data) : NULL; }
 
       public:
-        typedef std::bidirectional_iterator_tag iterator_category;
-        typedef T value_type;
-        typedef ptrdiff_t difference_type;
-        typedef value_type * pointer;
-        typedef value_type & reference;
-
         bool operator==(const iterator_base & it) const { return this->element == it.element; }
         bool operator!=(const iterator_base & it) const { return this->element != it.element; }
 
@@ -1030,6 +1030,13 @@ template <class T> class PSortedList : public PAbstractSortedList
     }
 
     class iterator_base {
+      public:
+        typedef std::bidirectional_iterator_tag iterator_category;
+        typedef T value_type;
+        typedef ptrdiff_t difference_type;
+        typedef value_type * pointer;
+        typedef value_type & reference;
+
       protected:
         const PSortedList<T> * m_list;
         PSortedListElement   * m_element;
@@ -1042,12 +1049,6 @@ template <class T> class PSortedList : public PAbstractSortedList
         value_type * Ptr() const { return dynamic_cast<value_type *>(Valid() ? this->m_element->m_data : NULL); }
 
       public:
-        typedef std::bidirectional_iterator_tag iterator_category;
-        typedef T value_type;
-        typedef ptrdiff_t difference_type;
-        typedef value_type * pointer;
-        typedef value_type & reference;
-
         bool operator==(const iterator_base & it) const { return this->m_element == it.m_element; }
         bool operator!=(const iterator_base & it) const { return this->m_element != it.m_element; }
 
