@@ -695,6 +695,10 @@ ODBC_CFLAGS
 ODBC_SYSTEM
 PTLIB_GSTREAMER
 HAS_GSTREAMER
+GLIB_USABLE
+GLIB_LIBS
+GLIB_CFLAGS
+GLIB_SYSTEM
 GSTREAMER_USABLE
 GSTREAMER_LIBS
 GSTREAMER_CFLAGS
@@ -1078,6 +1082,7 @@ enable_curses
 with_curses_dir
 enable_sdl
 enable_gstreamer
+enable_glib
 enable_odbc
 with_odbc_dir
 enable_vfw
@@ -1156,6 +1161,8 @@ SDL_CFLAGS
 SDL_LIBS
 GSTREAMER_CFLAGS
 GSTREAMER_LIBS
+GLIB_CFLAGS
+GLIB_LIBS
 ODBC_CFLAGS
 ODBC_LIBS
 ESD_CFLAGS
@@ -1928,6 +1935,8 @@ Optional Features:
                           display) support
   --disable-gstreamer     disable
                           GStreamer 0.10 support
+  --disable-glib          disable GLib
+                          support
   --disable-gstreamer     disable
                           GStreamer 1.0 support
   --disable-odbc          disable
@@ -2067,6 +2076,8 @@ Some influential environment variables:
               C compiler flags for GSTREAMER, overriding pkg-config
   GSTREAMER_LIBS
               linker flags for GSTREAMER, overriding pkg-config
+  GLIB_CFLAGS C compiler flags for GLIB, overriding pkg-config
+  GLIB_LIBS   linker flags for GLIB, overriding pkg-config
   ODBC_CFLAGS C compiler flags for ODBC, overriding pkg-config
   ODBC_LIBS   linker flags for ODBC, overriding pkg-config
   ESD_CFLAGS  C compiler flags for ESD, overriding pkg-config
@@ -22034,6 +22045,228 @@ then :
 
 else $as_nop
 
+   GLIB_SYSTEM="yes"
+
+
+
+   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking GLib support" >&5
+printf %s "checking GLib support... " >&6; }
+
+   # Check whether --enable-glib was given.
+if test ${enable_glib+y}
+then :
+  enableval=$enable_glib; if test "x$enableval" = xno
+then :
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
+printf "%s\n" "disabled by user" >&6; }
+fi
+else $as_nop
+
+         enableval=${DEFAULT_GLIB:-yes}
+         if test "x$enableval" = xno
+then :
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
+printf "%s\n" "disabled by default" >&6; }
+fi
+
+
+fi
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+   if test "x$enableval" = xyes
+then :
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+fi
+
+   if test "x$enableval" = "xyes"
+then :
+  usable=yes
+else $as_nop
+  usable=no
+fi
+
+
+   enable_glib="$enableval"
+
+
+   if test "x$usable" = xyes
+then :
+
+
+
+      if test "x$GLIB_SYSTEM" = xyes
+then :
+
+
+
+pkg_failed=no
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for gio-2.0" >&5
+printf %s "checking for gio-2.0... " >&6; }
+
+if test -n "$GLIB_CFLAGS"; then
+    pkg_cv_GLIB_CFLAGS="$GLIB_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"gio-2.0\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "gio-2.0") 2>&5
+  ac_status=$?
+  printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_GLIB_CFLAGS=`$PKG_CONFIG --cflags "gio-2.0" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$GLIB_LIBS"; then
+    pkg_cv_GLIB_LIBS="$GLIB_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"gio-2.0\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "gio-2.0") 2>&5
+  ac_status=$?
+  printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_GLIB_LIBS=`$PKG_CONFIG --libs "gio-2.0" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        GLIB_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "gio-2.0" 2>&1`
+        else
+	        GLIB_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "gio-2.0" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$GLIB_PKG_ERRORS" >&5
+
+	usable=no
+
+elif test $pkg_failed = untried; then
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+	usable=no
+
+else
+	GLIB_CFLAGS=$pkg_cv_GLIB_CFLAGS
+	GLIB_LIBS=$pkg_cv_GLIB_LIBS
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+   MY_LINK_IFELSE_CPPFLAGS="$CPPFLAGS"
+   MY_LINK_IFELSE_LIBS="$LIBS"
+   CPPFLAGS="$CPPFLAGS $GLIB_CFLAGS"
+   LIBS="$GLIB_LIBS $LIBS"
+   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for GLIB usability" >&5
+printf %s "checking for GLIB usability... " >&6; }
+   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <glib.h>
+int
+main (void)
+{
+guint v = glib_major_version
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"
+then :
+  usable=yes
+else $as_nop
+  usable=no
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
+printf "%s\n" "$usable" >&6; }
+   CPPFLAGS="$MY_LINK_IFELSE_CPPFLAGS"
+   LIBS="$MY_LINK_IFELSE_LIBS"
+
+   if test "x$usable" = "xyes"
+then :
+
+            mod_name=`echo "gio-2.0" | cut -d ' ' -f 1`
+            GLIB_CPPFLAGS=`$PKG_CONFIG --cflags-only-I $mod_name`
+            GLIB_CXXFLAGS=`$PKG_CONFIG --cflags-only-other $mod_name`
+
+
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Adding CPPFLAGS: $GLIB_CPPFLAGS" >&5
+printf "%s\n" "$as_me: Adding CPPFLAGS: $GLIB_CPPFLAGS" >&6;}
+      CPPFLAGS="$GLIB_CPPFLAGS $CPPFLAGS"
+
+
+
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Adding CXXFLAGS: $GLIB_CXXFLAGS" >&5
+printf "%s\n" "$as_me: Adding CXXFLAGS: $GLIB_CXXFLAGS" >&6;}
+      CXXFLAGS="$GLIB_CXXFLAGS $CXXFLAGS"
+
+
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Adding LIBS: $GLIB_LIBS" >&5
+printf "%s\n" "$as_me: Adding LIBS: $GLIB_LIBS" >&6;}
+      LIBS="$GLIB_LIBS $LIBS"
+
+
+
+else $as_nop
+  usable=no
+
+fi
+
+
+fi
+
+
+
+
+
+
+
+
+fi
+
+fi
+
+   GLIB_USABLE=$usable
+
+
+
+   if test "x$usable" = "xyes"
+then :
+
 
    GSTREAMER_SYSTEM="yes"
 
@@ -22104,19 +22337,19 @@ then :
 
 
 pkg_failed=no
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for gio-2.0 gstreamer-app-1.0" >&5
-printf %s "checking for gio-2.0 gstreamer-app-1.0... " >&6; }
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for gstreamer-app-1.0" >&5
+printf %s "checking for gstreamer-app-1.0... " >&6; }
 
 if test -n "$GSTREAMER_CFLAGS"; then
     pkg_cv_GSTREAMER_CFLAGS="$GSTREAMER_CFLAGS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"gio-2.0 gstreamer-app-1.0\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "gio-2.0 gstreamer-app-1.0") 2>&5
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"gstreamer-app-1.0\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "gstreamer-app-1.0") 2>&5
   ac_status=$?
   printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_GSTREAMER_CFLAGS=`$PKG_CONFIG --cflags "gio-2.0 gstreamer-app-1.0" 2>/dev/null`
+  pkg_cv_GSTREAMER_CFLAGS=`$PKG_CONFIG --cflags "gstreamer-app-1.0" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
@@ -22128,12 +22361,12 @@ if test -n "$GSTREAMER_LIBS"; then
     pkg_cv_GSTREAMER_LIBS="$GSTREAMER_LIBS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"gio-2.0 gstreamer-app-1.0\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "gio-2.0 gstreamer-app-1.0") 2>&5
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"gstreamer-app-1.0\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "gstreamer-app-1.0") 2>&5
   ac_status=$?
   printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_GSTREAMER_LIBS=`$PKG_CONFIG --libs "gio-2.0 gstreamer-app-1.0" 2>/dev/null`
+  pkg_cv_GSTREAMER_LIBS=`$PKG_CONFIG --libs "gstreamer-app-1.0" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
@@ -22154,9 +22387,9 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-	        GSTREAMER_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "gio-2.0 gstreamer-app-1.0" 2>&1`
+	        GSTREAMER_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "gstreamer-app-1.0" 2>&1`
         else
-	        GSTREAMER_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "gio-2.0 gstreamer-app-1.0" 2>&1`
+	        GSTREAMER_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "gstreamer-app-1.0" 2>&1`
         fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$GSTREAMER_PKG_ERRORS" >&5
@@ -22209,7 +22442,7 @@ printf "%s\n" "$usable" >&6; }
    if test "x$usable" = "xyes"
 then :
 
-            mod_name=`echo "gio-2.0 gstreamer-app-1.0" | cut -d ' ' -f 1`
+            mod_name=`echo "gstreamer-app-1.0" | cut -d ' ' -f 1`
             GSTREAMER_CPPFLAGS=`$PKG_CONFIG --cflags-only-I $mod_name`
             GSTREAMER_CXXFLAGS=`$PKG_CONFIG --cflags-only-other $mod_name`
 
@@ -22284,6 +22517,10 @@ fi
    fi
 
 
+
+
+
+fi
 
 
 

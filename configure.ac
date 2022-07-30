@@ -2420,15 +2420,24 @@ PTLIB_MODULE_OPTION(
    [#include <gst/gst.h>],
    [gst_version_string()],
    [],
-   [PTLIB_MODULE_OPTION(
-      [GSTREAMER],
-      [gstreamer],
-      [GStreamer 1.0 support],
-      [gio-2.0 gstreamer-app-1.0],
-      [],[],
-      [#include <gst/gst.h>],
-      [gst_version_string()],
-      [AC_DEFINE(P_GSTREAMER_1_0_API, 1)]
+   [MY_MODULE_OPTION(
+      [GLIB],
+      [glib],
+      [GLib support],
+      [gio-2.0],
+      [], [],
+      [#include <glib.h>],
+      [guint v = glib_major_version],
+      [PTLIB_MODULE_OPTION(
+         [GSTREAMER],
+         [gstreamer],
+         [GStreamer 1.0 support],
+         [gstreamer-app-1.0],
+         [],[],
+         [#include <gst/gst.h>],
+         [gst_version_string()],
+         [AC_DEFINE(P_GSTREAMER_1_0_API, 1)]
+      )]
    )]
 )
 
