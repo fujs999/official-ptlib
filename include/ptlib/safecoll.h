@@ -1401,11 +1401,11 @@ template <class K, class D>
     class iterator_pair
     {
     public:
-      const K & first;
+      const key_type & first;
       value_type second;
 
     private:
-      iterator_pair() : first(reinterpret_cast<const K &>(0)) { }
+      iterator_pair() : first(reinterpret_cast<const key_type &>(0)) { }
     };
 
     class iterator_base {
@@ -1418,11 +1418,11 @@ template <class K, class D>
 
       protected:
         K * m_internal_first;  // Must be first two members
-        value_type m_internal_second;
+        typename dict_type::value_type m_internal_second;
 
         const dict_type * m_dictionary;
-        PArray<K>   m_keys;
-        PINDEX      m_position;
+        PArray<key_type>  m_keys;
+        PINDEX            m_position;
 
         iterator_base()
           : m_internal_first(NULL)
