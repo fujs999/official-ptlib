@@ -112,8 +112,8 @@ static PConstCaselessString const SRGS("application/srgs");
       (session).GoToEventHandler(element, ErrorBadFetch, true) \
     )
 #else
-  #define ThrowSemanticError2(element, reason) (session).GoToEventHandler(element, ErrorSemantic, true)
-  #define ThrowBadFetchError2(element, reason) (session).GoToEventHandler(element, ErrorBadFetch, true)
+  #define ThrowSemanticError2(session, element, reason) (session).GoToEventHandler(element, ErrorSemantic, true)
+  #define ThrowBadFetchError2(session, element, reason) (session).GoToEventHandler(element, ErrorBadFetch, true)
 #endif
 
 #define ThrowSemanticError(element, reason) ThrowSemanticError2(*this, element, reason)
@@ -1324,7 +1324,11 @@ PVXMLSession::PVXMLSession()
   m_videoSender.SetActualDevice(PVideoInputDevice::CreateOpenedDevice(videoArgs));
 #endif // P_VXML_VIDEO
 
-  Properties props(PTRACE_PARAM(SessionScope));
+#if PTRACING
+  Properties props(SessionScope);
+#else
+  Properties props;
+#endif
   props.SetAt(TimeoutProperty, "10s");
   props.SetAt(BargeInProperty, true);
   props.SetAt(CachingProperty, "86400s");

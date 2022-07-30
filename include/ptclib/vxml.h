@@ -627,6 +627,7 @@ class PVXMLSession : public PIndirectChannel
       Properties(const PXMLElement & node) { m_node = PSTRSTRM(node.PrintTrace()); }
 #else
       Properties() { }
+      Properties(const PXMLElement &) { }
 #endif
     };
     std::list<Properties> m_properties;
