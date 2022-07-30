@@ -1882,7 +1882,7 @@ PTLIB_MODULE_OPTION(
    [#include <v8.h>],
    [v8::V8::Initialize()],
    [],
-   [
+   [AS_VAR_IF([CPLUSPLUS_STD], ["-std=c++03"],[],[
       CXXFLAGS="$oldCXXFLAGS -std=c++14"
       MY_MODULE_OPTION(
          [V8],
@@ -1895,7 +1895,7 @@ PTLIB_MODULE_OPTION(
          [v8::V8::Initialize()],
          [AC_SUBST(CPLUSPLUS_STD,"-std=c++14")]
       )
-   ],
+   ])],
 )
 
 CXXFLAGS="$oldCXXFLAGS"

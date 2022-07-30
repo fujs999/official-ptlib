@@ -127,8 +127,9 @@ AC_DEFUN([MY_PKG_CHECK_MODULE],[
          [$3],
          [$4],
          [
-            $1[_CPPFLAGS]=`$PKG_CONFIG --cflags-only-I $2`
-            $1[_CXXFLAGS]=`$PKG_CONFIG --cflags-only-other $2`
+            mod_name=`echo "$2" | cut -d ' ' -f 1`
+            $1[_CPPFLAGS]=`$PKG_CONFIG --cflags-only-I $mod_name`
+            $1[_CXXFLAGS]=`$PKG_CONFIG --cflags-only-other $mod_name`
             MY_ADD_FLAGS([$$1[_LIBS]], [$$1[_CPPFLAGS]], [], [$$1[_CXXFLAGS]])
          ],
          [usable=no]
@@ -466,7 +467,8 @@ AC_SUBST(ARFLAGS, "rc")
 
 
 dnl Check for latest and greatest
-AC_SUBST(CPLUSPLUS_STD,"-std=c++03")
+AC_SUBST(CPLUSPLUS_STD,"-std=c++11")
+AC_ARG_ENABLE(cpp03, AS_HELP_STRING([--enable-cpp03],[Enable C++03 build]),AC_SUBST(CPLUSPLUS_STD,"-std=c++03"))
 AC_ARG_ENABLE(cpp11, AS_HELP_STRING([--enable-cpp11],[Enable C++11 build]),AC_SUBST(CPLUSPLUS_STD,"-std=c++11"))
 AC_ARG_ENABLE(cpp14, AS_HELP_STRING([--enable-cpp14],[Enable C++14 build]),AC_SUBST(CPLUSPLUS_STD,"-std=c++14"))
 AC_ARG_ENABLE(cpp17, AS_HELP_STRING([--enable-cpp17],[Enable C++17 build]),AC_SUBST(CPLUSPLUS_STD,"-std=c++17"))
