@@ -2103,6 +2103,22 @@ PSSLContext::PSSLContext(const void * sessionId, PINDEX idSize)
 
 void PSSLContext::Construct(const void * sessionId, PINDEX idSize)
 {
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+  m_context = SSL_CTX_new(TLS_method());
+  if (m_context == NULL) {
+    PSSLAssert("Error creating context: ");
+    return;
+  }
+  if (m_method == DTLSv1_2_v1_0) {
+    SSL_CTX_set_min_proto_version(m_context, DTLS1_VERSION);
+    SSL_CTX_set_max_proto_version(m_context, DTLS1_2_VERSION);
+  }
+  else {
+    static int ssl_versions[] = { SSL3_VERSION, TLS1_VERSION, TLS1_1_VERSION, TLS1_2_VERSION, TLS1_3_VERSION, DTLS1_VERSION, DTLS1_2_VERSION };
+    SSL_CTX_set_min_proto_version(m_context, 0);
+    SSL_CTX_set_max_proto_version(m_context, ssl_versions[m_method]);
+  }
+#else
   // create the new SSL context
   const SSL_METHOD * meth;
 
@@ -2117,37 +2133,17 @@ void PSSLContext::Construct(const void * sessionId, PINDEX idSize)
       meth = SSLv23_method();
       break;
 
-#if OPENSSL_VERSION_NUMBER >= 0x10100000L
-    case TLSv1_1 :
-      meth = TLSv1_1_method(); 
-      break;
-    case TLSv1_2 :
-      meth = TLSv1_2_method(); 
-      break;
-    case TLSv1_3:
-      meth = TLS_method();
-#else
   #pragma message ("Using " OPENSSL_VERSION_TEXT " - TLS 1.1 & 1.2 not available, using 1.0")
-    case TLSv1_1 :
-    case TLSv1_2 :
-#endif
     case TLSv1:
+    case TLSv1_1:
+    case TLSv1_2:
       meth = TLSv1_method();
       break;
 
-#if OPENSSL_VERSION_NUMBER >= 0x10100000L
-    case DTLSv1_2 :
-      meth = DTLSv1_2_method(); 
-      break;
-    case DTLSv1_2_v1_0 :
-      meth = DTLS_method(); 
-      break;
-#else
 #pragma message ("Using " OPENSSL_VERSION_TEXT " - DTLS 1.2 not available, using 1.0")
-    case DTLSv1_2 :
-    case DTLSv1_2_v1_0 :
-#endif
     case DTLSv1:
+    case DTLSv1_2:
+    case DTLSv1_2_v1_0:
       meth = DTLSv1_method();
       break;
     default :
@@ -2155,12 +2151,12 @@ void PSSLContext::Construct(const void * sessionId, PINDEX idSize)
       m_context = NULL;
       return;
   }
-
   m_context = SSL_CTX_new(meth);
   if (m_context == NULL) {
     PSSLAssert("Error creating context: ");
     return;
   }
+#endif
 
   if (sessionId != NULL) {
     if (idSize == 0)

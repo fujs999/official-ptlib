@@ -720,7 +720,6 @@ class PSSLContext : public PObject
     PCLASSINFO(PSSLContext, PObject);
   public:
     P_DECLARE_TRACED_ENUM(Method,
-      SSLv23,
       SSLv3,
       TLSv1,
       TLSv1_1,
