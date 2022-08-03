@@ -337,6 +337,7 @@ class PNotifierListTemplate : public PObject
       return this->m_list.empty();
     }
 
+#if __cplusplus < 201103L
     struct IsTarget : public std::unary_function<PObject, bool> 
     {
       PObject * m_obj;
@@ -349,6 +350,13 @@ class PNotifierListTemplate : public PObject
     {
       this->m_list.remove_if(IsTarget(obj));
     }
+#else
+    /// Remove all notifiers that use the specified target object.
+    void RemoveTarget(PObject * obj)
+    {
+      this->m_list.remove_if([obj](Notifier & test) { return  obj == test.GetTarget(); });
+    }
+#endif
 
     /// Execute all notifiers in the list.
     bool operator()(PObject & obj, ParamType param)

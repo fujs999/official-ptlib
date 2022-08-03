@@ -996,6 +996,7 @@ PBoolean PSocket::ConvertOSError(P_INT_PTR libcReturnValue, ErrorGroup group)
     case ECONNREFUSED :
     case EHOSTUNREACH :
     case ENETUNREACH :
+    case ENETRESET :
       SetErrorValues(Unavailable, err, group);
       break;
 

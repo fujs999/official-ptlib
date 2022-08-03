@@ -574,6 +574,13 @@
   #pragma P_SSL_INCLUDE(openssl/asyncerr.h)
   #pragma P_SSL_INCLUDE(openssl/ct.h)
   #pragma P_SSL_INCLUDE(openssl/cterr.h)
+  #pragma P_SSL_INCLUDE(openssl/macros.h)
+  #pragma P_SSL_INCLUDE(openssl/configuration.h)
+  #pragma P_SSL_INCLUDE(openssl/types.h)
+  #pragma P_SSL_INCLUDE(openssl/cryptoerr_legacy.h)
+  #pragma P_SSL_INCLUDE(openssl/core.h)
+  #pragma P_SSL_INCLUDE(openssl/core_dispatch.h)
+  #pragma P_SSL_INCLUDE(openssl/params.h)
 
 #endif
 

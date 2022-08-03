@@ -23,6 +23,8 @@
  *
  * Contributor(s): ______________________________________.
  *
+ * Get windows binaries from http://slproweb.com/products/Win32OpenSSL.html
+ * 
  * Portions bsed upon the file crypto/buffer/bss_sock.c 
  * Original copyright notice appears below
  */
@@ -88,6 +90,7 @@
 #define USE_SOCKETS
 
 extern "C" {
+#define OPENSSL_SUPPRESS_DEPRECATED 1
 
 #include <openssl/ssl.h>
 #include <openssl/err.h>
@@ -101,8 +104,8 @@ extern "C" {
 #endif
 };
 
-#if (OPENSSL_VERSION_NUMBER < 0x0090819fL)
-  #error OpenSSL too old!
+#if (OPENSSL_VERSION_NUMBER < 0x10002000L)
+  #error OpenSSL too old! Use at least 1.0.2
 #endif
 
 #ifdef _MSC_VER
@@ -624,7 +627,11 @@ bool PSSLCertificate::CreateRoot(const PString & subject,
 
   const EVP_MD * pDigest;
   if (digest == NULL)
+#if (OPENSSL_VERSION_NUMBER < 0x10101000L)
     pDigest = EVP_sha1();
+#else
+    pDigest = EVP_sha256();
+#endif
   else {
     pDigest = EVP_get_digestbyname(digest);
     if (pDigest == NULL) {
@@ -2096,49 +2103,43 @@ PSSLContext::PSSLContext(const void * sessionId, PINDEX idSize)
 
 void PSSLContext::Construct(const void * sessionId, PINDEX idSize)
 {
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+  m_context = SSL_CTX_new(TLS_method());
+  if (m_context == NULL) {
+    PSSLAssert("Error creating context: ");
+    return;
+  }
+  if (m_method == DTLSv1_2_v1_0) {
+    SSL_CTX_set_min_proto_version(m_context, DTLS1_VERSION);
+    SSL_CTX_set_max_proto_version(m_context, DTLS1_2_VERSION);
+  }
+  else {
+    static int ssl_versions[] = { SSL3_VERSION, TLS1_VERSION, TLS1_1_VERSION, TLS1_2_VERSION, TLS1_3_VERSION, DTLS1_VERSION, DTLS1_2_VERSION };
+    SSL_CTX_set_min_proto_version(m_context, 0);
+    SSL_CTX_set_max_proto_version(m_context, ssl_versions[m_method]);
+  }
+#else
   // create the new SSL context
   const SSL_METHOD * meth;
 
   switch (m_method) {
-    case SSLv3:
 #ifndef OPENSSL_NO_SSL3
-      // fall through to SSLv23_method if unsupported
+    case SSLv3:
       meth = SSLv3_method();
       break;
 #endif
-    case SSLv23:
-      meth = SSLv23_method();
-      break;
 
-#if OPENSSL_VERSION_NUMBER > 0x0090819fL
-    case TLSv1_1 :
-      meth = TLSv1_1_method(); 
-      break;
-    case TLSv1_2 :
-      meth = TLSv1_2_method(); 
-      break;
-#else
   #pragma message ("Using " OPENSSL_VERSION_TEXT " - TLS 1.1 & 1.2 not available, using 1.0")
-    case TLSv1_1 :
-    case TLSv1_2 :
-#endif
     case TLSv1:
-      meth = TLSv1_method(); 
+    case TLSv1_1:
+    case TLSv1_2:
+      meth = TLSv1_method();
       break;
 
-#if OPENSSL_VERSION_NUMBER > 0x10002000L
-    case DTLSv1_2 :
-      meth = DTLSv1_2_method(); 
-      break;
-    case DTLSv1_2_v1_0 :
-      meth = DTLS_method(); 
-      break;
-#else
-  #pragma message ("Using " OPENSSL_VERSION_TEXT " - DTLS 1.2 not available, using 1.0")
-    case DTLSv1_2 :
-    case DTLSv1_2_v1_0 :
-#endif
+#pragma message ("Using " OPENSSL_VERSION_TEXT " - DTLS 1.2 not available, using 1.0")
     case DTLSv1:
+    case DTLSv1_2:
+    case DTLSv1_2_v1_0:
       meth = DTLSv1_method();
       break;
     default :
@@ -2146,12 +2147,12 @@ void PSSLContext::Construct(const void * sessionId, PINDEX idSize)
       m_context = NULL;
       return;
   }
-
   m_context = SSL_CTX_new(meth);
   if (m_context == NULL) {
     PSSLAssert("Error creating context: ");
     return;
   }
+#endif
 
   if (sessionId != NULL) {
     if (idSize == 0)
@@ -2166,16 +2167,7 @@ void PSSLContext::Construct(const void * sessionId, PINDEX idSize)
   /* Specify an ECDH group for ECDHE ciphers, otherwise they cannot be
      negotiated when acting as the server. Use NIST's P-256 which is commonly
      supported. */
-#if OPENSSL_VERSION_NUMBER >= 0x10002000L
   SSL_CTX_set_ecdh_auto(m_context, 1);
-#else
-  EC_KEY* ecdh = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
-  if (ecdh != NULL) {
-    SSL_CTX_set_options(m_context, SSL_OP_SINGLE_ECDH_USE);
-    SSL_CTX_set_tmp_ecdh(m_context, ecdh);
-    EC_KEY_free(ecdh);
-  }
-#endif
 
   PTRACE(4, "Constructed context: method=" << m_method << " ctx=" << m_context);
 }
@@ -2366,19 +2358,11 @@ bool PSSLContext::UseCertificate(const PSSLCertificate & certificate)
 
   const PSSLCertificate::X509_Chain & chain = certificate.GetChain();
 
-#if OPENSSL_VERSION_NUMBER >= 0x10002000L
   SSL_CTX_clear_chain_certs(m_context);
-#else
-  SSL_CTX_clear_extra_chain_certs(m_context);
-#endif
 
   for (PSSLCertificate::X509_Chain::const_iterator it = chain.begin(); it != chain.end(); ++it) {
     X509 * ca = X509_dup(*it);
-#if OPENSSL_VERSION_NUMBER >= 0x10002000L
     if (!SSL_CTX_add0_chain_cert(m_context, ca)) {
-#else
-    if (!SSL_CTX_add_extra_chain_cert(m_context, ca)) {
-#endif
       PTRACE(2, "Could not use certificate chain: " << PSSLError());
       X509_free(ca);
       return false;

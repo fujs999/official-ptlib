@@ -835,6 +835,13 @@ void PURL::SetPath(const PStringArray & p)
 }
 
 
+void PURL::SetRelativePath(bool relative)
+{
+  m_relativePath = relative;
+  Recalculate();
+}
+
+
 void PURL::AppendPath(const PString & segment)
 {
   m_path.MakeUnique();

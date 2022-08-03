@@ -276,6 +276,9 @@ class PURL : public PObject
     /// Set the path field of the URL as a string array.
     void SetPath(const PStringArray & path);
 
+    /// Set the path as being relative.
+    void SetRelativePath(bool relative);
+
     /// Append segment to the path field of the URL.
     void AppendPath(const PString & segment);
 

@@ -873,6 +873,7 @@ void PMessageDigest5::InternalCompleteDigest(Result & result)
 // PMessageDigestSHA1
 
 #if P_SSL
+#define OPENSSL_SUPPRESS_DEPRECATED 1
 
 #include <openssl/sha.h>
 

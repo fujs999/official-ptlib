@@ -136,19 +136,19 @@ endif
 #
 $(OBJDIR)/%.o : %.cxx 
 	@if [ ! -d $(dir $@) ] ; then $(MKDIR_P) $(dir $@) ; fi
-	$(Q_CXX)$(CXX) -o $@ $(strip $(CPPFLAGS) $(CPLUSPLUS_STD) $(CXXFLAGS)) -c $<
+	$(Q_CXX)$(CXX) -o $@ $(strip $(CPPFLAGS) $(CXXFLAGS) $(CPLUSPLUS_STD)) -c $<
 
 $(OBJDIR)/%.o : %.cpp 
 	@if [ ! -d $(dir $@) ] ; then $(MKDIR_P) $(dir $@) ; fi
-	$(Q_CXX)$(CXX) -o $@ $(strip $(CPPFLAGS) $(CPLUSPLUS_STD) $(CXXFLAGS)) -c $<
+	$(Q_CXX)$(CXX) -o $@ $(strip $(CPPFLAGS) $(CXXFLAGS) $(CPLUSPLUS_STD)) -c $<
 
 $(OBJDIR)/%.o : %.cc 
 	@if [ ! -d $(dir $@) ] ; then $(MKDIR_P) $(dir $@) ; fi
-	$(Q_CXX)$(CXX) -o $@ $(strip $(CPPFLAGS) $(CPLUSPLUS_STD) $(CXXFLAGS)) -c $<
+	$(Q_CXX)$(CXX) -o $@ $(strip $(CPPFLAGS) $(CXXFLAGS) $(CPLUSPLUS_STD)) -c $<
 
 $(OBJDIR)/%.o : %.mm 
 	@if [ ! -d $(dir $@) ] ; then $(MKDIR_P) $(dir $@) ; fi
-	$(Q_CC)$(CXX) -o $@ $(strip $(CPPFLAGS) $(CPLUSPLUS_STD) $(CXXFLAGS)) -c $<
+	$(Q_CC)$(CXX) -o $@ $(strip $(CPPFLAGS) $(CXXFLAGS) $(CPLUSPLUS_STD)) -c $<
 
 $(OBJDIR)/%.o : %.c 
 	@if [ ! -d $(dir $@) ] ; then $(MKDIR_P) $(dir $@) ; fi

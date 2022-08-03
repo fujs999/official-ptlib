@@ -108,7 +108,8 @@ AC_DEFUN([MY_LINK_IFELSE],[
 
 
 dnl MY_PKG_CHECK_MODULE
-dnl As PKG_CHECK_MODULES but does test compile so works wit cross compilers
+dnl As PKG_CHECK_MODULES but does test compile so works with cross compilers.
+dnl It also splits C preprocessor flags and C++ flags to avoid failure to compile C modules.
 dnl $1 module name
 dnl $2 pkg name
 dnl $3 program headers
@@ -126,9 +127,12 @@ AC_DEFUN([MY_PKG_CHECK_MODULE],[
          [$3],
          [$4],
          [
-            CPPFLAGS="$CPPFLAGS $$1[_CFLAGS]"
-            LIBS="$$1[_LIBS] $LIBS"
-         ]
+            mod_name=`echo "$2" | cut -d ' ' -f 1`
+            $1[_CPPFLAGS]=`$PKG_CONFIG --cflags-only-I $mod_name`
+            $1[_CXXFLAGS]=`$PKG_CONFIG --cflags-only-other $mod_name`
+            MY_ADD_FLAGS([$$1[_LIBS]], [$$1[_CPPFLAGS]], [], [$$1[_CXXFLAGS]])
+         ],
+         [usable=no]
       )],
       [usable=no]
    )
@@ -159,14 +163,6 @@ AC_DEFUN([MY_ADD_FLAGS],[
       AC_MSG_NOTICE([Adding LIBS: $1])
       LIBS="$1 $LIBS"
    ])
-])
-
-
-dnl MY_ADD_MODULE_FLAGS
-dnl Add to CPPFLAGS, & LIBS new flags from xxx_CFLAGS, xxx_LIBS
-dnl $1 module name
-AC_DEFUN([MY_ADD_MODULE_FLAGS],[
-   MY_ADD_FLAGS($$1[_LIBS], $$1[_CFLAGS])
 ])
 
 
@@ -206,43 +202,39 @@ AC_DEFUN([MY_MODULE_OPTION],[
       ])
 
       AS_VAR_IF([$1[_SYSTEM]], [yes], [
-         m4_ifnblank([$5$6],
-            [AC_ARG_WITH(
-               [$2-dir],
-               AS_HELP_STRING([--with-$2-dir=<dir>],[location for $3]),
-               [
-                  AC_MSG_NOTICE(Using directory $withval for $3)
-                  $1[_CFLAGS]="-I$withval/include $5"
-                  $1[_LIBS]="-L$withval/lib $6"
-               ],
-               [PKG_CHECK_MODULES(
+         m4_ifnblank([$4],
+            [m4_ifnblank([$5$6],
+               [AC_ARG_WITH(
+                  [$2-dir],
+                  AS_HELP_STRING([--with-$2-dir=<dir>],[location for $3]),
+                  [
+                     AC_MSG_NOTICE(Using directory $withval for $3)
+                     $1[_CFLAGS]="-I$withval/include $5"
+                     $1[_LIBS]="-L$withval/lib $6"
+                  ],
+                  [MY_PKG_CHECK_MODULE(
+                     [$1],
+                     [m4_bpatsubsts([$4],[local-source], [])],
+                     [$7],
+                     [$8]
+                  )]
+               )],
+               [MY_PKG_CHECK_MODULE(
                   [$1],
                   [m4_bpatsubsts([$4],[local-source], [])],
-                  [],
-                  [
-                     $1[_CFLAGS]="$5"
-                     $1[_LIBS]="$6"
-                  ]
+                  [$7],
+                  [$8]
                )]
             )],
-            [PKG_CHECK_MODULES(
-               [$1],
-               [m4_bpatsubsts([$4],[local-source], [])],
-               [],
-               [usable=no]
-            )]
-         )
-
-         AS_VAR_IF([usable], [yes],
-            MY_LINK_IFELSE(
+            [MY_LINK_IFELSE(
                [for $3 usability],
-               [$$1[_CFLAGS]],
-               [$$1[_LIBS]],
+               [$5],
+               [$6],
                [$7],
                [$8],
-               [MY_ADD_MODULE_FLAGS([$1])],
+               [MY_ADD_FLAGS([$6], [$5])],
                [usable=no]
-            )
+            )]
          )
 
          m4_bmatch([$4], [.*local-source.*], [
@@ -427,6 +419,7 @@ dnl AC_PROG_MKDIR_P()  -- Doesn't work!
 AC_SUBST(MKDIR_P, "mkdir -p")
 AC_PATH_PROG(SVN, svn)
 AC_PATH_PROG(GIT, git)
+AC_PATH_PROG(PKG_CONFIG, pkg-config)
 
 AC_PROG_INSTALL()
 AC_MSG_CHECKING([install support for -C])
@@ -474,7 +467,8 @@ AC_SUBST(ARFLAGS, "rc")
 
 
 dnl Check for latest and greatest
-AC_SUBST(CPLUSPLUS_STD,"-std=c++03")
+AC_SUBST(CPLUSPLUS_STD,"-std=c++11")
+AC_ARG_ENABLE(cpp03, AS_HELP_STRING([--enable-cpp03],[Enable C++03 build]),AC_SUBST(CPLUSPLUS_STD,"-std=c++03"))
 AC_ARG_ENABLE(cpp11, AS_HELP_STRING([--enable-cpp11],[Enable C++11 build]),AC_SUBST(CPLUSPLUS_STD,"-std=c++11"))
 AC_ARG_ENABLE(cpp14, AS_HELP_STRING([--enable-cpp14],[Enable C++14 build]),AC_SUBST(CPLUSPLUS_STD,"-std=c++14"))
 AC_ARG_ENABLE(cpp17, AS_HELP_STRING([--enable-cpp17],[Enable C++17 build]),AC_SUBST(CPLUSPLUS_STD,"-std=c++17"))
@@ -858,4 +852,3 @@ AC_ARG_WITH(
 
 
 dnl End of file
-

@@ -109,6 +109,7 @@ using namespace std; // Not a good practice (name space polution), but will take
     public:
       PAutoPtr() = default;
       explicit PAutoPtr(T * p) : std::unique_ptr<T>(p) { }
+      PAutoPtr(PAutoPtr & other) : std::unique_ptr<T>(other.release()) { }
       void transfer(PAutoPtr & other) { std::unique_ptr<T>::operator=(std::move(other)); }
   };
 #endif

@@ -1867,7 +1867,7 @@ CXXFLAGS="$CXXFLAGS $CPLUSPLUS_STD"
  
 AS_VAR_IF([target_os], [Darwin],
    [
-      V8_EXTRA_CFLAGS="-I/usr/local/include/node"
+      V8_EXTRA_CFLAGS=""
       V8_EXTRA_LIBS="-lv8_libplatform -lv8_libbase"
    ]
 )
@@ -1879,14 +1879,25 @@ PTLIB_MODULE_OPTION(
    [v8],
    [$V8_EXTRA_CFLAGS],
    [-lv8 $V8_EXTRA_LIBS],
-   [
-      #include <v8.h>
-   ],
-   [
-      v8::V8::Initialize();
-   ]
+   [#include <v8.h>],
+   [v8::V8::Initialize()],
+   [],
+   [AS_VAR_IF([CPLUSPLUS_STD], ["-std=c++03"],[],[
+      CXXFLAGS="$oldCXXFLAGS -std=c++14"
+      MY_MODULE_OPTION(
+         [V8],
+         [v8],
+         [V8 Javascript script support (C++14)],
+         [],
+         [$V8_EXTRA_CFLAGS],
+         [-lv8 $V8_EXTRA_LIBS],
+         [#include <v8.h>],
+         [v8::V8::Initialize()],
+         [AC_SUBST(CPLUSPLUS_STD,"-std=c++14")]
+      )
+   ])],
 )
- 
+
 CXXFLAGS="$oldCXXFLAGS"
 
 
@@ -1909,12 +1920,42 @@ dnl MSWIN_CHECK_DIR  aws,%ProgramW6432%\aws-sdk-cpp
 
 PTLIB_MODULE_OPTION(
    [AWS_SDK], 
-   [aws-sdk],
+   [aws],
    [AWS SDK support],
    [aws-sdk], 
    [],[],
    [#include <aws/core/Aws.h>],
-   [Aws::InitAPI(Aws::SDKOptions())]
+   [Aws::InitAPI(Aws::SDKOptions())],
+   [],
+   [PTLIB_MODULE_OPTION(
+      [AWS_SDK],
+      [aws],
+      [AWS SDK core support],
+      [aws-cpp-sdk-core],
+      [],[],
+      [#include <aws/core/Aws.h>],
+      [Aws::InitAPI(Aws::SDKOptions())],
+      [
+         MY_PKG_CHECK_MODULE(
+            [AWS_SDK_POLLY],
+            [aws-cpp-sdk-polly],
+            [#include <aws/polly/PollyClient.h>],
+            [Aws::Polly::PollyClient x]
+         )
+         MY_PKG_CHECK_MODULE(
+            [AWS_SDK_TTS],
+            [aws-cpp-sdk-text-to-speech],
+            [#include <aws/text-to-speech/TextToSpeechManager.h>],
+            [Aws::TextToSpeech::DeviceInfo x]
+         )
+         MY_PKG_CHECK_MODULE(
+            [AWS_SDK_TRANSCRIBE],
+            [aws-cpp-sdk-transcribe],
+            [#include <aws/transcribe/TranscribeServiceClient.h>],
+            [Aws::TranscribeService::TranscribeServiceClient x]
+         )
+      ]
+   )]
 )
 
 
@@ -2379,15 +2420,24 @@ PTLIB_MODULE_OPTION(
    [#include <gst/gst.h>],
    [gst_version_string()],
    [],
-   [PTLIB_MODULE_OPTION(
-      [GSTREAMER],
-      [gstreamer],
-      [GStreamer 1.0 support],
-      [gio-2.0 gstreamer-app-1.0],
-      [],[],
-      [#include <gst/gst.h>],
-      [gst_version_string()],
-      [AC_DEFINE(P_GSTREAMER_1_0_API, 1)]
+   [MY_MODULE_OPTION(
+      [GLIB],
+      [glib],
+      [GLib support],
+      [gio-2.0],
+      [], [],
+      [#include <glib.h>],
+      [guint v = glib_major_version],
+      [PTLIB_MODULE_OPTION(
+         [GSTREAMER],
+         [gstreamer],
+         [GStreamer 1.0 support],
+         [gstreamer-app-1.0],
+         [],[],
+         [#include <gst/gst.h>],
+         [gst_version_string()],
+         [AC_DEFINE(P_GSTREAMER_1_0_API, 1)]
+      )]
    )]
 )
 
@@ -2486,7 +2536,7 @@ dnl ########################################################################
 dnl dynamic libraries
 
 MY_CHECK_DLFCN([
-   MY_ADD_MODULE_FLAGS([DLFCN])
+   MY_ADD_FLAGS([$DLFCN_LIBS], [$DLFCN_CFLAGS])
    PTLIB_SUBST([DYNALINK], 1)
 ])
 
@@ -2975,7 +3025,7 @@ MY_OUTPUT_SUMMARY(
    [                     Festival TTS], PTLIB_FESTIVAL,
    [                           Curses], PTLIB_CURSES,
    [                        GStreamer], PTLIB_GSTREAMER,
-   [                          AWS SDK], PTLIB_AWS,
+   [                          AWS SDK], PTLIB_AWS_SDK,
    [], [],
    [                            Audio], PTLIB_AUDIO,
    [                             ALSA], PTLIB_ALSA,

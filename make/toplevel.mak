@@ -278,8 +278,15 @@ ifeq ($(HAS_DNS_RESOLVER),1)
              $(COMPONENT_SRC_DIR)/enum.cxx 
 endif
 
+ifneq ($(HAS_AWS_SDK),)
+  SOURCES += $(COMPONENT_SRC_DIR)/aws_sdk.cxx 
+endif
+
 ifneq ($(HAS_TEXT_TO_SPEECH)$(HAS_SPEECH_RECOGNITION),)
-  SOURCES += $(PLATFORM_SRC_DIR)/speech.cxx 
+  SOURCES += $(PLATFORM_SRC_DIR)/speech.cxx
+  ifneq ($(HAS_AWS_SDK),)
+    SOURCES += $(COMPONENT_SRC_DIR)/speech_aws.cxx 
+  endif
 endif
 
 ifeq ($(HAS_TEXT_TO_SPEECH),1)

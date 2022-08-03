@@ -28,3 +28,4 @@ private/
 /src/ptlib/common/getdate.c
 /samples/vxmltest/cache/
 /tools/configure/Release
+.vscode/*.log

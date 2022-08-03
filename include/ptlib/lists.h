@@ -348,7 +348,13 @@ template <class T> class PList : public PAbstractList
   //@{
     typedef T value_type;
 
-    class iterator_base : public std::iterator<std::bidirectional_iterator_tag, value_type> {
+    class iterator_base {
+      public:
+        typedef std::bidirectional_iterator_tag iterator_category;
+        typedef ptrdiff_t difference_type;
+        typedef value_type * pointer;
+        typedef value_type & reference;
+
       protected:
         iterator_base(PListElement * e) : element(e) { }
         PListElement * element;
@@ -1023,7 +1029,14 @@ template <class T> class PSortedList : public PAbstractSortedList
         element = NULL;
     }
 
-    class iterator_base : public std::iterator<std::bidirectional_iterator_tag, value_type> {
+    class iterator_base {
+      public:
+        typedef std::bidirectional_iterator_tag iterator_category;
+        typedef T value_type;
+        typedef ptrdiff_t difference_type;
+        typedef value_type * pointer;
+        typedef value_type & reference;
+
       protected:
         const PSortedList<T> * m_list;
         PSortedListElement   * m_element;

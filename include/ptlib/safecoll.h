@@ -1261,7 +1261,7 @@ template <class K, class D> class PSafeDictionary : public PSafeCollection
       PWaitAndSignal mutex(this->m_collectionMutex);
       if (this->GetDictionaryPtr()->GetAt(to) != NULL)
         return false;
-      this->GetDictionaryPtr()->SetAt(to, this->GetDictionaryPtr()->GetAt(from));
+      this->GetDictionaryPtr()->SetAt(to, this->GetDictionaryPtr()->RemoveAt(from));
       return true;
     }
 
@@ -1298,7 +1298,27 @@ template <class K, class D> class PSafeDictionary : public PSafeCollection
 
   /**@name Iterators */
   //@{
+    class iterator;
+    class const_iterator;
+
+    class iterator_pair
+    {
+    public:
+      const key_type & first;
+      ptr_type       & second;
+
+    private:
+      iterator_pair() : first(reinterpret_cast<const key_type &>(0)) { }
+    };
+
     class iterator_base {
+      public:
+        typedef std::forward_iterator_tag iterator_category;
+        typedef iterator_pair value_type;
+        typedef ptrdiff_t difference_type;
+        typedef value_type * pointer;
+        typedef value_type & reference;
+
       protected:
         const key_type * m_internal_first;  // Must be first two members
         ptr_type       * m_internal_second;
@@ -1368,16 +1388,7 @@ template <class K, class D> class PSafeDictionary : public PSafeCollection
         bool operator!=(const iterator_base & it) const { return !operator==(it); }
     };
 
-    class iterator_pair {
-      public:
-        const key_type & first;
-        ptr_type       & second;
-
-      private:
-        iterator_pair() : first(reinterpret_cast<const key_type &>(0)) { }
-    };
-
-    class iterator : public iterator_base, public std::iterator<std::forward_iterator_tag, iterator_pair> {
+    class iterator : public iterator_base {
       protected:
         iterator(const PSafeDictionary & owner) : iterator_base(owner) { }
         iterator(const PSafeDictionary & owner, const key_type & key) : iterator_base(owner, key) { }
@@ -1399,7 +1410,7 @@ template <class K, class D> class PSafeDictionary : public PSafeCollection
     iterator find(const K & key) { return iterator(*this, key); }
 
 
-    class const_iterator : public iterator_base, public std::iterator<std::forward_iterator_tag, iterator_pair> {
+    class const_iterator : public iterator_base {
       protected:
         const_iterator(const PSafeDictionary & owner) : iterator_base(owner) { }
         const_iterator(const PSafeDictionary & owner, const key_type & key) : iterator_base(owner, key) { }

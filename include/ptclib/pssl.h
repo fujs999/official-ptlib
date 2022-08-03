@@ -720,17 +720,17 @@ class PSSLContext : public PObject
     PCLASSINFO(PSSLContext, PObject);
   public:
     P_DECLARE_TRACED_ENUM(Method,
-      SSLv23,
       SSLv3,
       TLSv1,
       TLSv1_1,
       TLSv1_2,
+      TLSv1_3,
       DTLSv1,
       DTLSv1_2,
       DTLSv1_2_v1_0
     );
 
-    static const Method HighestTLS = TLSv1_2;
+    static const Method HighestTLS = TLSv1_3;
     static const Method HighestDTLS = DTLSv1_2_v1_0;
 
     /**Create a new context for SSL channels.

@@ -627,7 +627,14 @@ template <class T> class PSet : public PAbstractSet
   //@{
     class iterator;
     class const_iterator;
-    class iterator_base : public std::iterator<std::forward_iterator_tag, T> {
+    class iterator_base {
+      public:
+        typedef std::forward_iterator_tag iterator_category;
+        typedef T value_type;
+        typedef ptrdiff_t difference_type;
+        typedef value_type * pointer;
+        typedef value_type & reference;
+
       protected:
         iterator_base()
           : table(NULL)
@@ -1187,22 +1194,28 @@ template <class K, class D> class PDictionary : public PAbstractDictionary
         iterator_pair() : first(reinterpret_cast<CK&>(0)), second(reinterpret_cast<CD&>(0)) { }
     };
 
-    class iterator : public iterator_base, public std::iterator<std::bidirectional_iterator_tag, iterator_pair<K,D> > {
-      protected:
-        iterator(dict_type * dict) : iterator_base(dict) { }
-        iterator(dict_type * dict, const K & key) : iterator_base(dict, key) { }
-
+    class iterator : public iterator_base {
       public:
+        typedef std::forward_iterator_tag iterator_category;
+        typedef iterator_pair<const K, const D> value_type;
+        typedef ptrdiff_t difference_type;
+        typedef value_type * pointer;
+        typedef value_type & reference;
+
         iterator() { }
 
-        iterator & operator++()    {                      this->Next(); return *this; }
-        iterator & operator--()    {                      this->Prev(); return *this; }
-        iterator   operator++(int) { iterator it = *this; this->Next(); return it;    }
-        iterator   operator--(int) { iterator it = *this; this->Prev(); return it;    }
+        iterator operator++()    {                      this->Next(); return *this; }
+        iterator operator--()    {                      this->Prev(); return *this; }
+        iterator operator++(int) { iterator it = *this; this->Next(); return it;    }
+        iterator operator--(int) { iterator it = *this; this->Prev(); return it;    }
 
         typedef iterator_pair<K,D> pair;
         const pair * operator->() const { return  reinterpret_cast<const pair *>(this); }
         const pair & operator* () const { return *reinterpret_cast<const pair *>(this); }
+
+      protected:
+        iterator(dict_type * dict) : iterator_base(dict) { }
+        iterator(dict_type * dict, const K & key) : iterator_base(dict, key) { }
 
       friend class PDictionary<K, D>;
     };
@@ -1212,12 +1225,14 @@ template <class K, class D> class PDictionary : public PAbstractDictionary
     iterator find(const K & key) { return iterator(this, key); }
 
 
-    class const_iterator : public iterator_base, public std::iterator<std::forward_iterator_tag, iterator_pair<const K,const D> > {
-      protected:
-        const_iterator(const dict_type * dict) : iterator_base(dict) { }
-        const_iterator(const dict_type * dict, const K & key) : iterator_base(dict, key) { }
-
+    class const_iterator : public iterator_base {
       public:
+        typedef std::forward_iterator_tag iterator_category;
+        typedef iterator_pair<const K, const D> value_type;
+        typedef ptrdiff_t difference_type;
+        typedef value_type * pointer;
+        typedef value_type & reference;
+
         const_iterator() { }
         const_iterator(iterator it) : iterator_base(it) { }
 
@@ -1229,6 +1244,10 @@ template <class K, class D> class PDictionary : public PAbstractDictionary
         typedef iterator_pair<const K, const D> pair;
         const pair * operator->() const { return  reinterpret_cast<const pair *>(this); }
         const pair & operator* () const { return *reinterpret_cast<const pair *>(this); }
+
+      protected:
+        const_iterator(const dict_type * dict) : iterator_base(dict) { }
+        const_iterator(const dict_type * dict, const K & key) : iterator_base(dict, key) { }
 
       friend class PDictionary<K, D>;
     };
