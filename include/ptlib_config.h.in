@@ -581,7 +581,10 @@
   #pragma P_SSL_INCLUDE(openssl/core.h)
   #pragma P_SSL_INCLUDE(openssl/core_dispatch.h)
   #pragma P_SSL_INCLUDE(openssl/params.h)
-
+  #pragma P_SSL_INCLUDE(openssl/http.h)
+  #pragma P_SSL_INCLUDE(openssl/conftypes.h)
+  #pragma P_SSL_INCLUDE(openssl/sslerr_legacy.h)
+  #pragma P_SSL_INCLUDE(openssl/prov_ssl.h)
 #endif
 
 #undef P_d2i_DHparams_bio_OLD
