@@ -86,6 +86,7 @@ static PConstString const NoMatchElement("nomatch");
 static PConstString const ErrorElement("error");
 static PConstString const CatchElement("catch");
 static PConstString const NameAttribute("name");
+static PConstString const CountAttribute("count");
 static PConstString const IdAttribute("id");
 static PConstString const ExprAttribute("expr");
 static PConstString const SrcAttribute("src");
@@ -103,21 +104,19 @@ static PConstCaselessString const SRGS("application/srgs");
 
 
 #if PTRACING
-  #define ThrowSemanticError2(session, element, reason) ( \
-      PTRACE(2, "Semantic error thrown in " << (element).PrintTrace() << " - " << reason), \
-      (session).GoToEventHandler(element, ErrorSemantic, true) \
-    )
-  #define ThrowBadFetchError2(session, element, reason) ( \
-      PTRACE(2, "Bad fetch error thrown in " << (element).PrintTrace() << " - " << reason), \
-      (session).GoToEventHandler(element, ErrorBadFetch, true) \
+  #define ThrowError2(session, element, errorName, reason) ( \
+      PTRACE(2, errorName << " thrown in " << (element).PrintTrace() << " - " << reason), \
+      (session).GoToEventHandler(element, errorName, true, true) \
     )
 #else
-  #define ThrowSemanticError2(session, element, reason) (session).GoToEventHandler(element, ErrorSemantic, true)
-  #define ThrowBadFetchError2(session, element, reason) (session).GoToEventHandler(element, ErrorBadFetch, true)
+  #define ThrowError2(session, element, errorName, reason) (session).GoToEventHandler(element, errorName, true, true)
 #endif
 
-#define ThrowSemanticError(element, reason) ThrowSemanticError2(*this, element, reason)
-#define ThrowBadFetchError(element, reason) ThrowBadFetchError2(*this, element, reason)
+#define ThrowSemanticError2(session, element, reason)  ThrowError2(session, element, ErrorSemantic, reason)
+#define ThrowBadFetchError2(session, element, reason)  ThrowError2(session, element, ErrorBadFetch, reason)
+#define ThrowError(element, errorName, reason)         ThrowError2(*this, element, errorName, reason)
+#define ThrowSemanticError(element, reason)            ThrowError2(*this, element, ErrorSemantic, reason)
+#define ThrowBadFetchError(element, reason)            ThrowError2(*this, element, ErrorBadFetch, reason)
 
 
 
@@ -275,7 +274,7 @@ protected:
     PXMLElement * parent = element.GetParent();
     if (parent != NULL &&
         parent->GetParent() != NULL &&
-        session.GoToEventHandler(*parent->GetParent(), element.GetName(), false))
+        session.GoToEventHandler(*parent->GetParent(), element.GetName(), false, false))
       return false;
 
     // No other handler continue with the aprent
@@ -2285,7 +2284,7 @@ PBoolean PVXMLSession::TraversedRecord(PXMLElement & element)
       return false;
 
     case RecordingComplete :
-      return !GoToEventHandler(element, FilledElement, false);
+      return !GoToEventHandler(element, FilledElement, false, true);
 
     default :
       break;
@@ -2642,8 +2641,7 @@ void PVXMLSession::LoadGrammar(const PString & type, const PVXMLGrammarInit & in
   PCaselessString adjustedType = type.empty() ? SRGS : type;
   PVXMLGrammar * grammar = PVXMLGrammarFactory::CreateInstance(adjustedType, init);
   if (grammar == NULL) {
-    PTRACE(2, "Could not set grammar of type \"" << adjustedType << '"');
-    GoToEventHandler(init.m_field, "error.unsupported.builtin", true);
+    ThrowError(init.m_field, "error.unsupported.builtin", "Could not set grammar of type \"" << adjustedType << '"');
     return;
   }
 
@@ -2652,10 +2650,8 @@ void PVXMLSession::LoadGrammar(const PString & type, const PVXMLGrammarInit & in
     delete grammar;
     if (state == PVXMLGrammar::BadFetch)
       ThrowBadFetchError(init.m_field, "Bad fetch in grammar " << *grammar);
-    else {
-      PTRACE(2, "Illegal/unsupported grammar of type \"" << adjustedType << '"');
-      GoToEventHandler(init.m_field, "error.unsupported.format", true);
-    }
+    else
+      ThrowError(init.m_field, "error.unsupported.format", "Illegal/unsupported grammar of type \"" << adjustedType << '"');
     return;
   }
 
@@ -2982,12 +2978,15 @@ PBoolean PVXMLSession::TraverseGrammar(PXMLElement & element)
 
 // Finds the proper event hander for 'noinput', 'filled', 'nomatch' and 'error'
 // by searching the scope hiearchy from the current from
-bool PVXMLSession::GoToEventHandler(PXMLElement & element, const PString & eventName, bool exitIfNotFound)
+bool PVXMLSession::GoToEventHandler(PXMLElement & element, const PString & eventName, bool exitIfNotFound, bool firstInHierarchy)
 {
+  if (eventName.empty())
+    return false;
+
   PXMLElement * level = &element;
   PXMLElement * handler = NULL;
 
-  unsigned actualCount = ++m_eventCount[eventName];
+  unsigned actualCount = firstInHierarchy ? ++m_eventCount[eventName] : m_eventCount[eventName];
 
   // Look in all the way up the tree for a handler either explicitly or in a catch
   while ((handler = FindElementWithCount(*level, eventName, actualCount)) == NULL) {
@@ -2997,7 +2996,7 @@ bool PVXMLSession::GoToEventHandler(PXMLElement & element, const PString & event
       static PConstString const MatchAll(".");
       if (eventName != MatchAll) {
         PINDEX dot = eventName.FindLast('.');
-        return GoToEventHandler(element, dot == P_MAX_INDEX ? static_cast<PString>(MatchAll) : eventName.Left(dot), exitIfNotFound);
+        return GoToEventHandler(element, dot == P_MAX_INDEX ? static_cast<PString>(MatchAll) : eventName.Left(dot), exitIfNotFound, firstInHierarchy);
       }
 
       if (exitIfNotFound) {
@@ -3014,43 +3013,31 @@ bool PVXMLSession::GoToEventHandler(PXMLElement & element, const PString & event
 }
 
 
-static unsigned GetCountAttribute(PXMLElement & element)
-{
-  PString str = element.GetAttribute("count");
-  return str.IsEmpty() ? 1 : str.AsUnsigned();
-}
-
-
 PXMLElement * PVXMLSession::FindElementWithCount(PXMLElement & parent, const PString & name, unsigned count)
 {
-  std::map<unsigned, PXMLElement *> elements;
+  typedef std::map<unsigned, PXMLElement *, std::greater<unsigned> > ElementsByCount;
+  ElementsByCount elements;
   PXMLElement * element;
   PINDEX idx = 0;
   while ((element = parent.GetElement(idx++)) != NULL) {
+    PString str = element->GetAttribute(CountAttribute);
+    unsigned elementCount = str.IsEmpty() ? 1 : str.AsUnsigned();
+
     if (element->GetName() == name)
-      elements[GetCountAttribute(*element)] = element;
+      elements[elementCount] = element;
     else if (element->GetName() == CatchElement) {
       PStringArray events = element->GetAttribute("event").Tokenise(" ", false);
       for (size_t i = 0; i < events.size(); ++i) {
         if (events[i] *= name) {
-          elements[GetCountAttribute(*element)] = element;
+          elements[elementCount] = element;
           break;
         }
       }
     }
   }
 
-  if (elements.empty())
-    return NULL;
-
-  while (count > 0) {
-    std::map<unsigned, PXMLElement *>::iterator it = elements.find(count);
-    if (it != elements.end() && ExecuteCondition(*it->second))
-      return it->second;
-    --count;
-  }
-
-  return NULL;
+  ElementsByCount::iterator it = elements.lower_bound(count);
+  return it != elements.end() ? it->second : NULL;
 }
 
 
@@ -3267,9 +3254,8 @@ PBoolean PVXMLSession::TraverseSubmit(PXMLElement & element)
       return InternalLoadVXML(url, replyBody, PString::Empty());
     }
 
-    PTRACE(2, "<submit> POST " << url << " failed with "
-           << http->GetLastResponseCode() << ' ' << http->GetLastResponseInfo());
-    return GoToEventHandler(element, PSTRSTRM(ErrorBadFetch << '.' << url.GetScheme() << '.' << http->GetLastResponseCode()), true);
+    return ThrowError(element, PSTRSTRM(ErrorBadFetch << '.' << url.GetScheme() << '.' << http->GetLastResponseCode()),
+                      "<submit> POST " << url << " failed with " << http->GetLastResponseCode() << ' ' << http->GetLastResponseInfo());
   }
 
   // Put in boundary
@@ -3462,7 +3448,7 @@ bool PVXMLSession::CompletedTransfer(PXMLElement & element)
                  (PTime() - m_transferStartTime).AsString(0, PTimeInterval::SecondsOnly));
 
   m_transferStatus = TransferCompleted;
-  return GoToEventHandler(element, error ? ErrorElement : FilledElement, error);
+  return GoToEventHandler(element, error ? ErrorElement : FilledElement, error, true);
 }
 
 
@@ -3523,7 +3509,7 @@ PBoolean PVXMLSession::TraverseAssign(PXMLElement & element)
 
 PBoolean PVXMLSession::TraverseDisconnect(PXMLElement & element)
 {
-  return GoToEventHandler(element, "connection.disconnect", true);
+  return GoToEventHandler(element, "connection.disconnect", true, true);
 }
 
 
@@ -3561,8 +3547,8 @@ PBoolean PVXMLSession::TraversedForm(PXMLElement &)
 PBoolean PVXMLSession::TraversePrompt(PXMLElement & element)
 {
   PXMLElement * validPrompt = FindElementWithCount(*element.GetParent(), PromptElement, m_promptCount);
-  if (validPrompt == NULL || GetCountAttribute(*validPrompt) != GetCountAttribute(element)) {
-    PTRACE(3, "Prompt count/cond attribute preventing execution: " << element.PrintTrace());
+  if (validPrompt != &element) {
+    PTRACE(3, "Prompt count attribute preventing execution: " << element.PrintTrace());
     return false;
   }
 
@@ -3888,11 +3874,9 @@ bool PVXMLGrammar::Start()
       lang = m_grammarElement->GetAttribute("xml:lang");
     if (lang.empty())
       lang = m_session.GetLanguage();
-    if (!lang.empty() && !m_recogniser->SetLanguage(lang)) {
-      PTRACE(2, "Grammar " << *this << " could not set speech recognition language to \"" << lang << '"');
-      m_session.GoToEventHandler(m_field, "error.unsupported.language", true);
-      return false;
-    }
+    if (!lang.empty() && !m_recogniser->SetLanguage(lang))
+      return ThrowError2(m_session, m_field, "error.unsupported.language",
+                         "Grammar " << *this << " could not set speech recognition language to \"" << lang << '"');
 
     // Currentlly, in AWS world, it takes several seconds to create a vocabulary.
     // So we need to figure out another solution than setting it up here.
@@ -4016,7 +4000,7 @@ bool PVXMLGrammar::Process()
       return false;
   }
 
-  if (m_session.GoToEventHandler(m_field, handler, false))
+  if (m_session.GoToEventHandler(m_field, handler, false, true))
     return true;
 
   PTRACE(2, "Grammar: " << *this << ", restarting node " << PXMLObject::PrintTrace(&m_field));
@@ -4070,7 +4054,7 @@ bool PVXMLMenuGrammar::Process()
         if (m_session.SetCurrentForm(next, true))
           return true;
 
-        if (m_session.GoToEventHandler(m_field, choice->GetAttribute("event"), false))
+        if (m_session.GoToEventHandler(m_field, choice->GetAttribute("event"), false, true))
           return true;
       }
     }

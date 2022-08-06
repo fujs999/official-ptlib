@@ -463,7 +463,7 @@ class PVXMLSession : public PIndirectChannel
     );
 
     bool SetCurrentForm(const PString & id, bool fullURI);
-    bool GoToEventHandler(PXMLElement & element, const PString & eventName, bool exitIfNotFound);
+    bool GoToEventHandler(PXMLElement & element, const PString & eventName, bool exitIfNotFound, bool firstInHierarchy);
     PXMLElement * FindElementWithCount(PXMLElement & parent, const PString & name, unsigned count);
 
     // overrides from VXMLChannelInterface
