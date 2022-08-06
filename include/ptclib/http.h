@@ -785,6 +785,12 @@ class PHTTPClient : public PHTTP
       const PURL & url        ///< Universal Resource Locator for document.
     );
 
+    /**Set proxy for connections.
+      */
+    void SetProxy(
+      const PString & proxy   // Proxy in host:port form
+    ) { m_proxy = proxy; }
+
     /** Set authentication paramaters to be use for retreiving documents
     */
     void SetAuthenticationInfo(
@@ -824,6 +830,7 @@ class PHTTPClient : public PHTTP
     PString  m_userAgentName;
     bool     m_persist;
     unsigned m_maxRedirects;
+    PString  m_proxy;
     PString  m_userName;
     PString  m_password;
 #if P_SSL

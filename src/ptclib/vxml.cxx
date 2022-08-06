@@ -1547,6 +1547,13 @@ bool PVXMLSession::LoadCachedResource(const PURL & url,
 }
 
 
+void PVXMLSession::SetProxy(const PString & proxy)
+{
+  PWaitAndSignal lock(m_httpMutex);
+  m_httpProxy = proxy;
+}
+
+
 #if P_SSL
 void PVXMLSession::SetSSLCredentials(const PString & authority,
                                      const PString & certificate,
@@ -1563,8 +1570,9 @@ void PVXMLSession::SetSSLCredentials(const PString & authority,
 PHTTPClient * PVXMLSession::CreateHTTPClient() const
 {
   PHTTPClient * http = new PHTTPClient("PTLib VXML Client");
-#if P_SSL
   PWaitAndSignal lock(m_httpMutex);
+  http->SetProxy(m_httpProxy);
+#if P_SSL
   http->SetSSLCredentials(m_httpAuthority, m_httpCertificate, m_httpPrivateKey);
 #endif
   return http;

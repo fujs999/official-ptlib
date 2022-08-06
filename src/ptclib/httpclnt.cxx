@@ -290,6 +290,8 @@ PHTTP::StatusCode PHTTPClient::ExecuteCommand(Commands cmd,
   if (m_persist && !outMIME.Contains(ConnectionTag()))
     outMIME.SetAt(ConnectionTag(), KeepAliveTag());
 
+  PURL::UrlFormat urlFormat = m_proxy.empty() || url.GetScheme() == "https" || url.GetScheme() == "wss" ? PURL::RelativeOnly : PURL::FullURL;
+
   unsigned redirectCount = m_maxRedirects;
   bool needAuthentication = true;
   bool forceReopen = !m_persist;
@@ -310,7 +312,7 @@ PHTTP::StatusCode PHTTPClient::ExecuteCommand(Commands cmd,
         outMIME.SetAt(HostTag, url.GetHostPort());
     }
 
-    if (!WriteCommand(cmd, url.AsString(PURL::RelativeOnly), outMIME, processor))
+    if (!WriteCommand(cmd, url.AsString(urlFormat), outMIME, processor))
       continue;
 
     // If not persisting need to shut down write so other end stops reading
@@ -807,28 +809,37 @@ bool PHTTPClient::ConnectURL(const PURL & url)
   if (IsOpen())
     return true;
 
-  PString host = url.GetHostName();
+  PIPAddressAndPort ap(m_proxy.empty() ? url.GetHostPort() : m_proxy);
 
   // Is not open or other end shut down, restablish connection
-  if (host.IsEmpty())
-    return SetLastResponse(BadRequest, "No host specified");
+  if (!ap.IsValid())
+    return SetLastResponse(BadRequest, PSTRSTRM("Invalid host or port" << (m_proxy.empty() ? "in URL" : "in proxy")));
 
 #if P_SSL
   if (url.GetScheme() == "https" || url.GetScheme() == "wss") {
     PAutoPtr<PSSLChannel> ssl;
     PSSLContext::Method method = PSSLContext::HighestTLS;
     for (;;) {
-      PAutoPtr<PTCPSocket> tcp(new PTCPSocket(url.GetPort()));
+      PAutoPtr<PTCPSocket> tcp(new PTCPSocket(ap.GetPort()));
       tcp->SetReadTimeout(readTimeout);
-      if (!tcp->Connect(host))
+      if (!tcp->Connect(ap.GetAddress()))
         return SetLastResponse(TransportConnectError, PSTRSTRM("TCP connect fail: " << tcp->GetErrorText() << " (errno=" << tcp->GetErrorNumber() << ')'));
+
+      if (!m_proxy.empty()) {
+        PMIMEInfo outMIME, replyMIME;
+        PHTTPClient_DummyProcessor dummy(false);
+        if (!WriteCommand(CONNECT, url.GetHostPort(), outMIME, dummy) ||
+            !ReadResponse(replyMIME) ||
+            !ReadContentBody(replyMIME))
+          return false;
+      }
 
       PAutoPtr<PSSLContext> context(new PSSLContext(method));
       if (!context->SetCredentials(m_authority, m_certificate, m_privateKey))
         return SetLastResponse(TransportConnectError, "Could not set certificates");
 
       ssl.reset(new PSSLChannel(context.release(), true));
-      ssl->SetServerNameIndication(host);
+      ssl->SetServerNameIndication(url.GetHostName());
       if (ssl->Connect(tcp.release()))
         break;
 
@@ -838,7 +849,7 @@ bool PHTTPClient::ConnectURL(const PURL & url)
       --method;
     }
 
-    if (!ssl->CheckHostName(host))
+    if (!ssl->CheckHostName(url.GetHostName()))
         return SetLastResponse(TransportConnectError, "SSL host check fail: " + ssl->GetErrorText());
 
     if (!Open(ssl.release()))
@@ -847,10 +858,10 @@ bool PHTTPClient::ConnectURL(const PURL & url)
   else
 #endif
 
-  if (!Connect(host, url.GetPort()))
+  if (!Connect(ap.GetAddress(), ap.GetPort()))
     return SetLastResponse(TransportConnectError, PString::Empty());
 
-  PTRACE(5, "Connected to " << host);
+  PTRACE(4, "Connected to " << ap);
   return true;
 }
 
