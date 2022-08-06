@@ -3791,10 +3791,7 @@ PVXMLGrammar::PVXMLGrammar(const PVXMLGrammarInit & init)
   , m_recogniser(NULL)
   , m_allowDTMF(true)
   , m_fieldName(m_field.GetAttribute(NameAttribute))
-  , m_terminators(m_session.GetProperty(TermCharProperty))
   , m_state(Idle)
-  , m_noInputTimeout(m_session.GetTimeProperty(TimeoutProperty))
-  , m_partFillTimeout(m_session.GetTimeProperty(InterDigitTimeoutProperty))
 {
   m_timer.SetNotifier(PCREATE_NOTIFIER(OnTimeout), "VXMLGrammar");
 }
@@ -3851,9 +3848,12 @@ bool PVXMLGrammar::Start()
   if (!m_state.compare_exchange_strong(prev, Started))
     return prev == Started || prev == PartFill;
 
-  m_terminators = m_session.GetProperty(TermCharProperty);
-  m_noInputTimeout = m_session.GetTimeProperty(TimeoutProperty);
-  m_partFillTimeout = m_session.GetTimeProperty(InterDigitTimeoutProperty);
+  if (m_terminators.empty())
+    m_terminators = m_session.GetProperty(TermCharProperty);
+  if (m_noInputTimeout == 0)
+    m_noInputTimeout = m_session.GetTimeProperty(TimeoutProperty);
+  if (m_partFillTimeout == 0)
+    m_partFillTimeout = m_session.GetTimeProperty(InterDigitTimeoutProperty);
 
   PString inputModes = m_session.GetProperty(InputModesProperty, m_grammarElement, "mode");
 
@@ -4111,7 +4111,7 @@ PVXMLDigitsGrammar::PVXMLDigitsGrammar(const PVXMLGrammarInit & init)
   PURL::SplitVars(init.m_grammarElement->GetData(), tokens, ';', '=');
   m_minDigits = tokens.GetInteger("minDigits", 1);
   m_maxDigits = tokens.GetInteger("maxDigits", 10),
-    m_terminators = tokens.GetString("terminators", m_terminators);
+  m_terminators = tokens.GetString("terminators");
 
   if (m_minDigits == 0)
     m_minDigits = 1;
