@@ -1,4 +1,4 @@
-# zsdk-ptlib: Portable Tools Library
+# ptlib: Portable Tools Library
 
 ## Building
 
@@ -99,6 +99,6 @@ builds on the existing Jenkins by changing everything.
    * Restore the normal build dependency version requirements (not exact, but
      may have minimum required version)
 
-[1]: http://collab-jenkins.bbpd.io/job/zsdk-ptlib/
+[1]: https://contcicd.bbcollabcloud.com/job/rpm-ptlib
 [2]: http://semver.org/
 [3]: http://nvie.com/posts/a-successful-git-branching-model/
