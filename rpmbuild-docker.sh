@@ -2,8 +2,7 @@
 
 set -e
 
-PACKAGENAME=bbcollab-ptlib
-TARGET_OS=${1:-el7}
+PACKAGENAME=ptlib
 
-docker build -f $TARGET_OS.Dockerfile --build-arg SPECFILE=$PACKAGENAME.spec -t $PACKAGENAME-$TARGET_OS-build .
-docker run -it --rm --mount type=bind,src=$PWD,dst=/host -w /host $PACKAGENAME-$TARGET_OS-build ./rpmbuild.sh
+docker build --build-arg SPECFILE=$PACKAGENAME.spec -t $PACKAGENAME-build --file el7.Dockerfile .
+docker run -it --rm --mount type=bind,src=$PWD,dst=/work -w /work $PACKAGENAME-build ./rpmbuild.sh "$@"
