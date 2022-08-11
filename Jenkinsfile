@@ -1,124 +1,138 @@
+#!groovy
+
+@Library('collab-jenkins-library') _
+
+def spec_file = 'ptlib.spec'
+def job_name = JOB_NAME.replaceAll('%2F', '_')
+def build_tag = BUILD_TAG.replaceAll('%2F', '-')
+def el7_builder = null
+
 pipeline {
-  agent {
-    node {
-      label "master"
-      customWorkspace "${JOB_NAME.replaceAll('%2F', '_')}"
-    }
-  }
-
-  options {
-    buildDiscarder logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '', daysToKeepStr: '200', numToKeepStr: '200')
-  }
-
+  agent any
   stages {
-    stage('package-el7') {
-      // Build environment is defined by the Dockerfile
-      agent {
-        dockerfile {
-          filename 'el7.Dockerfile'
-          additionalBuildArgs  '--build-arg SPECFILE=bbcollab-ptlib.spec'
-          customWorkspace "${JOB_NAME.replaceAll('%2F', '_')}"
-        }
-      }
-      steps {
-        // Copy RPM dependencies to the workspace for fingerprinting (see Dockerfile)
-        sh 'cp -r /tmp/build-deps .'
-        sh './rpmbuild.sh'
-      }
-      post {
-        success {
-          fingerprint 'build-deps/*.rpm'
-          archiveArtifacts artifacts: 'rpmbuild/**/*', fingerprint: true
-          stash name: 'el7_rpms', includes: 'rpmbuild/RPMS/**/*'
-        }
-      }
-    }
-    stage('publish') {
-      when {
-        beforeAgent true
-        anyOf {
-          branch 'develop'
-          branch 'release/*'
-        }
-      }
-      agent {
-        dockerfile {
-          filename 'publish.Dockerfile'
-        }
-      }
-      environment {
-        BASE_PATH = './local_repo'
-      }
+    stage('el7-builder') {
+      // This avoids the matrix trying to build the docker image in parallel
       steps {
         script {
-          def dists = ['el7']
-          for (int i = 0; i < dists.size(); ++i) {
-            env.REPO = "${dists[i]}/"
-
-            if (env.BRANCH_NAME ==~ /release\/.*/) {
-              env.REPO += 'mcu-release'
-            } else if (env.BRANCH_NAME ==~ /epic\/.*/) {
-              env.REPO += 'mcu-epic'
-            } else {
-              env.REPO += 'mcu-develop'
+          el7_builder = docker.build("el7_builder:${build_tag}", "--build-arg SPECFILE=${spec_file} --file el7.Dockerfile .")
+        }
+      }
+    }
+    stage('matrix') {
+      failFast true
+      matrix {
+        axes {
+          axis {
+            name 'DIST'
+            values 'el7', 'amzn2'
+          }
+          axis {
+            name 'REPO'
+            values 'mcu-release', 'mcu-release-tsan', 'mcu-release-asan'
+          }
+          axis {
+            name 'ARCH'
+            values 'x86_64', 'aarch64'
+          }
+        }
+        when {
+          anyOf {
+            allOf {
+              branch 'develop'
+              expression { return REPO == 'mcu-develop' }
             }
-
-            sh "rm -rf rpmbuild"
-            unstash "${dists[i]}_rpms"
-            lock('aws-s3-citc-artifacts') {
-              withAWS(credentials: 'aws-dev', region: 'us-east-1') {
-                sh """
-                  aws s3 sync --no-progress --acl public-read s3://citc-artifacts/yum/$REPO/ $BASE_PATH
-                  repomanage --keep=5 --old $BASE_PATH | xargs rm -f no_such_file_as_this_to_prevent_error
-                  mv rpmbuild/RPMS/x86_64/* $BASE_PATH/base/
-                  createrepo --update $BASE_PATH
-                  aws s3 sync --no-progress --acl public-read --delete $BASE_PATH s3://citc-artifacts/yum/$REPO/
-                """
+            allOf {
+              branch 'release/*'
+              expression { return REPO != 'mcu-develop' }
+            }
+          }
+        }
+        excludes {
+          exclude {
+            axis {
+              name 'DIST'
+              values 'el7'
+            }
+            axis {
+              name 'ARCH'
+              values 'aarch64'
+            }
+          }
+          exclude {
+            axis {
+              name 'DIST'
+              values 'amzn2'
+            }
+            axis {
+              name 'REPO'
+              values 'mcu-release-tsan', 'mcu-release-asan'
+            }
+          }
+        }
+        environment {
+          HOME = "${WORKSPACE}/${DIST}-${REPO}"
+        }
+        stages {
+          stage('package') {
+            steps {
+              script {
+                sh 'mkdir -p $HOME'
+                if (DIST == 'el7') {
+                  el7_builder.inside() {
+                    sh "SPECFILE=${spec_file} ./rpmbuild.sh --with=${REPO.replace('mcu-release-','')}"
+                  }
+                }
+                else {
+                  awsCodeBuild \
+                      region: env.AWS_REGION, sourceControlType: 'jenkins', \
+                      credentialsId: 'aws-codebuild', credentialsType: 'jenkins', sseAlgorithm: 'AES256', \
+                      cloudWatchLogsStatusOverride: 'ENABLED', cloudWatchLogsGroupNameOverride: 'bbrtc-codebuild', \
+                      cloudWatchLogsStreamNameOverride: "${job_name}/${ARCH}", \
+                      artifactTypeOverride: 'S3', artifactLocationOverride: 'bbrtc-codebuild', \
+                      artifactNameOverride: 'rpmbuild', artifactPathOverride: build_tag, \
+                      downloadArtifacts: 'true', downloadArtifactsRelativePath: '.', \
+                      envVariables: "[ { BUILD_NUMBER, ${BUILD_NUMBER} }, { BRANCH_NAME, ${BRANCH_NAME} }, { SPECFILE, ${spec_file} } ]", \
+                      projectName: "BbRTC-${ARCH}"
+                  sh "mkdir -p ${HOME}/rpmbuild/RPMS/${ARCH}"
+                  sh "mv ${build_tag}/rpmbuild/RPMS/${ARCH}/* ${HOME}/rpmbuild/RPMS/${ARCH}"
+                }
+              }
+            }
+            post {
+              success {
+                archiveArtifacts artifacts: "${DIST}-${REPO}/rpmbuild/RPMS/**/*", fingerprint: true
+              }
+            }
+          }
+          stage('publish') {
+            steps {
+              unarchive mapping:["${DIST}-${REPO}/rpmbuild/RPMS/" : '.']
+              script {
+                stageYumPublish \
+                    rpms: "${HOME}/rpmbuild/RPMS", \
+                    dist: DIST, \
+                    repo: REPO, \
+                    arch: ARCH, \
+                    local_path: "${HOME}/yum", \
+                    tag_branch: "release/", \
+                    tag_spec_file: spec_file
               }
             }
           }
         }
       }
-      post {
-        success {
-          script {
-            if (env.BRANCH_NAME == 'develop') {
-              build job: "/zsdk-opal/develop", quietPeriod: 60, wait: false
-            }
-          }
-        }
-      }
-    }
-
-    stage('tag-release') {
-      when {
-        branch 'release/*'
-      }
-      steps {
-        // Set the key to do the git push
-        sshagent(credentials: ['collab_build_service_account']) {
-          sh """
-            major=`sed -n 's/%global *version_major *//p' bbcollab-ptlib.spec`
-            minor=`sed -n 's/%global *version_minor *//p' bbcollab-ptlib.spec`
-            patch=`sed -n 's/%global *version_patch *//p' bbcollab-ptlib.spec`
-            oem=`  sed -n 's/%global *version_oem *//p'   bbcollab-ptlib.spec`
-            git tag \$major.\$minor.\$patch.\$oem-2.${BUILD_NUMBER}
-            git tag ${env.BRANCH_NAME.replaceAll("release/", "")}-2.${BUILD_NUMBER}
-            git push --tags
-          """
-        }
-      }
     }
   }
+
   post {
     success {
       slackSend color: "good", message: "SUCCESS: <${currentBuild.absoluteUrl}|${currentBuild.fullDisplayName}>"
     }
     failure {
-      slackSend color: "danger", message: "FAILURE: <${currentBuild.absoluteUrl}|${currentBuild.fullDisplayName}>"
+      slackSend color: "danger", message: "@channel FAILURE: <${currentBuild.absoluteUrl}|${currentBuild.fullDisplayName}>"
     }
     unstable {
-      slackSend color: "warning", message: "UNSTABLE: <${currentBuild.absoluteUrl}|${currentBuild.fullDisplayName}>"
+      slackSend color: "warning", message: "@channel UNSTABLE: <${currentBuild.absoluteUrl}|${currentBuild.fullDisplayName}>"
     }
   }
 }

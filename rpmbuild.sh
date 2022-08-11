@@ -1,37 +1,58 @@
 #!/bin/bash
-# Build script using standard tools (should be done within a clean VM or
-# container to ensure reproducibility, and avoid polluting development environment)
+# Build script using standard tools (assumes dependencies are already installed)
 
 set -ex
 
-SPECFILE=bbcollab-ptlib.spec
-TARBALL=zsdk-ptlib.src.tgz
-BUILD_ARGS=(--define='_smp_mflags -j4')
-
-if [[ $BUILD_NUMBER ]]; then
-    BUILD_ARGS+=(--define="jenkins_release .${BUILD_NUMBER}")
+if ! [ -x /usr/bin/spectool ] > /dev/null; then
+    echo You must install spectool first: sudo yum install -y rpmdevtools
+    exit 1
 fi
 
-if [[ "$BRANCH_NAME" == "develop" ]]; then
-    BUILD_ARGS+=(--define="branch_id 1")
-elif [[ "$BRANCH_NAME" == release/* ]]; then
-    BUILD_ARGS+=(--define="branch_id 2")
+if [[ -z "$SPECFILE" ]]
+then SPECFILE=*.spec   # Expecting only one!
+fi
+
+BUILD_ARGS=(--define='_smp_mflags -j2')
+
+if [[ "$BRANCH_NAME" == release/* ]] || [[ "$BRANCH_NAME" == "main" ]]
+then BUILD_ARGS+=(--define="branch_id 2" --define="version_stage ReleaseCode")
+elif [[ "$BRANCH_NAME" == "develop" ]]
+then BUILD_ARGS+=(--define="branch_id 1" --define="version_stage BetaCode")
+fi
+
+if [[ $BUILD_NUMBER ]]
+then BUILD_ARGS+=(--define="jenkins_release .${BUILD_NUMBER}")
 fi
 
 # Create/clean the rpmbuild directory tree
 rpmdev-setuptree
 rpmdev-wipetree
 
-# Update the git commit in revision.h (tarball excludes git repo)
-make clean
-make $(pwd)/revision.h
+srcdir=$(rpm --eval "%{_sourcedir}")
 
-# Create the source tarball
-tar -czf $(rpm --eval "%{_sourcedir}")/$TARBALL --exclude-vcs --exclude=rpmbuild .
+# If local sources, need to build/copy them manually
+for src in $(spectool --list-files --sources $SPECFILE)
+do
+    if [[ "$src" == Source*: ]] || [[ "$src" == http* ]]
+    then continue
+    fi
+
+    if [[ "$src" == *.tar ]]
+    then git archive --format=tar --output=$srcdir/$src HEAD
+    elif [[ "$src" == *.tgz ]]
+    then git archive --format=tar.gz --output=$srcdir/$src HEAD
+    else
+        dir=$srcdir/$(dirname $src)
+        mkdir -p $dir
+        cp $src $dir/
+    fi
+done
+
+# Download the source tarball, copy in our patches
+spectool --get-files --sourcedir $SPECFILE
+if ls *.patch >/dev/null 2>&1
+then cp *.patch $srcdir
+fi
 
 # Build the RPM(s)
-rpmbuild -ba "${BUILD_ARGS[@]}" $SPECFILE
-
-# Copy the output RPM(s) to the local output directory
-mkdir -p rpmbuild
-cp -pr $(rpm --eval "%{_rpmdir}") rpmbuild/
+rpmbuild -bb "$@" "${BUILD_ARGS[@]}" $SPECFILE
