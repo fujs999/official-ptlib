@@ -1,10 +1,5 @@
 pipeline {
-  agent {
-    node {
-      label "master"
-      customWorkspace "${JOB_NAME.replaceAll('%2F', '_')}"
-    }
-  }
+  agent none
 
   options {
     buildDiscarder logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '', daysToKeepStr: '200', numToKeepStr: '200')
@@ -94,18 +89,23 @@ pipeline {
       when {
         branch 'release/*'
       }
+      agent any
+      environment {
+        SPEC_FILE = 'bbcollab-ptlib.spec'
+        GIT_PATH = GIT_URL.replace('https://', '')
+        RELEASE_TAG = "${BRANCH_NAME.replaceAll('release/', '')}-2.${BUILD_NUMBER}"
+      }
       steps {
-        // Set the key to do the git push
-        sshagent(credentials: ['collab_build_service_account']) {
-          sh """
-            major=`sed -n 's/%global *version_major *//p' bbcollab-ptlib.spec`
-            minor=`sed -n 's/%global *version_minor *//p' bbcollab-ptlib.spec`
-            patch=`sed -n 's/%global *version_patch *//p' bbcollab-ptlib.spec`
-            oem=`  sed -n 's/%global *version_oem *//p'   bbcollab-ptlib.spec`
-            git tag \$major.\$minor.\$patch.\$oem-2.${BUILD_NUMBER}
-            git tag ${env.BRANCH_NAME.replaceAll("release/", "")}-2.${BUILD_NUMBER}
-            git push --tags
-          """
+        withCredentials([usernamePassword(credentialsId: 'github-app-class-collab', passwordVariable: 'GIT_TOKEN', usernameVariable: 'GIT_USER')]) {
+          sh '''
+            major=`sed -n 's/%global *version_major *//p' $SPEC_FILE`
+            minor=`sed -n 's/%global *version_minor *//p' $SPEC_FILE`
+            patch=`sed -n 's/%global *version_patch *//p' $SPEC_FILE`
+            oem=`  sed -n 's/%global *version_oem *//p'   $SPEC_FILE`
+            git tag \$major.\$minor.\$patch.\$oem-2.$BUILD_NUMBER
+            git tag $RELEASE_TAG
+            git push --tags "https://$GIT_USER:$GIT_TOKEN@$GIT_PATH"
+          '''
         }
       }
     }
