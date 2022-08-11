@@ -1,0 +1,18 @@
+version: 0.2
+
+phases:
+  install:
+    commands:
+      - yum install --assumeyes sudo rpmdevtools yum-utils
+      - yum-builddep --assumeyes ${SPECFILE}
+  pre_build:
+    commands:
+      - chown -R codebuild-user:codebuild-user .
+      - chmod +x rpmbuild.sh
+  build:
+    commands:
+      - sudo --preserve-env --user=codebuild-user ./rpmbuild.sh
+artifacts:
+  files:
+    - '**/*.rpm'
+  base-directory: rpmbuild
