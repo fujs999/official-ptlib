@@ -1,11 +1,12 @@
 %global version_major  2
 %global version_minor  19
 %global version_patch  4
-%global version_oem    16
+%global version_oem    18
 
 # Branch ID should be 0 for local builds/PRs
 # Jenkins builds should use 1 for develop, 2 for master (release builds)
-%{!?branch_id: %global branch_id 0}
+%{!?branch_id:     %global branch_id     0}
+%{!?version_stage: %global version_stage AlphaCode}
 
 # Disable the separate debug package and automatic stripping, as detailed here:
 # http://fedoraproject.org/wiki/How_to_create_an_RPM_package
@@ -13,40 +14,26 @@
 %global debug_package %{nil}
 %global __os_install_post /usr/lib/rpm/brp-compress %{nil}
 
-Name:           bbcollab-ptlib
+Name:           collab-ptlib
 Version:        %{version_major}.%{version_minor}.%{version_patch}.%{version_oem}
 Release:        %{branch_id}%{?jenkins_release}%{?dist}
 Summary:        PTLib: Portable Tools Library
 
 Group:          System Environment/Libraries
 License:        MPL 1.0 + others
-URL:            https://stash.bbpd.io/projects/COL/repos/zsdk-ptlib/browse
-Source0:        zsdk-ptlib.src.tgz
+URL:            https://github.com/Class-Collab/rpm-ptlib
+Source0:        source.tgz
 
 # Initial dependency list based on Opal wiki:
 # http://wiki.opalvoip.org/index.php?n=Main.BuildingPTLibUnix
 # Optional build dependencies not needed for the MCU are commented-out
 BuildRequires:  %__sed
 
-BuildRequires:  devtoolset-9-gcc-c++
-BuildRequires:  openssl-devel
-BuildRequires:  ImageMagick-devel
-
-#BuildRequires:  cyrus-sasl-devel
-BuildRequires:  expat-devel
-BuildRequires:  gperftools
-# gstreamer 0.10 support seems to be broken, but 1.0 isn't available
-#BuildRequires:  gstreamer-plugins-base-devel
-#BuildRequires:  gstreamer-devel
-#BuildRequires:  libjpeg-devel
-BuildRequires:  libpcap-devel
-#BuildRequires:  lua-devel
-BuildRequires:  ncurses-devel
-#BuildRequires:  openldap-devel
-#BuildRequires:  SDL-devel
-#BuildRequires:  unixODBC-devel
-#BuildRequires:  v8-devel
 BuildRequires:  which
+BuildRequires:  gperftools
+BuildRequires:  openssl-devel
+BuildRequires:  expat-devel
+BuildRequires:  ImageMagick-devel
 
 %description
 PTLib: Portable Tools Library
@@ -79,12 +66,31 @@ developing applications that use %{name}.
 
 
 %prep
-%setup -q -c -n zsdk-ptlib
-
+%setup -q -c -n ptlib
 
 %build
+%if "%{?dist}" == ".el7"
 source /opt/rh/devtoolset-9/enable
-%configure --enable-exceptions \
+%endif
+%ifarch aarch64
+%define arch_arg --enable-graviton2
+%endif
+%if %{?_with_tsan:1}%{!?_with_tsan:0}
+%define tsan_arg --enable-sanitize-thread
+%endif
+%if %{?_with_asan:1}%{!?_with_asan:0}
+%define asan_arg --enable-sanitize-address
+%endif
+sed -i \
+    -e "s/MAJOR_VERSION.*/MAJOR_VERSION %{version_major}/" \
+    -e "s/MINOR_VERSION.*/MINOR_VERSION %{version_minor}/" \
+    -e "s/BUILD_TYPE.*/BUILD_TYPE %{version_stage}/"       \
+    -e "s/PATCH_VERSION.*/PATCH_VERSION %{version_patch}/" \
+    -e "s/OEM_VERSION.*/OEM_VERSION %{version_oem}/"       \
+    version.h
+./configure %{?arch_arg} %{?tsan_arg} %{?asan_arg} \
+        --enable-cpp14 \
+        --enable-exceptions \
         --with-profiling=manual \
         --disable-pthread_kill \
         --disable-vxml \
@@ -92,18 +98,17 @@ source /opt/rh/devtoolset-9/enable
         --disable-sasl \
         --disable-openldap \
         --disable-plugins \
-        --enable-cpp14 \
-        PTLIB_MAJOR=%{version_major} \
-        PTLIB_MINOR=%{version_minor} \
-        PTLIB_PATCH=%{version_patch} \
-        PTLIB_OEM=%{version_oem}
-make %{?_smp_mflags} REVISION_FILE= PTLIB_FILE_VERSION=%{version} all
+        --prefix=%{_prefix} \
+        --libdir=%{_libdir}
+make %{?_smp_mflags} opt debug
 
 
 %install
-rm -rf $RPM_BUILD_ROOT
+%if "%{?dist}" == ".el7"
 source /opt/rh/devtoolset-9/enable
-make install DESTDIR=$RPM_BUILD_ROOT PTLIB_FILE_VERSION=%{version}
+%endif
+rm -rf $RPM_BUILD_ROOT
+make DESTDIR=$RPM_BUILD_ROOT install
 find $RPM_BUILD_ROOT -name '*.la' -exec rm -f {} ';'
 
 
