@@ -1998,8 +1998,8 @@ bool PVXMLSession::ProcessEvents()
   PString input;
 
   m_userInputMutex.Wait();
-  if (!m_userInputQueue.empty()) {
-    input = m_userInputQueue.front();
+  while (!m_userInputQueue.empty()) {
+    input += m_userInputQueue.front();
     m_userInputQueue.pop();
   }
   m_userInputMutex.Signal();
@@ -2209,6 +2209,7 @@ void PVXMLSession::ClearBargeIn()
 
 void PVXMLSession::FlushInput()
 {
+  PTRACE(4, "Flushing user input queue");
   m_userInputMutex.Wait();
   while (!m_userInputQueue.empty())
     m_userInputQueue.pop();
