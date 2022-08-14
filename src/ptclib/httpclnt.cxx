@@ -809,14 +809,26 @@ bool PHTTPClient::ConnectURL(const PURL & url)
   if (IsOpen())
     return true;
 
-  PIPAddressAndPort ap(m_proxy.empty() ? url.GetHostPort() : m_proxy);
+  bool secure = url.GetScheme() == "https" || url.GetScheme() == "wss";
+
+  PURL proxy;
+  {
+    PString proxyStr = m_proxy;
+    if (proxyStr.empty())
+      proxyStr = getenv(secure ? "HTTPS_PROXY" : "HTTP_PROXY");
+    if (!proxy.Parse(proxyStr, url.GetScheme()))
+      return SetLastResponse(BadRequest, PSTRSTRM("Invalid URL in proxy"));
+  }
+
+  PIPAddressAndPort ap(proxy.IsEmpty() ? url.GetHostPort() : proxy.GetHostPort());
 
   // Is not open or other end shut down, restablish connection
   if (!ap.IsValid())
     return SetLastResponse(BadRequest, PSTRSTRM("Invalid host or port" << (m_proxy.empty() ? "in URL" : "in proxy")));
 
+  if (secure)
 #if P_SSL
-  if (url.GetScheme() == "https" || url.GetScheme() == "wss") {
+  {
     PAutoPtr<PSSLChannel> ssl;
     PSSLContext::Method method = PSSLContext::HighestTLS;
     for (;;) {
@@ -825,7 +837,7 @@ bool PHTTPClient::ConnectURL(const PURL & url)
       if (!tcp->Connect(ap.GetAddress()))
         return SetLastResponse(TransportConnectError, PSTRSTRM("TCP connect fail: " << tcp->GetErrorText() << " (errno=" << tcp->GetErrorNumber() << ')'));
 
-      if (!m_proxy.empty()) {
+      if (!proxy.IsEmpty()) {
         PMIMEInfo outMIME, replyMIME;
         PHTTPClient_DummyProcessor dummy(false);
         if (!WriteCommand(CONNECT, url.GetHostPort(), outMIME, dummy) ||
@@ -856,6 +868,8 @@ bool PHTTPClient::ConnectURL(const PURL & url)
       return SetLastResponse(TransportConnectError, PString::Empty());
   }
   else
+#else
+    return SetLastResponse(TransportConnectError, "Secure secokts unsupported");
 #endif
 
   if (!Connect(ap.GetAddress(), ap.GetPort()))
