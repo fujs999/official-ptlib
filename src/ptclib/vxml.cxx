@@ -4095,21 +4095,30 @@ PFACTORY_SYNONYM(PVXMLGrammarFactory, PVXMLDigitsGrammar, OPAL_digits, "X-OPAL/d
 PVXMLDigitsGrammar::PVXMLDigitsGrammar(const PVXMLGrammarInit & init)
   : PVXMLGrammar(init)
   , m_minDigits(1)
-  , m_maxDigits(UINT_MAX)
+  , m_maxDigits(10)
 {
   if (init.m_grammarElement == NULL)
     return;
 
   PStringOptions tokens;
   PURL::SplitVars(init.m_grammarElement->GetData(), tokens, ';', '=');
-  m_minDigits = tokens.GetInteger("minDigits", 1);
-  m_maxDigits = tokens.GetInteger("maxDigits", 10),
-  m_terminators = tokens.GetString("terminators");
 
+  m_minDigits = tokens.GetVar("minDigits", m_minDigits);
   if (m_minDigits == 0)
     m_minDigits = 1;
+
+  m_maxDigits = tokens.GetVar("maxDigits", m_maxDigits);
   if (m_maxDigits < m_minDigits)
     m_maxDigits = m_minDigits;
+
+  if (tokens.Contains("terminators")) {
+    m_terminators = tokens.GetString("terminators");
+
+    // An empty terminators token is set to an impossible DTMF value, as if m_terminators
+    // is an empty string, it is set to the terminators property in PVXMLGrammar::Start()
+    if (m_terminators.empty())
+      m_terminators = '\n';
+  }
 }
 
 
