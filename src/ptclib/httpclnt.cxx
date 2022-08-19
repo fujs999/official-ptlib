@@ -816,7 +816,7 @@ bool PHTTPClient::ConnectURL(const PURL & url)
     PString proxyStr = m_proxy;
     if (proxyStr.empty())
       proxyStr = getenv(secure ? "HTTPS_PROXY" : "HTTP_PROXY");
-    if (!proxy.Parse(proxyStr, url.GetScheme()))
+    if (!proxyStr.empty() && !proxy.Parse(proxyStr, url.GetScheme()))
       return SetLastResponse(BadRequest, PSTRSTRM("Invalid URL in proxy"));
   }
 
