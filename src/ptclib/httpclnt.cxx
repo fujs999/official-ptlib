@@ -820,11 +820,13 @@ bool PHTTPClient::ConnectURL(const PURL & url)
       return SetLastResponse(BadRequest, PSTRSTRM("Invalid URL in proxy"));
   }
 
-  PIPAddressAndPort ap(proxy.IsEmpty() ? url.GetHostPort() : proxy.GetHostPort());
+  PIPAddressAndPort ap((proxy.IsEmpty() ? url : proxy).GetHostPort(true));
 
   // Is not open or other end shut down, restablish connection
   if (!ap.IsValid())
-    return SetLastResponse(BadRequest, PSTRSTRM("Invalid host or port" << (m_proxy.empty() ? "in URL" : "in proxy")));
+    return SetLastResponse(BadRequest, PSTRSTRM("Invalid host or port in "
+                                                << (proxy.IsEmpty() ? "URL" : "proxy") << " - "
+                                                << (proxy.IsEmpty() ? url : proxy)));
 
   if (secure)
 #if P_SSL
