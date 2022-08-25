@@ -28,7 +28,7 @@ pipeline {
           }
           axis {
             name 'REPO'
-            values 'mcu-develop', 'mcu-release', 'mcu-release-tsan'
+            values 'mcu-release', 'mcu-release-tsan', 'mcu-release-asan'
           }
           axis {
             name 'ARCH'
@@ -65,7 +65,7 @@ pipeline {
             }
             axis {
               name 'REPO'
-              values 'mcu-release-tsan'
+              values 'mcu-release-tsan', 'mcu-release-asan'
             }
           }
         }

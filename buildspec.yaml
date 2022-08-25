@@ -3,6 +3,7 @@ version: 0.2
 phases:
   install:
     commands:
+      - yum update --assumeyes
       - yum install --assumeyes sudo rpmdevtools yum-utils
       - yum-builddep --assumeyes ${SPECFILE}
   pre_build:
@@ -15,4 +16,4 @@ phases:
 artifacts:
   files:
     - '**/*.rpm'
-  base-directory: rpmbuild
+  base-directory: /home/codebuild-user/rpmbuild

@@ -8,43 +8,55 @@ if ! [ -x /usr/bin/spectool ] > /dev/null; then
     exit 1
 fi
 
-if [[ -z "$SPECFILE" ]]; then
-    SPECFILE=*.spec   # Expecting only one!
+if [[ -z "$SPECFILE" ]]
+then SPECFILE=*.spec   # Expecting only one!
 fi
 
 BUILD_ARGS=(--define='_smp_mflags -j4')
 
-if [[ "$BRANCH_NAME" == "develop" ]]; then
-    BUILD_ARGS+=(--define="branch_id 1")
-elif [[ "$BRANCH_NAME" == release/* ]]; then
-    BUILD_ARGS+=(--define="branch_id 2")
+if [[ "$@" == *tsan* ]]
+then BUILD_ARGS+=(--define="branch_id tsan" --define="library_id tsan")
+elif [[ "$@" == *asan* ]]
+then BUILD_ARGS+=(--define="branch_id asan" --define="library_id tsan")
+elif [[ "$BRANCH_NAME" == "develop" ]]
+then BUILD_ARGS+=(--define="branch_id 1")
+elif [[ "$BRANCH_NAME" == release/* ]] || [[ "$BRANCH_NAME" == "main" ]]
+then BUILD_ARGS+=(--define="branch_id 2")
 fi
 
-if [[ $BUILD_NUMBER ]]; then
-    BUILD_ARGS+=(--define="jenkins_release .${BUILD_NUMBER}")
+if [[ $BUILD_NUMBER ]]
+then BUILD_ARGS+=(--define="jenkins_release .${BUILD_NUMBER}")
 fi
 
 # Create/clean the rpmbuild directory tree
 rpmdev-setuptree
 rpmdev-wipetree
 
+srcdir=$(rpm --eval "%{_sourcedir}")
+
 # If local sources, need to build/copy them manually
-if [ "`spectool --list-files --source 0 $SPECFILE`" == "Source0: source.tgz" ]; then
-    git archive HEAD | gzip > $(rpm --eval "%{_sourcedir}")/source.tgz
-fi
-if [ "`spectool --list-files --source 1 $SPECFILE`" == "Source1: filter-requires.sh" ]; then
-    cp filter-requires.sh $(rpm --eval "%{_sourcedir}")
-fi
+for src in $(spectool --list-files --sources $SPECFILE)
+do
+    if [[ "$src" == Source*: ]] || [[ "$src" == http* ]]
+    then continue
+    fi
+
+    if [[ "$src" == *.tar ]]
+    then git archive --format=tar --output=$srcdir/$src HEAD
+    elif [[ "$src" == *.tgz ]]
+    then git archive --format=tar.gz --output=$srcdir/$src HEAD
+    else
+        dir=$srcdir/$(dirname $src)
+        mkdir -p $dir
+        cp $src $dir/
+    fi
+done
 
 # Download the source tarball, copy in our patches
 spectool --get-files --sourcedir $SPECFILE
-if ls *.patch >/dev/null 2>&1; then
-    cp *.patch $(rpm --eval "%{_sourcedir}")
+if ls *.patch >/dev/null 2>&1
+then cp *.patch $srcdir
 fi
 
 # Build the RPM(s)
-rpmbuild -ba "$@" "${BUILD_ARGS[@]}" $SPECFILE
-
-# Copy the output RPM(s) to the local output directory
-mkdir -p rpmbuild
-cp -pr $(rpm --eval "%{_rpmdir}") rpmbuild/
+rpmbuild -bb "$@" "${BUILD_ARGS[@]}" $SPECFILE

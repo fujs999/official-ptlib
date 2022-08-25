@@ -77,7 +77,10 @@ source /opt/rh/devtoolset-9/enable
 %if %{?_with_tsan:1}%{!?_with_tsan:0}
 %define tsan_arg --enable-sanitize-thread
 %endif
-./configure %{?tsan_arg} %{?arch_arg} \
+%if %{?_with_asan:1}%{!?_with_asan:0}
+%define asan_arg --enable-sanitize-address
+%endif
+./configure %{?arch_arg} %{?tsan_arg} %{?asan_arg} \
         --enable-cpp14 \
         --enable-exceptions \
         --with-profiling=manual \
