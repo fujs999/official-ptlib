@@ -839,6 +839,7 @@ class PHTTPClient : public PHTTP
     PString  m_privateKey;   // File or data
 #endif
     PHTTPClientAuthentication * m_authentication;
+    PURL::UrlFormat m_commandUrlFormat;
 };
 
 

@@ -243,6 +243,7 @@ PHTTPClient::PHTTPClient(const PString & userAgent)
   , m_persist(true)
   , m_maxRedirects(10)
   , m_authentication(NULL)
+  , m_commandUrlFormat(PURL::RelativeOnly)
 {
 }
 
@@ -290,8 +291,6 @@ PHTTP::StatusCode PHTTPClient::ExecuteCommand(Commands cmd,
   if (m_persist && !outMIME.Contains(ConnectionTag()))
     outMIME.SetAt(ConnectionTag(), KeepAliveTag());
 
-  PURL::UrlFormat urlFormat = m_proxy.empty() || url.GetScheme() == "https" || url.GetScheme() == "wss" ? PURL::RelativeOnly : PURL::FullURL;
-
   unsigned redirectCount = m_maxRedirects;
   bool needAuthentication = true;
   bool forceReopen = !m_persist;
@@ -312,7 +311,7 @@ PHTTP::StatusCode PHTTPClient::ExecuteCommand(Commands cmd,
         outMIME.SetAt(HostTag, url.GetHostPort());
     }
 
-    if (!WriteCommand(cmd, url.AsString(urlFormat), outMIME, processor))
+    if (!WriteCommand(cmd, url.AsString(m_commandUrlFormat), outMIME, processor))
       continue;
 
     // If not persisting need to shut down write so other end stops reading
@@ -813,11 +812,13 @@ bool PHTTPClient::ConnectURL(const PURL & url)
 
   PURL proxy;
   {
-    PString proxyStr = m_proxy;
-    if (proxyStr.empty())
-      proxyStr = getenv(secure ? "HTTPS_PROXY" : "HTTP_PROXY");
-    if (!proxyStr.empty() && !proxy.Parse(proxyStr, url.GetScheme()))
-      return SetLastResponse(BadRequest, PSTRSTRM("Invalid URL in proxy"));
+    PString proxyStr = m_proxy.empty() ? getenv(secure ? "HTTPS_PROXY" : "HTTP_PROXY") : m_proxy;
+    if (!proxyStr.empty()) {
+      if (!proxy.Parse(proxyStr) && !proxy.Parse("http://" + proxyStr))
+        return SetLastResponse(BadRequest, PSTRSTRM("Invalid URL in proxy: \"" << proxyStr << '"'));
+      if (!secure)
+        m_commandUrlFormat = PURL::FullURL;
+    }
   }
 
   PIPAddressAndPort ap((proxy.IsEmpty() ? url : proxy).GetHostPort(true));
@@ -871,13 +872,13 @@ bool PHTTPClient::ConnectURL(const PURL & url)
   }
   else
 #else
-    return SetLastResponse(TransportConnectError, "Secure secokts unsupported");
+    return SetLastResponse(TransportConnectError, "TLS secure sockets unsupported");
 #endif
 
   if (!Connect(ap.GetAddress(), ap.GetPort()))
-    return SetLastResponse(TransportConnectError, PString::Empty());
+      return SetLastResponse(TransportConnectError, PString::Empty());
 
-  PTRACE(4, "Connected to " << ap);
+  PTRACE(4, "Connected to " << (proxy.IsEmpty() ? "URL" : "proxy") << " at " << ap);
   return true;
 }
 
