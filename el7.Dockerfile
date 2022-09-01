@@ -8,7 +8,6 @@ RUN yum install --assumeyes epel-release centos-release-scl-rh && yum clean all
 # Add standard tools expected on any development machine
 RUN yum groupinstall --assumeyes "Development tools" && yum clean all
 
-
 # Install large/common dependencies (to avoid delays upon later cache invalidation)
 RUN yum install --assumeyes --setopt=tsflags=nodocs \
         devtoolset-9-gcc \
@@ -23,7 +22,7 @@ RUN yum install --assumeyes rpmdevtools yum-utils && yum clean all
 # Install dependencies referenced by the spec file
 ARG SPECFILE
 COPY ${SPECFILE} .
-RUN yum-builddep -y ${SPECFILE} && yum clean all
+RUN yum-builddep --assumeyes ${SPECFILE} && yum clean all
 
 # Set up a non-root user for RPM builds
 ARG USERID=1000

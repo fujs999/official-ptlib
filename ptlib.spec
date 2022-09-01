@@ -1,11 +1,12 @@
 %global version_major  2
 %global version_minor  19
 %global version_patch  4
-%global version_oem    17
+%global version_oem    19
 
 # Branch ID should be 0 for local builds/PRs
 # Jenkins builds should use 1 for develop, 2 for master (release builds)
-%{!?branch_id: %global branch_id 0}
+%{!?branch_id:     %global branch_id     0}
+%{!?version_stage: %global version_stage AlphaCode}
 
 # Disable the separate debug package and automatic stripping, as detailed here:
 # http://fedoraproject.org/wiki/How_to_create_an_RPM_package
@@ -80,6 +81,13 @@ source /opt/rh/devtoolset-9/enable
 %if %{?_with_asan:1}%{!?_with_asan:0}
 %define asan_arg --enable-sanitize-address
 %endif
+sed -i \
+    -e "s/MAJOR_VERSION.*/MAJOR_VERSION %{version_major}/" \
+    -e "s/MINOR_VERSION.*/MINOR_VERSION %{version_minor}/" \
+    -e "s/BUILD_TYPE.*/BUILD_TYPE %{version_stage}/"       \
+    -e "s/PATCH_VERSION.*/PATCH_VERSION %{version_patch}/" \
+    -e "s/OEM_VERSION.*/OEM_VERSION %{version_oem}/"       \
+    version.h
 ./configure %{?arch_arg} %{?tsan_arg} %{?asan_arg} \
         --enable-cpp14 \
         --enable-exceptions \
@@ -91,13 +99,8 @@ source /opt/rh/devtoolset-9/enable
         --disable-openldap \
         --disable-plugins \
         --prefix=%{_prefix} \
-        --libdir=%{_libdir} \
-        PTLIB_MAJOR=%{version_major} \
-        PTLIB_MINOR=%{version_minor} \
-        PTLIB_PATCH=%{version_patch} \
-        PTLIB_OEM=%{version_oem}
-make $(pwd)/revision.h
-make %{?_smp_mflags} REVISION_FILE= PTLIB_FILE_VERSION=%{version} opt debug
+        --libdir=%{_libdir}
+make %{?_smp_mflags} opt debug
 
 
 %install
@@ -105,7 +108,7 @@ make %{?_smp_mflags} REVISION_FILE= PTLIB_FILE_VERSION=%{version} opt debug
 source /opt/rh/devtoolset-9/enable
 %endif
 rm -rf $RPM_BUILD_ROOT
-make DESTDIR=$RPM_BUILD_ROOT PTLIB_FILE_VERSION=%{version} install
+make DESTDIR=$RPM_BUILD_ROOT install
 find $RPM_BUILD_ROOT -name '*.la' -exec rm -f {} ';'
 
 
