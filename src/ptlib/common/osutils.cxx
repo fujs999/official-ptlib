@@ -1250,6 +1250,26 @@ PDirectory::PDirectory(const PDirectory & dir)
 }
 
 
+bool PDirectory::RemoveTree(const PString & path, bool force)
+{
+  PDirectory dir(path);
+  if (dir.Open()) {
+    do {
+      PFilePath entry = dir + dir.GetEntryName();
+      if (dir.IsSubDir()) {
+        if (!RemoveTree(entry))
+          return false;
+      }
+      else {
+        if (!PFile::Remove(entry, force))
+          return false;
+      }
+    } while (dir.Next());
+  }
+  return dir.Remove();
+}
+
+
 PDirectory PDirectory::GetTemporary()
 {
   const char * tmpdir = getenv("TMPDIR");
