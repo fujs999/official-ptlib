@@ -807,11 +807,11 @@ bool PHTTPClient::DeleteDocument(const PURL & url)
 }
 
 
-PHTTPClient::SelectProxyResult PHTTPClient::SelectProxy(const PURL & destURL, PURL & proxyURL)
+PHTTP::SelectProxyResult PHTTP::GetProxyFromEnvironment(PURL & proxyURL, const PURL & destURL, const PString & dflt)
 {
   PConfig env(PConfig::Environment);
 
-  PString proxyStr = m_proxy;
+  PString proxyStr = dflt;
   if (proxyStr.empty()) {
     proxyStr = env.GetString("HTTP_PROXY", env.GetString("http_proxy")).Trim();
     if (destURL.GetScheme() == "https" || destURL.GetScheme() == "wss")
@@ -843,8 +843,14 @@ PHTTPClient::SelectProxyResult PHTTPClient::SelectProxy(const PURL & destURL, PU
   if (proxyURL.Parse(proxyStr) || proxyURL.Parse("http://" + proxyStr))
     return e_HasProxy;
 
-  SetLastResponse(BadRequest, PSTRSTRM("Invalid URL in proxy: \"" << proxyStr << '"'));
+  PTRACE(2, &proxyURL, "Invalid URL in proxy: \"" << proxyStr << '"');
   return e_BadProxy;
+}
+
+
+PHTTPClient::SelectProxyResult PHTTPClient::SelectProxy(const PURL & destURL, PURL & proxyURL)
+{
+  return GetProxyFromEnvironment(proxyURL, destURL, m_proxy);
 }
 
 
@@ -857,9 +863,10 @@ bool PHTTPClient::ConnectURL(const PURL & destURL)
 
   bool usingProxy = false;
   PURL proxyURL;
+  PTRACE_CONTEXT_ID_TO(proxyURL);
   switch (SelectProxy(destURL, proxyURL)) {
     case e_BadProxy :
-      return false;
+      return SetLastResponse(BadRequest, "Invalid URL in proxy");
 
     case e_HasProxy :
       if (!secure)

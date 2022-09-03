@@ -30,6 +30,7 @@
 
 #include <ptlib/pprocess.h>
 #include <ptclib/aws_sdk.h>
+#include <ptclib/http.h>
 
 #define USE_IMPORT_EXPORT
 #include <aws/core/Aws.h>
@@ -169,7 +170,20 @@ PAwsClientBase::PAwsClientBase()
 #endif
 
   m_region = m_clientConfig->region.empty() ? "us-east-1" : m_clientConfig->region.c_str();
-  PTRACE(4, "Client config: region=\"" << m_region << "\" profile=\"" << m_clientConfig->profileName << '"');
+
+  PURL proxy;
+  if (PHTTP::GetProxyFromEnvironment(proxy, PSTRSTRM("https://" << m_region << ".amazonaws.com")) == PHTTP::e_HasProxy) {
+    m_clientConfig->proxyScheme = proxy.GetScheme() == "https" ? Aws::Http::Scheme::HTTPS : Aws::Http::Scheme::HTTP;
+    m_clientConfig->proxyUserName = proxy.GetUserName().c_str();
+    m_clientConfig->proxyPassword = proxy.GetPassword().c_str();
+    m_clientConfig->proxyHost = proxy.GetHostName().c_str();
+    m_clientConfig->proxyPort = proxy.GetPort();
+  }
+
+  PTRACE(4, "Client config: "
+         "region=\"" << m_region << "\" "
+         "profile=\"" << m_clientConfig->profileName << "\" "
+         "proxy=" << m_clientConfig->proxyHost << ':' << m_clientConfig->proxyPort);
 }
 
 

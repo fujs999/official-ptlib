@@ -258,7 +258,22 @@ class PHTTP : public PInternetProtocol
 
     static const PCaselessString & FormUrlEncoded();
 
-  protected:
+    enum SelectProxyResult
+    {
+      e_NoProxy,
+      e_BadProxy,
+      e_HasProxy
+    };
+
+    /**Get active proxy from environment variables.
+      */
+    static SelectProxyResult GetProxyFromEnvironment(
+      PURL & proxyURL,
+      const PURL & destURL,
+      const PString & dflt = PString::Empty()
+    );
+
+protected:
     /** Create a TCP/IP HTTP protocol channel.
      */
     PHTTP();
@@ -825,17 +840,13 @@ class PHTTPClient : public PHTTP
     static PINDEX MaxTraceContentSize;
 #endif
 
+    virtual SelectProxyResult SelectProxy(const PURL & url, PURL & proxy);
+
   protected:
     /// Connect at transport level to remote, based on URL
     bool ConnectURL(
       const PURL & url
     );
-    virtual enum SelectProxyResult
-    {
-      e_NoProxy,
-      e_BadProxy,
-      e_HasProxy
-    } SelectProxy(const PURL & url, PURL & proxy);
 
     PString  m_userAgentName;
     bool     m_persist;
