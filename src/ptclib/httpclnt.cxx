@@ -308,7 +308,7 @@ PHTTP::StatusCode PHTTPClient::ExecuteCommand(Commands cmd,
       if (url.GetHostName().IsEmpty())
         outMIME.SetAt(HostTag, "localhost");
       else
-        outMIME.SetAt(HostTag, url.GetHostPort());
+        outMIME.SetAt(HostTag, url.GetHostPort(true));
     }
 
     if (!WriteCommand(cmd, url.AsString(m_commandUrlFormat), outMIME, processor))
@@ -338,6 +338,9 @@ PHTTP::StatusCode PHTTPClient::ExecuteCommand(Commands cmd,
         if (redirectCount-- > 0) {
           PURL newLocation = replyMIME("Location");
           if (!newLocation.IsEmpty() && adjustableURL != newLocation) {
+            PTRACE(3, "Redirected to " << newLocation);
+            if (outMIME.Get(HostTag) == adjustableURL.GetHostPort(true))
+              outMIME.SetAt(HostTag, newLocation.GetHostPort(true));
             adjustableURL = newLocation;
             retry = 0; // Go back to full quota of retries.
             continue;
@@ -436,6 +439,7 @@ bool PHTTPClient::WriteCommand(Commands cmd,
       return false;
     }
   }
+  flush(); // In case no data is written
 
 #if PTRACING
   if (trace != NULL)
@@ -803,31 +807,75 @@ bool PHTTPClient::DeleteDocument(const PURL & url)
 }
 
 
-bool PHTTPClient::ConnectURL(const PURL & url)
+PHTTPClient::SelectProxyResult PHTTPClient::SelectProxy(const PURL & destURL, PURL & proxyURL)
+{
+  PConfig env(PConfig::Environment);
+
+  PString proxyStr = m_proxy;
+  if (proxyStr.empty()) {
+    proxyStr = env.GetString("HTTP_PROXY", env.GetString("http_proxy")).Trim();
+    if (destURL.GetScheme() == "https" || destURL.GetScheme() == "wss")
+      proxyStr = env.GetString("HTTPS_PROXY", env.GetString("https_proxy", proxyStr)).Trim();
+    if (proxyStr.empty())
+      return e_NoProxy;
+  }
+
+  PStringSet no_proxy = env.GetString("NO_PROXY", env.GetString("no_proxy")).Tokenise(" ,;");
+  if (no_proxy.Contains(destURL.GetHostName()))
+    return e_NoProxy;
+  if (no_proxy.Contains(destURL.GetHostPort(true)))
+    return e_NoProxy;
+  for (PStringSet::iterator it = no_proxy.begin(); it != no_proxy.end(); ++it) {
+    if (*it == "*")
+      return e_NoProxy;
+    if (it->GetAt(0) == '.') {
+      if (destURL.GetHostName() == it->Mid(1))
+        return e_NoProxy;
+      if (destURL.GetHostName().Right(it->length()) == *it)
+        return e_NoProxy;
+    }
+    else if (it->GetAt(0) == '*') {
+      if (destURL.GetHostName().Right(it->length()-1) == it->Mid(it->GetAt(1) == '.' ? 2 : 1))
+        return e_NoProxy;
+    }
+  }
+
+  if (proxyURL.Parse(proxyStr) || proxyURL.Parse("http://" + proxyStr))
+    return e_HasProxy;
+
+  SetLastResponse(BadRequest, PSTRSTRM("Invalid URL in proxy: \"" << proxyStr << '"'));
+  return e_BadProxy;
+}
+
+
+bool PHTTPClient::ConnectURL(const PURL & destURL)
 {
   if (IsOpen())
     return true;
 
-  bool secure = url.GetScheme() == "https" || url.GetScheme() == "wss";
+  bool secure = destURL.GetScheme() == "https" || destURL.GetScheme() == "wss";
 
-  PURL proxy;
-  {
-    PString proxyStr = m_proxy.empty() ? getenv(secure ? "HTTPS_PROXY" : "HTTP_PROXY") : m_proxy;
-    if (!proxyStr.empty()) {
-      if (!proxy.Parse(proxyStr) && !proxy.Parse("http://" + proxyStr))
-        return SetLastResponse(BadRequest, PSTRSTRM("Invalid URL in proxy: \"" << proxyStr << '"'));
+  bool usingProxy = false;
+  PURL proxyURL;
+  switch (SelectProxy(destURL, proxyURL)) {
+    case e_BadProxy :
+      return false;
+
+    case e_HasProxy :
       if (!secure)
         m_commandUrlFormat = PURL::FullURL;
-    }
+      usingProxy = true;
+    default :
+      break;
   }
 
-  PIPAddressAndPort ap((proxy.IsEmpty() ? url : proxy).GetHostPort(true));
+  PIPAddressAndPort ap((usingProxy ? proxyURL : destURL).GetHostPort(true));
 
   // Is not open or other end shut down, restablish connection
   if (!ap.IsValid())
     return SetLastResponse(BadRequest, PSTRSTRM("Invalid host or port in "
-                                                << (proxy.IsEmpty() ? "URL" : "proxy") << " - "
-                                                << (proxy.IsEmpty() ? url : proxy)));
+                                                << (usingProxy ? "proxy" : "URL") << " - "
+                                                << (usingProxy ? proxyURL : destURL)));
 
   if (secure)
 #if P_SSL
@@ -840,13 +888,21 @@ bool PHTTPClient::ConnectURL(const PURL & url)
       if (!tcp->Connect(ap.GetAddress()))
         return SetLastResponse(TransportConnectError, PSTRSTRM("TCP connect fail: " << tcp->GetErrorText() << " (errno=" << tcp->GetErrorNumber() << ')'));
 
-      if (!proxy.IsEmpty()) {
-        PMIMEInfo outMIME, replyMIME;
+      if (usingProxy) {
+        PTRACE(4, "Connected to secure proxy at " << ap);
+        if (!Open(tcp.get(), false))
+          return SetLastResponse(TransportConnectError, PString::Empty());
+        PMIMEInfo outMIME;
+        outMIME.Set(HostTag, destURL.GetHostPort(true));
         PHTTPClient_DummyProcessor dummy(false);
-        if (!WriteCommand(CONNECT, url.GetHostPort(), outMIME, dummy) ||
-            !ReadResponse(replyMIME) ||
-            !ReadContentBody(replyMIME))
+        if (!WriteCommand(CONNECT, destURL.GetHostPort(true), outMIME, dummy))
           return false;
+        PMIMEInfo replyMIME;
+        if (!ReadResponse(replyMIME))
+          return false;
+      }
+      else {
+        PTRACE(4, "Connected for secure URL at " << ap);
       }
 
       PAutoPtr<PSSLContext> context(new PSSLContext(method));
@@ -854,7 +910,7 @@ bool PHTTPClient::ConnectURL(const PURL & url)
         return SetLastResponse(TransportConnectError, "Could not set certificates");
 
       ssl.reset(new PSSLChannel(context.release(), true));
-      ssl->SetServerNameIndication(url.GetHostName());
+      ssl->SetServerNameIndication(destURL.GetHostName());
       if (ssl->Connect(tcp.release()))
         break;
 
@@ -864,7 +920,7 @@ bool PHTTPClient::ConnectURL(const PURL & url)
       --method;
     }
 
-    if (!ssl->CheckHostName(url.GetHostName()))
+    if (!ssl->CheckHostName(destURL.GetHostName()))
         return SetLastResponse(TransportConnectError, "SSL host check fail: " + ssl->GetErrorText());
 
     if (!Open(ssl.release()))
@@ -874,11 +930,11 @@ bool PHTTPClient::ConnectURL(const PURL & url)
 #else
     return SetLastResponse(TransportConnectError, "TLS secure sockets unsupported");
 #endif
-
-  if (!Connect(ap.GetAddress(), ap.GetPort()))
+  {
+    if (!Connect(ap.GetAddress(), ap.GetPort()))
       return SetLastResponse(TransportConnectError, PString::Empty());
-
-  PTRACE(4, "Connected to " << (proxy.IsEmpty() ? "URL" : "proxy") << " at " << ap);
+    PTRACE(4, "Connected " << (usingProxy ? "to proxy" : "for URL") << " at " << ap);
+  }
   return true;
 }
 

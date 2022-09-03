@@ -519,11 +519,6 @@ class PHTTPClient : public PHTTP
 
 
   // New functions for class.
-    /// Connect at transport level to remote, based on URL
-    bool ConnectURL(
-      const PURL & url
-    );
-
     /// Call back to process the body of the HTTP command
     typedef PHTTPContentProcessor ContentProcessor;
 
@@ -791,7 +786,11 @@ class PHTTPClient : public PHTTP
       const PString & proxy   // Proxy in host:port form
     ) { m_proxy = proxy; }
 
-    /** Set authentication paramaters to be use for retreiving documents
+    /**Get proxy for connections.
+      */
+    const PString & GetProxy() const { return m_proxy; }
+
+/** Set authentication paramaters to be use for retreiving documents
     */
     void SetAuthenticationInfo(
       const PString & userName,
@@ -827,6 +826,17 @@ class PHTTPClient : public PHTTP
 #endif
 
   protected:
+    /// Connect at transport level to remote, based on URL
+    bool ConnectURL(
+      const PURL & url
+    );
+    virtual enum SelectProxyResult
+    {
+      e_NoProxy,
+      e_BadProxy,
+      e_HasProxy
+    } SelectProxy(const PURL & url, PURL & proxy);
+
     PString  m_userAgentName;
     bool     m_persist;
     unsigned m_maxRedirects;
