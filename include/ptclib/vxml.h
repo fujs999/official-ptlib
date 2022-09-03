@@ -474,6 +474,7 @@ class PVXMLSession : public PIndirectChannel
 
     virtual PBoolean TraverseBlock(PXMLElement & element);
     virtual PBoolean TraversedBlock(PXMLElement & element);
+    virtual PBoolean TraverseReprompt(PXMLElement & element);
     virtual PBoolean TraverseAudio(PXMLElement & element);
     virtual PBoolean TraverseBreak(PXMLElement & element);
     virtual PBoolean TraverseValue(PXMLElement & element);
@@ -619,6 +620,7 @@ class PVXMLSession : public PIndirectChannel
     bool             m_bargingIn;
     PStringSet       m_dialogFieldNames;
     unsigned         m_promptCount;
+    enum { e_NormalPrompt, e_Reprompt, e_EventPrompt } m_promptMode;
     std::map<std::string, unsigned> m_eventCount;
 
     struct Properties : PStringToString

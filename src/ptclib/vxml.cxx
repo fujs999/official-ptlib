@@ -214,6 +214,7 @@ bool PVXMLNodeHandler::IsTraversing(PXMLElement & node)
   typedef PVXMLSinglePhaseNodeHandler<&PVXMLSession::Traverse##name> PVXMLTraverse##name; \
   PFACTORY_CREATE(PVXMLNodeFactory, PVXMLTraverse##name, #name, true)
 
+TRAVERSE_NODE(Reprompt);
 TRAVERSE_NODE(Audio);
 TRAVERSE_NODE(Break);
 TRAVERSE_NODE(Value);
@@ -255,7 +256,11 @@ protected:
   virtual bool StartTraversal(PVXMLSession & session, PXMLElement & element) const
   {
     PVXMLNodeHandler::StartTraversal(session, element);
-    return element.GetAttribute(InternalEventStateAttribute).IsTrue();
+    if (!element.GetAttribute(InternalEventStateAttribute).IsTrue())
+      return false;
+
+    session.m_promptMode = PVXMLSession::e_EventPrompt;
+    return true;
   }
 
   virtual bool FinishTraversal(PVXMLSession & session, PXMLElement & element) const
@@ -265,6 +270,9 @@ protected:
       return true;
 
     element.SetAttribute(InternalEventStateAttribute, false);
+
+    if (session.m_promptMode == PVXMLSession::e_EventPrompt)
+      session.m_promptMode = PVXMLSession::e_NormalPrompt;
 
     // We got moved to another node
     if (session.m_currentNode != NULL)
@@ -1305,6 +1313,7 @@ PVXMLSession::PVXMLSession()
   , m_bargeIn(true)
   , m_bargingIn(false)
   , m_promptCount(0)
+  , m_promptMode(e_NormalPrompt)
   , m_defaultMenuDTMF('N') /// Disabled
   , m_scriptContext(PScriptLanguage::Create(PSimpleScript::LanguageName()))
   , m_recordingStatus(NotRecording)
@@ -1704,6 +1713,7 @@ bool PVXMLSession::SetCurrentForm(const PString & searchId, bool fullURI)
 {
   ClearBargeIn();
   m_eventCount.clear();
+  m_promptMode = e_NormalPrompt;
   m_promptCount = 0;
 
   PTRACE(4, "Setting current form to \"" << searchId << '"');
@@ -2819,6 +2829,13 @@ PBoolean PVXMLSession::TraversedBlock(PXMLElement & element)
 }
 
 
+PBoolean PVXMLSession::TraverseReprompt(PXMLElement &)
+{
+  m_promptMode = e_Reprompt;
+  return false;
+}
+
+
 PBoolean PVXMLSession::TraverseAudio(PXMLElement & element)
 {
   if (PlayElement(element))
@@ -3555,6 +3572,9 @@ PBoolean PVXMLSession::TraversedForm(PXMLElement &)
 
 PBoolean PVXMLSession::TraversePrompt(PXMLElement & element)
 {
+  if (m_promptCount > 1 && m_promptMode == e_NormalPrompt)
+    return false;
+
   PXMLElement * validPrompt = FindElementWithCount(*element.GetParent(), PromptElement, m_promptCount);
   if (validPrompt != &element) {
     PTRACE(3, "Prompt count attribute preventing execution: " << element.PrintTrace());
