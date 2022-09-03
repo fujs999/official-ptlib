@@ -512,7 +512,7 @@ PTHREAD_MUTEX_RECURSIVE_NP
         PFilePath fn(m_filename);
         log << " to \"" << fn.GetDirectory() << fn.GetTitle() << m_rolloverPattern << fn.GetType();
       }
-      log << '"';
+      log << "\"\n";
       InternalEnd(log);
     }
   }
