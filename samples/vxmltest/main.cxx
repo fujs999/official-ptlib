@@ -55,6 +55,7 @@ void VxmlTest::Main()
                   "T-tts: Text to speech method\n"
                   "S-sr: Speech recognition method\n"
                   "c-cache: Text to speech cache directory\n"
+                  "-clear-cache. Clear the cache on execution\n"
                   "r-property: Set default property value: name=value\n"
 #if P_VXML_VIDEO
                   "V-video. Enabled video support\n"
@@ -330,7 +331,7 @@ bool TestInstance::Initialise(unsigned instance, const PArgList & args)
       cerr << "  " << *it << '\n';
     return false;
   }
-  cout << "Instance " << m_instance << " using text to speech \"" << GetTextToSpeech()->GetVoiceList() << '"' << endl;
+  cout << "Instance " << m_instance << " using text to speech: " << setfill (',') << GetTextToSpeech()->GetVoiceList() << endl;
 
   if (!SetSpeechRecognition(args.GetOptionString("sr"))) {
     cerr << "Instance " << m_instance << " error: cannot select speech recognition engine, use one of:\n";
@@ -352,6 +353,8 @@ bool TestInstance::Initialise(unsigned instance, const PArgList & args)
 
   if (args.HasOption("cache"))
     GetCache().SetDirectory(args.GetOptionString("cache"));
+  if (args.HasOption("clear-cache"))
+    PDirectory::RemoveTree(GetCache().GetDirectory());
 
   if (!Open(VXML_PCM16, audioParams.m_sampleRate, audioParams.m_channels)) {
     cerr << "Instance " << m_instance << " error: cannot open VXML device in PCM mode" << endl;
