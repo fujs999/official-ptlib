@@ -534,6 +534,11 @@ class PHTTPClient : public PHTTP
 
 
   // New functions for class.
+    /// Connect at transport level to remote, based on URL
+    bool ConnectURL(
+      const PURL & url
+    );
+
     /// Call back to process the body of the HTTP command
     typedef PHTTPContentProcessor ContentProcessor;
 
@@ -843,11 +848,6 @@ class PHTTPClient : public PHTTP
     virtual SelectProxyResult SelectProxy(const PURL & url, PURL & proxy);
 
   protected:
-    /// Connect at transport level to remote, based on URL
-    bool ConnectURL(
-      const PURL & url
-    );
-
     PString  m_userAgentName;
     bool     m_persist;
     unsigned m_maxRedirects;
