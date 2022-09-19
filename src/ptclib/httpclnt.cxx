@@ -282,7 +282,7 @@ PHTTP::StatusCode PHTTPClient::ExecuteCommand(Commands cmd,
                                               ContentProcessor & processor,
                                               PMIMEInfo & replyMIME)
 {
-  if (!outMIME.Contains(DateTag()))
+  if (cmd != CONNECT && !outMIME.Contains(DateTag()))
     outMIME.SetAt(DateTag(), PTime().AsString());
 
   if (!m_userAgentName.IsEmpty() && !outMIME.Contains(UserAgentTag()))
@@ -348,25 +348,23 @@ PHTTP::StatusCode PHTTPClient::ExecuteCommand(Commands cmd,
         }
         break;
 
-      case UnAuthorised:
-        if (needAuthentication && replyMIME.Contains("WWW-Authenticate") && !(m_userName.IsEmpty() && m_password.IsEmpty())) {
-          // authenticate 
-          PString errorMsg;
-          PHTTPClientAuthentication * newAuth = PHTTPClientAuthentication::ParseAuthenticationRequired(false, replyMIME, errorMsg);
-          if (newAuth != NULL) {
-            newAuth->SetUsername(m_userName);
-            newAuth->SetPassword(m_password);
-
-            delete m_authentication;
-            m_authentication = newAuth;
-            needAuthentication = false;
-            forceReopen = !m_persist; // Don't close and reopen if persisting
-            continue;
-          }
-
-          m_lastResponseInfo += " - " + errorMsg;
+      case ProxyAuthenticationRequired :
+        if (needAuthentication && HandleAuthorisation(true, replyMIME)) {
+          if (cmd == CONNECT)
+            return ProxyAuthOnCONNECT;
+          needAuthentication = false;
+          forceReopen = !m_persist; // Don't close and reopen if persisting
+          continue;
         }
-        // Do next case
+        break;
+
+      case UnAuthorised:
+        if (needAuthentication && HandleAuthorisation(false, replyMIME)) {
+          needAuthentication = false;
+          forceReopen = !m_persist; // Don't close and reopen if persisting
+          continue;
+        }
+        break;
 
       default:
         break;
@@ -378,6 +376,29 @@ PHTTP::StatusCode PHTTPClient::ExecuteCommand(Commands cmd,
   PTRACE_IF(3, !IsOK(m_lastResponseCode), "Error " << m_lastResponseCode << ' ' << m_lastResponseInfo.Left(m_lastResponseInfo.FindOneOf("\r\n")));
   return (StatusCode)m_lastResponseCode;
 }
+
+
+bool PHTTPClient::HandleAuthorisation(bool isProxy, PMIMEInfo & replyMIME)
+{
+  if (m_auth[isProxy].m_userName.empty())
+    return false;
+
+  // authenticate 
+  PString errorMsg;
+  PHTTPClientAuthentication * newAuth = PHTTPClientAuthentication::ParseAuthenticationRequired(isProxy, replyMIME, errorMsg);
+  if (newAuth == NULL) {
+    m_lastResponseInfo += " - " + errorMsg;
+    return false;
+  }
+
+  newAuth->SetUsername(m_auth[isProxy].m_userName);
+  newAuth->SetPassword(m_auth[isProxy].m_password);
+
+  delete m_authentication;
+  m_authentication = newAuth;
+  return true;
+}
+
 
 
 bool PHTTPClient::WriteCommand(Commands cmd,
@@ -807,18 +828,15 @@ bool PHTTPClient::DeleteDocument(const PURL & url)
 }
 
 
-PHTTP::SelectProxyResult PHTTP::GetProxyFromEnvironment(PURL & proxyURL, const PURL & destURL, const PString & dflt)
+PHTTP::SelectProxyResult PHTTP::GetProxyFromEnvironment(PURL & proxyURL, const PURL & destURL)
 {
   PConfig env(PConfig::Environment);
 
-  PString proxyStr = dflt;
-  if (proxyStr.empty()) {
-    proxyStr = env.GetString("HTTP_PROXY", env.GetString("http_proxy")).Trim();
-    if (destURL.GetScheme() == "https" || destURL.GetScheme() == "wss")
-      proxyStr = env.GetString("HTTPS_PROXY", env.GetString("https_proxy", proxyStr)).Trim();
-    if (proxyStr.empty())
-      return e_NoProxy;
-  }
+  PString proxyStr = env.GetString("HTTP_PROXY", env.GetString("http_proxy")).Trim();
+  if (destURL.GetScheme() == "https" || destURL.GetScheme() == "wss")
+    proxyStr = env.GetString("HTTPS_PROXY", env.GetString("https_proxy", proxyStr)).Trim();
+  if (proxyStr.empty())
+    return e_NoProxy;
 
   PStringSet no_proxy = env.GetString("NO_PROXY", env.GetString("no_proxy")).Tokenise(" ,;");
   if (no_proxy.Contains(destURL.GetHostName()))
@@ -851,7 +869,11 @@ PHTTP::SelectProxyResult PHTTP::GetProxyFromEnvironment(PURL & proxyURL, const P
 
 PHTTPClient::SelectProxyResult PHTTPClient::SelectProxy(const PURL & destURL, PURL & proxyURL)
 {
-  return GetProxyFromEnvironment(proxyURL, destURL, m_proxy);
+  if (m_proxy.IsEmpty())
+    return GetProxyFromEnvironment(proxyURL, destURL);
+
+  proxyURL = m_proxy;
+  return e_HasProxy;
 }
 
 
@@ -872,6 +894,8 @@ bool PHTTPClient::ConnectURL(const PURL & destURL)
     case e_HasProxy :
       if (!secure)
         m_commandUrlFormat = PURL::FullURL;
+      m_auth[true].m_userName = proxyURL.GetUserName();
+      m_auth[true].m_password = proxyURL.GetPassword();
       usingProxy = true;
     default :
       break;
@@ -893,23 +917,35 @@ bool PHTTPClient::ConnectURL(const PURL & destURL)
     for (;;) {
       PAutoPtr<PTCPSocket> tcp(new PTCPSocket(ap.GetPort()));
       tcp->SetReadTimeout(readTimeout);
-      if (!tcp->Connect(ap.GetAddress()))
-        return SetLastResponse(TransportConnectError, PSTRSTRM("TCP connect fail: " << tcp->GetErrorText() << " (errno=" << tcp->GetErrorNumber() << ')'));
 
       if (usingProxy) {
-        PTRACE(4, "Connected to secure proxy at " << ap);
-        if (!Open(tcp.get(), false))
-          return SetLastResponse(TransportConnectError, PString::Empty());
-        PMIMEInfo outMIME;
-        outMIME.Set(HostTag, destURL.GetHostPort(true));
-        PHTTPClient_DummyProcessor dummy(false);
-        if (!WriteCommand(CONNECT, destURL.GetHostPort(true), outMIME, dummy))
-          return false;
-        PMIMEInfo replyMIME;
-        if (!ReadResponse(replyMIME))
-          return false;
+        for (unsigned retry = 0; retry < 3; ++retry) {
+          if (!tcp->Connect(ap.GetAddress()))
+            return SetLastResponse(TransportConnectError, PSTRSTRM("TCP connect fail: " << tcp->GetErrorText() << " (errno=" << tcp->GetErrorNumber() << ')'));
+
+          PTRACE(4, "Connected to secure proxy at " << ap);
+          if (!Open(tcp.get(), false))
+            return SetLastResponse(TransportConnectError, PString::Empty());
+
+          m_persist = true;
+          PMIMEInfo outMIME, replyMIME;
+          PHTTPClient_DummyProcessor dummy(false);
+          outMIME.Set(HostTag, destURL.GetHostPort(true));
+          switch (ExecuteCommand(CONNECT, destURL.GetHostPort(true), outMIME, dummy, replyMIME)) {
+            case ProxyAuthOnCONNECT:
+              continue;
+            case RequestOK:
+              break;
+            default:
+              Close();
+              return false;
+          }
+          break;
+        }
       }
       else {
+        if (!tcp->Connect(ap.GetAddress()))
+          return SetLastResponse(TransportConnectError, PSTRSTRM("TCP connect fail: " << tcp->GetErrorText() << " (errno=" << tcp->GetErrorNumber() << ')'));
         PTRACE(4, "Connected for secure URL at " << ap);
       }
 
@@ -949,8 +985,8 @@ bool PHTTPClient::ConnectURL(const PURL & destURL)
 
 void PHTTPClient::SetAuthenticationInfo(const PString & userName,const PString & password)
 {
-  m_userName = userName;
-  m_password = password;
+  m_auth[false].m_userName = userName;
+  m_auth[false].m_password = password;
 }
 
 
@@ -1039,8 +1075,9 @@ PObject::Comparison PHTTPClientBasicAuthentication::Compare(const PObject & othe
   return PHTTPClientAuthentication::Compare(other);
 }
 
-PBoolean PHTTPClientBasicAuthentication::Parse(const PString & /*auth*/, PBoolean /*proxy*/)
+PBoolean PHTTPClientBasicAuthentication::Parse(const PString & /*auth*/, PBoolean proxy)
 {
+  isProxy = proxy;
   return true;
 }
 
@@ -1281,7 +1318,12 @@ static void AuthError(PString & errorMsg, const char * errText, const PString & 
 
 PHTTPClientAuthentication * PHTTPClientAuthentication::ParseAuthenticationRequired(bool isProxy, const PMIMEInfo & replyMIME, PString & errorMsg)
 {
-  PStringArray lines = replyMIME(isProxy ? "Proxy-Authenticate" : "WWW-Authenticate").Lines();
+  PString headerName = isProxy ? "Proxy-Authenticate" : "WWW-Authenticate";
+  PStringArray lines = replyMIME(headerName).Lines();
+  if (lines.empty()) {
+    errorMsg = PSTRSTRM("No " << headerName << " header present");
+    return NULL;
+  }
 
   // find authentication
   for (PINDEX i = 0; i < lines.GetSize(); ++i) {

@@ -180,6 +180,7 @@ class PHTTP : public PInternetProtocol
       TransportConnectError,       ///< Could not connect transport
       TransportWriteError,         ///< Could not write transport
       TransportReadError,          ///< Could not read transport
+      ProxyAuthOnCONNECT,          ///< Proxy authenication on CONNECT command
       Continue = 100,              ///< 100 - Continue
       SwitchingProtocols,          ///< 101 - upgrade allowed
       RequestOK = 200,             ///< 200 - request has succeeded
@@ -269,8 +270,7 @@ class PHTTP : public PInternetProtocol
       */
     static SelectProxyResult GetProxyFromEnvironment(
       PURL & proxyURL,
-      const PURL & destURL,
-      const PString & dflt = PString::Empty()
+      const PURL & destURL
     );
 
 protected:
@@ -803,18 +803,18 @@ class PHTTPClient : public PHTTP
     /**Set proxy for connections.
       */
     void SetProxy(
-      const PString & proxy   // Proxy in host:port form
+      const PURL & proxy ///< Proxy in host:port form
     ) { m_proxy = proxy; }
 
     /**Get proxy for connections.
       */
-    const PString & GetProxy() const { return m_proxy; }
+    const PURL & GetProxy() const { return m_proxy; }
 
 /** Set authentication paramaters to be use for retreiving documents
     */
     void SetAuthenticationInfo(
-      const PString & userName,
-      const PString & password
+      const PString & username,   ///< Authentication user (non-proxy)
+      const PString & password    ///< Authentication password (non-proxy)
     );
 
 #if P_SSL
@@ -846,14 +846,17 @@ class PHTTPClient : public PHTTP
 #endif
 
     virtual SelectProxyResult SelectProxy(const PURL & url, PURL & proxy);
+    virtual bool HandleAuthorisation(bool isProxy, PMIMEInfo & replyMIME);
 
   protected:
     PString  m_userAgentName;
     bool     m_persist;
     unsigned m_maxRedirects;
-    PString  m_proxy;
-    PString  m_userName;
-    PString  m_password;
+    PURL     m_proxy;
+    struct {
+      PString  m_userName;
+      PString  m_password;
+    } m_auth[2];
 #if P_SSL
     PString  m_authority;    // Directory, file or data
     PString  m_certificate;  // File or data
