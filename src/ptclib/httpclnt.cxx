@@ -835,7 +835,8 @@ PHTTP::SelectProxyResult PHTTP::GetProxyFromEnvironment(PURL & proxyURL, const P
         return e_NoProxy;
     }
     else if (it->GetAt(0) == '*') {
-      if (destURL.GetHostName().Right(it->length()-1) == it->Mid(it->GetAt(1) == '.' ? 2 : 1))
+      PINDEX offset = it->GetAt(1) == '.' ? 2 : 1;
+      if (destURL.GetHostName().Right(it->length()-offset) == it->Mid(offset))
         return e_NoProxy;
     }
   }
