@@ -1078,6 +1078,7 @@ bool PVXMLPlayableHTTP::OnStart()
   // open the resource
   PVXMLSession & session = m_vxmlChannel->GetSession();
   PHTTPClient * client = session.CreateHTTPClient();
+  client->SetReadTimeout(session.GetTimeProperty(FetchTimeoutProperty));
   client->SetPersistent(false);
   PMIMEInfo outMIME, replyMIME;
   session.AddCookie(outMIME, m_url);
@@ -1346,7 +1347,7 @@ PVXMLSession::PVXMLSession()
   props.SetAt(TermCharProperty, "#");
   props.SetAt(CompleteTimeoutProperty, "2s");
   props.SetAt(IncompleteTimeoutProperty, "5s");
-  props.SetAt(FetchTimeoutProperty, "15s");
+  props.SetAt(FetchTimeoutProperty, "5s");
   props.SetAt(DocumentMaxAgeProperty, "3600s");
   props.SetAt(DocumentMaxStaleProperty, "1s");
   props.SetAt(AudioMaxAgeProperty, "3600s");
@@ -4254,7 +4255,7 @@ PVXMLGrammarSRGS::PVXMLGrammarSRGS(const PVXMLGrammarInit & init)
 
   PAutoPtr<PXML> loadedXML;
   PXMLElement * grammar;
-  PString src = init.m_grammarElement->GetAttribute("src");
+  PString src = init.m_grammarElement->GetAttribute(SrcAttribute);
   if (src.empty())
     grammar = init.m_grammarElement;
   else {
