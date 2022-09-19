@@ -187,6 +187,9 @@ static PConstString const InternalTraversingNodeAttribute("PTLibInternalTraversi
 
 bool PVXMLNodeHandler::StartTraversal(PVXMLSession & session, PXMLElement & node) const
 {
+//  if (IsTraversing(node))
+//    return false;
+
   PTRACE(4, &session, "Traversing " << GetDescription() << ' ' << node.PrintTrace());
   node.SetAttribute(InternalTraversingNodeAttribute, true);
   if (node.GetName() != "property")
@@ -255,7 +258,9 @@ class PVXMLTraverseEvent : public PVXMLNodeHandler
 protected:
   virtual bool StartTraversal(PVXMLSession & session, PXMLElement & element) const
   {
-    PVXMLNodeHandler::StartTraversal(session, element);
+    if (!PVXMLNodeHandler::StartTraversal(session, element))
+      return false;
+
     if (!element.GetAttribute(InternalEventStateAttribute).IsTrue())
       return false;
 
@@ -303,7 +308,9 @@ class PVXMLTraverseFilled : public PVXMLTraverseEvent
 {
   virtual bool StartTraversal(PVXMLSession & session, PXMLElement & element) const
   {
-    PVXMLNodeHandler::StartTraversal(session, element);
+    if (!PVXMLNodeHandler::StartTraversal(session, element))
+      return false;
+
     if (!element.GetAttribute(InternalEventStateAttribute).IsTrue())
       return false;
 
@@ -2006,35 +2013,30 @@ bool PVXMLSession::ProcessEvents()
   if (PAssertNULL(vxmlChannel) == NULL)
     return false;
 
-  PString input;
-
-  m_userInputMutex.Wait();
-  while (!m_userInputQueue.empty()) {
-    input += m_userInputQueue.front();
-    m_userInputQueue.pop();
-  }
-  m_userInputMutex.Signal();
-
-  if (!input.empty()) {
+  if (!m_userInputQueue.empty()) {
     if (m_recordingStatus == RecordingInProgress) {
-      PTRACE(3, "Recording ended via user input \"" << input << '"');
+      PTRACE(3, "Recording ended via user input");
       if (m_recordStopOnDTMF && vxmlChannel->EndRecording(false)) {
-        if (!m_recordingName.IsEmpty())
-          InternalSetVar(m_recordingName, "termchar", input[0]);
+        if (!m_recordingName.IsEmpty()) {
+          PString input;
+          if (m_userInputQueue.Dequeue(input))
+            InternalSetVar(m_recordingName, "termchar", input[0]);
+        }
       }
     }
-    else if (m_bargeIn) {
-      PTRACE(3, "Executing bargein with user input \"" << input << '"');
-      m_bargingIn = true;
-      vxmlChannel->FlushQueue();
-      OnUserInputToGrammars(input);
-    }
     else if (vxmlChannel->IsPlaying()) {
-      PTRACE(3, "No bargein, ignoring user input \"" << input << '"');
+      if (m_bargeIn) {
+        PTRACE_IF(3, !m_bargingIn, "Executing bargein");
+        m_bargingIn = true;
+        vxmlChannel->FlushQueue();
+      }
+      else {
+        PTRACE(3, "No bargein");
+        FlushInput(); // Ignore input so far
+      }
     }
     else {
-      PTRACE(3, "Handling user input \"" << input << '"');
-      OnUserInputToGrammars(input);
+      OnUserInputToGrammars();
     }
   }
 
@@ -2221,10 +2223,8 @@ void PVXMLSession::ClearBargeIn()
 void PVXMLSession::FlushInput()
 {
   PTRACE(4, "Flushing user input queue");
-  m_userInputMutex.Wait();
-  while (!m_userInputQueue.empty())
-    m_userInputQueue.pop();
-  m_userInputMutex.Signal();
+  m_userInputQueue.Close(false);
+  m_userInputQueue.Restart();
 }
 
 
@@ -2277,9 +2277,7 @@ bool PVXMLSession::ProcessNode()
 
 void PVXMLSession::OnUserInput(const PString & str)
 {
-  m_userInputMutex.Wait();
-  m_userInputQueue.push(str);
-  m_userInputMutex.Signal();
+  m_userInputQueue.Enqueue(str);
   Trigger();
 }
 
@@ -2699,16 +2697,25 @@ void PVXMLSession::ClearGrammars()
 void PVXMLSession::StartGrammars()
 {
   PWaitAndSignal lock(m_grammersMutex);
+  PTRACE(3, "Starting " << m_grammars.size() << " grammars");
   for (Grammars::iterator it = m_grammars.begin(); it != m_grammars.end(); ++it)
     it->Start();
+  OnUserInputToGrammars();
 }
 
 
-void PVXMLSession::OnUserInputToGrammars(const PString & input)
+void PVXMLSession::OnUserInputToGrammars()
 {
   PWaitAndSignal lock(m_grammersMutex);
-  for (Grammars::iterator it = m_grammars.begin(); it != m_grammars.end(); ++it)
-    it->OnUserInput(input);
+  if (m_grammars.empty())
+    return;
+
+  PString input;
+  while (m_userInputQueue.Dequeue(input, 0)) {
+    PTRACE(3, "Sending \"" << input << "\" to " << m_grammars.size() << " grammars");
+    for (Grammars::iterator it = m_grammars.begin(); it != m_grammars.end(); ++it)
+      it->OnUserInput(input);
+  }
 }
 
 
@@ -2989,7 +2996,7 @@ PBoolean PVXMLSession::TraverseGoto(PXMLElement & element)
   }
 
   if (SetCurrentForm(target, fullURI))
-    return ProcessNode();
+    return false;
 
   return ThrowBadFetchError(element, "<goto> has invalid URI \"" << target << '"');
 }
@@ -3019,7 +3026,7 @@ bool PVXMLSession::GoToEventHandler(PXMLElement & element, const PString & event
   while ((handler = FindElementWithCount(*level, eventName, actualCount)) == NULL) {
     level = level->GetParent();
     if (level == NULL) {
-      PTRACE(4, "No event handler found for \"" << eventName << '"');
+      PTRACE(4, "No event handler found for \"" << eventName << "\" (" << actualCount << ')');
       static PConstString const MatchAll(".");
       if (eventName != MatchAll) {
         PINDEX dot = eventName.FindLast('.');
@@ -3035,7 +3042,7 @@ bool PVXMLSession::GoToEventHandler(PXMLElement & element, const PString & event
   }
 
   handler->SetAttribute(InternalEventStateAttribute, true);
-  PTRACE(4, "Setting event handler to node " << handler->PrintTrace() << " for \"" << eventName << '"');
+  PTRACE(4, "Setting event handler to node " << handler->PrintTrace() << " for \"" << eventName << "\" (" << actualCount << ')');
   return SetCurrentNode(handler);
 }
 
@@ -3573,8 +3580,10 @@ PBoolean PVXMLSession::TraversedForm(PXMLElement &)
 
 PBoolean PVXMLSession::TraversePrompt(PXMLElement & element)
 {
-  if (m_promptCount > 1 && m_promptMode == e_NormalPrompt)
+  if (m_promptCount > 1 && m_promptMode == e_NormalPrompt) {
+    PTRACE(3, "No reprompt preventing execution: " << element.PrintTrace());
     return false;
+  }
 
   PXMLElement * validPrompt = FindElementWithCount(*element.GetParent(), PromptElement, m_promptCount);
   if (validPrompt != &element) {

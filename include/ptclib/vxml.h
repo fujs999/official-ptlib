@@ -652,7 +652,7 @@ class PVXMLSession : public PIndirectChannel
     virtual void LoadGrammar(const PString & type, const PVXMLGrammarInit & init);
     void ClearGrammars();
     void StartGrammars();
-    void OnUserInputToGrammars(const PString & input);
+    void OnUserInputToGrammars();
     void OnAudioInputToGrammars(const short * samples, size_t count);
     bool IsGrammarRunning() const;
     typedef PList<PVXMLGrammar> Grammars;
@@ -662,8 +662,7 @@ class PVXMLSession : public PIndirectChannel
 
     PAutoPtr<PScriptLanguage> m_scriptContext;
 
-    std::queue<PString> m_userInputQueue;
-    PDECLARE_MUTEX(     m_userInputMutex);
+    PSyncQueue<PString> m_userInputQueue;
 
     enum {
       NotRecording,
@@ -989,8 +988,7 @@ class PVXMLSinglePhaseNodeHandler : public PVXMLNodeHandler
 public:
   virtual bool StartTraversal(PVXMLSession & session, PXMLElement & node) const
   {
-    PVXMLNodeHandler::StartTraversal(session, node);
-    return (session.*traversing)(node);
+    return PVXMLNodeHandler::StartTraversal(session, node) && (session.*traversing)(node);
   }
 #if PTRACING
   virtual const char * GetDescription() const { return "single phase"; }
@@ -1007,8 +1005,7 @@ template <
 public:
   virtual bool StartTraversal(PVXMLSession & session, PXMLElement & node) const
   {
-    PVXMLNodeHandler::StartTraversal(session, node);
-    return (session.*traversing)(node);
+    return PVXMLNodeHandler::StartTraversal(session, node) && (session.*traversing)(node);
   }
   virtual bool FinishTraversal(PVXMLSession & session, PXMLElement & node) const
   {
