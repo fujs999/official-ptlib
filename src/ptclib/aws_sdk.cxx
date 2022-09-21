@@ -165,9 +165,6 @@ PAwsClientBase::PAwsClientBase()
     PTRACE(4, "Client config for \"" << wrap.GetProfile() << '"');
     m_clientConfig = std::make_shared<Aws::Client::ClientConfiguration>(wrap.GetProfile().c_str());
   }
-#ifdef _WIN32
-  m_clientConfig->httpLibOverride = Aws::Http::TransferLibType::WIN_INET_CLIENT;
-#endif
 
   m_region = m_clientConfig->region.empty() ? "us-east-1" : m_clientConfig->region.c_str();
 
