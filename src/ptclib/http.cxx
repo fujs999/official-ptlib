@@ -91,6 +91,9 @@ const PCaselessString & PHTTP::AllowHeaderTag      () { static const PConstCasel
 const PCaselessString & PHTTP::AllowOriginTag      () { static const PConstCaselessString s("Access-Control-Allow-Origin"); return s; }
 const PCaselessString & PHTTP::AllowMethodTag      () { static const PConstCaselessString s("Access-Control-Allow-Methods"); return s; }
 const PCaselessString & PHTTP::MaxAgeTAG           () { static const PConstCaselessString s("Access-Control-Max-Age"); return s; }
+const PString         & PHTTP::HttpProxyKey        () { static const PConstString         s("Http-Proxy"); return s; }
+const PString         & PHTTP::HttpsProxyKey       () { static const PConstString         s("Https-Proxy"); return s; }
+const PString         & PHTTP::NoProxyKey          () { static const PConstString         s("No-Proxy"); return s; }
 
 
 
@@ -119,6 +122,78 @@ PINDEX PHTTP::ParseResponse(const PString & line)
     m_lastResponseCode = PHTTP::BadResponse;
   m_lastResponseInfo &= line.Mid(endCode);
   return 0;
+}
+
+
+///////////////////////////////////////////////////////////////////////
+
+PHTTP::Proxies::Proxies(const PConfig & cfg)
+  : m_httpProxy(cfg.GetString("HTTP_PROXY", cfg.GetString("http_proxy")).Trim())
+  , m_httpsProxy(cfg.GetString("HTTPS_PROXY", cfg.GetString("https_proxy", m_httpProxy)).Trim())
+  , m_noProxy(cfg.GetString("NO_PROXY", cfg.GetString("no_proxy")))
+{ }
+
+
+PHTTP::Proxies::Proxies(const PStringOptions & options)
+  : m_httpProxy(options.GetString(HttpProxyKey(), options.GetString("HTTP_PROXY", options.GetString("http_proxy"))).Trim())
+  , m_httpsProxy(options.GetString(HttpsProxyKey(), options.GetString("HTTPS_PROXY", options.GetString("https_proxy", m_httpProxy))).Trim())
+  , m_noProxy(options.GetString(NoProxyKey(), options.GetString("NO_PROXY", options.GetString("no_proxy"))))
+{ }
+
+
+void PHTTP::Proxies::ToOptions(PStringToString & options) const
+{
+  if (m_httpProxy.empty())
+    options.RemoveAt(HttpProxyKey());
+  else
+    options.SetAt(HttpProxyKey(), m_httpProxy);
+
+  if (m_httpsProxy.empty())
+    options.RemoveAt(HttpsProxyKey());
+  else
+    options.SetAt(HttpsProxyKey(), m_httpProxy);
+
+  if (m_noProxy.empty())
+    options.RemoveAt(NoProxyKey());
+  else
+    options.SetAt(NoProxyKey(), m_noProxy);
+}
+
+
+PHTTP::SelectProxyResult PHTTP::Proxies::Select(PURL & proxyURL, const PURL & destURL) const
+{
+  PString proxyStr = m_httpProxy;
+  if (destURL.GetScheme() == "https" || destURL.GetScheme() == "wss")
+    proxyStr = m_httpsProxy;
+  if (proxyStr.empty())
+    return e_NoProxy;
+
+  PStringSet no_proxy = m_noProxy.Tokenise(" ,;");
+  if (no_proxy.Contains(destURL.GetHostName()))
+    return e_NoProxy;
+  if (no_proxy.Contains(destURL.GetHostPort(true)))
+    return e_NoProxy;
+  for (PStringSet::iterator it = no_proxy.begin(); it != no_proxy.end(); ++it) {
+    if (*it == "*")
+      return e_NoProxy;
+    if (it->GetAt(0) == '.') {
+      if (destURL.GetHostName() == it->Mid(1))
+        return e_NoProxy;
+      if (destURL.GetHostName().Right(it->length()) == *it)
+        return e_NoProxy;
+    }
+    else if (it->GetAt(0) == '*') {
+      PINDEX offset = it->GetAt(1) == '.' ? 2 : 1;
+      if (destURL.GetHostName().Right(it->length()-offset) == it->Mid(offset))
+        return e_NoProxy;
+    }
+  }
+
+  if (proxyURL.Parse(proxyStr) || proxyURL.Parse("http://" + proxyStr))
+    return e_HasProxy;
+
+  PTRACE(2, &proxyURL, "Invalid URL in proxy: \"" << proxyStr << '"');
+  return e_BadProxy;
 }
 
 

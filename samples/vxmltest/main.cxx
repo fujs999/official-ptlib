@@ -46,7 +46,9 @@ void VxmlTest::Main()
                   "R-recorder-device: Output to sound device\n"
                   "-recorder-rate: Output to sound sample rate\n"
                   "-recorder-channels: Output to sound channels\n"
-                  "-proxy: Set HTTP proxy\n"
+                  "-http-proxy: Set HTTP proxy\n"
+                  "-https-proxy: Set HTTPS proxy\n"
+                  "-no-proxy: Set hosts/domains to not use proxy\n"
 #if P_SSL
                   "-authority: Set certificate authority file/directory\n"
                   "-certificate: Set client certificate\n"
@@ -317,7 +319,9 @@ bool TestInstance::Initialise(unsigned instance, const PArgList & args)
   }
 #endif
 
-  SetProxy(args.GetOptionString("proxy"));
+  SetProxies(PHTTP::Proxies(args.GetOptionString("http-proxy"),
+                            args.GetOptionString("https-proxy"),
+                            args.GetOptionString("no-proxy")));
 #if P_SSL
   SetSSLCredentials(args.GetOptionString("authority"),
                     args.GetOptionString("certificate"),

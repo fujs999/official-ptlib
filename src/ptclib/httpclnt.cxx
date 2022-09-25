@@ -828,52 +828,12 @@ bool PHTTPClient::DeleteDocument(const PURL & url)
 }
 
 
-PHTTP::SelectProxyResult PHTTP::GetProxyFromEnvironment(PURL & proxyURL, const PURL & destURL)
-{
-  PConfig env(PConfig::Environment);
-
-  PString proxyStr = env.GetString("HTTP_PROXY", env.GetString("http_proxy")).Trim();
-  if (destURL.GetScheme() == "https" || destURL.GetScheme() == "wss")
-    proxyStr = env.GetString("HTTPS_PROXY", env.GetString("https_proxy", proxyStr)).Trim();
-  if (proxyStr.empty())
-    return e_NoProxy;
-
-  PStringSet no_proxy = env.GetString("NO_PROXY", env.GetString("no_proxy")).Tokenise(" ,;");
-  if (no_proxy.Contains(destURL.GetHostName()))
-    return e_NoProxy;
-  if (no_proxy.Contains(destURL.GetHostPort(true)))
-    return e_NoProxy;
-  for (PStringSet::iterator it = no_proxy.begin(); it != no_proxy.end(); ++it) {
-    if (*it == "*")
-      return e_NoProxy;
-    if (it->GetAt(0) == '.') {
-      if (destURL.GetHostName() == it->Mid(1))
-        return e_NoProxy;
-      if (destURL.GetHostName().Right(it->length()) == *it)
-        return e_NoProxy;
-    }
-    else if (it->GetAt(0) == '*') {
-      PINDEX offset = it->GetAt(1) == '.' ? 2 : 1;
-      if (destURL.GetHostName().Right(it->length()-offset) == it->Mid(offset))
-        return e_NoProxy;
-    }
-  }
-
-  if (proxyURL.Parse(proxyStr) || proxyURL.Parse("http://" + proxyStr))
-    return e_HasProxy;
-
-  PTRACE(2, &proxyURL, "Invalid URL in proxy: \"" << proxyStr << '"');
-  return e_BadProxy;
-}
-
-
 PHTTPClient::SelectProxyResult PHTTPClient::SelectProxy(const PURL & destURL, PURL & proxyURL)
 {
-  if (m_proxy.IsEmpty())
-    return GetProxyFromEnvironment(proxyURL, destURL);
+  if (m_proxies.IsEmpty())
+    return PHTTP::Proxies(PConfig(PConfig::Environment)).Select(proxyURL, destURL);
 
-  proxyURL = m_proxy;
-  return e_HasProxy;
+  return m_proxies.Select(proxyURL, destURL);
 }
 
 

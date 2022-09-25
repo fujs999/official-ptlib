@@ -266,12 +266,42 @@ class PHTTP : public PInternetProtocol
       e_HasProxy
     };
 
-    /**Get active proxy from environment variables.
-      */
-    static SelectProxyResult GetProxyFromEnvironment(
-      PURL & proxyURL,
-      const PURL & destURL
-    );
+    static const PString & HttpProxyKey();
+    static const PString & HttpsProxyKey();
+    static const PString & NoProxyKey();
+
+    ///  Proxy information
+    struct Proxies
+    {
+      PString m_httpProxy;
+      PString m_httpsProxy;
+      PString m_noProxy;
+
+      Proxies() { }
+      Proxies(const PString & httpProxy, const PString & httpsProxy, const PString & noProxy)
+        : m_httpProxy(httpProxy)
+        , m_httpsProxy(httpsProxy)
+        , m_noProxy(noProxy)
+      { }
+      /**Get active proxy from config or environment variables.
+        */
+      Proxies(const PConfig & cfg);
+      /**Get active proxy from options dictionary.
+        */
+      Proxies(const PStringOptions & options);
+
+      /// Set string options to pxoxy values
+      void ToOptions(PStringToString & options) const;
+
+      /// Return true if no proxies set
+      bool IsEmpty() const { return m_httpProxy.empty() && m_httpsProxy.empty(); }
+
+      /// Select the proxy given the destination
+      SelectProxyResult Select(
+        PURL & proxyURL,
+        const PURL & destURL
+      ) const;
+    };
 
 protected:
     /** Create a TCP/IP HTTP protocol channel.
@@ -802,13 +832,13 @@ class PHTTPClient : public PHTTP
 
     /**Set proxy for connections.
       */
-    void SetProxy(
-      const PURL & proxy ///< Proxy in host:port form
-    ) { m_proxy = proxy; }
+    void SetProxies(
+      const Proxies & proxies ///< Proxy in host:port form
+    ) { m_proxies = proxies; }
 
     /**Get proxy for connections.
       */
-    const PURL & GetProxy() const { return m_proxy; }
+    const Proxies & GetProxies() const { return m_proxies; }
 
 /** Set authentication paramaters to be use for retreiving documents
     */
@@ -852,7 +882,7 @@ class PHTTPClient : public PHTTP
     PString  m_userAgentName;
     bool     m_persist;
     unsigned m_maxRedirects;
-    PURL     m_proxy;
+    Proxies  m_proxies;
     struct {
       PString  m_userName;
       PString  m_password;

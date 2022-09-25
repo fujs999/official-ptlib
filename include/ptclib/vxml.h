@@ -372,7 +372,7 @@ class PVXMLSession : public PIndirectChannel
     void SetRecordDirectory(const PDirectory & dir) { m_recordDirectory = dir; }
     const PDirectory & GetRecordDirectory() const { return m_recordDirectory; }
 
-    void SetProxy(const PString & proxy);
+    void SetProxies(const PHTTP::Proxies & proxies);
 #if P_SSL
     void SetSSLCredentials(
       const PString & authority,
@@ -558,7 +558,7 @@ class PVXMLSession : public PIndirectChannel
     CachePtr m_resourceCache;
 
     PDECLARE_MUTEX(m_httpMutex);
-    PString m_httpProxy;
+    PHTTP::Proxies m_httpProxies;
 #if P_SSL
     PString m_httpAuthority;
     PString m_httpCertificate;

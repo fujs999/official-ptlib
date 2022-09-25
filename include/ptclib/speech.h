@@ -44,6 +44,12 @@ class PTextToSpeech : public PObject
   public:
     static PTextToSpeech * Create(const PString & name = PString::Empty());
 
+    static const PString & VoiceKey();
+    static const PString & SampleRateKey();
+    static const PString & ChannelsKey();
+    static const PString & VolumeKey();
+    virtual bool SetOptions(const PStringOptions & options);
+
     virtual PStringArray GetVoiceList() = 0;
     bool SetVoice(const PString & voice);
     PString GetVoice() const;
@@ -109,6 +115,11 @@ class PSpeechRecognition : public PObject
     PCLASSINFO(PSpeechRecognition, PObject);
   public:
     static PSpeechRecognition * Create(const PString & name = PString::Empty());
+
+    static const PString & SampleRateKey();
+    static const PString & ChannelsKey();
+    static const PString & LanguageKey();
+    virtual bool SetOptions(const PStringOptions & options);
 
     virtual bool SetSampleRate(unsigned rate) = 0;
     virtual unsigned GetSampleRate() const = 0;

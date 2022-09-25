@@ -119,12 +119,18 @@ public:
   }
 
 
+  virtual bool SetOptions(const PStringOptions & options)
+  {
+    return PAwsClient<Aws::Polly::PollyClient>::SetOptions(options) && PTextToSpeech::SetOptions(options);
+  }
+
+
   virtual PStringArray GetVoiceList()
   {
     //Enumerate the available voices 
     auto mgr = m_manager;
     if (!mgr)
-      mgr = Aws::TextToSpeech::TextToSpeechManager::Create(m_client);
+      mgr = Aws::TextToSpeech::TextToSpeechManager::Create(GetClient());
     Aws::Vector<std::pair<Aws::String, Aws::String>> awsVoices = mgr->ListAvailableVoices();
 
     PStringArray voiceList(awsVoices.size());
@@ -185,7 +191,7 @@ public:
 
   bool OpenFile(const PFilePath & fn)
   {
-    m_manager = Aws::TextToSpeech::TextToSpeechManager::Create(m_client, std::make_shared<OutputDriverFactory>());
+    m_manager = Aws::TextToSpeech::TextToSpeechManager::Create(GetClient(), std::make_shared<OutputDriverFactory>());
     std::shared_ptr<WAVOutputDriver> driver = std::make_shared<WAVOutputDriver>();
     PTRACE_CONTEXT_ID_TO(*driver);
     Aws::TextToSpeech::DeviceInfo deviceInfo;
@@ -390,6 +396,7 @@ class PSpeechRecognition_AWS : public PSpeechRecognition, PAwsClient<Aws::Transc
 
   void ReadEvents()
   {
+    PTRACE(4, "Reading events thread started");
     std::set<Transcript> sentTranscripts;
     while (m_webSocket.IsOpen()) {
       PBYTEArray data;
@@ -474,6 +481,7 @@ class PSpeechRecognition_AWS : public PSpeechRecognition, PAwsClient<Aws::Transc
 #endif // PTRACING
       }
     }
+    PTRACE(4, "Reading events thread ended");
   }
 
 
@@ -482,8 +490,8 @@ class PSpeechRecognition_AWS : public PSpeechRecognition, PAwsClient<Aws::Transc
     if (name.empty() || !m_vocabularies.Contains(name))
       return;
 
-    m_client->DeleteVocabulary(Aws::TranscribeService::Model::DeleteVocabularyRequest()
-                               .WithVocabularyName(name.c_str()));
+    GetClient()->DeleteVocabulary(Aws::TranscribeService::Model::DeleteVocabularyRequest()
+                                    .WithVocabularyName(name.c_str()));
     m_vocabularies -= name;
   }
 
@@ -502,6 +510,12 @@ public:
 
     while (!m_vocabularies.empty())
       DeleteVocabulary(*m_vocabularies.begin());
+  }
+
+
+  virtual bool SetOptions(const PStringOptions & options)
+  {
+    return PAwsClient<Aws::TranscribeService::TranscribeServiceClient>::SetOptions(options) && PSpeechRecognition::SetOptions(options);
   }
 
 
@@ -566,10 +580,10 @@ public:
     for (size_t i = 0; i < words.size(); ++i)
       phrases[i] = words[i].c_str();
 
-    auto outcome = m_client->CreateVocabulary(Aws::TranscribeService::Model::CreateVocabularyRequest()
-                                              .WithVocabularyName(name.c_str())
-                                              .WithLanguageCode(m_language)
-                                              .WithPhrases(phrases));
+    auto outcome = GetClient()->CreateVocabulary(Aws::TranscribeService::Model::CreateVocabularyRequest()
+                                                  .WithVocabularyName(name.c_str())
+                                                  .WithLanguageCode(m_language)
+                                                  .WithPhrases(phrases));
     if (outcome.IsSuccess()) {
       m_vocabularies += name;
       return true;
@@ -597,59 +611,21 @@ public:
 
     m_notifier = notifier;
 
-    PConstString const service("transcribe");
-    PConstString const operation("aws4_request");
-    PConstString const algorithm("AWS4-HMAC-SHA256");
-
-    PString timestamp = PTime().AsString(PTime::ShortISO8601, PTime::UTC);
-    PString credentialDatestamp = timestamp.Left(8);
-    PString credentialScope = PSTRSTRM(credentialDatestamp << '/' << m_region << '/' << service << '/' << operation);
-
-    PStringStream canonical;
-
-    PURL url;
-    url.SetScheme("wss");
-    url.SetHostName(PSTRSTRM("transcribestreaming." << m_region << ".amazonaws.com"));
-    url.SetPort(8443);
-    url.SetPathStr("stream-transcription-websocket");
-    canonical << "GET\n" << url.GetPathStr() << '\n';
-
-    // The following must be in ANSI order
-    AddSignedHeader(url, canonical, "X-Amz-Algorithm", algorithm, true);
-    AddSignedHeader(url, canonical, "X-Amz-Credential", PSTRSTRM(m_accessKeyId << '/' << credentialScope));
-    AddSignedHeader(url, canonical, "X-Amz-Date", timestamp);
-    AddSignedHeader(url, canonical, "X-Amz-Expires", "300");
-    AddSignedHeader(url, canonical, "X-Amz-SignedHeaders", "host");
-    AddSignedHeader(url, canonical, "language-code", GetLanguage());
-    AddSignedHeader(url, canonical, "media-encoding", "pcm");
-    AddSignedHeader(url, canonical, "sample-rate", PString(GetSampleRate()));
+    HeaderMap headers;
+    headers["language-code"] = GetLanguage();
+    headers["media-encoding"] = "pcm";
+    headers["sample-rate"] = GetSampleRate();
 
     if (!vocabulary.empty())
-      AddSignedHeader(url, canonical, "vocabulary-name", vocabulary);
+      headers["vocabulary-name"] = vocabulary;
 
-    canonical << "\nhost:" << url.GetHostPort() << "\n\nhost\n";
+    PURL url = SignURL("wss://transcribestreaming:8443/stream-transcription-websocket", "transcribe", headers);
 
-    PMessageDigest::Result result;
-    PMessageDigestSHA256::Encode("", result);
-    canonical << result.AsHex();
-    PMessageDigestSHA256::Encode(canonical, result);
-
-    PString stringToSign = PSTRSTRM(algorithm << '\n' << timestamp << '\n' << credentialScope << '\n' << result.AsHex());
-
-    PHMAC_SHA256 signer;
-    signer.SetKey("AWS4" + m_secretAccessKey); signer.Process(credentialDatestamp, result);
-    signer.SetKey(result); signer.Process(m_region.c_str(), result);
-    signer.SetKey(result); signer.Process(service, result);
-    signer.SetKey(result); signer.Process(operation, result);
-    signer.SetKey(result); signer.Process(stringToSign, result);
-    url.SetQueryVar("X-Amz-Signature", result.AsHex());
-
-    PTRACE(4, "Execute WebSocket connect: " << url << "\nCanonical string:\n'" << canonical << "'\nStringToSign:\n'" << stringToSign << '\'');
     if (!m_webSocket.Connect(url))
       return false;
 
     m_webSocket.SetBinaryMode();
-    m_eventThread = new PThreadObj<PSpeechRecognition_AWS>(*this, &PSpeechRecognition_AWS::ReadEvents);
+    m_eventThread = new PThreadObj<PSpeechRecognition_AWS>(*this, &PSpeechRecognition_AWS::ReadEvents, false, "AWS-SR");
     PTRACE(3, "Opened speech recognition.");
     return true;
   }

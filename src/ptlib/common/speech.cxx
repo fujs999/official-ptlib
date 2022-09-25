@@ -67,6 +67,38 @@ PTextToSpeech * PTextToSpeech::Create(const PString & name)
 }
 
 
+const PString & PTextToSpeech::VoiceKey() { static const PConstString s("TTS-Voice"); return s; }
+const PString & PTextToSpeech::SampleRateKey() { static const PConstString s("TTS-Sample-Rate"); return s; }
+const PString & PTextToSpeech::ChannelsKey() { static const PConstString s("TTS-Channels"); return s; }
+const PString & PTextToSpeech::VolumeKey() { static const PConstString s("TTS-Volume"); return s; }
+
+bool PTextToSpeech::SetOptions(const PStringOptions & options)
+{
+  if (options.Has(VoiceKey())) {
+    if (!SetVoice(options.GetString(VoiceKey())))
+      return false;
+  }
+
+  if (options.Has(SampleRateKey())) {
+    if (!SetSampleRate(options.GetInteger(SampleRateKey())))
+      return false;
+  }
+
+  if (options.Has(ChannelsKey())) {
+    if (!SetChannels(options.GetInteger(ChannelsKey())))
+      return false;
+  }
+
+  if (options.Has(VolumeKey())) {
+    if (!SetVolume(options.GetInteger(VolumeKey())))
+      return false;
+  }
+
+  PTRACE(4, "SetOptions succeeded");
+  return true;
+}
+
+
 bool PTextToSpeech::SetVoice(const PString & voice)
 {
   PStringArray voices = GetVoiceList();
@@ -499,6 +531,32 @@ PSpeechRecognition * PSpeechRecognition::Create(const PString & name)
   else
     PTRACE(2, sr, "Could not create default Speech Recognition engine");
   return sr;
+}
+
+
+const PString & PSpeechRecognition::SampleRateKey() { static const PConstString s("SR-Sample-Rate"); return s; }
+const PString & PSpeechRecognition::ChannelsKey  () { static const PConstString s("SR-Channels"); return s; }
+const PString & PSpeechRecognition::LanguageKey  () { static const PConstString s("SR-Language"); return s; }
+
+bool PSpeechRecognition::SetOptions(const PStringOptions & options)
+{
+  if (options.Has(SampleRateKey())) {
+    if (!SetSampleRate(options.GetInteger(SampleRateKey())))
+      return false;
+  }
+
+  if (options.Has(ChannelsKey())) {
+    if (!SetChannels(options.GetInteger(ChannelsKey())))
+      return false;
+  }
+
+  if (options.Has(LanguageKey())) {
+    if (!SetLanguage(options.GetString(LanguageKey())))
+      return false;
+  }
+
+  PTRACE(4, "SetOptions succeeded");
+  return true;
 }
 
 

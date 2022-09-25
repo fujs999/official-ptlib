@@ -1396,7 +1396,16 @@ PTextToSpeech * PVXMLSession::SetTextToSpeech(PTextToSpeech * tts, PBoolean auto
     delete m_textToSpeech;
 
   m_autoDeleteTextToSpeech = autoDelete;
-  PTRACE_IF(4, tts != NULL, "Text to Speech set: " << *tts);
+
+  if (tts != NULL) {
+    PStringToString options;
+    m_httpMutex.Wait();
+    m_httpProxies.ToOptions(options);
+    m_httpMutex.Signal();
+    tts->SetOptions(options);
+    PTRACE_IF(4, m_textToSpeech != tts, "Text to Speech set: " << *tts);
+  }
+
   return m_textToSpeech = tts;
 }
 
@@ -1564,10 +1573,12 @@ bool PVXMLSession::LoadCachedResource(const PURL & url,
 }
 
 
-void PVXMLSession::SetProxy(const PString & proxy)
+void PVXMLSession::SetProxies(const PHTTP::Proxies & proxies)
 {
-  PWaitAndSignal lock(m_httpMutex);
-  m_httpProxy = proxy;
+  m_httpMutex.Wait();
+  m_httpProxies = proxies;
+  m_httpMutex.Signal();
+  SetTextToSpeech(m_textToSpeech);
 }
 
 
@@ -1588,7 +1599,7 @@ PHTTPClient * PVXMLSession::CreateHTTPClient() const
 {
   PHTTPClient * http = new PHTTPClient("PTLib VXML Client");
   PWaitAndSignal lock(m_httpMutex);
-  http->SetProxy(m_httpProxy);
+  http->SetProxies(m_httpProxies);
 #if P_SSL
   http->SetSSLCredentials(m_httpAuthority, m_httpCertificate, m_httpPrivateKey);
 #endif
