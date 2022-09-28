@@ -570,7 +570,7 @@ PBoolean PVideoInputDevice_DirectShow::Open(const PString & devName,
 
 PBoolean PVideoInputDevice_DirectShow::IsOpen()
 {
-  return m_pGraphBuilder != NULL;
+  return !m_deviceName.empty();
 }
 
 
@@ -581,8 +581,11 @@ PBoolean PVideoInputDevice_DirectShow::Close()
 
   PTRACE(4, "Closing " << this);
 
+  m_deviceName.MakeEmpty();
+
   // Stop Camera Graph
-  Stop();
+  m_pMediaControl->Pause();
+  m_pSampleGrabberCB->Stop();
 
   m_lastFrameMutex.Wait();
 
@@ -646,6 +649,9 @@ PBoolean PVideoInputDevice_DirectShow::Stop()
 
 PBoolean PVideoInputDevice_DirectShow::IsCapturing()
 {
+  if (!IsOpen())
+    return false;
+
   OAFilterState state;
   PCOM_RETURN_ON_FAILED(m_pMediaControl->GetState,(0, &state));
   return state != State_Stopped;
