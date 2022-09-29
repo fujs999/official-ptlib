@@ -1392,7 +1392,7 @@ PTextToSpeech * PVXMLSession::SetTextToSpeech(PTextToSpeech * tts, PBoolean auto
 {
   PWaitAndSignal mutex(m_sessionMutex);
 
-  if (m_autoDeleteTextToSpeech)
+  if (m_autoDeleteTextToSpeech && tts != m_textToSpeech)
     delete m_textToSpeech;
 
   m_autoDeleteTextToSpeech = autoDelete;
@@ -1578,7 +1578,7 @@ void PVXMLSession::SetProxies(const PHTTP::Proxies & proxies)
   m_httpMutex.Wait();
   m_httpProxies = proxies;
   m_httpMutex.Signal();
-  SetTextToSpeech(m_textToSpeech);
+  SetTextToSpeech(m_textToSpeech, m_autoDeleteTextToSpeech);
 }
 
 
