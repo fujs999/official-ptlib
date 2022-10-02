@@ -320,7 +320,7 @@ bool TestInstance::Initialise(unsigned instance, const PArgList & args)
 #endif
 
   SetProxies(PHTTP::Proxies(args.GetOptionString("http-proxy"),
-                            args.GetOptionString("https-proxy"),
+                            args.GetOptionString("https-proxy", args.GetOptionString("http-proxy")),
                             args.GetOptionString("no-proxy")));
 #if P_SSL
   SetSSLCredentials(args.GetOptionString("authority"),
