@@ -1837,7 +1837,7 @@ Optional Features:
   --disable-v8            disable V8 Javascript script
                           support
   --disable-v8            disable V8 Javascript script
-                          support (C++14)
+                          support (C++17)
   --disable-aws           disable AWS SDK
                           support
   --disable-aws           disable
@@ -7227,7 +7227,12 @@ rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
     ;; #(
   arm*) :
 
-      target_64bit=0
+      if test "x$target_os" = xDarwin
+then :
+  target_64bit=1
+else $as_nop
+  target_64bit=0
+fi
     ;; #(
   aarch64*) :
 
@@ -14761,7 +14766,7 @@ printf %s "checking for OPENLDAP usability... " >&6; }
 int
 main (void)
 {
-ldap_init("localhost", 1234)
+ldap_initialize(NULL, "http://localhost")
 
   ;
   return 0;
@@ -15670,19 +15675,19 @@ then :
 
 
 pkg_failed=no
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for $LUA_PKG" >&5
-printf %s "checking for $LUA_PKG... " >&6; }
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for lua" >&5
+printf %s "checking for lua... " >&6; }
 
 if test -n "$LUA_CFLAGS"; then
     pkg_cv_LUA_CFLAGS="$LUA_CFLAGS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"\$LUA_PKG\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "$LUA_PKG") 2>&5
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"lua\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "lua") 2>&5
   ac_status=$?
   printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_LUA_CFLAGS=`$PKG_CONFIG --cflags "$LUA_PKG" 2>/dev/null`
+  pkg_cv_LUA_CFLAGS=`$PKG_CONFIG --cflags "lua" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
@@ -15694,12 +15699,12 @@ if test -n "$LUA_LIBS"; then
     pkg_cv_LUA_LIBS="$LUA_LIBS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"\$LUA_PKG\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "$LUA_PKG") 2>&5
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"lua\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "lua") 2>&5
   ac_status=$?
   printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_LUA_LIBS=`$PKG_CONFIG --libs "$LUA_PKG" 2>/dev/null`
+  pkg_cv_LUA_LIBS=`$PKG_CONFIG --libs "lua" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
@@ -15720,9 +15725,9 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-	        LUA_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "$LUA_PKG" 2>&1`
+	        LUA_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "lua" 2>&1`
         else
-	        LUA_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "$LUA_PKG" 2>&1`
+	        LUA_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "lua" 2>&1`
         fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$LUA_PKG_ERRORS" >&5
@@ -15776,7 +15781,7 @@ printf "%s\n" "$usable" >&6; }
    if test "x$usable" = "xyes"
 then :
 
-            mod_name=`echo "$LUA_PKG" | cut -d ' ' -f 1`
+            mod_name=`echo "lua" | cut -d ' ' -f 1`
             LUA_CPPFLAGS=`$PKG_CONFIG --cflags-only-I $mod_name`
             LUA_CXXFLAGS=`$PKG_CONFIG --cflags-only-other $mod_name`
 
@@ -15865,8 +15870,8 @@ CXXFLAGS="$CXXFLAGS $CPLUSPLUS_STD"
 if test "x$target_os" = xDarwin
 then :
 
-      V8_EXTRA_CFLAGS=""
-      V8_EXTRA_LIBS="-lv8_libplatform -lv8_libbase"
+      V8_EXTRA_CFLAGS="-I/opt/homebrew/opt/v8/include"
+      V8_EXTRA_LIBS="-L/opt/homebrew/opt/v8/lib -lv8_libplatform -lv8_libbase"
 
 
 fi
@@ -16114,14 +16119,14 @@ then :
 
 else $as_nop
 
-      CXXFLAGS="$oldCXXFLAGS -std=c++14"
+      CXXFLAGS="$oldCXXFLAGS -std=c++17"
 
    V8_SYSTEM="yes"
 
 
 
-   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking V8 Javascript script support (C++14)" >&5
-printf %s "checking V8 Javascript script support (C++14)... " >&6; }
+   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking V8 Javascript script support (C++17)" >&5
+printf %s "checking V8 Javascript script support (C++17)... " >&6; }
 
    # Check whether --enable-v8 was given.
 if test ${enable_v8+y}
@@ -16187,8 +16192,8 @@ then :
    MY_LINK_IFELSE_LIBS="$LIBS"
    CPPFLAGS="$CPPFLAGS $V8_EXTRA_CFLAGS"
    LIBS="-lv8 $V8_EXTRA_LIBS $LIBS"
-   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for V8 Javascript script support (C++14) usability" >&5
-printf %s "checking for V8 Javascript script support (C++14) usability... " >&6; }
+   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for V8 Javascript script support (C++17) usability" >&5
+printf %s "checking for V8 Javascript script support (C++17) usability... " >&6; }
    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include <v8.h>
@@ -16250,7 +16255,7 @@ fi
 
    if test "x$usable" = "xyes"
 then :
-  CPLUSPLUS_STD="-std=c++14"
+  CPLUSPLUS_STD="-std=c++17"
 
 
 fi

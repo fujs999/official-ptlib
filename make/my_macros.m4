@@ -617,7 +617,7 @@ AS_CASE([$target_cpu],
    ],
 
    arm*, [
-      target_64bit=0
+      AS_VAR_IF([target_os], [Darwin], [target_64bit=1], [target_64bit=0])
    ],
 
    aarch64*, [

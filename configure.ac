@@ -1615,7 +1615,7 @@ PTLIB_MODULE_OPTION(
    [],
    [-lldap -llber],
    [#include <ldap.h>],
-   [ldap_init("localhost", 1234)],
+   [ldap_initialize(NULL, "http://localhost")],
    [],
    [],
    [HAS_DNS_RESOLVER]
@@ -1835,7 +1835,7 @@ PTLIB_MODULE_OPTION(
    [LUA],
    [lua],
    [Lua script support],
-   [$LUA_PKG], 
+   [lua], 
    [],[],
    [#include <lua.h>],
    [lua_newstate(NULL, NULL)]
@@ -1867,8 +1867,8 @@ CXXFLAGS="$CXXFLAGS $CPLUSPLUS_STD"
  
 AS_VAR_IF([target_os], [Darwin],
    [
-      V8_EXTRA_CFLAGS=""
-      V8_EXTRA_LIBS="-lv8_libplatform -lv8_libbase"
+      V8_EXTRA_CFLAGS="-I/opt/homebrew/opt/v8/include"
+      V8_EXTRA_LIBS="-L/opt/homebrew/opt/v8/lib -lv8_libplatform -lv8_libbase"
    ]
 )
 
@@ -1883,17 +1883,17 @@ PTLIB_MODULE_OPTION(
    [v8::V8::Initialize()],
    [],
    [AS_VAR_IF([CPLUSPLUS_STD], ["-std=c++03"],[],[
-      CXXFLAGS="$oldCXXFLAGS -std=c++14"
+      CXXFLAGS="$oldCXXFLAGS -std=c++17"
       MY_MODULE_OPTION(
          [V8],
          [v8],
-         [V8 Javascript script support (C++14)],
+         [V8 Javascript script support (C++17)],
          [],
          [$V8_EXTRA_CFLAGS],
          [-lv8 $V8_EXTRA_LIBS],
          [#include <v8.h>],
          [v8::V8::Initialize()],
-         [AC_SUBST(CPLUSPLUS_STD,"-std=c++14")]
+         [AC_SUBST(CPLUSPLUS_STD,"-std=c++17")]
       )
    ])],
 )
