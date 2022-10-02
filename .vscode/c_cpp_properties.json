@@ -4,9 +4,9 @@
         {
             "name": "Mac",
             "includePath": [
-                "${workspaceFolder}/lib_Darwin_x86_64/include/",
+                "${workspaceFolder}/lib_Darwin_*/include/",
                 "${workspaceFolder}/include/**",
-                "/usr/local/include/**"
+                "/opt/homebrew/include/**"
             ],
             "macFrameworkPath": [
                 "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks"
