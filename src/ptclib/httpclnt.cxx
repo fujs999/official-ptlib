@@ -884,8 +884,10 @@ bool PHTTPClient::ConnectURL(const PURL & destURL)
             return SetLastResponse(TransportConnectError, PSTRSTRM("TCP connect fail: " << tcp->GetErrorText() << " (errno=" << tcp->GetErrorNumber() << ')'));
 
           PTRACE(4, "Connected to secure proxy at " << ap);
-          if (!Open(tcp.get(), false))
+          if (!Open(tcp.get(), false)) {
+            Detach();
             return SetLastResponse(TransportConnectError, PString::Empty());
+          }
 
           m_persist = true;
           PMIMEInfo outMIME, replyMIME;
@@ -902,6 +904,7 @@ bool PHTTPClient::ConnectURL(const PURL & destURL)
           }
           break;
         }
+        Detach(); // Connects again later
       }
       else {
         if (!tcp->Connect(ap.GetAddress()))
