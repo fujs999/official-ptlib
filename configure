@@ -7004,8 +7004,8 @@ else $as_nop
   as_fn_error $? "Unable to determine iOS release number" "$LINENO" 5
 fi
 
-      CPPFLAGS="-mmacosx-version-min=$target_release $CPPFLAGS"
-      LDFLAGS="-mmacosx-version-min=$target_release $LDFLAGS"
+      CPPFLAGS="-mmacosx-version-min=$target_release $CPPFLAGS -I/opt/homebrew/include"
+      LDFLAGS="-mmacosx-version-min=$target_release $LDFLAGS -L/opt/homebrew/lib"
       LIBS="-framework AVFoundation -framework CoreVideo -framework CoreMedia -framework AudioUnit $LIBS"
    ;;
 

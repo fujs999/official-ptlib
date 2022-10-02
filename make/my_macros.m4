@@ -512,8 +512,8 @@ case "$target_os" in
       target_release=`xcodebuild -showsdks | sed -n 's/.* macosx\(.*\)/\1/p' | sort | tail -n 1`
       AS_VAR_SET_IF([target_release], , AC_MSG_ERROR([Unable to determine iOS release number]))
 
-      CPPFLAGS="-mmacosx-version-min=$target_release $CPPFLAGS"
-      LDFLAGS="-mmacosx-version-min=$target_release $LDFLAGS"
+      CPPFLAGS="-mmacosx-version-min=$target_release $CPPFLAGS -I/opt/homebrew/include"
+      LDFLAGS="-mmacosx-version-min=$target_release $LDFLAGS -L/opt/homebrew/lib"
       LIBS="-framework AVFoundation -framework CoreVideo -framework CoreMedia -framework AudioUnit $LIBS"
    ;;
 
