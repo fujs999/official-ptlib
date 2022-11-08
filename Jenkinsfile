@@ -20,6 +20,7 @@ pipeline {
     }
     stage('matrix') {
       matrix {
+        agent any
         axes {
           axis {
             name 'DIST'
@@ -35,6 +36,7 @@ pipeline {
           }
         }
         when {
+          beforeAgent true
           anyOf {
             allOf {
               not {
