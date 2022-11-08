@@ -9,7 +9,7 @@ if ! [ -x /usr/bin/spectool ] > /dev/null; then
 fi
 
 if [[ -z "$SPECFILE" ]]
-then SPECFILE=*.spec   # Expecting only one!
+then SPECFILE=$(ls *.spec)   # Expecting only one!
 fi
 
 BUILD_ARGS=(--define='_smp_mflags -j2')
@@ -38,13 +38,13 @@ do
     fi
 
     if [[ "$src" == *.tar ]]
-    then git archive --format=tar --output=$srcdir/$src HEAD
+    then tar -cf $srcdir/$src --exclude-vcs --exclude=rpmbuild .
     elif [[ "$src" == *.tgz ]]
-    then git archive --format=tar.gz --output=$srcdir/$src HEAD
+    then tar -czf $srcdir/$src --exclude-vcs --exclude=rpmbuild .
     else
         dir=$srcdir/$(dirname $src)
         mkdir -p $dir
-        cp $src $dir/
+        cp -r $src $dir/
     fi
 done
 

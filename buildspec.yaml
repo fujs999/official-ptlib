@@ -4,15 +4,16 @@ phases:
   install:
     commands:
       - yum update --assumeyes
-      - yum install --assumeyes sudo rpmdevtools yum-utils
+      - yum install --assumeyes shadow-utils sudo gcc-c++ git libasan-static libtsan-static rpmdevtools yum-utils
       - yum-builddep --assumeyes ${SPECFILE}
   pre_build:
     commands:
+      - useradd codebuild-user
       - chown -R codebuild-user:codebuild-user .
       - chmod +x rpmbuild.sh
   build:
     commands:
-      - sudo --preserve-env --user=codebuild-user ./rpmbuild.sh
+      - sudo --preserve-env --user=codebuild-user ./rpmbuild.sh ${BUILD_ARGS}
 artifacts:
   files:
     - '**/*.rpm'
