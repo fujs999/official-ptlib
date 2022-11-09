@@ -1,20 +1,10 @@
 #!docker
 
-FROM centos:7
-
-# Add yum repositories needed for our builds
-RUN yum install --assumeyes epel-release centos-release-scl-rh && yum clean all
+# See https://docs.aws.amazon.com/linux/al2022/ug/install-docker.html
+FROM amazonlinux:2022
 
 # Add standard tools expected on any development machine
-RUN yum groupinstall --assumeyes "Development tools" && yum clean all
-
-# Install large/common dependencies (to avoid delays upon later cache invalidation)
-RUN yum install --assumeyes --setopt=tsflags=nodocs \
-        devtoolset-9-gcc \
-        devtoolset-9-gcc-c++ \
-        devtoolset-9-libtsan-devel \
-        devtoolset-9-libasan-devel && \
-    yum clean all
+RUN yum install --assumeyes shadow-utils sudo gcc-c++ git libasan-static libtsan-static && yum clean all
 
 # Add tools needed for RPM building and dealing with yum repositories
 RUN yum install --assumeyes rpmdevtools yum-utils && yum clean all

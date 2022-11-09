@@ -69,17 +69,8 @@ developing applications that use %{name}.
 %setup -q -c -n ptlib
 
 %build
-%if "%{?dist}" == ".el7"
+%if 0%{?el7}
 source /opt/rh/devtoolset-9/enable
-%endif
-%ifarch aarch64
-%define arch_arg --enable-graviton2
-%endif
-%if %{?_with_tsan:1}%{!?_with_tsan:0}
-%define tsan_arg --enable-sanitize-thread
-%endif
-%if %{?_with_asan:1}%{!?_with_asan:0}
-%define asan_arg --enable-sanitize-address
 %endif
 sed -i \
     -e "s/MAJOR_VERSION.*/MAJOR_VERSION %{version_major}/" \
@@ -88,27 +79,34 @@ sed -i \
     -e "s/PATCH_VERSION.*/PATCH_VERSION %{version_patch}/" \
     -e "s/OEM_VERSION.*/OEM_VERSION %{version_oem}/"       \
     version.h
-./configure %{?arch_arg} %{?tsan_arg} %{?asan_arg} \
-        --enable-cpp14 \
-        --enable-exceptions \
-        --with-profiling=manual \
-        --disable-pthread_kill \
-        --disable-vxml \
-        --disable-sdl \
-        --disable-sasl \
-        --disable-openldap \
-        --disable-plugins \
-        --prefix=%{_prefix} \
-        --libdir=%{_libdir}
-make %{?_smp_mflags} opt debug
+%configure \
+%ifarch aarch64
+    --enable-graviton2 \
+%endif
+%if 0%{?_with_tsan:1}
+    --enable-sanitize-thread \
+%endif
+%if 0%{?_with_asan:1}
+    --enable-sanitize-address \
+%endif
+    --enable-cpp14 \
+    --enable-exceptions \
+    --with-profiling=manual \
+    --disable-pthread_kill \
+    --disable-vxml \
+    --disable-sdl \
+    --disable-sasl \
+    --disable-openldap \
+    --disable-plugins
+%make_build opt debug
 
 
 %install
-%if "%{?dist}" == ".el7"
+%if 0%{?el7}
 source /opt/rh/devtoolset-9/enable
 %endif
 rm -rf $RPM_BUILD_ROOT
-make DESTDIR=$RPM_BUILD_ROOT install
+%make_install
 find $RPM_BUILD_ROOT -name '*.la' -exec rm -f {} ';'
 
 
