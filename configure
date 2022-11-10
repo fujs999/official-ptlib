@@ -7003,6 +7003,10 @@ then :
 else $as_nop
   as_fn_error $? "Unable to determine iOS release number" "$LINENO" 5
 fi
+      if test "x$target_cpu" = xarm
+then :
+  target_cpu=arm64
+fi
 
       CPPFLAGS="-mmacosx-version-min=$target_release $CPPFLAGS -I/opt/homebrew/include"
       LDFLAGS="-mmacosx-version-min=$target_release $LDFLAGS -L/opt/homebrew/lib"
@@ -7222,6 +7226,10 @@ rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
       target_64bit=1
     ;; #(
   hppa64 | ia64 | s390x) :
+
+      target_64bit=1
+    ;; #(
+  arm*64*) :
 
       target_64bit=1
     ;; #(
