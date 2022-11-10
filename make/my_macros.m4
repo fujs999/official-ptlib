@@ -517,6 +517,7 @@ case "$target_os" in
       target_os=Darwin
       target_release=`xcodebuild -showsdks | sed -n 's/.* macosx\(.*\)/\1/p' | sort | tail -n 1`
       AS_VAR_SET_IF([target_release], , AC_MSG_ERROR([Unable to determine iOS release number]))
+      AS_VAR_IF([target_cpu],[arm],[target_cpu=arm64])
 
       CPPFLAGS="-mmacosx-version-min=$target_release $CPPFLAGS"
       LDFLAGS="-mmacosx-version-min=$target_release $LDFLAGS"
@@ -619,6 +620,10 @@ AS_CASE([$target_cpu],
    ],
 
    hppa64 | ia64 | s390x, [
+      target_64bit=1
+   ],
+
+   arm*64*, [
       target_64bit=1
    ],
 
