@@ -269,8 +269,9 @@ class PJSON : public PObject
 
 class PJSONWrapMember;
 
-class PJSONRecord
+class PJSONRecord : public PObject
 {
+  PCLASSINFO(PJSONRecord, PObject)
   friend class PJSONWrapMember;
 protected:
   std::map<PString, PJSONWrapMember *> m_jsonDataMembers;
