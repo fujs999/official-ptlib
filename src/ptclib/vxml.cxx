@@ -3913,6 +3913,12 @@ bool PVXMLGrammar::Start()
       PTimeInterval incomplete = m_session.GetTimeProperty(IncompleteTimeoutProperty);
       if (incomplete < m_partFillTimeout)
         m_partFillTimeout = incomplete;
+
+      PStringToString options;
+      m_session.m_httpMutex.Wait();
+      m_session.m_httpProxies.ToOptions(options);
+      m_session.m_httpMutex.Signal();
+      m_recogniser->SetOptions(options);
     }
   }
 
