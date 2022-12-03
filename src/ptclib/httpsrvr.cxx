@@ -1417,6 +1417,7 @@ bool PWebSocket::Connect(const PURL & url, const PStringArray & protocols, PStri
 
   channelPointerMutex.EndWrite();
 
+  http->SetProxies(m_proxies);
   http->SetSSLCredentials(*this);
 
   // Before starting up, make sure underlying socket is closed, so reconnects

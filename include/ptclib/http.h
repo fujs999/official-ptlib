@@ -1080,6 +1080,12 @@ class PWebSocket : public PIndirectChannel, public PSSLCertificateInfo
       uint64_t maxFrameSize  ///< New maximum size.
     ) { maxFrameSize = m_maxFrameSize; }
 
+    /**Set proxy for connections.
+      */
+    void SetProxies(
+      const PHTTP::Proxies & proxies ///< Proxy in host:port form
+    ) { m_proxies = proxies; }
+
   protected:
     enum OpCodes
     {
@@ -1110,6 +1116,8 @@ class PWebSocket : public PIndirectChannel, public PSSLCertificateInfo
 
     bool InternalWrite(OpCodes  opCode, bool fragmenting, const void * data, PINDEX len);
     bool WriteMasked(const uint32_t * data, PINDEX len, uint32_t mask);
+
+    PHTTP::Proxies m_proxies;
 
     bool     m_client;
     bool     m_fragmentingWrite;

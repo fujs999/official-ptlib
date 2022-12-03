@@ -515,6 +515,7 @@ public:
 
   virtual bool SetOptions(const PStringOptions & options)
   {
+    m_webSocket.SetProxies(options);
     return PAwsClient<Aws::TranscribeService::TranscribeServiceClient>::SetOptions(options) && PSpeechRecognition::SetOptions(options);
   }
 
