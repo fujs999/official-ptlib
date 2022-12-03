@@ -1582,27 +1582,12 @@ void PVXMLSession::SetProxies(const PHTTP::Proxies & proxies)
 }
 
 
-#if P_SSL
-void PVXMLSession::SetSSLCredentials(const PString & authority,
-                                     const PString & certificate,
-                                     const PString & privateKey)
-{
-  PWaitAndSignal lock(m_httpMutex);
-  m_httpAuthority = authority;
-  m_httpCertificate = certificate;
-  m_httpPrivateKey = privateKey;
-}
-#endif
-
-
 PHTTPClient * PVXMLSession::CreateHTTPClient() const
 {
   PHTTPClient * http = new PHTTPClient("PTLib VXML Client");
+  http->SetSSLCredentials(*this);
   PWaitAndSignal lock(m_httpMutex);
   http->SetProxies(m_httpProxies);
-#if P_SSL
-  http->SetSSLCredentials(m_httpAuthority, m_httpCertificate, m_httpPrivateKey);
-#endif
   return http;
 }
 

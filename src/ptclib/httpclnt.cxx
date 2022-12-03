@@ -913,7 +913,7 @@ bool PHTTPClient::ConnectURL(const PURL & destURL)
       }
 
       PAutoPtr<PSSLContext> context(new PSSLContext(method));
-      if (!context->SetCredentials(m_authority, m_certificate, m_privateKey))
+      if (!ApplySSLCredentials(*context))
         return SetLastResponse(TransportConnectError, "Could not set certificates");
 
       ssl.reset(new PSSLChannel(context.release(), true));
@@ -952,15 +952,6 @@ void PHTTPClient::SetAuthenticationInfo(const PString & userName,const PString &
   m_auth[false].m_password = password;
 }
 
-
-#if P_SSL
-void PHTTPClient::SetSSLCredentials(const PString & authority, const PString & certificate, const PString & privateKey)
-{
-  m_authority = authority;
-  m_certificate = certificate;
-  m_privateKey = privateKey;
-}
-#endif
 
 ////////////////////////////////////////////////////////////////////////////////////
 
@@ -1340,16 +1331,6 @@ PString PHTTPClientAuthenticator::GetMethod()
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
-
-#if P_SSL
-void PHTTPClientPool::SetSSLCredentials(const PString & authority, const PString & certificate, const PString & privateKey)
-{
-  m_authority = authority;
-  m_certificate = certificate;
-  m_privateKey = privateKey;
-}
-#endif
-
 
 void PHTTPClientPool::ShutDown()
 {

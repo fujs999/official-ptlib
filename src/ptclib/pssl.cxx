@@ -2088,6 +2088,124 @@ static int VerifyCallback(int ok, X509_STORE_CTX * ctx)
 
 ///////////////////////////////////////////////////////////////////////////////
 
+PSSLCertificateInfo::PSSLCertificateInfo(bool withDefaults)
+  : m_sslAutoCreateCertificate(true)
+{
+  if (withDefaults) {
+    const PProcess & process = PProcess::Current();
+    PString prefix = process.GetHomeDirectory() + process.GetName();
+    m_sslCertificateAuthority = "*";
+    m_sslCertificate = prefix + "_certificate.pem";
+    m_sslPrivateKey = prefix + "_private_key.pem";
+  }
+}
+
+
+PSSLCertificateInfo::PSSLCertificateInfo(const PString & ca,
+                                         const PString & certificate,
+                                         const PString & privateKey,
+                                         bool autoCreate)
+  : m_sslCertificateAuthority(ca)
+  , m_sslCertificate(certificate)
+  , m_sslPrivateKey(privateKey)
+  , m_sslAutoCreateCertificate(autoCreate)
+{
+}
+
+
+bool PSSLCertificateInfo::ApplySSLCredentials(PSSLContext & context, bool create) const
+{
+  PWaitAndSignal lock(m_sslInfoMutex);
+  return context.SetCredentials(*this, create);
+}
+
+
+PString PSSLCertificateInfo::GetSSLCertificateAuthority() const
+{
+  PWaitAndSignal lock(m_sslInfoMutex);
+  return m_sslCertificateAuthority.c_str();
+}
+
+
+void PSSLCertificateInfo::SetSSLCertificateAuthority(const PString & ca)
+{
+  PWaitAndSignal lock(m_sslInfoMutex);
+  m_sslCertificateAuthority = ca.c_str();
+}
+
+
+PString PSSLCertificateInfo::GetSSLCertificate() const
+{
+  PWaitAndSignal lock(m_sslInfoMutex);
+  return m_sslCertificate.c_str();
+}
+
+
+void PSSLCertificateInfo::SetSSLCertificate(const PString & cert)
+{
+  PWaitAndSignal lock(m_sslInfoMutex);
+  m_sslCertificate = cert.c_str();
+}
+
+
+PString PSSLCertificateInfo::GetSSLPrivateKey() const
+{
+  PWaitAndSignal lock(m_sslInfoMutex);
+  return m_sslPrivateKey.c_str();
+}
+
+
+void PSSLCertificateInfo::SetSSLPrivateKey(const PString & key)
+{
+  PWaitAndSignal lock(m_sslInfoMutex);
+  m_sslPrivateKey = key.c_str();
+}
+
+
+void PSSLCertificateInfo::SetSSLAutoCreateCertificate(bool yes)
+{
+  m_sslAutoCreateCertificate = yes;
+}
+
+
+bool PSSLCertificateInfo::GetSSLAutoCreateCertificate() const
+{
+  PWaitAndSignal lock(m_sslInfoMutex);
+  return m_sslAutoCreateCertificate;
+}
+
+
+void PSSLCertificateInfo::SetSSLCredentials(const PString & ca,
+                                            const PString & certificate,
+                                            const PString & privateKey,
+                                            bool autoCreate)
+{
+  PWaitAndSignal lock(m_sslInfoMutex);
+  m_sslCertificateAuthority = ca;
+  m_sslCertificate = certificate;
+  m_sslPrivateKey = privateKey;
+  m_sslAutoCreateCertificate = autoCreate;
+}
+
+
+void PSSLCertificateInfo::SetSSLCredentials(const PSSLCertificateInfo & info)
+{
+  if (this == &info)
+    return;
+  PWaitAndSignal lock(m_sslInfoMutex);
+  *this = info;
+}
+
+
+bool PSSLCertificateInfo::HasSSLCertificates() const
+{
+  PWaitAndSignal lock(m_sslInfoMutex);
+  return !m_sslCertificateAuthority.empty() || (!m_sslCertificate.empty() && !m_sslPrivateKey.empty());
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+
 PSSLContext::PSSLContext(Method method, const void * sessionId, PINDEX idSize)
   : m_method(method)
 {
@@ -2395,6 +2513,15 @@ bool PSSLContext::SetCipherList(const PString & ciphers)
   return PAssertNULL(m_context) != NULL &&
          !ciphers.IsEmpty() &&
          SSL_CTX_set_cipher_list(m_context, (char *)(const char *)ciphers);
+}
+
+
+bool PSSLContext::SetCredentials(const PSSLCertificateInfo & info, bool create)
+{
+  return SetCredentials(info.GetSSLCertificateAuthority(),
+                        info.GetSSLCertificate(),
+                        info.GetSSLPrivateKey(),
+                        create && info.GetSSLAutoCreateCertificate());
 }
 
 

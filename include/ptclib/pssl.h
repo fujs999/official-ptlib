@@ -31,6 +31,8 @@
 #pragma interface
 #endif
 
+#if P_SSL
+
 #include <ptlib/sockets.h>
 
 
@@ -710,6 +712,114 @@ class PSHA1Context : public PObject
 };
 
 
+class PSSLContext;
+
+/** Encapsulation of the infromation to handle certificates with SSL.
+ */
+class PSSLCertificateInfo
+{
+public:
+  ///  Construction
+  PSSLCertificateInfo(
+    bool withDefaults = false
+  );
+  PSSLCertificateInfo(
+    const PString & authority,    ///< Certificate Authority directory, file or data
+    const PString & certificate,  ///< Local certificate filename or data
+    const PString & privateKey,   ///< Private key filename or data for above local certificate
+    bool autoCreate = false       ///< If certificate/privateKey are file paths, and do not exist, then create.
+  );
+
+  virtual ~PSSLCertificateInfo() { }
+
+  /** Apply the SSL certificates/key for SSL based calls, e.g. sips or h323s
+      This function loads the certificates and keys for use by a OpalListener
+      or OpalTransport on the \p endpoint parameter. It allows for embedded
+      certificates and keys, while the default behaviour loads the
+      certificates and keys from files pointed to by member variables.
+
+      Note that a listener must have a cert/key and may have CA directory/list
+      for bi-directional authentication. A transport should have the CA
+      directory/list set, and if missing then no server authentication is
+      performed. Similarly if a transport may have an optional cert/key for
+      bi-directional authentication.
+    */
+  virtual bool ApplySSLCredentials(
+    PSSLContext & context,    ///< Context on which to set certificates
+    bool create = true        ///< Create self signed cert/key if required & enabled
+  ) const;
+
+  /**Get the Certificate Authority. This may be:
+      filenames (';' separated),
+      a directory of certificate files,
+      direct certificate data,
+      '*' for system defined default.
+    */
+  PString GetSSLCertificateAuthority() const;
+
+  /**Set the Certificate Authority. This may be:
+      filenames (';' separated),
+      a directory of certificate files,
+      direct certificate data.
+    */
+  void SetSSLCertificateAuthority(const PString & ca);
+
+  /**Get the default local certificate filename or data
+    */
+  PString GetSSLCertificate() const;
+
+  /**Set the default local certificate filename or data
+    */
+  void SetSSLCertificate(const PString & cert);
+
+  /**Get the default local private key filename or data
+    */
+  PString GetSSLPrivateKey() const;
+
+  /**Set the default local private key filename or data
+    */
+  void SetSSLPrivateKey(const PString & key);
+
+  /**Set flag to auto-create a self signed root certificate and private key.
+   */
+  void SetSSLAutoCreateCertificate(bool yes);
+
+  /**Get flag to auto-create a self signed root certificate and private key.
+   */
+  bool GetSSLAutoCreateCertificate() const;
+
+  /**Set all the certificate info. */
+  void SetSSLCredentials(
+    const PString & authority,    ///< Certificate Authority directory, file or data
+    const PString & certificate,  ///< Local certificate filename or data
+    const PString & privateKey,   ///< Private key filename or data for above local certificate
+    bool autoCreate = false       ///< If certificate/privateKey are file paths, and do not exist, then create.
+  );
+  void SetSSLCredentials(
+    const PSSLCertificateInfo & info  ///< Other certificate info to copy from
+  );
+
+  ///  Indicate if there is certficate info available.
+  bool HasSSLCertificates() const;
+
+  P_DEPRECATED PString GetSSLCertificateAuthorityFiles() const { return GetSSLCertificateAuthority(); }
+  P_DEPRECATED void SetSSLCertificateAuthorityFiles(const PString & ca) { SetSSLCertificateAuthority(ca); }
+  P_DEPRECATED PString GetSSLCertificateFile() const { return GetSSLCertificate();  }
+  P_DEPRECATED void SetSSLCertificateFile(const PString & cert) { SetSSLCertificate(cert); }
+  P_DEPRECATED PString GetSSLPrivateKeyFile() const { return GetSSLPrivateKey(); }
+  P_DEPRECATED void SetSSLPrivateKeyFile(const PString & key) { SetSSLPrivateKey(key); }
+
+protected:
+  PString   m_sslCertificateAuthority;
+  PFilePath m_sslCertificate;
+  PFilePath m_sslPrivateKey;
+  bool      m_sslAutoCreateCertificate;
+
+private:
+  PCriticalSection m_sslInfoMutex;
+};
+
+
 /**Context for SSL channels.
    This class embodies a common environment for all connections made via SSL
    using the PSSLChannel class. It includes such things as the version of SSL
@@ -840,6 +950,10 @@ class PSSLContext : public PObject
 
     /**Set the credentials for the context.
       */
+    bool SetCredentials(
+      const PSSLCertificateInfo & info,  ///< Informaation about certificates to use.
+      bool create = false                ///< Create self signed cert/key if required & enabled
+    );
     bool SetCredentials(
       const PString & authority,    ///< Certificate Authority directory, file or data
       const PString & certificate,  ///< Local certificate file or data
@@ -1107,6 +1221,17 @@ class PSSLChannelDTLS : public PSSLChannel
     virtual bool InternalConnect();
 };
 
+
+#else // P_SSL
+
+class PSSLCertificateInfo
+{
+public:
+  PSSLCertificateInfo(bool withDefaults = false) { }
+  void SetSSLCredentials(const PSSLCertificateInfo &) { }
+};
+
+#endif // P_SSL
 
 #endif // PTLIB_PSSL_H
 

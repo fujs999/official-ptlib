@@ -43,6 +43,8 @@
 
 
 #include <ptclib/html.h>
+#include <ptclib/pssl.h>
+
 
 //////////////////////////////////////////////////////////////////////////////
 // PHTTPSpace
@@ -551,7 +553,7 @@ class PHTTPClientDigestAuthentication : public PHTTPClientAuthentication
          PError << "HTTP conection failed." << endl;
       </CODE></PRE>
  */
-class PHTTPClient : public PHTTP
+class PHTTPClient : public PHTTP, public PSSLCertificateInfo
 {
   PCLASSINFO(PHTTPClient, PHTTP)
 
@@ -847,14 +849,6 @@ class PHTTPClient : public PHTTP
       const PString & password    ///< Authentication password (non-proxy)
     );
 
-#if P_SSL
-    void SetSSLCredentials(
-      const PString & authority,
-      const PString & certificate,
-      const PString & privateKey
-    );
-#endif
-
     /// Set persistent connection mode
     void SetPersistent(
       bool persist = true
@@ -887,11 +881,6 @@ class PHTTPClient : public PHTTP
       PString  m_userName;
       PString  m_password;
     } m_auth[2];
-#if P_SSL
-    PString  m_authority;    // Directory, file or data
-    PString  m_certificate;  // File or data
-    PString  m_privateKey;   // File or data
-#endif
     PHTTPClientAuthentication * m_authentication;
     PURL::UrlFormat m_commandUrlFormat;
 };
@@ -903,7 +892,7 @@ class PHTTPClient : public PHTTP
 /**A class for a pool of PHTTPClient instances/threads for efficient high
    volume access. e.g. for REST API access.
  */
-class PHTTPClientPool : public PObject
+class PHTTPClientPool : public PObject, public PSSLCertificateInfo
 {
     PCLASSINFO(PHTTPClientPool, PObject);
   public:
@@ -921,14 +910,6 @@ class PHTTPClientPool : public PObject
       , m_readTimeout(readTimeout)
     { }
     ~PHTTPClientPool() { ShutDown(); }
-
-#if P_SSL
-    void SetSSLCredentials(
-      const PString & authority,
-      const PString & certificate,
-      const PString & privateKey
-    );
-#endif
 
     void ShutDown();
 
@@ -983,11 +964,6 @@ class PHTTPClientPool : public PObject
     PTimeInterval m_timeToLive;
     PTimeInterval m_connectTimeout;
     PTimeInterval m_readTimeout;
-#if P_SSL
-    PString  m_authority;    // Directory, file or data
-    PString  m_certificate;  // File or data
-    PString  m_privateKey;   // File or data
-#endif
 
     PDECLARE_MUTEX(m_mutex);
 
@@ -1020,7 +996,7 @@ class PHTTPClientPool : public PObject
     Note the WebSocket handshake is assumed to have already occurred.
 */
 
-class PWebSocket : public PIndirectChannel
+class PWebSocket : public PIndirectChannel, public PSSLCertificateInfo
 {
     PCLASSINFO(PWebSocket, PIndirectChannel)
   public:
@@ -1099,13 +1075,6 @@ class PWebSocket : public PIndirectChannel
       bool txt = true
     ) { m_binaryWrite = !txt; }
 
-    /// Set security credentials
-    void SetSSLCredentials(
-      const PString & authority,    ///< Authority directory/filename/data
-      const PString & certificate,  ///< Certificate filename/data
-      const PString & privateKey    ///< Private key filename/data
-    );
-
   ///  Set maximum possible frame size. Defaults to 1GB.
     void SetMaxFrameSize(
       uint64_t maxFrameSize  ///< New maximum size.
@@ -1153,10 +1122,6 @@ class PWebSocket : public PIndirectChannel
     bool     m_fragmentedRead;
 
     bool     m_recursiveRead;
-
-    PString  m_authority;    // Directory, file or data
-    PString  m_certificate;  // File or data
-    PString  m_privateKey;   // File or data
 };
 
 #endif // P_SSL

@@ -349,7 +349,7 @@ class PVXMLCache : public PSafeObject
 
 class PVXMLChannel;
 
-class PVXMLSession : public PIndirectChannel
+class PVXMLSession : public PIndirectChannel, public PSSLCertificateInfo
 {
   PCLASSINFO(PVXMLSession, PIndirectChannel);
   public:
@@ -373,13 +373,6 @@ class PVXMLSession : public PIndirectChannel
     const PDirectory & GetRecordDirectory() const { return m_recordDirectory; }
 
     void SetProxies(const PHTTP::Proxies & proxies);
-#if P_SSL
-    void SetSSLCredentials(
-      const PString & authority,
-      const PString & certificate,
-      const PString & privateKey
-    );
-#endif
     PHTTPClient * CreateHTTPClient() const;
 
     virtual PBoolean Load(const PString & source);
@@ -559,11 +552,6 @@ class PVXMLSession : public PIndirectChannel
 
     PDECLARE_MUTEX(m_httpMutex);
     PHTTP::Proxies m_httpProxies;
-#if P_SSL
-    PString m_httpAuthority;
-    PString m_httpCertificate;
-    PString m_httpPrivateKey;
-#endif
 
 #if P_VXML_VIDEO
     void SetRealVideoSender(PVideoInputDevice * device);
