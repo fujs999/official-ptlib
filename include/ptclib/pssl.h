@@ -732,6 +732,9 @@ public:
 
   virtual ~PSSLCertificateInfo() { }
 
+  PSSLCertificateInfo(const PSSLCertificateInfo & info) { SetSSLCredentials(info); }
+  PSSLCertificateInfo & operator=(const PSSLCertificateInfo & info) { SetSSLCredentials(info); return *this; }
+
   /** Apply the SSL certificates/key for SSL based calls, e.g. sips or h323s
       This function loads the certificates and keys for use by a OpalListener
       or OpalTransport on the \p endpoint parameter. It allows for embedded
@@ -799,6 +802,14 @@ public:
     const PSSLCertificateInfo & info  ///< Other certificate info to copy from
   );
 
+  /**Get all the certificate info. */
+  void GetSSLCredentials(
+    PString & authority,    ///< Certificate Authority directory, file or data
+    PString & certificate,  ///< Local certificate filename or data
+    PString & privateKey,   ///< Private key filename or data for above local certificate
+    bool & autoCreate       ///< If certificate/privateKey are file paths, and do not exist, then create.
+  ) const;
+
   ///  Indicate if there is certficate info available.
   bool HasSSLCertificates() const;
 
@@ -810,13 +821,13 @@ public:
   P_DEPRECATED void SetSSLPrivateKeyFile(const PString & key) { SetSSLPrivateKey(key); }
 
 protected:
-  PString   m_sslCertificateAuthority;
-  PFilePath m_sslCertificate;
-  PFilePath m_sslPrivateKey;
-  bool      m_sslAutoCreateCertificate;
+  PString m_sslCertificateAuthority;
+  PString m_sslCertificate;
+  PString m_sslPrivateKey;
+  bool    m_sslAutoCreateCertificate;
 
 private:
-  PCriticalSection m_sslInfoMutex;
+  mutable PCriticalSection m_sslInfoMutex;
 };
 
 

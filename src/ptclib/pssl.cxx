@@ -2115,7 +2115,6 @@ PSSLCertificateInfo::PSSLCertificateInfo(const PString & ca,
 
 bool PSSLCertificateInfo::ApplySSLCredentials(PSSLContext & context, bool create) const
 {
-  PWaitAndSignal lock(m_sslInfoMutex);
   return context.SetCredentials(*this, create);
 }
 
@@ -2175,16 +2174,29 @@ bool PSSLCertificateInfo::GetSSLAutoCreateCertificate() const
 }
 
 
-void PSSLCertificateInfo::SetSSLCredentials(const PString & ca,
+void PSSLCertificateInfo::SetSSLCredentials(const PString & authority,
                                             const PString & certificate,
                                             const PString & privateKey,
                                             bool autoCreate)
 {
   PWaitAndSignal lock(m_sslInfoMutex);
-  m_sslCertificateAuthority = ca;
+  m_sslCertificateAuthority = authority;
   m_sslCertificate = certificate;
   m_sslPrivateKey = privateKey;
   m_sslAutoCreateCertificate = autoCreate;
+}
+
+
+void PSSLCertificateInfo::GetSSLCredentials(PString & authority,
+                                            PString & certificate,
+                                            PString & privateKey,
+                                            bool & autoCreate) const
+{
+  PWaitAndSignal lock(m_sslInfoMutex);
+  authority = m_sslCertificateAuthority;
+  certificate = m_sslCertificate;
+  privateKey = m_sslPrivateKey;
+  autoCreate = m_sslAutoCreateCertificate;
 }
 
 
@@ -2192,8 +2204,9 @@ void PSSLCertificateInfo::SetSSLCredentials(const PSSLCertificateInfo & info)
 {
   if (this == &info)
     return;
+
   PWaitAndSignal lock(m_sslInfoMutex);
-  *this = info;
+  GetSSLCredentials(m_sslCertificateAuthority, m_sslCertificate, m_sslPrivateKey, m_sslAutoCreateCertificate);
 }
 
 
@@ -2518,10 +2531,10 @@ bool PSSLContext::SetCipherList(const PString & ciphers)
 
 bool PSSLContext::SetCredentials(const PSSLCertificateInfo & info, bool create)
 {
-  return SetCredentials(info.GetSSLCertificateAuthority(),
-                        info.GetSSLCertificate(),
-                        info.GetSSLPrivateKey(),
-                        create && info.GetSSLAutoCreateCertificate());
+  PString authority, certificate, privateKey;
+  bool autoCreate;
+  info.GetSSLCredentials(authority, certificate, privateKey, autoCreate);
+  return SetCredentials(authority, certificate, privateKey, create && autoCreate);
 }
 
 
