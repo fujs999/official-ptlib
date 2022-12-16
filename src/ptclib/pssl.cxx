@@ -2206,7 +2206,7 @@ void PSSLCertificateInfo::SetSSLCredentials(const PSSLCertificateInfo & info)
     return;
 
   PWaitAndSignal lock(m_sslInfoMutex);
-  GetSSLCredentials(m_sslCertificateAuthority, m_sslCertificate, m_sslPrivateKey, m_sslAutoCreateCertificate);
+  info.GetSSLCredentials(m_sslCertificateAuthority, m_sslCertificate, m_sslPrivateKey, m_sslAutoCreateCertificate);
 }
 
 
@@ -2560,11 +2560,15 @@ bool PSSLContext::SetCredentials(const PString & authority,
       PTRACE(2, "Could not find/parse certificate authority \"" << authority << '"');
       return false;
     }
+    PTRACE(4, "Set certificate authority to \"" << authority << '"');
     SetVerifyMode(VerifyPeerMandatory);
   }
 
-  if (certificate.IsEmpty() && privateKey.IsEmpty())
+  
+  if (certificate.IsEmpty() && privateKey.IsEmpty()) {
+    PTRACE(4, "No certificate in use.");
     return true;
+  }
 
   PSSLCertificate cert;
   PSSLPrivateKey key;
@@ -2594,7 +2598,7 @@ bool PSSLContext::SetCredentials(const PString & authority,
     }
 
     if (!create) {
-      PTRACE(2, "Require certificate and private key");
+      PTRACE(2, "Require certificate and private key, not creating.");
       return false;
     }
 
@@ -2633,6 +2637,7 @@ bool PSSLContext::SetCredentials(const PString & authority,
     return false;
   }
 
+  PTRACE(4, "Using certificate \"" << certificate << "\" and key \"" << privateKey << '"');
   return true;
 }
 
