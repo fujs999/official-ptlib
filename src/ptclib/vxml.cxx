@@ -97,6 +97,7 @@ static PConstString const DestAttribute("dest");
 static PConstString const DestExprAttribute("destexpr");
 static PConstString const MaxAgeAttribute("maxage");
 static PConstString const MaxStaleAttribute("maxstale");
+static PConstString const EventAttribute("event");
 static PConstString const ErrorSemantic("error.semantic");
 static PConstString const ErrorBadFetch("error.badfetch");
 
@@ -287,10 +288,13 @@ protected:
 
     // See if there is another event handler up the heirarchy
     PXMLElement * parent = element.GetParent();
-    if (parent != NULL &&
-        parent->GetParent() != NULL &&
-        session.GoToEventHandler(*parent->GetParent(), element.GetName(), false, false))
-      return false;
+    if (parent != NULL && parent->GetParent() != NULL) {
+      PString name = element.GetName();
+      if (name == CatchElement)
+        name = element.GetAttribute(EventAttribute);
+      if (session.GoToEventHandler(*parent->GetParent(), name, false, false))
+        return false;
+    }
 
     // No other handler continue with the aprent
     session.SetCurrentNode(parent);
@@ -298,7 +302,7 @@ protected:
   }
 
 #if PTRACING
-  virtual const char * GetDescription() const { return "event"; }
+  virtual const char * GetDescription() const { return EventAttribute; }
 #endif
 };
 PFACTORY_CREATE(PVXMLNodeFactory, PVXMLTraverseEvent, CatchElement, true);
@@ -3097,7 +3101,7 @@ PXMLElement * PVXMLSession::FindElementWithCount(PXMLElement & parent, const PSt
     if (element->GetName() == name)
       elements[elementCount] = element;
     else if (element->GetName() == CatchElement) {
-      PStringArray events = element->GetAttribute("event").Tokenise(" ", false);
+      PStringArray events = element->GetAttribute(EventAttribute).Tokenise(" ", false);
       for (size_t i = 0; i < events.size(); ++i) {
         if (events[i] *= name) {
           elements[elementCount] = element;
@@ -4149,7 +4153,7 @@ bool PVXMLMenuGrammar::Process()
         if (m_session.SetCurrentForm(next, true))
           return true;
 
-        if (m_session.GoToEventHandler(m_field, choice->GetAttribute("event"), false, true))
+        if (m_session.GoToEventHandler(m_field, choice->GetAttribute(EventAttribute), false, true))
           return true;
       }
     }
