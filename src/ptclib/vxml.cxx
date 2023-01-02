@@ -217,6 +217,7 @@ bool PVXMLNodeHandler::IsTraversing(PXMLElement & node)
   typedef PVXMLSinglePhaseNodeHandler<&PVXMLSession::Traverse##name> PVXMLTraverse##name; \
   PFACTORY_CREATE(PVXMLNodeFactory, PVXMLTraverse##name, #name, true)
 
+TRAVERSE_NODE(RootNode);
 TRAVERSE_NODE(Reprompt);
 TRAVERSE_NODE(Audio);
 TRAVERSE_NODE(Break);
@@ -264,7 +265,8 @@ protected:
     if (!element.GetAttribute(InternalEventStateAttribute).IsTrue())
       return false;
 
-    session.m_promptMode = PVXMLSession::e_EventPrompt;
+    if (session.m_promptMode != PVXMLSession::e_FinalProcessing)
+      session.m_promptMode = PVXMLSession::e_EventPrompt;
     return true;
   }
 
@@ -1315,6 +1317,7 @@ PVXMLSession::PVXMLSession()
   , m_videoReceiver(*this)
 #endif
   , m_vxmlThread(NULL)
+  , m_closing(false)
   , m_abortVXML(false)
   , m_currentNode(NULL)
   , m_speakNodeData(true)
@@ -1717,6 +1720,10 @@ bool PVXMLSession::SetCurrentForm(const PString & searchId, bool fullURI)
 {
   ClearBargeIn();
   m_eventCount.clear();
+
+  if (m_promptMode == e_FinalProcessing)
+    return false; // Cannot go to new form when in final
+
   m_promptMode = e_NormalPrompt;
   m_promptCount = 0;
 
@@ -1833,10 +1840,10 @@ PBoolean PVXMLSession::Close()
 
   ClearGrammars();
 
-  // Stop condition for thread
-  m_abortVXML = true;
+  // Indicate closing and throw disconnect exception
+  m_closing = true;
   Trigger();
-  PThread::WaitAndDelete(m_vxmlThread, 10000, &m_sessionMutex, false);
+  PThread::WaitAndDelete(m_vxmlThread, 30000, &m_sessionMutex, false);
 
 #if P_VXML_VIDEO
   m_videoReceiver.Close();
@@ -2002,12 +2009,29 @@ bool PVXMLSession::ProcessEvents()
 {
   // m_sessionMutex already locked
 
-  if (m_abortVXML || !IsOpen())
+  if (m_abortVXML || m_currentNode == NULL || !IsOpen())
     return false;
 
   PVXMLChannel * vxmlChannel = GetVXMLChannel();
   if (PAssertNULL(vxmlChannel) == NULL)
     return false;
+
+  if (m_closing) {
+    m_closing = false;
+    m_promptMode = e_FinalProcessing;
+    vxmlChannel->FlushQueue();
+
+    PXMLElement * element = dynamic_cast<PXMLElement *>(m_currentNode);
+    if (element == NULL)
+      element = m_currentNode->GetParent();
+    GoToEventHandler(*element,
+                     m_transferStatus != NotTransfering
+                         ? "connection.disconnect.transfer"
+                         : "connection.disconnect.hangup",
+                     true,
+                     true);
+    return false;
+  }
 
   if (!m_userInputQueue.empty()) {
     if (m_recordingStatus == RecordingInProgress) {
@@ -2066,12 +2090,13 @@ bool PVXMLSession::ProcessEvents()
   m_waitForEvent.Wait();
   m_sessionMutex.Wait();
 
-  if (m_newXML.get() == NULL)
+  if (m_closing || m_newXML.get() == NULL)
     return true;
 
   PTRACE(4, "XML changed, flushing queue");
 
   // Clear out any audio being output, so can start fresh on new VXML.
+  // Don't use vxmlChannel as may have changed during m_waitForEvent
   if (IsOpen())
     GetVXMLChannel()->FlushQueue();
 
@@ -2280,6 +2305,9 @@ void PVXMLSession::OnUserInput(const PString & str)
 
 PBoolean PVXMLSession::TraverseRecord(PXMLElement & element)
 {
+  if (m_promptMode == e_FinalProcessing)
+    return false;
+
   if (!ExecuteCondition(element))
     return false;
 
@@ -2817,6 +2845,13 @@ void PVXMLSession::SetPause(PBoolean pause)
 }
 
 
+PBoolean PVXMLSession::TraverseRootNode(PXMLElement &)
+{
+  m_abortVXML = true;
+  return false;
+}
+
+
 PBoolean PVXMLSession::TraverseBlock(PXMLElement & element)
 {
   unsigned col, line;
@@ -2835,7 +2870,8 @@ PBoolean PVXMLSession::TraversedBlock(PXMLElement & element)
 
 PBoolean PVXMLSession::TraverseReprompt(PXMLElement &)
 {
-  m_promptMode = e_Reprompt;
+  if (m_promptMode != e_FinalProcessing)
+    m_promptMode = e_Reprompt;
   return false;
 }
 
@@ -3026,10 +3062,15 @@ bool PVXMLSession::GoToEventHandler(PXMLElement & element, const PString & event
       static PConstString const MatchAll(".");
       if (eventName != MatchAll) {
         PINDEX dot = eventName.FindLast('.');
-        return GoToEventHandler(element, dot == P_MAX_INDEX ? static_cast<PString>(MatchAll) : eventName.Left(dot), exitIfNotFound, firstInHierarchy);
+        return GoToEventHandler(element,
+                                dot == P_MAX_INDEX
+                                    ? static_cast<PString>(MatchAll)
+                                    : eventName.Left(dot),
+                                exitIfNotFound,
+                                firstInHierarchy);
       }
 
-      if (exitIfNotFound) {
+      if (exitIfNotFound || m_closing) {
         PTRACE(3, "Exiting script.");
         SetCurrentNode(NULL);
       }
@@ -3396,6 +3437,9 @@ PBoolean PVXMLSession::TraverseProperty(PXMLElement & element)
 
 PBoolean PVXMLSession::TraverseTransfer(PXMLElement & element)
 {
+  if (m_promptMode == e_FinalProcessing)
+    return false;
+
   if (!ExecuteCondition(element))
     return false;
 
@@ -3432,6 +3476,7 @@ PBoolean PVXMLSession::TraversedTransfer(PXMLElement & element)
       return true;
   }
 
+  m_transferStatus = TransferInProgress;
   if (OnTransfer(dest, type)) {
     if (type == BlindTransfer) {
       if (element.HasAttribute("connecttimeout"))
@@ -3439,7 +3484,6 @@ PBoolean PVXMLSession::TraversedTransfer(PXMLElement & element)
       else
         m_transferTimeout.SetInterval(0, 0, 1);
     }
-    m_transferStatus = TransferInProgress;
     return false;
   }
 
@@ -3484,6 +3528,9 @@ bool PVXMLSession::CompletedTransfer(PXMLElement & element)
 
 PBoolean PVXMLSession::TraverseMenu(PXMLElement & element)
 {
+  if (m_promptMode == e_FinalProcessing)
+    return false;
+
   if (element.GetParent() && element.GetParent()->GetName() != "vxml")
     return ThrowSemanticError(element, "<menu> must be at top level.");
 
@@ -3539,12 +3586,16 @@ PBoolean PVXMLSession::TraverseAssign(PXMLElement & element)
 
 PBoolean PVXMLSession::TraverseDisconnect(PXMLElement & element)
 {
-  return GoToEventHandler(element, "connection.disconnect", true, true);
+  m_promptMode = e_FinalProcessing;
+  return GoToEventHandler(element, "connection.disconnect.hangup", true, true);
 }
 
 
 PBoolean PVXMLSession::TraverseForm(PXMLElement & element)
 {
+  if (m_promptMode == e_FinalProcessing)
+    return false;
+
   if (element.GetParent() && element.GetParent()->GetName() != "vxml")
     return ThrowSemanticError(element, "<form> must be at top level.");
 
@@ -3613,6 +3664,9 @@ PBoolean PVXMLSession::TraversedPrompt(PXMLElement& element)
 
 PBoolean PVXMLSession::TraverseField(PXMLElement & element)
 {
+  if (m_promptMode == e_FinalProcessing)
+    return false;
+
   if (!ExecuteCondition(element))
     return false;
 

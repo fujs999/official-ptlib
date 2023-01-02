@@ -119,6 +119,7 @@ void VxmlTest::Main()
   cli.SetCommand("9", PCREATE_NOTIFIER(SimulateInput), "Simulate input 9 for VXML instance (1..n)", "[ <n> ]");
   cli.SetCommand("set", PCREATE_NOTIFIER(SetVar), "Set variable for VXML instance (1..n)", "<var> <value> [ <n> ]");
   cli.SetCommand("get", PCREATE_NOTIFIER(GetVar), "Get variable for VXML instance (1..n)", "<var> [ <n> ]");
+  cli.SetCommand("disconnect", PCREATE_NOTIFIER(Disconnect), "Disconnect VXML instance (1..n)", "[ <n> ]");
   cli.Start(false);
   m_tests.clear();
 }
@@ -195,6 +196,22 @@ void VxmlTest::GetVar(PCLI::Arguments & args, P_INT_PTR)
     args.GetContext() << m_tests[num - 1]->GetVar(args[0]) << endl;
 }
 
+
+void VxmlTest::Disconnect(PCLI::Arguments & args, P_INT_PTR)
+{
+  unsigned num;
+  if (args.GetCount() < 1)
+    num = 1;
+  else if ((num = args[0].AsUnsigned()) == 0) {
+    args.WriteError("Invalid instance number");
+    return;
+  }
+
+  if (num > m_tests.size())
+    args.WriteError("No such instance");
+  else
+    m_tests[num - 1]->Close();
+}
 
 
 TestInstance::TestInstance()
@@ -329,20 +346,26 @@ bool TestInstance::Initialise(unsigned instance, const PArgList & args)
 #endif
 
   if (SetTextToSpeech(args.GetOptionString("tts")) == NULL) {
-    cerr << "Instance " << m_instance << " error: cannot select text to speech engine, use one of:\n";
     PFactory<PTextToSpeech>::KeyList_T engines = PFactory<PTextToSpeech>::GetKeyList();
-    for (PFactory<PTextToSpeech>::KeyList_T::iterator it = engines.begin(); it != engines.end(); ++it)
-      cerr << "  " << *it << '\n';
-    return false;
+    if (!engines.empty()) {
+      cerr << "Instance " << m_instance << " error: cannot select text to speech engine, use one of:\n";
+      for (PFactory<PTextToSpeech>::KeyList_T::iterator it = engines.begin(); it != engines.end(); ++it)
+        cerr << "  " << *it << '\n';
+      return false;
+    }
+    cerr << "Instance " << m_instance << " warning: no text to speech engine available" << endl;
   }
   cout << "Instance " << m_instance << " using text to speech: " << setfill (',') << GetTextToSpeech()->GetVoiceList() << endl;
 
   if (!SetSpeechRecognition(args.GetOptionString("sr"))) {
-    cerr << "Instance " << m_instance << " error: cannot select speech recognition engine, use one of:\n";
     PFactory<PTextToSpeech>::KeyList_T engines = PFactory<PSpeechRecognition>::GetKeyList();
-    for (PFactory<PTextToSpeech>::KeyList_T::iterator it = engines.begin(); it != engines.end(); ++it)
-      cerr << "  " << *it << '\n';
-    return false;
+    if (!engines.empty()) {
+      cerr << "Instance " << m_instance << " error: cannot select speech recognition engine, use one of:\n";
+      for (PFactory<PTextToSpeech>::KeyList_T::iterator it = engines.begin(); it != engines.end(); ++it)
+        cerr << "  " << *it << '\n';
+      return false;
+    }
+    cerr << "Instance " << m_instance << " warning: no speech recognition engine available" << endl;
   }
   cout << "Instance " << m_instance << " using speech recognition \"" << GetSpeechRecognition() << '"' << endl;
 

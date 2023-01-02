@@ -170,5 +170,11 @@
 
     <!-- Seems obvious -->
     <disconnect/>
+    <catch event="connection.disconnect.hangup">
+      <log expr="'Caught disconnection in form'"/>
+    </catch>
   </form>
+  <catch event="connection.disconnect.hangup">
+    <log expr="'Caught disconnection globally'"/>
+  </catch>
 </vxml>

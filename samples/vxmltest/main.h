@@ -67,6 +67,7 @@ class VxmlTest : public PProcess
     PDECLARE_NOTIFIER(PCLI::Arguments, VxmlTest, SimulateInput);
     PDECLARE_NOTIFIER(PCLI::Arguments, VxmlTest, SetVar);
     PDECLARE_NOTIFIER(PCLI::Arguments, VxmlTest, GetVar);
+    PDECLARE_NOTIFIER(PCLI::Arguments, VxmlTest, Disconnect);
     std::vector< PSharedPtr<TestInstance> > m_tests;
 };
 

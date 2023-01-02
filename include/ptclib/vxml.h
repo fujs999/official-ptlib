@@ -465,6 +465,7 @@ class PVXMLSession : public PIndirectChannel, public PSSLCertificateInfo
     virtual void Trigger();
 
 
+    virtual PBoolean TraverseRootNode(PXMLElement & element);
     virtual PBoolean TraverseBlock(PXMLElement & element);
     virtual PBoolean TraversedBlock(PXMLElement & element);
     virtual PBoolean TraverseReprompt(PXMLElement & element);
@@ -595,6 +596,7 @@ class PVXMLSession : public PIndirectChannel, public PSSLCertificateInfo
 #endif // P_VXML_VIDEO
 
     PThread     *    m_vxmlThread;
+    bool             m_closing;
     bool             m_abortVXML;
     PSyncPoint       m_waitForEvent;
     PURL             m_newURL;
@@ -608,7 +610,7 @@ class PVXMLSession : public PIndirectChannel, public PSSLCertificateInfo
     bool             m_bargingIn;
     PStringSet       m_dialogFieldNames;
     unsigned         m_promptCount;
-    enum { e_NormalPrompt, e_Reprompt, e_EventPrompt } m_promptMode;
+    enum { e_NormalPrompt, e_Reprompt, e_EventPrompt, e_FinalProcessing } m_promptMode;
     std::map<std::string, unsigned> m_eventCount;
 
     struct Properties : PStringToString
