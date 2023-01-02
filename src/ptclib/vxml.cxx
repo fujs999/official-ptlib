@@ -98,6 +98,7 @@ static PConstString const DestExprAttribute("destexpr");
 static PConstString const MaxAgeAttribute("maxage");
 static PConstString const MaxStaleAttribute("maxstale");
 static PConstString const EventAttribute("event");
+static PConstString const EventExprAttribute("eventexpr");
 static PConstString const ErrorSemantic("error.semantic");
 static PConstString const ErrorBadFetch("error.badfetch");
 
@@ -4143,17 +4144,24 @@ bool PVXMLMenuGrammar::Process()
       if (choice->GetAttribute(DtmfAttribute) == m_value) {
         PTRACE(3, "Grammar " << *this << " matched menu choice: " << m_value << " to " << choice->PrintTrace());
 
-        PString next = choice->GetAttribute(NextAttribute);
-        if (next.IsEmpty()) {
-          bool retval = m_session.EvaluateExpr(*choice, ExprAttribute, next);
-          if (next.IsEmpty())
-            return retval;
-        }
+        if ((choice->HasAttribute(NextAttribute) +
+             choice->HasAttribute(ExprAttribute) +
+             choice->HasAttribute(EventAttribute) +
+             choice->HasAttribute(EventExprAttribute)) != 1)
+          return ThrowBadFetchError2(m_session, *choice, "Only one of next, nextexpr, event, eventexpr alllowed");
 
-        if (m_session.SetCurrentForm(next, true))
+        PString next = choice->GetAttribute(NextAttribute);
+        if (next.empty() && m_session.EvaluateExpr(*choice, ExprAttribute, next))
           return true;
 
-        if (m_session.GoToEventHandler(m_field, choice->GetAttribute(EventAttribute), false, true))
+        if (!next.empty())
+          return m_session.SetCurrentForm(next, true);
+
+        next = choice->GetAttribute(EventAttribute);
+        if (next.empty() && m_session.EvaluateExpr(*choice, EventExprAttribute, next))
+          return true;
+
+        if (!next.empty() && m_session.GoToEventHandler(m_field, next, false, true))
           return true;
       }
     }
