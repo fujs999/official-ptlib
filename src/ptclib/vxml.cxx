@@ -3871,6 +3871,8 @@ PVXMLGrammar::PVXMLGrammar(const PVXMLGrammarInit & init)
   , m_recogniser(NULL)
   , m_allowDTMF(true)
   , m_fieldName(m_field.GetAttribute(NameAttribute))
+  , m_usingDTMF(false)
+  , m_confidence(1.0)
   , m_state(Idle)
 {
   m_timer.SetNotifier(PCREATE_NOTIFIER(OnTimeout), "VXMLGrammar");
@@ -3880,12 +3882,9 @@ PVXMLGrammar::PVXMLGrammar(const PVXMLGrammarInit & init)
 void PVXMLGrammar::OnRecognition(PSpeechRecognition &, PSpeechRecognition::Transcript transcript)
 {
   if (Start()) {
-    if (!m_fieldName.empty()) {
-      m_session.SetDialogVar(m_fieldName+"$.utterance", PSTRSTRM(transcript.m_content));
-      m_session.SetDialogVar(m_fieldName+"$.confidence", PSTRSTRM(transcript.m_confidence));
-      m_session.SetDialogVar(m_fieldName+"$.inputmode", VoiceAttribute);
-    }
-
+    m_usingDTMF = false;
+    if (m_confidence > transcript.m_confidence)
+      m_confidence = transcript.m_confidence;
     OnInput(transcript.m_content);
   }
 }
@@ -3894,10 +3893,8 @@ void PVXMLGrammar::OnRecognition(PSpeechRecognition &, PSpeechRecognition::Trans
 void PVXMLGrammar::OnUserInput(const PString & input)
 {
   if (m_allowDTMF && Start()) {
-    m_session.SetDialogVar(m_fieldName+"$.utterance", input);
-    m_session.SetDialogVar(m_fieldName+"$.confidence", "1.0");
-    m_session.SetDialogVar(m_fieldName+"$.inputmode", DtmfAttribute);
-
+    m_usingDTMF = true;
+    m_confidence = 1.0;
     for (size_t i = 0; i < input.length(); ++i)
       OnInput(input[i]);
   }
@@ -3932,8 +3929,6 @@ bool PVXMLGrammar::Start()
     m_terminators = m_session.GetProperty(TermCharProperty);
   if (m_noInputTimeout == 0)
     m_noInputTimeout = m_session.GetTimeProperty(TimeoutProperty);
-  if (m_partFillTimeout == 0)
-    m_partFillTimeout = m_session.GetTimeProperty(InterDigitTimeoutProperty);
 
   PString inputModes = m_session.GetProperty(InputModesProperty, m_grammarElement, "mode");
 
@@ -3954,10 +3949,6 @@ bool PVXMLGrammar::Start()
       m_allowDTMF = true; // Turn on despite element indication, as no other way for input!
     }
     else {
-      PTimeInterval incomplete = m_session.GetTimeProperty(IncompleteTimeoutProperty);
-      if (incomplete < m_partFillTimeout)
-        m_partFillTimeout = incomplete;
-
       PStringToString options;
       m_session.m_httpMutex.Wait();
       m_session.m_httpProxies.ToOptions(options);
@@ -3994,16 +3985,8 @@ bool PVXMLGrammar::Start()
          " inputModes=" << inputModes << ","
          " dtmf=" << boolalpha << m_allowDTMF << ","
          " voice=" << (m_recogniser != NULL) << ","
-         " noInputTimeout=" << m_noInputTimeout << ","
-         " partFillTimeout=" << m_partFillTimeout);
+         " noInputTimeout=" << m_noInputTimeout);
   return true;
-}
-
-
-void PVXMLGrammar::SetIdle()
-{
-  m_state = Idle;
-  m_timer = m_noInputTimeout;
 }
 
 
@@ -4011,16 +3994,18 @@ void PVXMLGrammar::SetPartFilled(const PString & input)
 {
   m_value += input;
 
+  PTimeInterval timeout = m_session.GetTimeProperty(m_usingDTMF ? InterDigitTimeoutProperty : IncompleteTimeoutProperty);
+
   GrammarState prev = Started;
   if (m_state.compare_exchange_strong(prev, PartFill)) {
-    PTRACE(3, "Grammar " << *this << " start part fill: value=" << m_value.ToLiteral());
+    PTRACE(3, "Grammar " << *this << " start part fill: value=" << m_value.ToLiteral() << ", timeout=" << timeout);
     m_session.ClearBargeIn();
   }
   else {
-    PTRACE_IF(4, !m_value.empty(), "Grammar " << *this << " part filled: value=" << m_value.ToLiteral());
+    PTRACE_IF(4, !m_value.empty(), "Grammar " << *this << " part filled: value=" << m_value.ToLiteral() << ", timeout=" << timeout);
   }
 
-  m_timer = m_partFillTimeout;
+  m_timer = timeout;
 }
 
 
@@ -4035,10 +4020,10 @@ void PVXMLGrammar::SetFilled(const PString & input)
     }
   }
 
+  m_timer.Stop(false);
   m_value += input;
   PTRACE(3, "Grammar " << *this << " filled: value=" << m_value.ToLiteral());
-  m_timer.Stop(false);
-  m_session.Trigger();
+  Finished();
 }
 
 
@@ -4064,12 +4049,24 @@ void PVXMLGrammar::OnTimeout(PTimer &, P_INT_PTR)
     PTRACE(3, "Grammar " << *this << " timed out with no input");
   else {
     prev = PartFill;
-    if (m_state.compare_exchange_strong(prev, Filled) && !m_value.empty())
+    if (m_state.compare_exchange_strong(prev, Filled) && !m_value.empty()) {
       PTRACE(3, "Grammar " << *this << " timed out with partial input: " << m_value.ToLiteral());
+      Finished();
+    }
     else {
       PTRACE(3, "Grammar " << *this << " timed out with no match: state=" << prev);
       m_state = NoMatch;
     }
+  }
+}
+
+
+void PVXMLGrammar::Finished()
+{
+  if (!m_fieldName.empty()) {
+    m_session.SetDialogVar(m_fieldName+"$.utterance", m_value);
+    m_session.SetDialogVar(m_fieldName+"$.confidence", PSTRSTRM(m_confidence));
+    m_session.SetDialogVar(m_fieldName+"$.inputmode", m_usingDTMF ? DtmfAttribute : VoiceAttribute);
   }
   m_session.Trigger();
 }
@@ -4104,7 +4101,8 @@ bool PVXMLGrammar::Process()
     return true;
 
   PTRACE(2, "Grammar: " << *this << ", restarting node " << PXMLObject::PrintTrace(&m_field));
-  SetIdle();
+  m_state = Idle;
+  m_timer = m_noInputTimeout;
   return false;
 }
 
@@ -4304,15 +4302,12 @@ void PVXMLTextGrammar::OnRecognition(PSpeechRecognition& sr, PSpeechRecognition:
 }
 
 
-void PVXMLTextGrammar::OnUserInput(const PString & input)
-{
-  SetPartFilled(input);
-}
-
-
 void PVXMLTextGrammar::OnInput(const PString & input)
 {
-  SetFilled(input);
+  if (m_terminators.Find(input) != P_MAX_INDEX)
+    SetFilled(input);
+  else
+    SetPartFilled(input);
 }
 
 

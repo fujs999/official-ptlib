@@ -183,9 +183,6 @@ class PVXMLGrammar : public PObject, protected PVXMLGrammarInit
     GrammarState GetState() const { return m_state; }
 
     virtual bool Start();
-    virtual void SetIdle();
-    virtual void SetPartFilled(const PString & input);
-    virtual void SetFilled(const PString & value);
     virtual void Stop();
     virtual bool Process();
 
@@ -196,15 +193,19 @@ class PVXMLGrammar : public PObject, protected PVXMLGrammarInit
     PDECLARE_SpeechRecognitionNotifier(PVXMLGrammar, OnRecognition);
     virtual void GetWordsToRecognise(PStringArray & words) const;
     virtual void OnInput(const PString & input) = 0;
+    virtual void SetPartFilled(const PString & input);
+    virtual void SetFilled(const PString & value);
+    virtual void Finished();
 
     PSpeechRecognition * m_recogniser;
     bool                 m_allowDTMF;
     PString              m_fieldName;
     PString              m_terminators;
     PString              m_value;
+    bool                 m_usingDTMF;
+    float                m_confidence;
     atomic<GrammarState> m_state;
     PTimeInterval        m_noInputTimeout;
-    PTimeInterval        m_partFillTimeout;
     PTimer               m_timer;
 };
 
@@ -268,7 +269,6 @@ class PVXMLTextGrammar : public PVXMLGrammar
     PVXMLTextGrammar(const PVXMLGrammarInit & init);
 
     virtual void OnRecognition(PSpeechRecognition &, PSpeechRecognition::Transcript transcript);
-    virtual void OnUserInput(const PString & input);
     virtual void OnInput(const PString & input);
 };
 
