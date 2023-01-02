@@ -48,7 +48,7 @@ PTextToSpeech * PTextToSpeech::Create(const PString & name)
   if (!name.empty())
     return PFactory<PTextToSpeech>::CreateInstance(name);
 
-  PTextToSpeech * tts;
+  PTextToSpeech * tts = NULL;
 #ifdef P_TEXT_TO_SPEECH_AWS
   if ((tts = PFactory<PTextToSpeech>::CreateInstance(P_TEXT_TO_SPEECH_AWS)) == NULL)
 #endif
@@ -58,7 +58,11 @@ PTextToSpeech * PTextToSpeech::Create(const PString & name)
 #ifdef P_TEXT_TO_SPEECH_SAPI
       if ((tts = PFactory<PTextToSpeech>::CreateInstance(P_TEXT_TO_SPEECH_SAPI)) == NULL)
 #endif
-        tts = PFactory<PTextToSpeech>::CreateInstance(PFactory<PTextToSpeech>::GetKeyList().front());
+      {
+        vector<string> keys = PFactory<PTextToSpeech>::GetKeyList();
+        if (!keys.empty())
+          tts = PFactory<PTextToSpeech>::CreateInstance(keys.front());
+      }
   if (tts != NULL)
     PTRACE(4, tts, "Created " << *tts);
   else
@@ -518,14 +522,18 @@ PSpeechRecognition * PSpeechRecognition::Create(const PString & name)
   if (!name.empty())
     return PFactory<PSpeechRecognition>::CreateInstance(name);
 
-  PSpeechRecognition * sr;
+  PSpeechRecognition * sr = NULL;
 #ifdef P_SPEECH_RECOGNITION_AWS
   if ((sr = PFactory<PSpeechRecognition>::CreateInstance(P_SPEECH_RECOGNITION_AWS)) == NULL)
 #endif
 #ifdef P_SPEECH_RECOGNITION_SAPI
     if ((sr = PFactory<PSpeechRecognition>::CreateInstance(P_SPEECH_RECOGNITION_SAPI)) == NULL)
 #endif
-      sr = PFactory<PSpeechRecognition>::CreateInstance(PFactory<PSpeechRecognition>::GetKeyList().front());
+    {
+      vector<string> keys = PFactory<PSpeechRecognition>::GetKeyList();
+      if (!keys.empty())
+        sr = PFactory<PSpeechRecognition>::CreateInstance(keys.front());
+    }
   if (sr != NULL)
     PTRACE(4, sr, "Created " << *sr);
   else
