@@ -1829,12 +1829,10 @@ void PVXMLSession::InternalStartThread()
 {
   PWaitAndSignal mutex(m_sessionMutex);
 
-  if (IsOpen()) {
-    if (m_vxmlThread == NULL && m_newXML.get() != NULL)
-      m_vxmlThread = new PThreadObj<PVXMLSession>(*this, &PVXMLSession::InternalThreadMain, false, "VXML");
-    else
-      Trigger();
-  }
+  if (IsOpen() && m_promptMode != e_FinalProcessing && m_vxmlThread == NULL && m_newXML.get() != NULL)
+    m_vxmlThread = new PThreadObj<PVXMLSession>(*this, &PVXMLSession::InternalThreadMain, false, "VXML");
+  else
+    Trigger();
 }
 
 
@@ -3308,8 +3306,9 @@ PBoolean PVXMLSession::TraverseSubmit(PXMLElement & element)
       url.SetQueryVar(*it, GetVar(*it));
 
     PBYTEArray body;
-    if (LoadCachedResource(url, &element, DocumentMaxAgeProperty, DocumentMaxStaleProperty, body))
-      return InternalLoadVXML(url, PString(body), PString::Empty());
+    if (LoadCachedResource(url, &element, DocumentMaxAgeProperty, DocumentMaxStaleProperty, body) &&
+        InternalLoadVXML(url, PString(body), PString::Empty()))
+      return true;
     return ThrowBadFetchError(element, "Could not GET " << url);
   }
 
@@ -3325,10 +3324,9 @@ PBoolean PVXMLSession::TraverseSubmit(PXMLElement & element)
       vars.SetAt(*it, GetVar(*it));
 
     PString replyBody;
-    if (http->PostData(url, sendMIME, vars, replyMIME, replyBody)) {
-      PTRACE(4, "<submit> POST " << url << " succeeded and returned body:\n" << replyBody);
-      return InternalLoadVXML(url, replyBody, PString::Empty());
-    }
+    if (http->PostData(url, sendMIME, vars, replyMIME, replyBody) &&
+        InternalLoadVXML(url, replyBody, PString::Empty()))
+      return true;
 
     return ThrowError(element, PSTRSTRM(ErrorBadFetch << '.' << url.GetScheme() << '.' << http->GetLastResponseCode()),
                       "<submit> POST " << url << " failed with " << http->GetLastResponseCode() << ' ' << http->GetLastResponseInfo());
@@ -3384,20 +3382,17 @@ PBoolean PVXMLSession::TraverseSubmit(PXMLElement & element)
       << "\r\n";
   }
 
-  if (entityBody.IsEmpty()) {
-    PTRACE(2, "<submit> could not find anything to send using \"" << setfill(',') << namelist << '"');
-    return false;
-  }
+  if (entityBody.IsEmpty())
+    return ThrowError(element, PSTRSTRM(ErrorBadFetch << '.' << url.GetScheme() << '.' << http->GetLastResponseCode()),
+                      "<submit> could not find anything to send using \"" << setfill(',') << namelist << '"');
 
   PString replyBody;
-  if (http->PostData(url, sendMIME, entityBody, replyMIME, replyBody)) {
-    PTRACE(2, "<submit> POST " << url << " succeeded and returned body:\n" << replyBody);
-    return InternalLoadVXML(url, replyBody, PString::Empty());
-  }
+  if (http->PostData(url, sendMIME, entityBody, replyMIME, replyBody) &&
+      InternalLoadVXML(url, replyBody, PString::Empty()))
+    return true;
 
-  PTRACE(2, "<submit> POST " << url << " failed with "
-         << http->GetLastResponseCode() << ' ' << http->GetLastResponseInfo());
-  return false;
+  return ThrowError(element, PSTRSTRM(ErrorBadFetch << '.' << url.GetScheme() << '.' << http->GetLastResponseCode()),
+                    "<submit> POST " << url << " failed with " << http->GetLastResponseCode() << ' ' << http->GetLastResponseInfo());
 }
 
 
