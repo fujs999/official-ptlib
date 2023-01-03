@@ -108,9 +108,11 @@ extern "C" {
   #error OpenSSL too old! Use at least 1.0.2
 #endif
 
-#ifdef _MSC_VER
-  #pragma comment(lib, P_SSL_LIB1)
-  #pragma comment(lib, P_SSL_LIB2)
+#ifdef P_SSL_LIB1
+#pragma comment(lib, P_SSL_LIB1)
+#endif
+#ifdef P_SSL_LIB2
+#pragma comment(lib, P_SSL_LIB2)
 #endif
 
 
@@ -121,10 +123,6 @@ extern "C" {
   #undef X509_NAME
   #pragma comment (lib, "crypt32.lib")
   #pragma comment (lib, "cryptui.lib")
-
-  #ifdef SSL_OP_NO_QUERY_MTU
-    #define P_SSL_USE_CONST 1
-  #endif
 #endif
 
 #define PTraceModule() "SSL"
@@ -378,12 +376,7 @@ bool PSSLPrivateKey::SetData(const PBYTEArray & keyData)
   FreePrivateKey();
 
   const BYTE * keyPtr = keyData;
-#if P_SSL_USE_CONST
   m_pkey = d2i_AutoPrivateKey(NULL, &keyPtr, keyData.GetSize());
-#else
-  m_pkey = d2i_AutoPrivateKey(NULL, (BYTE **)&keyPtr, keyData.GetSize());
-#endif
-
   return m_pkey != NULL;
 }
 
@@ -713,11 +706,7 @@ bool PSSLCertificate::SetData(const PBYTEArray & certData)
   FreeCertificate();
 
   const BYTE * certPtr = certData;
-#if P_SSL_USE_CONST
   m_certificate = d2i_X509(NULL, &certPtr, certData.GetSize());
-#else
-  m_certificate = d2i_X509(NULL, (unsigned char **)&certPtr, certData.GetSize());
-#endif
   return m_certificate != NULL;
 }
 
@@ -2659,13 +2648,9 @@ void PSSLContext::SetPasswordNotifier(const PSSLPasswordNotifier & notifier)
 
 bool PSSLContext::SetExtension(const char * extension)
 {
-#if P_SSL_SRTP
   return PAssertNULL(m_context) != NULL &&
          extension != NULL && *extension != '\0' &&
          SSL_CTX_set_tlsext_use_srtp(m_context, extension) == 0;
-#else
-  return false;
-#endif
 }
 
 
@@ -3250,13 +3235,11 @@ PCaselessString PSSLChannelDTLS::GetSelectedProfile() const
   if (PAssertNULL(m_ssl) == NULL)
     return PString::Empty();
 
-#if P_SSL_SRTP
   SRTP_PROTECTION_PROFILE *p = SSL_get_selected_srtp_profile(m_ssl);
   if (p != NULL)
     return p->name;
 
   PTRACE(2, "SSL_get_selected_srtp_profile returned NULL: " << PSSLError());
-#endif
   return PString::Empty();
 }
 
@@ -3266,7 +3249,6 @@ PBYTEArray PSSLChannelDTLS::GetKeyMaterial(PINDEX materialSize, const char * nam
   if (PAssertNULL(m_ssl) == NULL)
     return PBYTEArray();
 
-#if P_SSL_SRTP
   if (PAssert(materialSize > 0 && name != NULL && *name != '\0', PInvalidParameter)) {
     PBYTEArray result;
     if (SSL_export_keying_material(m_ssl,
@@ -3277,7 +3259,6 @@ PBYTEArray PSSLChannelDTLS::GetKeyMaterial(PINDEX materialSize, const char * nam
 
     PTRACE(2, "SSL_export_keying_material failed: " << PSSLError());
   }
-#endif
 
   return PBYTEArray();
 }

@@ -877,12 +877,13 @@ void PMessageDigest5::InternalCompleteDigest(Result & result)
 
 #include <openssl/sha.h>
 
-#ifdef _MSC_VER
-
+#ifdef P_SSL_LIB1
 #pragma comment(lib, P_SSL_LIB1)
-#pragma comment(lib, P_SSL_LIB2)
-
 #endif
+#ifdef P_SSL_LIB2
+#pragma comment(lib, P_SSL_LIB2)
+#endif
+
 
 struct PMessageDigestSHA::Context
 {

@@ -1635,12 +1635,26 @@ dnl As if that is not enough, autoconf gets very confused if configure.in
 dnl contains a AC_CHECK_HEADER directive that never gets used. So we have 
 dnl to ensure that it is always called
 
+dnl MSWIN_DISPLAY    opensslvc32,Open SSL (vcpkg 32 bit)
+dnl MSWIN_CHECK_FILE opensslvc32,include\openssl\ssl.h,P_SSL_VCPKG32=1
+dnl MSWIN_CHECK_DIR  opensslvc32,..\external\vcpkg\installed\x86-windows\
+dnl MSWIN_CHECK_DIR  opensslvc32,..\..\external\vcpkg\installed\x86-windows\
+dnl MSWIN_CHECK_DIR  opensslvc32,%ProgramFiles%\vcpkg\installed\x86-windows\
+dnl MSWIN_CHECK_DIR  opensslvc32,%ProgramW6432%\vcpkg\installed\x86-windows\
+
+dnl MSWIN_DISPLAY    opensslvc64,Open SSL (vcpkg 64 bit)
+dnl MSWIN_CHECK_FILE opensslvc64,include\openssl\ssl.h,P_SSL_VCPKG64=1
+dnl MSWIN_CHECK_DIR  opensslvc64,..\external\vcpkg\installed\x64-windows\
+dnl MSWIN_CHECK_DIR  opensslvc64,..\..\external\vcpkg\installed\x64-windows\
+dnl MSWIN_CHECK_DIR  opensslvc64,%ProgramFiles%\vcpkg\installed\x64-windows\
+dnl MSWIN_CHECK_DIR  opensslvc64,%ProgramW6432%\vcpkg\installed\x64-windows\
+
 dnl MSWIN_DISPLAY    openssl,Open SSL (32 bit)
+dnl MSWIN_IF_FEATURE openssl,!opensslvc32
 dnl MSWIN_CHECK_FILE openssl,inc32\openssl\ssl.h,P_SSL_WIN32=1
 dnl MSWIN_CHECK_FILE openssl,include\openssl\ssl.h,P_SSL_WIN32=2
 dnl MSWIN_FIND_FILE  openssl,P_SSL_AES32,aes.h,...
 dnl MSWIN_FIND_FILE  openssl,P_SSL_LIBEAY32,libeay32MD.lib,...
-dnl MSWIN_DEFINE     openssl,P_SSL_SRTP
 dnl MSWIN_DIR_SYMBOL openssl,SSL_WIN32_DIR
 dnl MSWIN_CHECK_DIR  openssl,%OPENSSL32DIR%\
 dnl MSWIN_CHECK_DIR  openssl,..\openssl\
@@ -1657,11 +1671,11 @@ dnl MSWIN_CHECK_DIR  openssl,%ProgramW6432%\OpenSSL\
 dnl MSWIN_CHECK_DIR  openssl,\OpenSSL-Win32
 
 dnl MSWIN_DISPLAY    openssl64,Open SSL (64 bit)
+dnl MSWIN_IF_FEATURE openssl64,!opensslvc64
 dnl MSWIN_CHECK_FILE openssl64,include\openssl\ssl.h,P_SSL_WIN64=1
 dnl MSWIN_FIND_FILE  openssl64,P_SSL_AES64,aes.h,...
 dnl MSWIN_FIND_FILE  openssl64,P_SSL_LIBEAY64,libeay32MD.lib,...
 dnl MSWIN_DIR_SYMBOL openssl64,SSL_WIN64_DIR
-dnl MSWIN_DEFINE     openssl64,P_SSL_SRTP
 dnl MSWIN_CHECK_DIR  openssl64,%OPENSSL64DIR%\
 dnl MSWIN_CHECK_DIR  openssl64,..\openssl64\
 dnl MSWIN_CHECK_DIR  openssl64,..\OpenSSL-Win64\
@@ -1686,33 +1700,6 @@ PTLIB_MODULE_OPTION(
    [#include <openssl/ssl.h>],
    [TLSv1_method()],
    [
-      MY_COMPILE_IFELSE(
-         [for OPENSSL const arg to d2i_AutoPrivateKey],
-         [$OPENSSL_CFLAGS],
-         [#include <openssl/evp.h>],
-         [
-            EVP_PKEY **a;
-            const unsigned char **p;
-            long l;
-            d2i_AutoPrivateKey(a, p, l);
-         ],
-         [AC_DEFINE([P_SSL_USE_CONST], [1], [SSL with const])]
-      )
-
-      MY_COMPILE_IFELSE(
-         [for OPENSSL SRTP support],
-         [$OPENSSL_CFLAGS],
-         [#include <openssl/ssl.h>],
-         [
-            SSL *s;
-            SRTP_PROTECTION_PROFILE * srtp = SSL_get_selected_srtp_profile(s);
-         ],
-         [
-            AC_DEFINE([P_SSL_SRTP], [1],[openssl with SRTP yes])
-            HAS_SSL_SRTP=1
-         ]
-      )
-
       MY_COMPILE_IFELSE(
          [for OPENSSL AES header],
          [$OPENSSL_CFLAGS],
@@ -1904,8 +1891,16 @@ CXXFLAGS="$oldCXXFLAGS"
 dnl ########################################################################
 dnl check for AWS SDK library
 
-dnl MSWIN_DISPLAY    aws,AWS SDK
-dnl MSWIN_CHECK_FILE aws,include/aws/core/Aws.h,P_AWS_SDK_DEFAULT=1
+dnl MSWIN_DISPLAY    awsvc,AWS SDK (vcpkg)
+dnl MSWIN_CHECK_FILE awsvc,include/aws/core/Aws.h,P_AWS_SDK_VCPKG=1
+dnl MSWIN_CHECK_DIR  awsvc,..\external\vcpkg\installed
+dnl MSWIN_CHECK_DIR  awsvc,..\..\external\vcpkg\installed
+dnl MSWIN_CHECK_DIR  awsvc,\vcpkg\installed
+dnl MSWIN_CHECK_DIR  awsvc,%ProgramFiles%\vcpkg\installed
+dnl MSWIN_CHECK_DIR  awsvc,%ProgramW6432%\vcpkg\installed
+
+dnl MSWIN_DISPLAY    aws,AWS SDK (local build)
+dnl MSWIN_IF_FEATURE aws,!awsvc
 dnl MSWIN_CHECK_FILE aws,out/install/x86-Debug/include/aws/core/Aws.h,P_AWS_SDK_DEBUG32=1
 dnl MSWIN_CHECK_FILE aws,out/install/x86-Release/include/aws/core/Aws.h,P_AWS_SDK_RELEASE32=1
 dnl MSWIN_CHECK_FILE aws,out/install/x64-Debug/include/aws/core/Aws.h,P_AWS_SDK_DEBUG64=1

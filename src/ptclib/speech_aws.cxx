@@ -48,7 +48,7 @@
 
 #define PTraceModule() "AWS-Speech"
 
-#ifdef _MSC_VER
+#ifdef P_AWS_SDK_LIBDIR
   #pragma comment(lib, P_AWS_SDK_LIBDIR(polly))
   #pragma comment(lib, P_AWS_SDK_LIBDIR(text-to-speech))
   #pragma comment(lib, P_AWS_SDK_LIBDIR(transcribe))

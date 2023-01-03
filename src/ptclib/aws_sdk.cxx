@@ -41,7 +41,7 @@
 
 #define PTraceModule() "AWS-SDK"
 
-#ifdef _MSC_VER
+#ifdef P_AWS_SDK_LIBDIR
   #pragma comment(lib, P_AWS_SDK_LIBDIR(core))
 #endif
 
