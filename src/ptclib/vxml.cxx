@@ -4044,21 +4044,20 @@ void PVXMLGrammar::OnTimeout(PTimer &, P_INT_PTR)
     PTRACE(3, "Grammar " << *this << " timed out with no input");
   else {
     prev = PartFill;
-    if (m_state.compare_exchange_strong(prev, Filled) && !m_value.empty()) {
+    if (m_state.compare_exchange_strong(prev, Filled) && !m_value.empty())
       PTRACE(3, "Grammar " << *this << " timed out with partial input: " << m_value.ToLiteral());
-      Finished();
-    }
     else {
       PTRACE(3, "Grammar " << *this << " timed out with no match: state=" << prev);
       m_state = NoMatch;
     }
   }
+  Finished();
 }
 
 
 void PVXMLGrammar::Finished()
 {
-  if (!m_fieldName.empty()) {
+  if (!m_fieldName.empty() && !m_value.empty()) {
     m_session.SetDialogVar(m_fieldName+"$.utterance", m_value);
     m_session.SetDialogVar(m_fieldName+"$.confidence", PSTRSTRM(m_confidence));
     m_session.SetDialogVar(m_fieldName+"$.inputmode", m_usingDTMF ? DtmfAttribute : VoiceAttribute);
