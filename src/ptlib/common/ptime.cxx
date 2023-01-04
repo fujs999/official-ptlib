@@ -531,13 +531,13 @@ PString PTime::AsString(TimeFormat format, int zone) const
       fmt += "www ";
       switch (GetDateOrder()) {
         case MonthDayYear :
-          fmt += "MMM d, yy";
+          fmt += "MMM d, yyyy";
           break;
         case DayMonthYear :
-          fmt += "d MMM yy";
+          fmt += "d MMM yyyy";
           break;
         case YearMonthDay :
-          fmt += "yy MMM d";
+          fmt += "yyyy MMM d";
       }
       break;
 
@@ -546,13 +546,13 @@ PString PTime::AsString(TimeFormat format, int zone) const
       dsep = GetDateSeparator();
       switch (GetDateOrder()) {
         case MonthDayYear :
-          fmt += "MM" + dsep + "dd" + dsep + "yy";
+          fmt += "MM" + dsep + "dd" + dsep + "yyyy";
           break;
         case DayMonthYear :
-          fmt += "dd" + dsep + "MM" + dsep + "yy";
+          fmt += "dd" + dsep + "MM" + dsep + "yyyy";
           break;
         case YearMonthDay :
-          fmt += "yy" + dsep + "MM" + dsep + "dd";
+          fmt += "yyyy" + dsep + "MM" + dsep + "dd";
       }
       break;
 
