@@ -13,6 +13,7 @@
 
   <!-- Main menu -->
   <menu id="MainMenu">
+    <voice name="Kevin Lea Russell" languages="fr-FR"/>
 
     <!-- Set this property for the time to wait for input -->
     <property name="timeout" value="30s"/>

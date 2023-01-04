@@ -39,8 +39,8 @@
 
 #define USE_IMPORT_EXPORT
 #include <aws/polly/PollyClient.h>
-#include <aws/text-to-speech/PCMOutputDriver.h>
-#include <aws/text-to-speech/TextToSpeechManager.h>
+#include <aws/polly/model/DescribeVoicesRequest.h>
+#include <aws/polly/model/SynthesizeSpeechRequest.h>
 #include <aws/transcribe/TranscribeServiceClient.h>
 #include <aws/transcribe/model/CreateVocabularyRequest.h>
 #include <aws/transcribe/model/DeleteVocabularyRequest.h>
@@ -58,61 +58,22 @@
  ////////////////////////////////////////////////////////////
 // Text to speech using AWS
 
+static PConstCaselessString VoiceEngine("engine");
+static PConstCaselessString VoiceEngines("engines");
+static PConstCaselessString DefaultVoiceEngine("TTS-Engine");
+
 class PTextToSpeech_AWS : public PTextToSpeech, PAwsClient<Aws::Polly::PollyClient>
 {
   PCLASSINFO(PTextToSpeech_AWS, PTextToSpeech);
 
-  std::shared_ptr<Aws::TextToSpeech::TextToSpeechManager> m_manager;
-  Aws::TextToSpeech::CapabilityInfo m_capability;
-
-  struct WAVOutputDriver : Aws::TextToSpeech::PCMOutputDriver, PObject
-  {
-    PWAVFile m_wavFile;
-
-    virtual bool WriteBufferToDevice(const unsigned char* data, size_t size)
-    {
-      return m_wavFile.Write(data, size);
-    }
-    virtual Aws::Vector<Aws::TextToSpeech::DeviceInfo> EnumerateDevices() const
-    {
-      Aws::TextToSpeech::DeviceInfo deviceInfo;
-      deviceInfo.deviceName = "*.wav";
-      return Aws::Vector<Aws::TextToSpeech::DeviceInfo>(1, deviceInfo);
-    }
-    virtual void SetActiveDevice(const Aws::TextToSpeech::DeviceInfo & deviceInfo, const Aws::TextToSpeech::CapabilityInfo & capability)
-    {
-      if (m_wavFile.Open(deviceInfo.deviceName.c_str(), PFile::WriteOnly) &&
-          m_wavFile.SetSampleRate(capability.sampleRate) &&
-          m_wavFile.SetChannels(capability.channels) &&
-          m_wavFile.SetSampleSize(capability.sampleWidthBits)) {
-        PTRACE(4, "Opened WAV file " << m_wavFile.GetName());
-      }
-    }
-    virtual const char* GetName() const
-    {
-      return m_wavFile.GetName().c_str();
-    }
-  };
-
-  struct OutputDriverFactory : Aws::TextToSpeech::PCMOutputDriverFactory
-  {
-    virtual Aws::Vector<std::shared_ptr<Aws::TextToSpeech::PCMOutputDriver>> LoadDrivers() const
-    {
-      Aws::Vector<std::shared_ptr<Aws::TextToSpeech::PCMOutputDriver>> drivers;
-      drivers.push_back(std::make_shared<WAVOutputDriver>());
-      return drivers;
-    }
-  };
+  typedef PDictionary<PCaselessString, PStringOptions> VoiceDict;
+  VoiceDict    m_voices;
+  PString      m_defaultEngine;
+  bool         m_sampleRate8k{ true };
+  PWAVFile     m_file;
+  PChannel   * m_channel{ NULL };
 
 public:
-  PTextToSpeech_AWS()
-  {
-    m_capability.sampleRate = 8000;
-    m_capability.channels = 1;
-    m_capability.sampleWidthBits = 16;
-  }
-
-
   ~PTextToSpeech_AWS()
   {
     Close();
@@ -121,59 +82,156 @@ public:
 
   virtual bool SetOptions(const PStringOptions & options)
   {
+    m_defaultEngine = options.Get(DefaultVoiceEngine).ToLower();
+    if (!m_defaultEngine.empty() && Aws::Polly::Model::EngineMapper::GetEngineForName(m_defaultEngine.c_str()) == Aws::Polly::Model::Engine::NOT_SET)
+      m_defaultEngine.MakeEmpty();
+
     return PAwsClient<Aws::Polly::PollyClient>::SetOptions(options) && PTextToSpeech::SetOptions(options);
   }
 
 
   virtual PStringArray GetVoiceList()
   {
-    //Enumerate the available voices 
-    auto mgr = m_manager;
-    if (!mgr)
-      mgr = Aws::TextToSpeech::TextToSpeechManager::Create(GetClient());
-    Aws::Vector<std::pair<Aws::String, Aws::String>> awsVoices = mgr->ListAvailableVoices();
+    PStringArray voices;
+    if (m_voices.empty()) {
+      //Enumerate the available voices
+      auto outcome = GetClient()->DescribeVoices(Aws::Polly::Model::DescribeVoicesRequest());
+      if (!outcome.IsSuccess()) {
+        PTRACE(2, "Could not describe voices: " << outcome.GetError().GetMessage());
+        return voices;
+      }
 
-    PStringArray voiceList(awsVoices.size());
-    for (size_t i = 0; i < awsVoices.size(); ++i)
-      voiceList[i] = PSTRSTRM(awsVoices[i].first << ':' << awsVoices[i].second);
-    PTRACE(3, "Voices: " << setfill(',') << voiceList);
-    return voiceList;
+      for (const auto & voice : outcome.GetResult().GetVoices()) {
+        PCaselessString voiceName = Aws::Polly::Model::VoiceIdMapper::GetNameForVoiceId(voice.GetId());
+        PStringOptions * opts = new PStringOptions;
+        opts->Set(VoiceName, voiceName);
+        opts->Set(VoiceLanguage, Aws::Polly::Model::LanguageCodeMapper::GetNameForLanguageCode(voice.GetLanguageCode()));
+        opts->Set(VoiceGender, Aws::Polly::Model::GenderMapper::GetNameForGender(voice.GetGender()));
+
+        PStringStream strm;
+        for (auto engine : voice.GetSupportedEngines()) {
+          if (engine == Aws::Polly::Model::Engine::NOT_SET)
+            continue;
+          if (!strm.empty())
+            strm << '+';
+          strm << Aws::Polly::Model::EngineMapper::GetNameForEngine(engine);
+        }
+        opts->Set(VoiceEngines, strm);
+
+        m_voices.SetAt(voiceName, opts);
+      }
+    }
+
+    for (const auto & voice : m_voices) {
+      PStringStream strm;
+      PURL::OutputVars(strm, voice.second);
+      voices.AppendString(strm.Mid(1));
+    }
+
+    PTRACE(3, "Voices:\n" << setfill('\n') << voices);
+    return voices;
   }
 
 
-  virtual bool InternalSetVoice(const PString & name, const PString & /*language*/)
+  bool ValidateEngine(PStringOptions & voice) const
   {
-    if (!m_manager)
-      return false;
+    if (voice.Contains(VoiceEngine))
+      return true;
 
-    m_manager->SetActiveVoice(name.c_str());
+    PStringArray engines = voice.Get(VoiceEngines, m_defaultEngine).ToLower().Tokenise("+", false);
+    if (m_defaultEngine.empty())
+      voice.Set(VoiceEngine, engines[0]);
+    else if (engines.GetValuesIndex(m_defaultEngine) != P_MAX_INDEX)
+      voice.Set(VoiceEngine, m_defaultEngine);
+    else {
+      PTRACE(2, "Cannot use engine \"" << m_defaultEngine << "\" with voice \"" << voice.Get(VoiceName) << '"');
+      return false;
+    }
+
+    PTRACE(4, "Using voice \"" << voice.Get(VoiceName) << '"');
     return true;
+  }
+
+
+  virtual bool InternalSetVoice(PStringOptions & voice)
+  {
+    if (voice == m_voice)
+      return ValidateEngine(voice);
+
+    if (m_voices.empty())
+      GetVoiceList();
+
+    PCaselessString language = voice.Get(VoiceLanguage);
+    PCaselessString gender = voice.Get(VoiceGender);
+    PCaselessString engine = voice.Get(VoiceEngine);
+
+    if (voice.Contains(VoiceName)) {
+      PCaselessString voiceName = voice.Get(VoiceName);
+      PStringOptions * found = m_voices.GetAt(voiceName);
+      if (!found) {
+        PTRACE(2, "Unsupported voice \"" << voiceName << '"');
+        return false;
+      }
+      if (!language.empty() && language != found->Get(VoiceLanguage)) {
+        PTRACE(2, "Voice \"" << voiceName << "\" has incorrect language: "
+               << language << " != " << found->Get(VoiceLanguage));
+        return false;
+      }
+      if (!gender.empty() && gender != found->Get(VoiceGender)) {
+        PTRACE(2, "Voice \"" << voiceName << "\" has incorrect gender: "
+               << gender << " != " << found->Get(VoiceGender));
+        return false;
+      }
+      if (!engine.empty() && engine != found->Get(VoiceEngine)) {
+        PTRACE(2, "Voice \"" << voiceName << "\" has incorrect engine: "
+               << engine << " != " << found->Get(VoiceEngine));
+        return false;
+      }
+      voice = *found;
+      voice.MakeUnique();
+      return ValidateEngine(voice);
+    }
+
+    for (const auto & it : m_voices) {
+      if ((language.empty() || language == it.second.Get(VoiceLanguage)) &&
+          (gender.empty() || gender == it.second.Get(VoiceGender)) &&
+          (engine.empty() || engine == it.second.Get(VoiceEngine) || it.second.Get(VoiceEngines).Find(engine) != P_MAX_INDEX)) {
+        voice = it.second;
+        voice.MakeUnique();
+        return ValidateEngine(voice);
+      }
+    }
+
+    PTRACE(2, "Could not find voice using:\n" << voice);
+    return false;
   }
 
 
   virtual bool SetSampleRate(unsigned rate)
   {
-    m_capability.sampleRate = rate;
+    if (rate != 8000 && rate != 16000)
+      return false;
+
+    m_sampleRate8k = rate == 8000;
     return true;
   }
 
 
   virtual unsigned GetSampleRate() const
   {
-    return m_capability.sampleRate;
+    return m_sampleRate8k ? 8000 : 16000;
   }
 
 
   virtual bool SetChannels(unsigned channels)
   {
-    m_capability.channels = channels;
-    return true;
+    return channels == 1;
   }
 
 
   virtual unsigned GetChannels() const
   {
-    return m_capability.channels;
+    return 1;
   }
 
 
@@ -191,54 +249,71 @@ public:
 
   bool OpenFile(const PFilePath & fn)
   {
-    m_manager = Aws::TextToSpeech::TextToSpeechManager::Create(GetClient(), std::make_shared<OutputDriverFactory>());
-    std::shared_ptr<WAVOutputDriver> driver = std::make_shared<WAVOutputDriver>();
-    PTRACE_CONTEXT_ID_TO(*driver);
-    Aws::TextToSpeech::DeviceInfo deviceInfo;
-    deviceInfo.deviceName = fn.c_str();
-    m_manager->SetActiveDevice(driver, deviceInfo, m_capability);
-    if (m_voiceName.empty())
-      SetVoice(PString::Empty());
-    else
-      InternalSetVoice(m_voiceName, m_voiceLanguage);
-    return true;
+    if (m_file.Open(fn, PFile::WriteOnly))
+      return true;
+
+    PTRACE(2, "Could not open \"" << fn << "\" - " << m_file.GetErrorText());
+    return false;
   }
 
 
-  bool OpenChannel(PChannel * /*channel*/)
+  bool OpenChannel(PChannel * channel)
   {
     Close();
-    return false;
+    return m_channel = channel;
   }
 
 
   bool IsOpen() const
   {
-    return !!m_manager;
+    return m_channel != NULL || m_file.IsOpen();
   }
 
 
   bool Close()
   {
-    m_manager.reset();
+    m_file.Close();
+    m_channel = NULL;
     return true;
   }
 
 
   bool Speak(const PString & text, TextType /*hint*/)
   {
-    bool success = false;
-    PSyncPoint done;
-    Aws::TextToSpeech::SendTextCompletedHandler handler =
-          [&success, &done]
-          (const char*, const Aws::Polly::Model::SynthesizeSpeechOutcome&, bool doneGood)
-          {
-            success = doneGood;
-            done.Signal();
-          };
-    m_manager->SendTextToOutputDevice(text.c_str(), handler);
-    done.Wait();
-    return success;
+    if (!IsOpen() || !SetVoice(PString::Empty()))
+      return false;
+
+    Aws::Polly::Model::SynthesizeSpeechRequest request;
+
+    request.SetOutputFormat(Aws::Polly::Model::OutputFormat::pcm);
+    request.SetSampleRate(m_sampleRate8k ? "8000" : "16000");
+    request.SetVoiceId(Aws::Polly::Model::VoiceIdMapper::GetVoiceIdForName(m_voice.Get(VoiceName).c_str()));
+    request.SetLanguageCode(Aws::Polly::Model::LanguageCodeMapper::GetLanguageCodeForName(m_voice.Get(VoiceLanguage).c_str()));
+    request.SetEngine(Aws::Polly::Model::EngineMapper::GetEngineForName(m_voice.Get(VoiceEngine).c_str()));
+    request.SetText(text.c_str());
+
+    auto outcome = GetClient()->SynthesizeSpeech(request);
+    if (!outcome.IsSuccess()) {
+      PTRACE(2, "Could not synthesize speech: " << outcome.GetError().GetMessage());
+      return false;
+    }
+
+    auto & strm = outcome.GetResult().GetAudioStream();
+    for (;;) {
+      char buf[1000];
+      strm.read(buf, sizeof(buf));
+      auto count = strm.gcount();
+      if (count == 0)
+        break;
+
+      if (m_channel != NULL ? m_channel->Write(buf, count) : m_file.Write(buf, count))
+        continue;
+
+      PTRACE(2, "Write failure to \"" << m_file.GetFilePath() << "\" - " << m_file.GetErrorText());
+      return false;
+    }
+
+    return true;
   }
 };
 
@@ -594,14 +669,6 @@ public:
     return false;
   }
 
-
-  static void AddSignedHeader(PURL & url, PStringStream & canonical, const char * key, const PString & value, bool first = false)
-  {
-    url.SetQueryVar(key, value);
-    if (!first)
-      canonical << '&';
-    canonical << key << '=' << PURL::TranslateString(value, PURL::QueryTranslation);
-  }
 
   virtual bool Open(const Notifier & notifier, const PString & vocabulary)
   {

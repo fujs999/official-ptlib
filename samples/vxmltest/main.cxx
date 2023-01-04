@@ -355,7 +355,7 @@ bool TestInstance::Initialise(unsigned instance, const PArgList & args)
     }
     cerr << "Instance " << m_instance << " warning: no text to speech engine available" << endl;
   }
-  cout << "Instance " << m_instance << " using text to speech: " << setfill (',') << GetTextToSpeech()->GetVoiceList() << endl;
+  cout << "Instance " << m_instance << " using text to speech:\n" << GetTextToSpeech()->GetVoiceList()[0] << endl;
 
   if (!SetSpeechRecognition(args.GetOptionString("sr"))) {
     PFactory<PTextToSpeech>::KeyList_T engines = PFactory<PSpeechRecognition>::GetKeyList();

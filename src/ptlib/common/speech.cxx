@@ -41,6 +41,12 @@
 #include <ptlib/sound.h>
 #include <ptlib/ipsock.h>
 #include <ptclib/pwavfile.h>
+#include <ptclib/url.h>
+
+
+const PCaselessString & PTextToSpeech::VoiceName() { static PConstCaselessString s("name"); return s; }
+const PCaselessString & PTextToSpeech::VoiceLanguage() { static PConstCaselessString s("language"); return s; }
+const PCaselessString & PTextToSpeech::VoiceGender() { static PConstCaselessString s("gender"); return s; }
 
 
 PTextToSpeech * PTextToSpeech::Create(const PString & name)
@@ -103,83 +109,41 @@ bool PTextToSpeech::SetOptions(const PStringOptions & options)
 }
 
 
-bool PTextToSpeech::SetVoice(const PString & voice)
+bool PTextToSpeech::SetVoice(const PString & voiceStr)
 {
-  PStringArray voices = GetVoiceList();
-
-  PString name, language;
-  if (voice.empty()) {
-    if (m_voiceName.empty())
-      voices[0].Split(':', name, language, PString::SplitDefaultToBefore|PString::SplitTrim);
-    else {
-      name = m_voiceName;
-      language = m_voiceLanguage;
+  PStringOptions voice;
+  if (voiceStr.empty() || voiceStr == ":" || voiceStr == "*") {
+    if (m_voice.empty() || !voiceStr.empty()) {
+      PStringArray voices = GetVoiceList();
+      if (!voices.empty())
+        PURL::SplitVars(voices[0], m_voice);
     }
+    voice = m_voice;
   }
-  else
-    voice.Split(':', name, language, PString::SplitDefaultToBefore|PString::SplitTrim);
-
-  PINDEX found = P_MAX_INDEX;
-  unsigned count = 0;
-
-  if (name.empty()) {
-    if (language.empty())
-      language = "US English";
-    for (PINDEX i = 0; i < voices.GetSize(); ++i) {
-      PString v = voices[i];
-      if (v.NumCompare(language, language.length(), v.Find(':')+1) == PObject::EqualTo) {
-        found = i;
-        ++count;
-        break;
-      }
-    }
-  }
-  else if (language.empty()) {
-    for (PINDEX i = 0; i < voices.GetSize(); ++i) {
-      if (voices[i].NumCompare(name) == PObject::EqualTo) {
-        if (found == P_MAX_INDEX)
-          found = i;
-        ++count;
-      }
-    }
-  }
+  else if (voiceStr.find('=') != string::npos)
+    PURL::SplitVars(voiceStr, voice);
   else {
-    for (PINDEX i = 0; i < voices.GetSize(); ++i) {
-      PString v = voices[i];
-      if (v.NumCompare(name) == PObject::EqualTo && v.NumCompare(language, language.length(), v.Find(':')+1) == PObject::EqualTo) {
-        if (found == P_MAX_INDEX)
-          found = i;
-        ++count;
-      }
-    }
+    PString name, language;
+    voiceStr.Split(':', name, language, PString::SplitDefaultToBefore|PString::SplitTrim);
+    if (!name.empty())
+      voice.Set(VoiceName, name);
+    if (!language.empty())
+      voice.Set(VoiceLanguage, language);
   }
 
-  switch (count) {
-    case 0 :
-      PTRACE(2, "No voice \"" << voice << "\" available in " << setfill(',') << voices);
-      return false;
-    case 1 :
-      voices[found].Split(':', name, language);
-      break;
-    default :
-      PTRACE(2, "Multiple voices matching \"" << voice << "\" in " << setfill(',') << voices);
-      return false;
-  }
-
-  if (IsOpen() && !InternalSetVoice(name, language))
+  if (!InternalSetVoice(voice))
     return false;
 
-  m_voiceName = name;
-  m_voiceLanguage = language;
+  m_voice = voice;
   return true;
 }
 
 
 PString PTextToSpeech::GetVoice() const
 {
-  if (m_voiceLanguage.empty())
-    return m_voiceName;
-  return PSTRSTRM(m_voiceName << ':' << m_voiceLanguage);
+  if (m_voice.size() == 1)
+    return m_voice.Get(VoiceName);
+  return PSTRSTRM(m_voice);
 }
 
 
@@ -288,7 +252,7 @@ public:
   }
   PBoolean SpeakFile(const PString & text)
   {
-    PFilePath f = PDirectory(m_voiceName) + (text.ToLower() + ".wav");
+    PFilePath f = PDirectory(m_voice.Get(VoiceName)) + (text.ToLower() + ".wav");
     if (!PFile::Exists(f)) {
       PTRACE(2, "Unable to find explicit file for " << text);
       return false;

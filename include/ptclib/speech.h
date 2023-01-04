@@ -85,9 +85,13 @@ class PTextToSpeech : public PObject
 
     virtual bool Speak(const PString & text, TextType hint = Default) = 0;
 
+    static const PCaselessString & VoiceName();
+    static const PCaselessString & VoiceLanguage();
+    static const PCaselessString & VoiceGender();
+
   protected:
-    virtual bool InternalSetVoice(const PString & /*name*/, const PString & /*language*/) { return true; }
-    PString m_voiceName, m_voiceLanguage;
+    virtual bool InternalSetVoice(PStringOptions & /*voice*/) { return true; }
+    PStringOptions m_voice;
 };
 
 PFACTORY_LOAD(PTextToSpeech_WAV);

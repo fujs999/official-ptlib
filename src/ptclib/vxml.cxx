@@ -86,6 +86,8 @@ static PConstString const NoMatchElement("nomatch");
 static PConstString const ErrorElement("error");
 static PConstString const CatchElement("catch");
 static PConstString const NameAttribute("name");
+static PConstString const LanguagesAttribute("languages");
+static PConstString const GenderAttribute("gender");
 static PConstString const CountAttribute("count");
 static PConstString const IdAttribute("id");
 static PConstString const ExprAttribute("expr");
@@ -2942,7 +2944,7 @@ static bool UnsupportedVoiceAttribute(const PStringArray & attr)
 {
   for (PINDEX i = 0; i < attr.GetSize(); ++i) {
     PCaselessString a = attr[i];
-    if (a != "name" || a != "languages")
+    if (a != NameAttribute || a != LanguagesAttribute || a != GenderAttribute)
       return true;
   }
   return false;
@@ -2954,56 +2956,136 @@ PBoolean PVXMLSession::TraverseVoice(PXMLElement & element)
   if (m_textToSpeech == NULL)
     return true;
 
-  PStringArray names = element.GetAttribute("name").Tokenise(" ", false);
-  PStringArray languages = element.GetAttribute("languages").Tokenise(" ", false);
-  if (names.empty() && languages.empty())
-    return ThrowSemanticError(element, "<voice> must have name or language");
+  PStringArray names = element.GetAttribute(NameAttribute).Tokenise(" ", false);
+  PStringArray languages = element.GetAttribute(LanguagesAttribute).Tokenise(" ", false);
+  PString gender = element.GetAttribute("gender");
+  if (names.empty() && languages.empty() && gender.empty())
+    return ThrowSemanticError(element, "<voice> must have one of name, language or gender");
 
   PStringArray required = element.GetAttribute("required").Tokenise(" ", false);
   PStringArray ordering = element.GetAttribute("ordering").Tokenise(" ", false);
   if (UnsupportedVoiceAttribute(required) && UnsupportedVoiceAttribute(ordering))
     return ThrowSemanticError(element, "<voice> has unsupported required/ordering");
 
-  if (names.empty() || languages.empty() || ordering.empty() || (ordering[0] *= "name")) {
-    if (languages.empty()) {
-      for (PINDEX i = 0; i < names.GetSize(); ++i) {
-        if (m_textToSpeech->SetVoice(names[i]))
-          return true;
-      }
-    }
-    else if (names.empty()) {
-      for (PINDEX i = 0; i < languages.GetSize(); ++i) {
-        if (m_textToSpeech->SetVoice(':' + languages[i]))
-          return true;
-      }
-    }
-    else {
-      for (PINDEX i = 0; i < names.GetSize(); ++i) {
-        for (PINDEX j = 0; j < languages.GetSize(); ++j) {
-          if (m_textToSpeech->SetVoice(PSTRSTRM(names[i] << ':' << languages[j])))
+  PINDEX pos = ordering.GetValuesIndex(NameAttribute);
+  if (names.empty())
+    ordering.RemoveAt(pos);
+  else if (pos == P_MAX_INDEX)
+    ordering.AppendString(NameAttribute);
+
+  pos = ordering.GetValuesIndex(LanguagesAttribute);
+  if (languages.empty())
+    ordering.RemoveAt(pos);
+  else if (pos == P_MAX_INDEX)
+    ordering.AppendString(LanguagesAttribute);
+
+  pos = ordering.GetValuesIndex(GenderAttribute);
+  if (gender.empty())
+    ordering.RemoveAt(pos);
+  else if (pos == P_MAX_INDEX)
+    ordering.AppendString(GenderAttribute);
+
+  bool prioritySelect = !element.HasAttribute("onvoicefailure") || (element.GetAttribute("onvoicefailure") *= "priorityselect");
+
+  switch (ordering.size()) {
+    case 1 :
+      if (ordering[0] == NameAttribute) {
+        for (PINDEX i = 0; i < names.GetSize(); ++i)
+          if (m_textToSpeech->SetVoice(PSTRSTRM("name=" << names[i])))
             return true;
+      }
+      else if (ordering[0] == LanguagesAttribute) {
+        for (PINDEX i = 0; i < languages.GetSize(); ++i)
+          if (m_textToSpeech->SetVoice(PSTRSTRM("language=" << languages[i])))
+            return true;
+      }
+      else {
+        if (m_textToSpeech->SetVoice(PSTRSTRM("gender=" << gender)))
+          return true;
+      }
+      break;
+    case 2 :
+      if (ordering[0] == NameAttribute && ordering[1] == LanguagesAttribute) {
+        for (PINDEX i = 0; i < names.GetSize(); ++i)
+          for (PINDEX j = 0; j < languages.GetSize(); ++j)
+            if (m_textToSpeech->SetVoice(PSTRSTRM("name=" << names[i] << ";language=" << languages[j])))
+              return true;
+        if (prioritySelect) {
+          for (PINDEX i = 0; i < names.GetSize(); ++i)
+            if (m_textToSpeech->SetVoice(PSTRSTRM("name=" << names[i])))
+              return true;
         }
       }
-    }
-  }
-  else {
-    for (PINDEX j = 0; j < languages.GetSize(); ++j) {
-      for (PINDEX i = 0; i < names.GetSize(); ++i) {
-        if (m_textToSpeech->SetVoice(PSTRSTRM(names[i] << ':' << languages[j])))
-          return true;
+      else if (ordering[0] == LanguagesAttribute && ordering[1] == NameAttribute) {
+        for (PINDEX j = 0; j < languages.GetSize(); ++j)
+          for (PINDEX i = 0; i < names.GetSize(); ++i)
+            if (m_textToSpeech->SetVoice(PSTRSTRM("name=" << names[i] << ";language=" << languages[j])))
+              return true;
+        if (prioritySelect) {
+          for (PINDEX i = 0; i < languages.GetSize(); ++i)
+            if (m_textToSpeech->SetVoice(PSTRSTRM("language=" << languages[i])))
+              return true;
+        }
       }
-    }
+      else if (ordering[0] == NameAttribute || ordering[1] == NameAttribute) {
+        for (PINDEX i = 0; i < names.GetSize(); ++i)
+          if (m_textToSpeech->SetVoice(PSTRSTRM("name=" << names[i] << ";gender=" << gender)))
+            return true;
+        if (prioritySelect) {
+          for (PINDEX i = 0; i < names.GetSize(); ++i)
+            if (m_textToSpeech->SetVoice(PSTRSTRM("name=" << names[i])))
+              return true;
+        }
+      }
+      else {
+        for (PINDEX i = 0; i < languages.GetSize(); ++i)
+          if (m_textToSpeech->SetVoice(PSTRSTRM("language=" << languages[i] << ";gender=" << gender)))
+            return true;
+        if (prioritySelect) {
+          for (PINDEX i = 0; i < languages.GetSize(); ++i)
+            if (m_textToSpeech->SetVoice(PSTRSTRM("language=" << languages[i])))
+              return true;
+        }
+      }
+      break;
+    default :
+      if (ordering.GetValuesIndex(NameAttribute) < ordering.GetValuesIndex(LanguagesAttribute)) {
+        for (PINDEX i = 0; i < names.GetSize(); ++i)
+          for (PINDEX j = 0; j < languages.GetSize(); ++j)
+            if (m_textToSpeech->SetVoice(PSTRSTRM("name=" << names[i] << ";language=" << languages[j] << ";gender=" << gender)))
+              return true;
+        if (prioritySelect) {
+          for (PINDEX i = 0; i < names.GetSize(); ++i)
+            if (m_textToSpeech->SetVoice(PSTRSTRM("name=" << names[i] << ";gender=" << gender)))
+              return true;
+          for (PINDEX i = 0; i < names.GetSize(); ++i)
+            if (m_textToSpeech->SetVoice(PSTRSTRM("name=" << names[i])))
+              return true;
+        }
+      }
+      else {
+        for (PINDEX j = 0; j < languages.GetSize(); ++j)
+          for (PINDEX i = 0; i < names.GetSize(); ++i)
+            if (m_textToSpeech->SetVoice(PSTRSTRM("name=" << names[i] << ";language=" << languages[j] << ";gender=" << gender)))
+              return true;
+        if (prioritySelect) {
+          for (PINDEX i = 0; i < languages.GetSize(); ++i)
+            if (m_textToSpeech->SetVoice(PSTRSTRM("language=" << languages[i] << ";gender=" << gender)))
+              return true;
+          for (PINDEX i = 0; i < languages.GetSize(); ++i)
+            if (m_textToSpeech->SetVoice(PSTRSTRM("language=" << languages[i])))
+              return true;
+        }
+      }
   }
 
-  PString failure = element.GetAttribute("onvoicefailure");
-  PTRACE(3, "Could not set voice to any of [" << setfill(',') << names << "], onvoicefailure=" << failure);
+  PTRACE(3, "Could not set voice to any of [" << setfill(',') << names << "],"
+            " [" << setfill(',') << languages << "], gender=\"" << gender << '"');
 
-  if (failure.empty() || (failure *= "priorityselect"))
-    m_textToSpeech->SetVoice(":");
-  else if (failure *= "processorchoice")
-    m_textToSpeech->SetVoice(PString::Empty());
+  if (prioritySelect)
+    m_textToSpeech->SetVoice("*");
 
-  return true;
+  return ThrowError(element, "error.voice", "<voice> cannot be used.");
 }
 
 
