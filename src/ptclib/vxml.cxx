@@ -79,6 +79,7 @@ static PConstCaselessString const SafeKeyword("safe");
 static PConstString const FormElement("form");
 static PConstString const FieldElement("field");
 static PConstString const MenuElement("menu");
+static PConstString const ChoiceElement("choice");
 static PConstString const PromptElement("prompt");
 static PConstString const FilledElement("filled");
 static PConstString const NoInputElement("noinput");
@@ -1966,10 +1967,15 @@ void PVXMLSession::InternalThreadMain()
         ;
     } while (NextNode(processChildren));
 
-    if (m_newXML.get() != NULL) {
+    if (m_closing) {
+      if (m_currentNode == NULL)
+        ProcessEvents(); // Move to connection.disconnect event
+    }
+    else {
       /* Replace old XML with new, now it is safe to do so and no XML elements
-         pointers are being referenced by the code any more */
-      InternalStartVXML();
+          pointers are being referenced by the code any more */
+      if (m_newXML.get() != NULL)
+        InternalStartVXML();
     }
 
     // Determine if we should quit
@@ -2195,8 +2201,10 @@ bool PVXMLSession::NextNode(bool processChildren)
 
   PXMLElement * element = dynamic_cast<PXMLElement *>(m_currentNode);
   if (element != NULL) {
-    if ((m_transferStatus == TransferSuccessful || m_transferStatus == TransferFailed) && CompletedTransfer(*element))
+    if (m_transferStatus == TransferSuccessful || m_transferStatus == TransferFailed) {
+      CompletedTransfer(*element);
       return false;
+    }
 
       // if the current node has children, then process the first child
     if (processChildren && (m_currentNode = element->GetSubObject(0)) != NULL)
@@ -3155,27 +3163,24 @@ PBoolean PVXMLSession::TraverseGrammar(PXMLElement & element)
   PString type = element.GetAttribute(TypeAttribute);
   if (type.empty()) {
     PString src = element.GetAttribute(SrcAttribute);
-    if (src.NumCompare("builtin:") == EqualTo) {
+    PConstString builtin("builtin:");
+    if (src.NumCompare(builtin, builtin.length()) == EqualTo) {
       PINDEX pos = src.Find('/');
-      if (pos == P_MAX_INDEX)
-        pos = 0;
-      else if (pos > 8) {
+      if (pos == P_MAX_INDEX || pos <= builtin.length())
+        type = src.Mid(builtin.length());
+      else {
+        type = src.Mid(pos+1);
         PCaselessString srcMode = src(8, pos-1);
-        PCaselessString mode = element.GetAttribute(ModeAttribute);
-        if (mode.empty())
+        PCaselessString modeAttr = element.GetAttribute(ModeAttribute);
+        if (modeAttr.empty())
           element.SetAttribute(ModeAttribute, srcMode);
-        else if (srcMode != mode)
+        else if (srcMode != modeAttr)
           return ThrowSemanticError(element, "Builtin disagrees with mode attribute");
-        ++pos;
       }
-
-      type = src.Mid(pos);
-      if (type.empty())
-        type = SRGS;
     }
   }
 
-  LoadGrammar(PVXMLGrammarInit(type, *this, *element.GetParent(), &element));
+  LoadGrammar(PVXMLGrammarInit(type.empty() ? SRGS : type, *this, *element.GetParent(), &element));
   return false; // Skip subelements
 }
 
@@ -3600,17 +3605,22 @@ void PVXMLSession::SetTransferComplete(bool state)
 }
 
 
-bool PVXMLSession::CompletedTransfer(PXMLElement & element)
+void PVXMLSession::CompletedTransfer(PXMLElement & element)
 {
-  bool error = m_transferStatus != TransferSuccessful;
-  PTRACE(4, "Transfer " << (error ? "failed" : "successful") << " in " << element.PrintTrace());
-
   InternalSetVar(element.GetAttribute(NameAttribute) + '$',
                  "duration",
                  (PTime() - m_transferStartTime).AsString(0, PTimeInterval::SecondsOnly));
 
+  if (m_transferStatus != TransferSuccessful) {
+    PTRACE(3, "Transfer failed in " << element.PrintTrace());
+    GoToEventHandler(element, ErrorElement, true, true);
+  }
+  else {
+    PTRACE(3, "Transfer successful in " << element.PrintTrace());
+    GoToEventHandler(element, FilledElement, false, true);
+    m_closing = true;
+  }
   m_transferStatus = TransferCompleted;
-  return GoToEventHandler(element, error ? ErrorElement : FilledElement, error, true);
 }
 
 
@@ -4219,7 +4229,7 @@ bool PVXMLMenuGrammar::Process()
   if (m_state == Filled) {
     PXMLElement * choice;
     PINDEX index = 0;
-    while ((choice = m_field.GetElement("choice", index++)) != NULL) {
+    while ((choice = m_field.GetElement(ChoiceElement, index++)) != NULL) {
       // Check if DTMF value for grammarResult matches the DTMF value for the choice
       if (choice->GetAttribute(DtmfAttribute) == m_value) {
         PTRACE(3, "Grammar " << *this << " matched menu choice: " << m_value << " to " << choice->PrintTrace());
@@ -4258,7 +4268,7 @@ void PVXMLMenuGrammar::GetWordsToRecognise(PStringArray & words) const
 {
   PXMLElement * choice;
   PINDEX index = 0;
-  while ((choice = m_field.GetElement("choice", index++)) != NULL) {
+  while ((choice = m_field.GetElement(ChoiceElement, index++)) != NULL) {
     if (choice->HasAttribute(DtmfAttribute))
       words.AppendString(choice->GetAttribute(DtmfAttribute));
   }

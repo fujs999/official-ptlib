@@ -686,7 +686,7 @@ class PVXMLSession : public PIndirectChannel, public PSSLCertificateInfo
     PTime m_transferStartTime;
     PTimer m_transferTimeout;
     PDECLARE_NOTIFIER(PTimer, PVXMLSession, OnTransferTimeout);
-    bool CompletedTransfer(PXMLElement & element);
+    void CompletedTransfer(PXMLElement & element);
 
     friend class PVXMLChannel;
     friend class PVXMLMenuGrammar;
