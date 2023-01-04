@@ -135,14 +135,7 @@
     <!-- A field is a place to enter digits -->
     <field name="enteredDigits">
 
-      <!-- A grammar is a description of the input. We do not support any of the
-           standards at this point, only a custom grammer that will accept n to m
-           digits with something as a termiantor. -->
-      <grammar mode="dtmf" type="X-OPAL/digits">
-        minDigits=1;
-        maxDigits=5;
-        terminators=#
-      </grammar>
+      <grammar src="builtin:dtmf/digits?minlength=1;maxlength=5"/>
 
       <prompt>
         <!-- If prompt does not contain an <audio> then just speaks the text -->
@@ -152,7 +145,9 @@
 
     <filled>
       <!-- A <value> evaluates the expression then speaks it using speech synthesis -->
-      <value expr="'You entered '+dialog.enteredDigits" />
+      <say-as interpret-as="vxml:digits">
+        <value expr="'You entered '+dialog.enteredDigits" />
+      </say-as>
       <goto next="#MainMenu"/>
     </filled>
 

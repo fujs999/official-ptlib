@@ -86,6 +86,8 @@ static PConstString const NoMatchElement("nomatch");
 static PConstString const ErrorElement("error");
 static PConstString const CatchElement("catch");
 static PConstString const NameAttribute("name");
+static PConstString const TypeAttribute("type");
+static PConstString const ModeAttribute("mode");
 static PConstString const LanguagesAttribute("languages");
 static PConstString const GenderAttribute("gender");
 static PConstString const CountAttribute("count");
@@ -331,7 +333,7 @@ class PVXMLTraverseFilled : public PVXMLTraverseEvent
     if (parent == NULL)
       return ThrowBadFetchError2(session, element, "No parent on <filled>");
 
-    PCaselessString mode = element.GetAttribute("mode");
+    PCaselessString mode = element.GetAttribute(ModeAttribute);
     PStringSet namelist = element.GetAttribute("namelist").Tokenise(" \t", false);
 
     if (parent->GetName() != "form") {
@@ -2340,7 +2342,7 @@ PBoolean PVXMLSession::TraversedRecord(PXMLElement & element)
   }
 
   static const PConstString supportedFileType(".wav");
-  PCaselessString typeMIME = element.GetAttribute("type");
+  PCaselessString typeMIME = element.GetAttribute(TypeAttribute);
   if (typeMIME.IsEmpty())
     typeMIME = PMIMEInfo::GetContentType(supportedFileType);
 
@@ -2390,7 +2392,7 @@ PBoolean PVXMLSession::TraversedRecord(PXMLElement & element)
   }
 
   m_recordingName = name + '$';
-  InternalSetVar(m_recordingName, "type", typeMIME);
+  InternalSetVar(m_recordingName, TypeAttribute, typeMIME);
   InternalSetVar(m_recordingName, "uri", PURL(destination));
   InternalSetVar(m_recordingName, "maxtime", false);
   InternalSetVar(m_recordingName, "termchar", ' ');
@@ -2685,12 +2687,11 @@ PBoolean PVXMLSession::PlayResource(const PURL & url, PINDEX repeat, PINDEX dela
 }
 
 
-void PVXMLSession::LoadGrammar(const PString & type, const PVXMLGrammarInit & init)
+void PVXMLSession::LoadGrammar(const PVXMLGrammarInit & init)
 {
-  PCaselessString adjustedType = type.empty() ? SRGS : type;
-  PVXMLGrammar * grammar = PVXMLGrammarFactory::CreateInstance(adjustedType, init);
+  PVXMLGrammar * grammar = PVXMLGrammarFactory::CreateInstance(init.m_type, init);
   if (grammar == NULL) {
-    ThrowError(init.m_field, "error.unsupported.builtin", "Could not set grammar of type \"" << adjustedType << '"');
+    ThrowError(init.m_field, "error.unsupported.builtin", "Could not set grammar of type \"" << init.m_type << '"');
     return;
   }
 
@@ -2700,11 +2701,11 @@ void PVXMLSession::LoadGrammar(const PString & type, const PVXMLGrammarInit & in
     if (state == PVXMLGrammar::BadFetch)
       ThrowBadFetchError(init.m_field, "Bad fetch in grammar " << *grammar);
     else
-      ThrowError(init.m_field, "error.unsupported.format", "Illegal/unsupported grammar of type \"" << adjustedType << '"');
+      ThrowError(init.m_field, "error.unsupported.format", "Illegal/unsupported grammar of type \"" << init.m_type << '"');
     return;
   }
 
-  PTRACE(2, "Grammar set to " << *grammar << " from \"" << adjustedType << '"');
+  PTRACE(2, "Grammar set to " << *grammar << " from \"" << init.m_type << '"');
   m_grammersMutex.Wait();
   m_grammars.Append(grammar);
   m_grammersMutex.Signal();
@@ -3150,7 +3151,31 @@ PBoolean PVXMLSession::TraverseGoto(PXMLElement & element)
 PBoolean PVXMLSession::TraverseGrammar(PXMLElement & element)
 {
   m_speakNodeData = false;
-  LoadGrammar(element.GetAttribute("type"), PVXMLGrammarInit(*this, *element.GetParent(), &element));
+
+  PString type = element.GetAttribute(TypeAttribute);
+  if (type.empty()) {
+    PString src = element.GetAttribute(SrcAttribute);
+    if (src.NumCompare("builtin:") == EqualTo) {
+      PINDEX pos = src.Find('/');
+      if (pos == P_MAX_INDEX)
+        pos = 0;
+      else if (pos > 8) {
+        PCaselessString srcMode = src(8, pos-1);
+        PCaselessString mode = element.GetAttribute(ModeAttribute);
+        if (mode.empty())
+          element.SetAttribute(ModeAttribute, srcMode);
+        else if (srcMode != mode)
+          return ThrowSemanticError(element, "Builtin disagrees with mode attribute");
+        ++pos;
+      }
+
+      type = src.Mid(pos);
+      if (type.empty())
+        type = SRGS;
+    }
+  }
+
+  LoadGrammar(PVXMLGrammarInit(type, *this, *element.GetParent(), &element));
   return false; // Skip subelements
 }
 
@@ -3524,7 +3549,7 @@ PBoolean PVXMLSession::TraversedTransfer(PXMLElement & element)
   if (element.GetAttribute("bridge").IsFalse())
     type = BlindTransfer;
   else {
-    PCaselessString typeStr = element.GetAttribute("type");
+    PCaselessString typeStr = element.GetAttribute(TypeAttribute);
     if (typeStr == "blind")
       type = BlindTransfer;
     else if (typeStr == "consultation")
@@ -3601,7 +3626,7 @@ PBoolean PVXMLSession::TraverseMenu(PXMLElement & element)
     m_scriptContext->PopScopeChain(true);
   m_scriptContext->PushScopeChain(DialogScope, true);
 
-  LoadGrammar(MenuElement, PVXMLGrammarInit(*this, element));
+  LoadGrammar(PVXMLGrammarInit(MenuElement, *this, element));
   m_defaultMenuDTMF = element.GetAttribute(DtmfAttribute).IsTrue() ? '1' : 'N';
   ++m_promptCount;
   return true;
@@ -3740,9 +3765,9 @@ PBoolean PVXMLSession::TraverseField(PXMLElement & element)
   m_scriptContext->CreateComposite(PSTRSTRM(DialogScope << '.' << name << '$'));
   SetDialogVar(name, PString::Empty());
 
-  PString type = element.GetAttribute("type");
+  PString type = element.GetAttribute(TypeAttribute);
   if (!type.empty())
-    LoadGrammar(type, PVXMLGrammarInit(*this, element));
+    LoadGrammar(PVXMLGrammarInit(type, *this, element));
 
   return true;
 }
@@ -3988,14 +4013,14 @@ bool PVXMLGrammar::Start()
   if (m_noInputTimeout == 0)
     m_noInputTimeout = m_session.GetTimeProperty(TimeoutProperty);
 
-  PString inputModes = m_session.GetProperty(InputModesProperty, m_grammarElement, "mode");
+  PString inputModes = m_session.GetProperty(InputModesProperty, m_grammarElement, ModeAttribute);
 
   // Can't be empty, default to DTMF
   m_allowDTMF = inputModes.empty() || inputModes.Find(DtmfAttribute) != P_MAX_INDEX;
 
   bool allowVoice = inputModes.Find(VoiceAttribute) != P_MAX_INDEX;
   if (m_grammarElement != NULL) {
-    PCaselessString attrib = m_grammarElement->GetAttribute("mode");
+    PCaselessString attrib = m_grammarElement->GetAttribute(ModeAttribute);
     if (!attrib.empty())
       allowVoice = attrib == VoiceAttribute;
   }
@@ -4253,25 +4278,34 @@ PVXMLDigitsGrammar::PVXMLDigitsGrammar(const PVXMLGrammarInit & init)
   if (init.m_grammarElement == NULL)
     return;
 
-  PStringOptions tokens;
-  PURL::SplitVars(init.m_grammarElement->GetData(), tokens, ';', '=');
+  if (init.m_parameters.empty()) {
+    PStringOptions tokens;
+    PURL::SplitVars(init.m_grammarElement->GetData(), tokens, ';', '=');
 
-  m_minDigits = tokens.GetVar("minDigits", m_minDigits);
+    m_minDigits = tokens.GetVar("minDigits", m_minDigits);
+    m_maxDigits = tokens.GetVar("maxDigits", m_maxDigits);
+
+    if (tokens.Contains("terminators")) {
+      m_terminators = tokens.GetString("terminators");
+
+      // An empty terminators token is set to an impossible DTMF value, as if m_terminators
+      // is an empty string, it is set to the terminators property in PVXMLGrammar::Start()
+      if (m_terminators.empty())
+        m_terminators = '\n';
+    }
+  }
+  else if (init.m_parameters.Contains("length"))
+    m_minDigits = m_maxDigits = init.m_parameters.GetVar("length", m_minDigits);
+  else {
+    m_minDigits = init.m_parameters.GetVar("minlength", m_minDigits);
+    m_maxDigits = init.m_parameters.GetVar("maxlength", m_maxDigits);
+  }
+
   if (m_minDigits == 0)
     m_minDigits = 1;
 
-  m_maxDigits = tokens.GetVar("maxDigits", m_maxDigits);
   if (m_maxDigits < m_minDigits)
     m_maxDigits = m_minDigits;
-
-  if (tokens.Contains("terminators")) {
-    m_terminators = tokens.GetString("terminators");
-
-    // An empty terminators token is set to an impossible DTMF value, as if m_terminators
-    // is an empty string, it is set to the terminators property in PVXMLGrammar::Start()
-    if (m_terminators.empty())
-      m_terminators = '\n';
-  }
 }
 
 
@@ -4320,15 +4354,17 @@ PFACTORY_CREATE(PVXMLGrammarFactory, PVXMLBooleanGrammar, "boolean");
 
 PVXMLBooleanGrammar::PVXMLBooleanGrammar(const PVXMLGrammarInit & init)
   : PVXMLGrammar(init)
+  , m_yes(init.m_parameters.Get("y", "1"))
+  , m_no(init.m_parameters.Get("n", "2"))
 {
 }
 
 
 void PVXMLBooleanGrammar::OnInput(const PString & input)
 {
-  if (input == "1" || (input *= "yes"))
+  if (m_yes == input || (input *= "yes"))
     SetFilled(PString(true));
-  else if (input == "2" || (input *= "no"))
+  else if (m_no == input || (input *= "no"))
     SetFilled(PString(false));
 }
 

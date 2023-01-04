@@ -147,15 +147,25 @@ Default variables:
 
 struct PVXMLGrammarInit
 {
+  PString        m_type;
   PVXMLSession & m_session;
   PXMLElement  & m_field;
   PXMLElement  * m_grammarElement;
+  PStringOptions m_parameters;
 
-  PVXMLGrammarInit(PVXMLSession & session, PXMLElement & field, PXMLElement  * grammar = NULL)
-    :m_session(session)
+  PVXMLGrammarInit(const PString & builtinType, PVXMLSession & session, PXMLElement & field, PXMLElement  * grammar = NULL)
+    : m_session(session)
     , m_field(field)
     , m_grammarElement(grammar)
-  { }
+  {
+    PINDEX pos = builtinType.Find('?');
+    if (pos == P_MAX_INDEX)
+      m_type = builtinType;
+    else {
+      m_type = builtinType.Left(pos);
+      PURL::SplitVars(builtinType.Mid(pos+1), m_parameters);
+    }
+  }
 };
 
 
@@ -257,6 +267,9 @@ class PVXMLBooleanGrammar : public PVXMLGrammar
 
   protected:
     virtual void GetWordsToRecognise(PStringArray & words) const;
+
+    PCaselessString m_yes;
+    PCaselessString m_no;
 };
 
 
@@ -638,7 +651,7 @@ class PVXMLSession : public PIndirectChannel, public PSSLCertificateInfo
       PBYTEArray & data,
       PVXMLCache::Params & cacheParams
     );
-    virtual void LoadGrammar(const PString & type, const PVXMLGrammarInit & init);
+    virtual void LoadGrammar(const PVXMLGrammarInit & init);
     void ClearGrammars();
     void StartGrammars();
     void OnUserInputToGrammars();
