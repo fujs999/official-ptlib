@@ -80,7 +80,8 @@ class PTextToSpeech : public PObject
       Phone,
       IPAddress,
       Duration,
-      Spell
+      Spell,
+      Boolean
     );
 
     virtual bool Speak(const PString & text, TextType hint = Default) = 0;

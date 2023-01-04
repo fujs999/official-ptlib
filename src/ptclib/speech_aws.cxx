@@ -36,6 +36,7 @@
 #include <ptclib/http.h>
 #include <ptclib/pjson.h>
 #include <ptclib/aws_sdk.h>
+#include <ptclib/pxml.h>
 
 #define USE_IMPORT_EXPORT
 #include <aws/polly/PollyClient.h>
@@ -278,7 +279,7 @@ public:
   }
 
 
-  bool Speak(const PString & text, TextType /*hint*/)
+  bool Speak(const PString & text, TextType hint)
   {
     if (!IsOpen() || !SetVoice(PString::Empty()))
       return false;
@@ -290,7 +291,37 @@ public:
     request.SetVoiceId(Aws::Polly::Model::VoiceIdMapper::GetVoiceIdForName(m_voice.Get(VoiceName).c_str()));
     request.SetLanguageCode(Aws::Polly::Model::LanguageCodeMapper::GetLanguageCodeForName(m_voice.Get(VoiceLanguage).c_str()));
     request.SetEngine(Aws::Polly::Model::EngineMapper::GetEngineForName(m_voice.Get(VoiceEngine).c_str()));
-    request.SetText(text.c_str());
+
+    static const char * HintToAWS[TextType::NumTextType] = {
+      NULL, // Default,
+      NULL, // Literal,
+      "digits", // Digits,
+      "cardinal", // Number,
+      "cardinal", // Currency,
+      "time", // Time,
+      "date", // Date,
+      NULL, // DateAndTime,
+      "telephone", // Phone,
+      NULL, // IPAddress,
+      NULL, // Duration,
+      "characters", // Spell,
+      NULL, // Boolean
+    };
+    if (HintToAWS[hint] == NULL)
+      request.SetText(text.c_str());
+    else {
+      PStringStream strm;
+      strm << "<say-as interpret-as=\"" << HintToAWS[hint] << '"';
+      if (hint == Date) {
+        static const char * DateOrder[] = { "mdy", "dmy", "ymd" };
+        strm << " format=\"" << DateOrder[PTime::GetDateOrder()] << '"';
+      }
+      strm << '>'
+           << PXML::EscapeSpecialChars(text)
+           << "</say-as>";
+      request.SetText(strm.c_str());
+      request.SetTextType(Aws::Polly::Model::TextType::ssml);
+    }
 
     auto outcome = GetClient()->SynthesizeSpeech(request);
     if (!outcome.IsSuccess()) {

@@ -226,7 +226,6 @@ TRAVERSE_NODE(Reprompt);
 TRAVERSE_NODE(Audio);
 TRAVERSE_NODE(Break);
 TRAVERSE_NODE(Value);
-TRAVERSE_NODE(SayAs);
 TRAVERSE_NODE(Voice);
 TRAVERSE_NODE(Goto);
 TRAVERSE_NODE(Grammar);
@@ -253,6 +252,8 @@ TRAVERSE_NODE2(Record);
 TRAVERSE_NODE2(Prompt);
 TRAVERSE_NODE2(If);
 TRAVERSE_NODE2(Block);
+TRAVERSE_NODE2(SayAs);
+PFACTORY_SYNONYM(PVXMLNodeFactory, PVXMLTraverseSayAs, SSML, "say-as");
 
 
 static PConstString const InternalEventStateAttribute("PTLibInternalEventState");
@@ -1332,6 +1333,7 @@ PVXMLSession::PVXMLSession()
   , m_bargingIn(false)
   , m_promptCount(0)
   , m_promptMode(e_NormalPrompt)
+  , m_promptType(PTextToSpeech::Default)
   , m_defaultMenuDTMF('N') /// Disabled
   , m_scriptContext(PScriptLanguage::Create(PSimpleScript::LanguageName()))
   , m_recordingStatus(NotRecording)
@@ -1924,10 +1926,6 @@ void PVXMLSession::InternalThreadMain()
     newScript->CreateComposite(SessionScope);
     newScript->CreateComposite(ApplicationScope);
     InternalSetVar(ApplicationScope, RootURIVar, PString::Empty());
-#if P_VXML_VIDEO
-    newScript->SetFunction(SIGN_LANGUAGE_PREVIEW_SCRIPT_FUNCTION, PCREATE_NOTIFIER(SignLanguagePreviewFunction));
-    newScript->SetFunction(SIGN_LANGUAGE_CONTROL_SCRIPT_FUNCTION, PCREATE_NOTIFIER(SignLanguageControlFunction));
-#endif
 
     PSimpleScript * simpleScript = dynamic_cast<PSimpleScript *>(m_scriptContext.get());
     if (simpleScript != NULL) {
@@ -1938,6 +1936,10 @@ void PVXMLSession::InternalThreadMain()
     m_scriptContext.reset(newScript);
   }
 
+#if P_VXML_VIDEO
+  m_scriptContext->SetFunction(SIGN_LANGUAGE_PREVIEW_SCRIPT_FUNCTION, PCREATE_NOTIFIER(SignLanguagePreviewFunction));
+  m_scriptContext->SetFunction(SIGN_LANGUAGE_CONTROL_SCRIPT_FUNCTION, PCREATE_NOTIFIER(SignLanguageControlFunction));
+#endif
   m_scriptContext->PushScopeChain(SessionScope, false);
   m_scriptContext->PushScopeChain(ApplicationScope, false);
 
@@ -2267,7 +2269,7 @@ bool PVXMLSession::ProcessNode()
   PXMLData * nodeData = dynamic_cast<PXMLData *>(m_currentNode);
   if (nodeData != NULL) {
     if (m_speakNodeData)
-      PlayText(nodeData->GetString().Trim());
+      PlayText(nodeData->GetString().Trim(), m_promptType);
     return true;
   }
 
@@ -2545,7 +2547,7 @@ void PVXMLSession::SetConnectionVars(const PString & localURI,
 
 
 PCaselessString PVXMLSession::GetProperty(const PString & propName,
-                                          PXMLElement * overrideElement,
+                                          const PXMLElement * overrideElement,
                                           const PString & attrName) const
 {
   if (overrideElement != NULL) {
@@ -2922,20 +2924,46 @@ PBoolean PVXMLSession::TraverseBreak(PXMLElement & element)
 
 PBoolean PVXMLSession::TraverseValue(PXMLElement & element)
 {
-  PString className = element.GetAttribute("class");
   PString value;
-  bool retval = EvaluateExpr(element, ExprAttribute, value);
-  if (value.IsEmpty())
-    return retval;
-
-  SayAs(className, value, GetProperty(VoiceAttribute, &element));
-  return true;
+  EvaluateExpr(element, ExprAttribute, value);
+  PlayText(value.Trim(), m_promptType);
+  return false;
 }
 
 
 PBoolean PVXMLSession::TraverseSayAs(PXMLElement & element)
 {
-  SayAs(element.GetAttribute("class"), element.GetData());
+  PCaselessString interpretAs = element.GetAttribute("interpret-as");
+  static const struct
+  {
+    PConstCaselessString m_name;
+    PTextToSpeech::TextType m_value;
+  } TextTypes[] = {
+    { "vxml:boolean",     PTextToSpeech::Boolean },
+    { "vxml:date",        PTextToSpeech::Date },
+    { "vxml:digits",      PTextToSpeech::Digits },
+    { "vxml:currency",    PTextToSpeech::Currency },
+    { "vxml:number",      PTextToSpeech::Number },
+    { "vxml:phone",       PTextToSpeech::Phone },
+    { "vxml:time",        PTextToSpeech::Time },
+    { "x-opal:ip",        PTextToSpeech::IPAddress },
+    { "x-opal:ipaddress", PTextToSpeech::IPAddress },
+    { "x-opal:duration",  PTextToSpeech::Duration }
+  };
+  for (PINDEX i = 0; i < PARRAYSIZE(TextTypes); ++i) {
+    if (TextTypes[i].m_name == interpretAs) {
+      m_promptType = TextTypes[i].m_value;
+      break;
+    }
+  }
+
+  return true;
+}
+
+
+PBoolean PVXMLSession::TraversedSayAs(PXMLElement &)
+{
+  m_promptType = PTextToSpeech::Default;
   return true;
 }
 
@@ -3194,53 +3222,6 @@ PXMLElement * PVXMLSession::FindElementWithCount(PXMLElement & parent, const PSt
 
   ElementsByCount::iterator it = elements.lower_bound(count);
   return it != elements.end() ? it->second : NULL;
-}
-
-
-void PVXMLSession::SayAs(const PString & className, const PString & text)
-{
-  SayAs(className, text, GetProperty(VoiceAttribute));
-}
-
-
-void PVXMLSession::SayAs(const PString & className, const PString & textToSay, const PString & voice)
-{
-  if (m_textToSpeech != NULL)
-    m_textToSpeech->SetVoice(voice);
-
-  PString text = textToSay.Trim();
-  if (!text.IsEmpty()) {
-    PTextToSpeech::TextType type = PTextToSpeech::Literal;
-
-    if (className *= "digits")
-      type = PTextToSpeech::Digits;
-
-    else if (className *= "literal")
-      type = PTextToSpeech::Literal;
-
-    else if (className *= "number")
-      type = PTextToSpeech::Number;
-
-    else if (className *= "currency")
-      type = PTextToSpeech::Currency;
-
-    else if (className *= "time")
-      type = PTextToSpeech::Time;
-
-    else if (className *= "date")
-      type = PTextToSpeech::Date;
-
-    else if (className *= "phone")
-      type = PTextToSpeech::Phone;
-
-    else if (className *= "ipaddress")
-      type = PTextToSpeech::IPAddress;
-
-    else if (className *= "duration")
-      type = PTextToSpeech::Duration;
-
-    PlayText(text, type);
-  }
 }
 
 

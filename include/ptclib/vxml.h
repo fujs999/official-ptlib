@@ -427,7 +427,7 @@ class PVXMLSession : public PIndirectChannel, public PSSLCertificateInfo
 
     PCaselessString GetProperty(
       const PString & propName,
-      PXMLElement * overrideElement = NULL,
+      const PXMLElement * overrideElement = NULL,
       const PString & attrName = PString::Empty()
     ) const;
     PTimeInterval GetTimeProperty(
@@ -473,6 +473,7 @@ class PVXMLSession : public PIndirectChannel, public PSSLCertificateInfo
     virtual PBoolean TraverseBreak(PXMLElement & element);
     virtual PBoolean TraverseValue(PXMLElement & element);
     virtual PBoolean TraverseSayAs(PXMLElement & element);
+    virtual PBoolean TraversedSayAs(PXMLElement & element);
     virtual PBoolean TraverseVoice(PXMLElement & element);
     virtual PBoolean TraverseGoto(PXMLElement & element);
     virtual PBoolean TraverseGrammar(PXMLElement & element);
@@ -533,9 +534,6 @@ class PVXMLSession : public PIndirectChannel, public PSSLCertificateInfo
     bool ExecuteCondition(PXMLElement & element);
     void ClearBargeIn();
     void FlushInput();
-
-    void SayAs(const PString & className, const PString & text);
-    void SayAs(const PString & className, const PString & text, const PString & voice);
 
     PURL NormaliseResourceName(const PString & src);
 
@@ -611,6 +609,7 @@ class PVXMLSession : public PIndirectChannel, public PSSLCertificateInfo
     PStringSet       m_dialogFieldNames;
     unsigned         m_promptCount;
     enum { e_NormalPrompt, e_Reprompt, e_EventPrompt, e_FinalProcessing } m_promptMode;
+    PTextToSpeech::TextType m_promptType;
     std::map<std::string, unsigned> m_eventCount;
 
     struct Properties : PStringToString

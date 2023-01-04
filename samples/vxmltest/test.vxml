@@ -22,8 +22,12 @@
     <prompt bargein="false" count="1">
       <!-- Audio plays the URI in src, or if absent uses speech synthesis of the body text -->
       <audio src="file:menu_prompt.wav">
-        Welcome to the P T lib I V R test script.
+        Welcome to the P T lib I V R test script
       </audio>
+      on
+      <say-as interpret-as="vxml:date">
+        <value expr="Date()"/>
+      </say-as>
     </prompt>
     <prompt count="2">
       <audio src="file:menu_prompt.wav">
