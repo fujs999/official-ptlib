@@ -37,22 +37,47 @@
 
     <!-- The next attribute here indicats what <form> to go to when the menu is selected -->
     <choice dtmf="1" next="#PlayFile">
+      <grammar>
+        <rule id="1">
+          <item>file</item>
+        </rule>
+      </grammar>
       Press 1 to play files
     </choice>
     
     <choice dtmf="2" next="#RecordFile">
+      <grammar>
+        <rule id="2">
+          <item>record</item>
+        </rule>
+      </grammar>
       Press 2 to record a message
     </choice>
     
     <choice dtmf="3" next="#PlayRecording">
+      <grammar>
+        <rule id="3">
+          <item>play</item>
+        </rule>
+      </grammar>
       Press 3 to play back recorded message
     </choice>
 
     <choice dtmf="4" next="#GetDigits">
+      <grammar>
+        <rule id="4">
+          <item>digits</item>
+        </rule>
+      </grammar>
       Press 4 to enter a number
     </choice>
 
     <choice dtmf="0" next="#HangUp">
+      <grammar>
+        <rule id="0">
+          <item>quit</item>
+        </rule>
+      </grammar>
       Press 0 to disconnect
       <script>SignLanguageAnalyserPreview()</script>
     </choice>
@@ -135,7 +160,7 @@
     <!-- A field is a place to enter digits -->
     <field name="enteredDigits">
 
-      <grammar src="builtin:dtmf/digits?minlength=1;maxlength=5"/>
+      <grammar type="digits?minlength=1;maxlength=5"/>
 
       <prompt>
         <!-- If prompt does not contain an <audio> then just speaks the text -->

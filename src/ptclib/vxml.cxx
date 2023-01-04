@@ -231,7 +231,6 @@ TRAVERSE_NODE(Break);
 TRAVERSE_NODE(Value);
 TRAVERSE_NODE(Voice);
 TRAVERSE_NODE(Goto);
-TRAVERSE_NODE(Grammar);
 TRAVERSE_NODE(ElseIf);
 TRAVERSE_NODE(Else);
 TRAVERSE_NODE(Exit);
@@ -250,6 +249,7 @@ TRAVERSE_NODE(Script);
 TRAVERSE_NODE2(Menu);
 TRAVERSE_NODE2(Form);
 TRAVERSE_NODE2(Field);
+TRAVERSE_NODE2(Grammar);
 TRAVERSE_NODE2(Transfer);
 TRAVERSE_NODE2(Record);
 TRAVERSE_NODE2(Prompt);
@@ -2070,7 +2070,7 @@ bool PVXMLSession::ProcessEvents()
         FlushInput(); // Ignore input so far
       }
     }
-    else {
+    else if (!m_bargingIn) {
       OnUserInputToGrammars();
     }
   }
@@ -2248,6 +2248,29 @@ bool PVXMLSession::NextNode(bool processChildren)
   } while ((element = element->GetParent()) != NULL);
 
   return false;
+}
+
+
+bool PVXMLSession::SelectMenuChoice(PXMLElement & choice)
+{
+  if ((choice.HasAttribute(NextAttribute) +
+       choice.HasAttribute(ExprAttribute) +
+       choice.HasAttribute(EventAttribute) +
+       choice.HasAttribute(EventExprAttribute)) != 1)
+    return ThrowBadFetchError(choice, "Only one of next, nextexpr, event, eventexpr alllowed");
+
+  PString next = choice.GetAttribute(NextAttribute);
+  if (next.empty() && EvaluateExpr(choice, ExprAttribute, next))
+    return true;
+
+  if (!next.empty())
+    return SetCurrentForm(next, true);
+
+  next = choice.GetAttribute(EventAttribute);
+  if (next.empty() && EvaluateExpr(choice, EventExprAttribute, next))
+    return true;
+
+  return !next.empty() && GoToEventHandler(choice, next, false, true);
 }
 
 
@@ -3185,6 +3208,13 @@ PBoolean PVXMLSession::TraverseGrammar(PXMLElement & element)
 }
 
 
+PBoolean PVXMLSession::TraversedGrammar(PXMLElement &)
+{
+  m_speakNodeData = true;
+  return true;
+}
+
+
 // Finds the proper event hander for 'noinput', 'filled', 'nomatch' and 'error'
 // by searching the scope hiearchy from the current from
 bool PVXMLSession::GoToEventHandler(PXMLElement & element, const PString & eventName, bool exitIfNotFound, bool firstInHierarchy)
@@ -3988,8 +4018,7 @@ void PVXMLGrammar::OnUserInput(const PString & input)
   if (m_allowDTMF && Start()) {
     m_usingDTMF = true;
     m_confidence = 1.0;
-    for (size_t i = 0; i < input.length(); ++i)
-      OnInput(input[i]);
+    OnInput(input);
   }
 }
 
@@ -4172,6 +4201,8 @@ bool PVXMLGrammar::Process()
   switch (m_state.load()) {
     case Filled:
       m_timer.Stop(false);
+      if (m_field.GetName() == ChoiceElement)
+        return m_session.SelectMenuChoice(m_field);
       m_session.SetDialogVar(m_fieldName, m_value);
       m_field.SetAttribute(InternalFilledStateAttribute, true);
       handler = FilledElement;
@@ -4211,16 +4242,12 @@ PVXMLMenuGrammar::PVXMLMenuGrammar(const PVXMLGrammarInit & init)
 
 void PVXMLMenuGrammar::OnInput(const PString & input)
 {
-  // Sadly, this is only English
-  static const char * const Numerals[] = { "zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine" };
-  for (PINDEX i = 0; i < PARRAYSIZE(Numerals); ++i) {
-    if (input *= Numerals[i]) {
-      SetFilled((char)(i+'0'));
-      return;
+  for (PINDEX i = 0; i < input.length(); ++i) {
+    if (isdigit(input[i])) {
+      SetFilled(input);
+      break;
     }
   }
-
-  SetFilled(input);
 }
 
 
@@ -4233,26 +4260,7 @@ bool PVXMLMenuGrammar::Process()
       // Check if DTMF value for grammarResult matches the DTMF value for the choice
       if (choice->GetAttribute(DtmfAttribute) == m_value) {
         PTRACE(3, "Grammar " << *this << " matched menu choice: " << m_value << " to " << choice->PrintTrace());
-
-        if ((choice->HasAttribute(NextAttribute) +
-             choice->HasAttribute(ExprAttribute) +
-             choice->HasAttribute(EventAttribute) +
-             choice->HasAttribute(EventExprAttribute)) != 1)
-          return ThrowBadFetchError2(m_session, *choice, "Only one of next, nextexpr, event, eventexpr alllowed");
-
-        PString next = choice->GetAttribute(NextAttribute);
-        if (next.empty() && m_session.EvaluateExpr(*choice, ExprAttribute, next))
-          return true;
-
-        if (!next.empty())
-          return m_session.SetCurrentForm(next, true);
-
-        next = choice->GetAttribute(EventAttribute);
-        if (next.empty() && m_session.EvaluateExpr(*choice, EventExprAttribute, next))
-          return true;
-
-        if (!next.empty() && m_session.GoToEventHandler(m_field, next, false, true))
-          return true;
+        return m_session.SelectMenuChoice(*choice);
       }
     }
 

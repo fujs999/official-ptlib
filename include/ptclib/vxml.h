@@ -490,6 +490,7 @@ class PVXMLSession : public PIndirectChannel, public PSSLCertificateInfo
     virtual PBoolean TraverseVoice(PXMLElement & element);
     virtual PBoolean TraverseGoto(PXMLElement & element);
     virtual PBoolean TraverseGrammar(PXMLElement & element);
+    virtual PBoolean TraversedGrammar(PXMLElement & element);
     virtual PBoolean TraverseRecord(PXMLElement & element);
     virtual PBoolean TraversedRecord(PXMLElement & element);
     virtual PBoolean TraverseIf(PXMLElement & element);
@@ -544,6 +545,7 @@ class PVXMLSession : public PIndirectChannel, public PSSLCertificateInfo
     virtual bool ProcessNode();
     virtual bool ProcessEvents();
     virtual bool NextNode(bool processChildren);
+    bool SelectMenuChoice(PXMLElement & choice);
     bool ExecuteCondition(PXMLElement & element);
     void ClearBargeIn();
     void FlushInput();
