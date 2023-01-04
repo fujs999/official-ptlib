@@ -2014,7 +2014,7 @@ bool PVXMLSession::ProcessEvents()
 {
   // m_sessionMutex already locked
 
-  if (m_abortVXML || m_currentNode == NULL || !IsOpen())
+  if (m_abortVXML || m_promptMode == e_FinalProcessing || m_currentNode == NULL || !IsOpen())
     return false;
 
   PVXMLChannel * vxmlChannel = GetVXMLChannel();
