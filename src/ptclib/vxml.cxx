@@ -2722,6 +2722,7 @@ void PVXMLSession::LoadGrammar(const PVXMLGrammarInit & init)
     ThrowError(init.m_field, "error.unsupported.builtin", "Could not set grammar of type \"" << init.m_type << '"');
     return;
   }
+  PTRACE_CONTEXT_ID_TO(grammar);
 
   PVXMLGrammar::GrammarState state = grammar->GetState();
   if (state != PVXMLGrammar::Idle) {
@@ -4068,6 +4069,7 @@ bool PVXMLGrammar::Start()
       m_allowDTMF = true; // Turn on despite element indication, as no other way for input!
     }
     else {
+      PTRACE_CONTEXT_ID_TO(m_recogniser);
       PStringToString options;
       m_session.m_httpMutex.Wait();
       m_session.m_httpProxies.ToOptions(options);
@@ -4109,9 +4111,12 @@ bool PVXMLGrammar::Start()
 }
 
 
-void PVXMLGrammar::SetPartFilled(const PString & input)
+void PVXMLGrammar::SetPartFilled(const PString & input, bool overwrite)
 {
-  m_value += input;
+  if (overwrite)
+    m_value = input;
+  else
+    m_value += input;
 
   PTimeInterval timeout = m_session.GetTimeProperty(m_usingDTMF ? InterDigitTimeoutProperty : IncompleteTimeoutProperty);
 
@@ -4460,6 +4465,7 @@ PVXMLGrammarSRGS::PVXMLGrammarSRGS(const PVXMLGrammarInit & init)
   }
 
   // Load the root rule
+  PTRACE_CONTEXT_ID_TO(m_rule);
   PString rootName = grammar->GetAttribute("root");
   if (m_rule.Parse(*grammar,
                    rootName.empty()
@@ -4494,6 +4500,7 @@ bool PVXMLGrammarSRGS::Item::Parse(PXMLElement & grammar, PXMLElement * element)
   while ((subElement = element->GetElement(idx++)) != NULL) {
     if (subElement->GetName() == "item") {
       Item item;
+      PTRACE_CONTEXT_ID_TO(item);
       if (!item.Parse(grammar, subElement))
         return false;
       m_items.push_back(std::vector<Item>(1, item));
@@ -4505,6 +4512,7 @@ bool PVXMLGrammarSRGS::Item::Parse(PXMLElement & grammar, PXMLElement * element)
       PXMLElement * altElement;
       while ((altElement = subElement->GetElement(alt++)) != NULL) {
         Item item;
+        PTRACE_CONTEXT_ID_TO(item);
         if (!item.Parse(grammar, altElement))
           return false;
         alternatives.push_back(item);
@@ -4519,30 +4527,48 @@ bool PVXMLGrammarSRGS::Item::Parse(PXMLElement & grammar, PXMLElement * element)
 PVXMLGrammar::GrammarState PVXMLGrammarSRGS::Item::OnInput(const PString & input)
 {
   if (m_token == input) {
-    m_value = m_token;
-    return PartFill;
+    ++m_repeatCount;
+    PTRACE(4, "SRGS matched \"" << input << "\" count=" << m_repeatCount
+           << " (" << m_minRepeat << '-' << m_maxRepeat << ')');
+    m_value &= m_token;
+    if (m_repeatCount < m_minRepeat)
+      return Started;
+    if (m_repeatCount < m_maxRepeat)
+      return PartFill;
+    return Filled;
   }
 
-  if (m_currentItem >= m_items.size())
-    return Started;
+  m_value.MakeEmpty();
+  GrammarState myState = Started;
+  for (Items::iterator it = m_items.begin(); it != m_items.end(); ++it) {
+    for (std::vector<Item>::iterator alt = it->begin(); alt != it->end(); ++alt) {
+      switch (alt->OnInput(input)) {
+        case Started:
+          break;
+        case PartFill:
+          myState = PartFill;
+          m_value += alt->m_value;
+          break;
+        case Filled:
+          ++m_repeatCount;
+          PTRACE(4, "SRGS matched one of \"" << alt->m_value << "\" count=" << m_repeatCount
+                 << " (" << m_minRepeat << '-' << m_maxRepeat << ')');
+          m_value += alt->m_value;
 
-  for (std::vector<Item>::iterator alt = m_items[m_currentItem].begin(); alt != m_items[m_currentItem].end(); ++alt) {
-    GrammarState state = alt->OnInput(input);
-    switch (state) {
-      case Started:
-        break;
-      case PartFill:
-      case Filled:
-        m_value += alt->m_value;
-        if (++m_currentItem >= m_items.size())
-          return Filled;
-        break;
-      default:
-        return state;
+          if (m_repeatCount < m_minRepeat)
+            break;
+          if (m_repeatCount < m_maxRepeat)
+            myState = PartFill;
+          else if (myState == Started)
+            myState = Filled;
+          break;
+        default:
+          myState = Illegal;
+      }
     }
   }
 
-  return Started;
+  return myState;
 }
 
 
@@ -4550,7 +4576,7 @@ void PVXMLGrammarSRGS::OnInput(const PString & input)
 {
   switch (m_rule.OnInput(input)) {
     case PartFill:
-      SetPartFilled(PString::Empty());
+      SetPartFilled(m_rule.m_value, true);
       break;
     case Filled:
       SetFilled(m_rule.m_value);
@@ -4571,8 +4597,9 @@ void PVXMLGrammarSRGS::Item::AddWordsToRecognise(PStringArray & words) const
 {
   if (!m_token.empty())
     words.AppendString(m_token);
-  for (std::vector<Item>::const_iterator alt = m_items[m_currentItem].begin(); alt != m_items[m_currentItem].end(); ++alt)
-    alt->AddWordsToRecognise(words);
+  for (Items::const_iterator it = m_items.begin(); it != m_items.end(); ++it)
+    for (std::vector<Item>::const_iterator alt = it->begin(); alt != it->end(); ++alt)
+      alt->AddWordsToRecognise(words);
 }
 
 

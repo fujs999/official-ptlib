@@ -203,7 +203,7 @@ class PVXMLGrammar : public PObject, protected PVXMLGrammarInit
     PDECLARE_SpeechRecognitionNotifier(PVXMLGrammar, OnRecognition);
     virtual void GetWordsToRecognise(PStringArray & words) const;
     virtual void OnInput(const PString & input) = 0;
-    virtual void SetPartFilled(const PString & input);
+    virtual void SetPartFilled(const PString & input, bool overwrite = false);
     virtual void SetFilled(const PString & value);
     virtual void Finished();
 
@@ -299,17 +299,17 @@ class PVXMLGrammarSRGS : public PVXMLGrammar
   protected:
     virtual void GetWordsToRecognise(PStringArray & words) const;
 
-    struct Item
+    struct Item : PObject
     {
       unsigned          m_minRepeat;
       unsigned          m_maxRepeat;
       PString           m_token;
       PString           m_value;
-      unsigned          m_currentItem;
+      unsigned          m_repeatCount;
       typedef std::vector< std::vector<Item> > Items;
       Items m_items; // A sequence of alternatives
 
-      Item() : m_minRepeat(1), m_maxRepeat(1), m_currentItem(0) { }
+      Item() : m_minRepeat(1), m_maxRepeat(1), m_repeatCount(0) { }
       bool Parse(PXMLElement & grammar, PXMLElement * element);
       GrammarState OnInput(const PString & input);
       void AddWordsToRecognise(PStringArray & words) const;
