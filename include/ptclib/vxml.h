@@ -549,6 +549,7 @@ class PVXMLSession : public PIndirectChannel, public PSSLCertificateInfo
     bool ExecuteCondition(PXMLElement & element);
     void ClearBargeIn();
     void FlushInput();
+    bool IsFinalProcessing() const { return m_closing || m_promptMode == e_FinalProcessing; }
 
     PURL NormaliseResourceName(const PString & src);
 

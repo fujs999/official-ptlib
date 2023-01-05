@@ -1733,7 +1733,7 @@ bool PVXMLSession::SetCurrentForm(const PString & searchId, bool fullURI)
   ClearBargeIn();
   m_eventCount.clear();
 
-  if (m_promptMode == e_FinalProcessing)
+  if (IsFinalProcessing())
     return false; // Cannot go to new form when in final
 
   m_promptMode = e_NormalPrompt;
@@ -2033,6 +2033,7 @@ bool PVXMLSession::ProcessEvents()
 
   if (m_closing) {
     m_closing = false;
+    PTRACE(4, "Entering final processing.");
     m_promptMode = e_FinalProcessing;
     vxmlChannel->FlushQueue();
 
@@ -2345,7 +2346,7 @@ void PVXMLSession::OnUserInput(const PString & str)
 
 PBoolean PVXMLSession::TraverseRecord(PXMLElement & element)
 {
-  if (m_promptMode == e_FinalProcessing)
+  if (IsFinalProcessing())
     return false;
 
   if (!ExecuteCondition(element))
@@ -3560,7 +3561,7 @@ PBoolean PVXMLSession::TraverseProperty(PXMLElement & element)
 
 PBoolean PVXMLSession::TraverseTransfer(PXMLElement & element)
 {
-  if (m_promptMode == e_FinalProcessing)
+  if (IsFinalProcessing())
     return false;
 
   if (!ExecuteCondition(element))
@@ -3656,7 +3657,7 @@ void PVXMLSession::CompletedTransfer(PXMLElement & element)
 
 PBoolean PVXMLSession::TraverseMenu(PXMLElement & element)
 {
-  if (m_promptMode == e_FinalProcessing)
+  if (IsFinalProcessing())
     return false;
 
   if (element.GetParent() && element.GetParent()->GetName() != "vxml")
@@ -3721,7 +3722,7 @@ PBoolean PVXMLSession::TraverseDisconnect(PXMLElement & element)
 
 PBoolean PVXMLSession::TraverseForm(PXMLElement & element)
 {
-  if (m_promptMode == e_FinalProcessing)
+  if (IsFinalProcessing())
     return false;
 
   if (element.GetParent() && element.GetParent()->GetName() != "vxml")
@@ -3792,7 +3793,7 @@ PBoolean PVXMLSession::TraversedPrompt(PXMLElement& element)
 
 PBoolean PVXMLSession::TraverseField(PXMLElement & element)
 {
-  if (m_promptMode == e_FinalProcessing)
+  if (IsFinalProcessing())
     return false;
 
   if (!ExecuteCondition(element))
