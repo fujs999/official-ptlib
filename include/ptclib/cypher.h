@@ -497,7 +497,7 @@ class PHMAC_MD5 : public PHMAC
 
 #if P_SSL
 
-class PMessageDigestSHA : public PMessageDigest
+class PMessageDigestSHA : public PMessageDigest, PNonCopyable
 {
     PCLASSINFO(PMessageDigestSHA, PMessageDigest)
   public:
@@ -522,10 +522,6 @@ class PMessageDigestSHA : public PMessageDigest
       e_Processing,
       e_Failed
     } m_state;
-
-  private:
-    PMessageDigestSHA(const PMessageDigestSHA &) : m_context(), m_state() { }
-    void operator=(const PMessageDigestSHA &) { }
 };
 
 

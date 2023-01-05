@@ -43,7 +43,7 @@
 // Abstract container class
 
 // The type below cannot be nested into PContainer as DevStudio 2005 AUTOEXP.DAT doesn't like it
-class PContainerReference
+class PContainerReference : PNonCopyable
 {
   public:
     __inline PContainerReference(PINDEX initialSize, bool isConst = false)
@@ -68,9 +68,6 @@ class PContainerReference
     bool           constObject;   // Indicates object is constant/static, copy on write.
 
     PDECLARE_POOL_ALLOCATOR(PContainerReference);
-
-  private:
-    void operator=(const PContainerReference &) { }
 };
 
 

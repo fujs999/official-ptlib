@@ -42,7 +42,7 @@
 class PTimeInterval;
 
 
-class PSync : public PObject
+class PSync : public PObject, PNonCopyable
 {
   public:
     PSync() { }
@@ -72,10 +72,6 @@ class PSync : public PObject
     /// As for Signal() but with location of call for instrumentation. Mostly used internally.
     virtual void InstrumentedSignal(const PDebugLocation & /*location*/) { Signal(); }
   //@}
-
-  private:
-    PSync(const PSync &) : PObject() { }
-    void operator=(const PSync &) { }
 };
 
 
@@ -87,10 +83,6 @@ class PSyncNULL : public PSync
     virtual void Wait() { }
     virtual PBoolean Wait(const PTimeInterval &) { return true; }
     virtual void Signal() { }
-
-  private:
-    PSyncNULL(const PSyncNULL &) : PSync() { }
-    void operator=(const PSyncNULL &) { }
 };
 
 

@@ -784,7 +784,7 @@ class PNullChannel : public PChannel
 };
 
 
-class P_fd_set
+class P_fd_set : PNonCopyable
 {
 public:
   P_fd_set();
@@ -812,10 +812,6 @@ protected:
 
   intptr_t max_fd;
   fd_set * set;
-
-private:
-  P_fd_set(const P_fd_set &) : max_fd(), set() { }
-  void operator=(const P_fd_set &) { }
 };
 
 

@@ -95,6 +95,13 @@ using namespace std; // Not a good practice (name space polution), but will take
 ///////////////////////////////////////////////////////////////////////////////
 // Deal with different C++ versions and std::auto_ptr deprecation
 #if __cplusplus < 201103L
+  struct PNonCopyable
+  {
+    PNonCopyable() { }
+  private:
+    PNonCopyable(const PNonCopyable &) { }
+    PNonCopyable & operator=(const PNonCopyable &) { return *this; }
+  };
   template <typename T> class PAutoPtr : public std::auto_ptr<T>
   {
     public:
@@ -104,6 +111,12 @@ using namespace std; // Not a good practice (name space polution), but will take
       void transfer(PAutoPtr & other) { this->reset(other.release()); }
   };
 #else
+  struct PNonCopyable
+  {
+    PNonCopyable() = default;
+    PNonCopyable(const PNonCopyable &) = delete;
+    PNonCopyable & operator=(const PNonCopyable &) = delete;
+  };
   template <typename T> class PAutoPtr : public std::unique_ptr<T>
   {
     public:
@@ -1444,14 +1457,11 @@ namespace PProfiling
      the time used by a section of code delimited by the scope (block till the close
      brace) with minimum, maximum and averages displayed as a PTRACE().
     */
-  class TimeScope
+  class TimeScope : PNonCopyable
   {
     protected:
       struct Implementation;
       Implementation * const m_implementation;
-
-    private:
-      void operator=(const TimeScope &) { }
 
     public:
       /**Create a TimeScope instance. This is usually created as a static variable

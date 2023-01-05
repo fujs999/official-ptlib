@@ -1544,7 +1544,7 @@ namespace PProfiling
     e_SystemExit
   };
 
-  struct FunctionRawData
+  struct FunctionRawData : PNonCopyable
   {
     PPROFILE_EXCLUDE(FunctionRawData(FunctionType type, void * function, void * caller));
     PPROFILE_EXCLUDE(FunctionRawData(FunctionType type, const PDebugLocation * location));
@@ -1576,10 +1576,6 @@ namespace PProfiling
     PUniqueThreadIdentifier m_threadUniqueId;
     uint64_t                m_when;
     FunctionRawData       * m_link;
-
-  private:
-    FunctionRawData(const FunctionRawData &) { }
-    void operator=(const FunctionRawData &) { }
   };
 
 

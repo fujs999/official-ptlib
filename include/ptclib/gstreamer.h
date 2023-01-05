@@ -43,15 +43,11 @@
 
 
 /// GLib object base wrapper class.
-class PGBaseObject : public PObject
+class PGBaseObject : public PObject, PNonCopyable
 {
     PCLASSINFO(PGBaseObject, PObject)
   protected:
     PGBaseObject();
-
-  private:
-    PGBaseObject(const PGBaseObject &) { }
-    void operator=(const PGBaseObject &) { }
 
   public:
     ~PGBaseObject();

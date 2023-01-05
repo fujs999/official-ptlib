@@ -121,7 +121,7 @@ class PTimer;
   </CODE>
 
  */
-class PSafeObject : public PObject
+class PSafeObject : public PObject, PNonCopyable
 {
     PCLASSINFO(PSafeObject, PObject);
   public:
@@ -289,8 +289,6 @@ class PSafeObject : public PObject
   //@}
 
   private:
-    void operator=(const PSafeObject &) { }
-
     bool InternalLockReadOnly(const PDebugLocation * location) const;
     void InternalUnlockReadOnly(const PDebugLocation * location) const;
     bool InternalLockReadWrite(const PDebugLocation * location) const;
@@ -409,7 +407,7 @@ class PSafeLockReadWrite : public PSafeLockBase
   See the PSafeObject class for more details. Especially in regard to
   enumeration of collections.
  */
-class PSafeCollection : public PObject
+class PSafeCollection : public PObject, PNonCopyable
 {
     PCLASSINFO(PSafeCollection, PObject);
   public:
@@ -534,15 +532,6 @@ class PSafeCollection : public PObject
     PDECLARE_NOTIFIER(PTimer, PSafeCollection, DeleteObjectsTimeout);
     PTimer           * m_deleteObjectsTimer;
 #endif
-
-  private:
-    PSafeCollection(const PSafeCollection & other)
-      : PObject(other)
-      , m_collection()
-      , m_deleteObjects()
-      , m_deleteObjectsTimer()
-    { }
-    void operator=(const PSafeCollection &) { }
 
   friend class PSafePtrBase;
 };

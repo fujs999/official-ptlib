@@ -1144,11 +1144,9 @@ class PHTTPServer;
    Protocol request. This information is required by handler functions on
    <code>PHTTPResource</code> descendant classes to manage the connection correctly.
 */
-class PHTTPConnectionInfo : public PObject
+class PHTTPConnectionInfo : public PObject, PNonCopyable
 {
   PCLASSINFO(PHTTPConnectionInfo, PObject)
-  private:
-    void operator=(const PHTTPConnectionInfo &) { }
   public:
     PHTTPConnectionInfo();
     PHTTPConnectionInfo(const PHTTPConnectionInfo &);

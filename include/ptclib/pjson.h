@@ -45,7 +45,7 @@ class PJSON : public PObject
     };
 
     ////////////////////////////////////////////////////////////////////////////////////////////
-    class Base
+    class Base : PNonCopyable
     {
       public:
         Base() { }
@@ -54,9 +54,6 @@ class PJSON : public PObject
         virtual void ReadFrom(istream & strm) = 0;
         virtual void PrintOn(ostream & strm) const = 0;
         virtual Base * DeepClone() const = 0;
-      private:
-        Base(const Base &) { }
-        void operator=(const Base &);
 
       friend ostream & operator<<(ostream & s, const Base & b) { b.PrintOn(s); return s; }
     };
@@ -114,10 +111,6 @@ class PJSON : public PObject
         bool SetInterval(const PString & name, const PTimeInterval & value);
 
         bool Remove(const PString & name);
-
-      private:
-        Object(const Object &) { }
-        void operator=(const Object &) { }
     };
 
     class Array : public Base, public std::vector<Base *>
@@ -161,10 +154,6 @@ class PJSON : public PObject
         void AppendInterval(const PTimeInterval & value);
 
         bool Remove(size_t index);
-
-      private:
-        Array(const Array &) { }
-        void operator=(const Array &) { }
     };
 
     class String : public Base, public PString

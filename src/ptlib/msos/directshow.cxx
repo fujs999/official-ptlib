@@ -272,7 +272,7 @@ static PString GUID2Format(GUID guid)
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-class MediaTypePtr
+class MediaTypePtr : PNonCopyable
 {
     AM_MEDIA_TYPE * pointer;
   public:
@@ -310,10 +310,6 @@ class MediaTypePtr
     AM_MEDIA_TYPE & operator*() const { return *pointer; }
     AM_MEDIA_TYPE** operator&()       { return &pointer; }
     AM_MEDIA_TYPE* operator->() const { return  pointer; }
-
-  private:
-    MediaTypePtr(const MediaTypePtr &) { }
-    void operator=(const MediaTypePtr &) { }
 };
 
 

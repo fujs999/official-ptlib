@@ -572,7 +572,7 @@ class PAESContext : public PObject
 
 
 /// Encryption/decryption context
-class PSSLCipherContext : public PObject
+class PSSLCipherContext : public PObject, PNonCopyable
 {
     PCLASSINFO(PSSLCipherContext, PObject);
   public:
@@ -677,17 +677,11 @@ class PSSLCipherContext : public PObject
     bool UpdateLoose(unsigned char *out, int *outl, const unsigned char *in, int inl);
     bool DecryptUpdateLoose(unsigned char *out, int *outl, const unsigned char *in, int inl);
     bool DecryptFinalLoose(unsigned char *out, int *outl);
-
-  private:
-    P_PUSH_MSVC_WARNINGS(26495)
-    PSSLCipherContext(const PSSLCipherContext &) { }
-    P_POP_MSVC_WARNINGS()
-    void operator=(const PSSLCipherContext &) { }
 };
 
 
 /// SHA1 digest scheme
-class PSHA1Context : public PObject
+class PSHA1Context : public PObject, PNonCopyable
 {
   PCLASSINFO(PSHA1Context, PObject);
   public:
@@ -707,12 +701,6 @@ class PSHA1Context : public PObject
 
   protected:
     SHAstate_st * m_context;
-
-  private:
-    P_PUSH_MSVC_WARNINGS(26495)
-    PSHA1Context(const PSHA1Context &) { }
-    P_POP_MSVC_WARNINGS()
-    void operator=(const PSHA1Context &) { }
 };
 
 
@@ -840,7 +828,7 @@ private:
    using the PSSLChannel class. It includes such things as the version of SSL
    and certificates, CA's etc.
   */
-class PSSLContext : public PObject
+class PSSLContext : public PObject, PNonCopyable
 {
     PCLASSINFO(PSSLContext, PObject);
   public:
@@ -994,12 +982,6 @@ class PSSLContext : public PObject
     Method       m_method;
     ssl_ctx_st * m_context;
     PSSLPasswordNotifier m_passwordNotifier;
-
-  private:
-    P_PUSH_MSVC_WARNINGS(26495)
-    PSSLContext(const PSSLContext &) { }
-    P_POP_MSVC_WARNINGS()
-    void operator=(const PSSLContext &) { }
 };
 
 
