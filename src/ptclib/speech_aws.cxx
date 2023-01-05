@@ -84,9 +84,14 @@ public:
 
   virtual bool SetOptions(const PStringOptions & options)
   {
-    m_defaultEngine = options.Get(DefaultVoiceEngine).ToLower();
-    if (!m_defaultEngine.empty() && Aws::Polly::Model::EngineMapper::GetEngineForName(m_defaultEngine.c_str()) == Aws::Polly::Model::Engine::NOT_SET)
-      m_defaultEngine.MakeEmpty();
+    PString engineStr = options.Get(DefaultVoiceEngine);
+    if (!engineStr.empty()) {
+      auto engine = Aws::Polly::Model::EngineMapper::GetEngineForName(engineStr.c_str());
+      if (engine != Aws::Polly::Model::Engine::NOT_SET) {
+        m_defaultEngine = Aws::Polly::Model::EngineMapper::GetNameForEngine(engine);
+        PTRACE(3, "Using default engine: " << m_defaultEngine);
+      }
+    }
 
     return PAwsClient<Aws::Polly::PollyClient>::SetOptions(options) && PTextToSpeech::SetOptions(options);
   }
