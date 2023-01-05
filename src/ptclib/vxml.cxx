@@ -495,9 +495,7 @@ public:
       ostream & trace = PTRACE_BEGIN(Level);
       trace << "Error " << code;
       if (m_library != NULL && m_library->SLErrorText.IsPresent()) {
-        SLErrorData errorData;
-        errorData.m_code = code;
-        memset(errorData.m_text, 0, sizeof(errorData.m_text));
+        SLErrorData errorData = { code };
         m_library->SLErrorText(&errorData);
         if (errorData.m_text[0] != '\0')
           trace << " \"" << errorData.m_text << '"';
@@ -665,9 +663,7 @@ public:
     PTRACE(5, "Sign Language Control:"
            " instance=" << instance << ","
            " data=" << ctrl.ToLiteral());
-    SLControlData data;
-    data.m_instance = instance;
-    data.m_control = ctrl;
+    SLControlData data = { instance, ctrl };
     int result = m_library->SLControl(&data);
     CheckError(result PTRACE_PARAM(, "controlling"));
     return result;
@@ -5018,7 +5014,7 @@ bool PVXMLChannelPCM::SetSampleRate(unsigned rate)
     return false;
 
   m_sampleRate = rate;
-  frameSize = rate*2*m_channels*frameDelay/1000;
+  frameSize = rate*sizeof(uint16_t)*m_channels*frameDelay/1000;
   return true;
 }
 

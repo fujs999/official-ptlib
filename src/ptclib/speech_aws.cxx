@@ -38,6 +38,7 @@
 #include <ptclib/aws_sdk.h>
 #include <ptclib/pxml.h>
 
+P_PUSH_MSVC_WARNINGS(26495)
 #define USE_IMPORT_EXPORT
 #include <aws/polly/PollyClient.h>
 #include <aws/polly/model/DescribeVoicesRequest.h>
@@ -45,7 +46,7 @@
 #include <aws/transcribe/TranscribeServiceClient.h>
 #include <aws/transcribe/model/CreateVocabularyRequest.h>
 #include <aws/transcribe/model/DeleteVocabularyRequest.h>
-
+P_POP_MSVC_WARNINGS()
 
 #define PTraceModule() "AWS-Speech"
 

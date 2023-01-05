@@ -2189,6 +2189,19 @@ of compatibility with documentation systems.
 #define PIsDescendant(ptr, cls)    (dynamic_cast<const cls *>(ptr) != NULL) 
 #define PRemoveConst(cls, ptr)  (const_cast<cls*>(ptr))
 
+template <class CLS, class BASE = PObject> CLS & PCastPtrToRef(BASE * obj)
+{
+  if (obj)
+    return dynamic_cast<CLS &>(*obj);
+  PAssertAlways(PNullPointerReference);
+  std::abort();
+}
+
+template <class CLS, class BASE = PObject> const CLS & PConstCastPtrToRef(const BASE * obj)
+{
+  return PCastPtrToRef<const CLS, const BASE>(obj);
+}
+
 #if P_USE_ASSERTS
 template<class BaseClass> inline BaseClass * PAssertCast(BaseClass * obj, const char * file, int line) 
   { if (obj == NULL) PAssertFunc(PDebugLocation(file, line, obj->Class()), PInvalidCast); return obj; }
@@ -2501,7 +2514,7 @@ struct PIntReversedOrder {
   __inline PIntReversedOrder & operator=(const PIntReversedOrder & value)                 { data = value.data;           return *this; }
   __inline operator type() const                                                          { return ReverseBytes(data); }
   __inline friend ostream & operator<<(ostream & s, const PIntReversedOrder & value)      { return s << ReverseBytes(value.data); }
-  __inline friend istream & operator>>(istream & s, PIntReversedOrder & value)            { type i; s >> i; value = i; return s; }
+  __inline friend istream & operator>>(istream & s, PIntReversedOrder & value)            { type i(); s >> i; value = i; return s; }
 
   private:
     type data;

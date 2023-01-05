@@ -33,6 +33,7 @@
 
 
 #include <ptlib/syncthrd.h>
+#include <ptlib/notifier.h>
 
 
 #if P_TIMERS

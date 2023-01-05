@@ -679,7 +679,9 @@ class PSSLCipherContext : public PObject
     bool DecryptFinalLoose(unsigned char *out, int *outl);
 
   private:
+    P_PUSH_MSVC_WARNINGS(26495)
     PSSLCipherContext(const PSSLCipherContext &) { }
+    P_POP_MSVC_WARNINGS()
     void operator=(const PSSLCipherContext &) { }
 };
 
@@ -707,7 +709,9 @@ class PSHA1Context : public PObject
     SHAstate_st * m_context;
 
   private:
+    P_PUSH_MSVC_WARNINGS(26495)
     PSHA1Context(const PSHA1Context &) { }
+    P_POP_MSVC_WARNINGS()
     void operator=(const PSHA1Context &) { }
 };
 
@@ -992,7 +996,9 @@ class PSSLContext : public PObject
     PSSLPasswordNotifier m_passwordNotifier;
 
   private:
+    P_PUSH_MSVC_WARNINGS(26495)
     PSSLContext(const PSSLContext &) { }
+    P_POP_MSVC_WARNINGS()
     void operator=(const PSSLContext &) { }
 };
 

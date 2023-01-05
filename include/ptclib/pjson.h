@@ -243,12 +243,12 @@ class PJSON : public PObject
 
     bool IsValid() const { return m_valid; }
 
-    bool IsType(Types type) const { return PAssertNULL(m_root)->IsType(type); }
+    bool IsType(Types type) const { return PAssertNULL(m_root) && m_root->IsType(type); }
 
     void Set(Types type);
 
-    template <class T> const T & GetAs() const { return dynamic_cast<const T &>(*PAssertNULL(m_root)); }
-    template <class T>       T & GetAs()       { return dynamic_cast<      T &>(*PAssertNULL(m_root)); }
+    template <class T> const T & GetAs() const { return PConstCastPtrToRef<T, Base>(m_root); }
+    template <class T>       T & GetAs()       { return PCastPtrToRef<T, Base>(m_root); }
     const Object  & GetObject()  const { return GetAs<Object>();  }
           Object  & GetObject()        { return GetAs<Object>();  }
     const Array   & GetArray ()  const { return GetAs<Array>();   }

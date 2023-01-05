@@ -46,6 +46,7 @@ class PWAVFile;
 namespace PWAV {
 
 #pragma pack(1)
+P_PUSH_MSVC_WARNINGS(26495)
 
   struct ChunkHeader
   {
@@ -82,6 +83,7 @@ namespace PWAV {
     PInt32l data1;      // 0   Should be number of samples.
   };
 
+P_POP_MSVC_WARNINGS()
 #pragma pack()
 
 }; // namespace PWAV

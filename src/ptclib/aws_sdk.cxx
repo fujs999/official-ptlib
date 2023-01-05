@@ -32,11 +32,13 @@
 #include <ptclib/aws_sdk.h>
 #include <ptclib/http.h>
 
+P_PUSH_MSVC_WARNINGS(26495)
 #define USE_IMPORT_EXPORT
 #include <aws/core/Aws.h>
 #include <aws/core/utils/logging/LogLevel.h>
 #include <aws/core/utils/logging/FormattedLogSystem.h>
 #include <aws/core/client/ClientConfiguration.h>
+P_POP_MSVC_WARNINGS()
 
 
 #define PTraceModule() "AWS-SDK"

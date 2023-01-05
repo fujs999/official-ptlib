@@ -29,7 +29,15 @@
 
 #if P_STD_ATOMIC
 
+#ifdef _MSC_VER
+// Accessing a local variable x via an Interlocked function : This is an unusual usage which could be reconsidered.
+// Yes, this warning is in Microsofts own code!
+#pragma warning(disable:28113)
 #include <atomic>
+#pragma warning(default:28113)
+#else
+#include <atomic>
+#endif
 
 using std::atomic;
 #define PAtomicEnum std::atomic
