@@ -370,8 +370,8 @@ class PVXMLSession : public PIndirectChannel, public PSSLCertificateInfo
     virtual ~PVXMLSession();
 
     // new functions
-    PTextToSpeech * SetTextToSpeech(PTextToSpeech * tts, PBoolean autoDelete = false);
-    PTextToSpeech * SetTextToSpeech(const PString & ttsName);
+    PTextToSpeech * SetTextToSpeech(PTextToSpeech * tts, PBoolean autoDelete = false, const PStringOptions & options = PStringOptions());
+    PTextToSpeech * SetTextToSpeech(const PString & ttsName, const PStringOptions & options = PStringOptions());
     PTextToSpeech * GetTextToSpeech() const { return m_textToSpeech; }
     bool SetSpeechRecognition(const PString & srName);
     PString GetSpeechRecognition() const { PWaitAndSignal lock(m_grammersMutex); return m_speechRecognition.c_str(); }

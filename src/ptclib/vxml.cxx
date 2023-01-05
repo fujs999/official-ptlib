@@ -1399,7 +1399,7 @@ PVXMLSession::~PVXMLSession()
 }
 
 
-PTextToSpeech * PVXMLSession::SetTextToSpeech(PTextToSpeech * tts, PBoolean autoDelete)
+PTextToSpeech * PVXMLSession::SetTextToSpeech(PTextToSpeech * tts, PBoolean autoDelete, const PStringOptions & options)
 {
   PWaitAndSignal mutex(m_sessionMutex);
 
@@ -1409,11 +1409,11 @@ PTextToSpeech * PVXMLSession::SetTextToSpeech(PTextToSpeech * tts, PBoolean auto
   m_autoDeleteTextToSpeech = autoDelete;
 
   if (tts != NULL) {
-    PStringToString options;
+    PStringOptions extraOptions = options;
     m_httpMutex.Wait();
-    m_httpProxies.ToOptions(options);
+    m_httpProxies.ToOptions(extraOptions);
     m_httpMutex.Signal();
-    tts->SetOptions(options);
+    tts->SetOptions(extraOptions);
     PTRACE_IF(4, m_textToSpeech != tts, "Text to Speech set: " << *tts);
   }
 
@@ -1421,13 +1421,13 @@ PTextToSpeech * PVXMLSession::SetTextToSpeech(PTextToSpeech * tts, PBoolean auto
 }
 
 
-PTextToSpeech * PVXMLSession::SetTextToSpeech(const PString & ttsName)
+PTextToSpeech * PVXMLSession::SetTextToSpeech(const PString & ttsName, const PStringOptions & options)
 {
   PFactory<PTextToSpeech>::Key_T name = (const char *)ttsName;
   if (ttsName.IsEmpty()) {
     PFactory<PTextToSpeech>::KeyList_T engines = PFactory<PTextToSpeech>::GetKeyList();
     if (engines.empty())
-      return SetTextToSpeech(NULL, false);
+      return SetTextToSpeech(NULL, false, options);
 
 #ifdef _WIN32
     name = "Microsoft SAPI";
@@ -1438,7 +1438,7 @@ PTextToSpeech * PVXMLSession::SetTextToSpeech(const PString & ttsName)
 
   PTextToSpeech * tts = PFactory<PTextToSpeech>::CreateInstance(name);
   PTRACE_IF(2, tts == NULL && !(ttsName *= "none"), "Could not create TextToSpeech for \"" << ttsName << '"');
-  return SetTextToSpeech(tts, true);
+  return SetTextToSpeech(tts, true, options);
 }
 
 
@@ -4462,9 +4462,12 @@ PVXMLGrammarSRGS::PVXMLGrammarSRGS(const PVXMLGrammarInit & init)
   // Load the root rule
   PString rootName = grammar->GetAttribute("root");
   if (m_rule.Parse(*grammar,
-                   rootName.empty() ? grammar->GetElement("rule")
-                   : grammar->GetElement("rule", "id", rootName)))
+                   rootName.empty()
+                      ? grammar->GetElement("rule")
+                      : grammar->GetElement("rule", "id", rootName))) {
+    PTRACE(4, "Parsed SRGS grammar");
     return;
+  }
 
   PTRACE(2, "Could not parse SRGS <grammar>");
   m_state = Illegal;
