@@ -139,7 +139,7 @@ class PFactoryBase
     }
 
   protected:
-    PDECLARE_MUTEX(m_mutex, "PFactoryBase");
+    PCriticalSection m_mutex;
 
   private:
     PFactoryBase(const PFactoryBase &) {}
@@ -386,7 +386,6 @@ typedef std::string PDefaultPFactoryKey;
   static bool IsRegistered(const Key_T & k)                            { return GetFactory().InternalIsRegistered(k); } \
   static bool IsSingleton(const Key_T & k)                             { return GetFactory().InternalIsSingleton(k); } \
   static typename Base_T::KeyList_T GetKeyList()                       { return GetFactory().InternalGetKeyList(); } \
-  static PMutex & GetMutex()                                           { return GetFactory().m_mutex; } \
 
 
 /** Class for a factory to create concrete class instances without parameters
