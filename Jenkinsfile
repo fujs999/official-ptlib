@@ -6,6 +6,7 @@ def spec_file = 'ptlib.spec'
 def job_name = JOB_NAME.replaceAll('%2F', '_')
 def build_tag = BUILD_TAG.replaceAll('%2F', '-')
 def el7_builder = null
+def random = new Random()
 
 pipeline {
   agent any
@@ -76,6 +77,7 @@ pipeline {
                   }
                 }
                 else {
+                  sleep random.nextInt(10)  // Avoid issue with simultaneous upload to S3
                   awsCodeBuild \
                       region: env.AWS_REGION, sourceControlType: 'jenkins', \
                       credentialsId: 'aws-codebuild', credentialsType: 'jenkins', sseAlgorithm: 'AES256', \
