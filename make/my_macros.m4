@@ -108,8 +108,7 @@ AC_DEFUN([MY_LINK_IFELSE],[
 
 
 dnl MY_PKG_CHECK_MODULE
-dnl As PKG_CHECK_MODULES but does test compile so works with cross compilers.
-dnl It also splits C preprocessor flags and C++ flags to avoid failure to compile C modules.
+dnl As PKG_CHECK_MODULES but does test compile so works wit cross compilers
 dnl $1 module name
 dnl $2 pkg name
 dnl $3 program headers
@@ -127,12 +126,9 @@ AC_DEFUN([MY_PKG_CHECK_MODULE],[
          [$3],
          [$4],
          [
-            mod_name=`echo "$2" | cut -d ' ' -f 1`
-            $1[_CPPFLAGS]=`$PKG_CONFIG --cflags-only-I $mod_name`
-            $1[_CXXFLAGS]=`$PKG_CONFIG --cflags-only-other $mod_name`
-            MY_ADD_FLAGS([$$1[_LIBS]], [$$1[_CPPFLAGS]], [], [$$1[_CXXFLAGS]])
-         ],
-         [usable=no]
+            CPPFLAGS="$CPPFLAGS $$1[_CFLAGS]"
+            LIBS="$$1[_LIBS] $LIBS"
+         ]
       )],
       [usable=no]
    )
@@ -163,6 +159,14 @@ AC_DEFUN([MY_ADD_FLAGS],[
       AC_MSG_NOTICE([Adding LIBS: $1])
       LIBS="$1 $LIBS"
    ])
+])
+
+
+dnl MY_ADD_MODULE_FLAGS
+dnl Add to CPPFLAGS, & LIBS new flags from xxx_CFLAGS, xxx_LIBS
+dnl $1 module name
+AC_DEFUN([MY_ADD_MODULE_FLAGS],[
+   MY_ADD_FLAGS($$1[_LIBS], $$1[_CFLAGS])
 ])
 
 
@@ -202,39 +206,43 @@ AC_DEFUN([MY_MODULE_OPTION],[
       ])
 
       AS_VAR_IF([$1[_SYSTEM]], [yes], [
-         m4_ifnblank([$4],
-            [m4_ifnblank([$5$6],
-               [AC_ARG_WITH(
-                  [$2-dir],
-                  AS_HELP_STRING([--with-$2-dir=<dir>],[location for $3]),
-                  [
-                     AC_MSG_NOTICE(Using directory $withval for $3)
-                     $1[_CFLAGS]="-I$withval/include $5"
-                     $1[_LIBS]="-L$withval/lib $6"
-                  ],
-                  [MY_PKG_CHECK_MODULE(
-                     [$1],
-                     [m4_bpatsubsts([$4],[local-source], [])],
-                     [$7],
-                     [$8]
-                  )]
-               )],
-               [MY_PKG_CHECK_MODULE(
+         m4_ifnblank([$5$6],
+            [AC_ARG_WITH(
+               [$2-dir],
+               AS_HELP_STRING([--with-$2-dir=<dir>],[location for $3]),
+               [
+                  AC_MSG_NOTICE(Using directory $withval for $3)
+                  $1[_CFLAGS]="-I$withval/include $5"
+                  $1[_LIBS]="-L$withval/lib $6"
+               ],
+               [PKG_CHECK_MODULES(
                   [$1],
                   [m4_bpatsubsts([$4],[local-source], [])],
-                  [$7],
-                  [$8]
+                  [],
+                  [
+                     $1[_CFLAGS]="$5"
+                     $1[_LIBS]="$6"
+                  ]
                )]
             )],
-            [MY_LINK_IFELSE(
-               [for $3 usability],
-               [$5],
-               [$6],
-               [$7],
-               [$8],
-               [MY_ADD_FLAGS([$6], [$5])],
+            [PKG_CHECK_MODULES(
+               [$1],
+               [m4_bpatsubsts([$4],[local-source], [])],
+               [],
                [usable=no]
             )]
+         )
+
+         AS_VAR_IF([usable], [yes],
+            MY_LINK_IFELSE(
+               [for $3 usability],
+               [$$1[_CFLAGS]],
+               [$$1[_LIBS]],
+               [$7],
+               [$8],
+               [MY_ADD_MODULE_FLAGS([$1])],
+               [usable=no]
+            )
          )
 
          m4_bmatch([$4], [.*local-source.*], [
@@ -419,7 +427,6 @@ dnl AC_PROG_MKDIR_P()  -- Doesn't work!
 AC_SUBST(MKDIR_P, "mkdir -p")
 AC_PATH_PROG(SVN, svn)
 AC_PATH_PROG(GIT, git)
-AC_PATH_PROG(PKG_CONFIG, pkg-config)
 
 AC_PROG_INSTALL()
 AC_MSG_CHECKING([install support for -C])
@@ -467,8 +474,7 @@ AC_SUBST(ARFLAGS, "rc")
 
 
 dnl Check for latest and greatest
-AC_SUBST(CPLUSPLUS_STD,"-std=c++11")
-AC_ARG_ENABLE(cpp03, AS_HELP_STRING([--enable-cpp03],[Enable C++03 build]),AC_SUBST(CPLUSPLUS_STD,"-std=c++03"))
+AC_SUBST(CPLUSPLUS_STD,"-std=c++03")
 AC_ARG_ENABLE(cpp11, AS_HELP_STRING([--enable-cpp11],[Enable C++11 build]),AC_SUBST(CPLUSPLUS_STD,"-std=c++11"))
 AC_ARG_ENABLE(cpp14, AS_HELP_STRING([--enable-cpp14],[Enable C++14 build]),AC_SUBST(CPLUSPLUS_STD,"-std=c++14"))
 AC_ARG_ENABLE(cpp17, AS_HELP_STRING([--enable-cpp17],[Enable C++17 build]),AC_SUBST(CPLUSPLUS_STD,"-std=c++17"))
@@ -513,8 +519,8 @@ case "$target_os" in
       AS_VAR_SET_IF([target_release], , AC_MSG_ERROR([Unable to determine iOS release number]))
       AS_VAR_IF([target_cpu],[arm],[target_cpu=arm64])
 
-      CPPFLAGS="-mmacosx-version-min=$target_release $CPPFLAGS -I/opt/homebrew/include"
-      LDFLAGS="-mmacosx-version-min=$target_release $LDFLAGS -L/opt/homebrew/lib"
+      CPPFLAGS="-mmacosx-version-min=$target_release $CPPFLAGS"
+      LDFLAGS="-mmacosx-version-min=$target_release $LDFLAGS"
       LIBS="-framework AVFoundation -framework CoreVideo -framework CoreMedia -framework AudioUnit $LIBS"
    ;;
 
@@ -622,7 +628,7 @@ AS_CASE([$target_cpu],
    ],
 
    arm*, [
-      AS_VAR_IF([target_os], [Darwin], [target_64bit=1], [target_64bit=0])
+      target_64bit=0
    ],
 
    aarch64*, [
@@ -768,9 +774,16 @@ MY_COMPILE_IFELSE(
 
 AC_LANG_POP(C++)
 
-AC_ARG_ENABLE(deprecated, AS_HELP_STRING([--disable-deprecated],[Stop compiler warning about deprecated functions]))
-
-if test "${enable_deprecated}" != "yes" ; then
+AC_ARG_ENABLE(deprecated, AS_HELP_STRING([--enable-deprecated],[Generate compiler warnings about deprecated functions]))
+AS_VAR_IF([enable_deprecated], [yes], [
+   MY_COMPILE_IFELSE(
+      [compiler -Wdeprecated-declarations],
+      [-Werror -Wdeprecated-declarations],
+      [],
+      [],
+      [CPPFLAGS="$CPPFLAGS -Wdeprecated-declarations"]
+   )
+   ],[
    MY_COMPILE_IFELSE(
       [compiler -Wno-deprecated-declarations],
       [-Werror -Wno-deprecated-declarations],
@@ -778,7 +791,7 @@ if test "${enable_deprecated}" != "yes" ; then
       [],
       [CPPFLAGS="$CPPFLAGS -Wno-deprecated-declarations"]
    )
-fi
+])
 
 MY_COMPILE_IFELSE(
    [warnings (-Wall)],
@@ -857,3 +870,4 @@ AC_ARG_WITH(
 
 
 dnl End of file
+
