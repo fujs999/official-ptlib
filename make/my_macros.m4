@@ -57,6 +57,32 @@ AC_DEFUN([MY_ARG_ENABLE],[
 ])
 
 
+dnl MY_ADD_FLAGS
+dnl Prepend to CPPFLAGS, CFLAGS, CXXFLAGS & LIBS new flags
+dnl $1 new LIBS
+dnl $2 new CPPFLAGS
+dnl $3 new CFLAGS
+dnl $4 new CXXFLAGS
+AC_DEFUN([MY_ADD_FLAGS],[
+   m4_ifnblank([$2], [
+      AC_MSG_NOTICE([Adding CPPFLAGS: $2])
+      CPPFLAGS="$2 $CPPFLAGS"
+   ])
+   m4_ifnblank([$3], [
+      AC_MSG_NOTICE([Adding CFLAGS: $3])
+      CFLAGS="$3 $CFLAGS"
+   ])
+   m4_ifnblank([$4], [
+      AC_MSG_NOTICE([Adding CXXFLAGS: $4])
+      CXXFLAGS="$4 $CXXFLAGS"
+   ])
+   m4_ifnblank([$1], [
+      AC_MSG_NOTICE([Adding LIBS: $1])
+      LIBS="$1 $LIBS"
+   ])
+])
+
+
 dnl MY_COMPILE_IFELSE
 dnl As AC_COMPILE_IFELSE but saves and restores CPPFLAGS if fails
 dnl $1 checking message
@@ -126,47 +152,14 @@ AC_DEFUN([MY_PKG_CHECK_MODULE],[
          [$3],
          [$4],
          [
-            CPPFLAGS="$CPPFLAGS $$1[_CFLAGS]"
-            LIBS="$$1[_LIBS] $LIBS"
+            $1[_CPPFLAGS]=`$PKG_CONFIG --cflags-only-I $2`
+            $1[_CFLAGS]=`$PKG_CONFIG --cflags-only-other $2`
+            MY_ADD_FLAGS([$$1[_LIBS]], [$$1[_CPPFLAGS]], [], [$$1[_CFLAGS]])
          ]
       )],
       [usable=no]
    )
    MY_IFELSE([usable], [$5], [$6])
-])
-
-
-dnl MY_ADD_FLAGS
-dnl Prepend to CPPFLAGS, CFLAGS, CXXFLAGS & LIBS new flags
-dnl $1 new LIBS
-dnl $2 new CPPFLAGS
-dnl $3 new CFLAGS
-dnl $4 new CXXFLAGS
-AC_DEFUN([MY_ADD_FLAGS],[
-   m4_ifnblank([$2], [
-      AC_MSG_NOTICE([Adding CPPFLAGS: $2])
-      CPPFLAGS="$2 $CPPFLAGS"
-   ])
-   m4_ifnblank([$3], [
-      AC_MSG_NOTICE([Adding CFLAGS: $3])
-      CFLAGS="$3 $CFLAGS"
-   ])
-   m4_ifnblank([$4], [
-      AC_MSG_NOTICE([Adding CXXFLAGS: $4])
-      CXXFLAGS="$4 $CXXFLAGS"
-   ])
-   m4_ifnblank([$1], [
-      AC_MSG_NOTICE([Adding LIBS: $1])
-      LIBS="$1 $LIBS"
-   ])
-])
-
-
-dnl MY_ADD_MODULE_FLAGS
-dnl Add to CPPFLAGS, & LIBS new flags from xxx_CFLAGS, xxx_LIBS
-dnl $1 module name
-AC_DEFUN([MY_ADD_MODULE_FLAGS],[
-   MY_ADD_FLAGS($$1[_LIBS], $$1[_CFLAGS])
 ])
 
 
@@ -215,9 +208,11 @@ AC_DEFUN([MY_MODULE_OPTION],[
                   $1[_CFLAGS]="-I$withval/include $5"
                   $1[_LIBS]="-L$withval/lib $6"
                ],
-               [PKG_CHECK_MODULES(
+               [MY_PKG_CHECK_MODULE(
                   [$1],
                   [m4_bpatsubsts([$4],[local-source], [])],
+                  [$7],
+                  [$8],
                   [],
                   [
                      $1[_CFLAGS]="$5"
@@ -225,24 +220,14 @@ AC_DEFUN([MY_MODULE_OPTION],[
                   ]
                )]
             )],
-            [PKG_CHECK_MODULES(
+            [MY_PKG_CHECK_MODULE(
                [$1],
                [m4_bpatsubsts([$4],[local-source], [])],
+               [$7],
+               [$8],
                [],
                [usable=no]
             )]
-         )
-
-         AS_VAR_IF([usable], [yes],
-            MY_LINK_IFELSE(
-               [for $3 usability],
-               [$$1[_CFLAGS]],
-               [$$1[_LIBS]],
-               [$7],
-               [$8],
-               [MY_ADD_MODULE_FLAGS([$1])],
-               [usable=no]
-            )
          )
 
          m4_bmatch([$4], [.*local-source.*], [

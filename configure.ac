@@ -1869,7 +1869,7 @@ PTLIB_MODULE_OPTION(
    [#include <v8.h>],
    [v8::V8::Initialize()],
    [],
-   [AS_VAR_IF([CPLUSPLUS_STD], ["-std=c++03"],[],[
+   [AS_VAR_IF([CPLUSPLUS_STD], ["-std=c++03"],[
       CXXFLAGS="$oldCXXFLAGS -std=c++17"
       MY_MODULE_OPTION(
          [V8],
@@ -1931,23 +1931,22 @@ PTLIB_MODULE_OPTION(
       [#include <aws/core/Aws.h>],
       [Aws::InitAPI(Aws::SDKOptions())],
       [
+         AS_VAR_IF([CPLUSPLUS_STD], ["-std=c++03"],[AC_SUBST(CPLUSPLUS_STD,"-std=c++11")])
          MY_PKG_CHECK_MODULE(
             [AWS_SDK_POLLY],
             [aws-cpp-sdk-polly],
             [#include <aws/polly/PollyClient.h>],
-            [Aws::Polly::PollyClient x]
-         )
-         MY_PKG_CHECK_MODULE(
-            [AWS_SDK_TTS],
-            [aws-cpp-sdk-text-to-speech],
-            [#include <aws/text-to-speech/TextToSpeechManager.h>],
-            [Aws::TextToSpeech::DeviceInfo x]
+            [Aws::Polly::PollyClient x],
+            [],
+            [AC_SUBST(AWS_SDK_USABLE, 0)]
          )
          MY_PKG_CHECK_MODULE(
             [AWS_SDK_TRANSCRIBE],
             [aws-cpp-sdk-transcribe],
             [#include <aws/transcribe/TranscribeServiceClient.h>],
-            [Aws::TranscribeService::TranscribeServiceClient x]
+            [Aws::TranscribeService::TranscribeServiceClient x],
+            [],
+            [AC_SUBST(AWS_SDK_USABLE, 0)]
          )
       ]
    )]
