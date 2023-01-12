@@ -4244,8 +4244,9 @@ PVXMLMenuGrammar::PVXMLMenuGrammar(const PVXMLGrammarInit & init)
 
 void PVXMLMenuGrammar::OnInput(const PString & input)
 {
+  static const PConstString ValidMenuDTMF("0123456789*#ABCDabcd");
   for (PINDEX i = 0; i < input.length(); ++i) {
-    if (isdigit(input[i])) {
+    if (ValidMenuDTMF.Find(input[i]) != P_MAX_INDEX) {
       SetFilled(input);
       break;
     }
