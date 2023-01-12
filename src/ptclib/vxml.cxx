@@ -3201,7 +3201,7 @@ PBoolean PVXMLSession::TraverseGrammar(PXMLElement & element)
     }
   }
 
-  LoadGrammar(PVXMLGrammarInit(type.empty() ? SRGS : type, *this, *element.GetParent(), &element));
+  LoadGrammar(PVXMLGrammarInit(type.empty() ? static_cast<PString>(SRGS) : type, *this, *element.GetParent(), &element));
   return false; // Skip subelements
 }
 
