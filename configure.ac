@@ -1825,7 +1825,17 @@ PTLIB_MODULE_OPTION(
    [lua], 
    [],[],
    [#include <lua.h>],
-   [lua_newstate(NULL, NULL)]
+   [lua_newstate(NULL, NULL)],
+   [],
+   [PTLIB_MODULE_OPTION(
+      [LUA],
+      [lua],
+      [Lua script support],
+      [lua5.3], 
+      [],[],
+      [#include <lua.h>],
+      [lua_newstate(NULL, NULL)]
+   )]
 )
 
 AC_LANG_POP(C)

@@ -14226,8 +14226,68 @@ then :
 
 else $as_nop
 
-                     LIBJPEG_CFLAGS=""
-                     LIBJPEG_LIBS="-ljpeg"
+
+   MY_LINK_IFELSE_CPPFLAGS="$CPPFLAGS"
+   MY_LINK_IFELSE_LIBS="$LIBS"
+   CPPFLAGS="$CPPFLAGS "
+   LIBS="-ljpeg $LIBS"
+   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for libJPEG support usability" >&5
+printf %s "checking for libJPEG support usability... " >&6; }
+   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+      #include <stdio.h>
+      #include <jpeglib.h>
+
+int
+main (void)
+{
+
+     struct jpeg_decompress_struct d;
+     unsigned char * b;
+     unsigned long s;
+     jpeg_mem_src(&d, b, s);
+
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  usable=yes
+else $as_nop
+  usable=no
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
+printf "%s\n" "$usable" >&6; }
+   CPPFLAGS="$MY_LINK_IFELSE_CPPFLAGS"
+   LIBS="$MY_LINK_IFELSE_LIBS"
+
+   if test "x$usable" = "xyes"
+then :
+
+
+
+
+
+
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Adding LIBS: -ljpeg" >&5
+printf "%s\n" "$as_me: Adding LIBS: -ljpeg" >&6;}
+      LIBS="-ljpeg $LIBS"
+
+
+                           usable=yes
+
+else $as_nop
+  usable=no
+
+fi
+
+
 
 
 fi
@@ -14798,8 +14858,59 @@ then :
 
 else $as_nop
 
-                     OPENLDAP_CFLAGS=""
-                     OPENLDAP_LIBS="-lldap -llber"
+
+   MY_LINK_IFELSE_CPPFLAGS="$CPPFLAGS"
+   MY_LINK_IFELSE_LIBS="$LIBS"
+   CPPFLAGS="$CPPFLAGS "
+   LIBS="-lldap -llber $LIBS"
+   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for Open LDAP support usability" >&5
+printf %s "checking for Open LDAP support usability... " >&6; }
+   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <ldap.h>
+int
+main (void)
+{
+ldap_initialize(NULL, "http://localhost")
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  usable=yes
+else $as_nop
+  usable=no
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
+printf "%s\n" "$usable" >&6; }
+   CPPFLAGS="$MY_LINK_IFELSE_CPPFLAGS"
+   LIBS="$MY_LINK_IFELSE_LIBS"
+
+   if test "x$usable" = "xyes"
+then :
+
+
+
+
+
+
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Adding LIBS: -lldap -llber" >&5
+printf "%s\n" "$as_me: Adding LIBS: -lldap -llber" >&6;}
+      LIBS="-lldap -llber $LIBS"
+
+
+                           usable=yes
+
+else $as_nop
+  usable=no
+
+fi
+
+
 
 
 fi
@@ -15448,8 +15559,60 @@ then :
 
 else $as_nop
 
-                     EXPAT_CFLAGS=""
-                     EXPAT_LIBS="-lexpat"
+
+   MY_LINK_IFELSE_CPPFLAGS="$CPPFLAGS"
+   MY_LINK_IFELSE_LIBS="$LIBS"
+   CPPFLAGS="$CPPFLAGS "
+   LIBS="-lexpat $LIBS"
+   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for expat XML support usability" >&5
+printf %s "checking for expat XML support usability... " >&6; }
+   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <expat.h>
+int
+main (void)
+{
+XML_ParserCreate(NULL)
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"
+then :
+  usable=yes
+else $as_nop
+  usable=no
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
+printf "%s\n" "$usable" >&6; }
+   CPPFLAGS="$MY_LINK_IFELSE_CPPFLAGS"
+   LIBS="$MY_LINK_IFELSE_LIBS"
+
+   if test "x$usable" = "xyes"
+then :
+
+
+
+
+
+
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Adding LIBS: -lexpat" >&5
+printf "%s\n" "$as_me: Adding LIBS: -lexpat" >&6;}
+      LIBS="-lexpat $LIBS"
+
+
+                           usable=yes
+
+else $as_nop
+  usable=no
+
+fi
+
+
 
 
 fi
@@ -15663,7 +15826,6 @@ int
 main (void)
 {
 lua_newstate(NULL, NULL)
-
   ;
   return 0;
 }
@@ -15733,7 +15895,263 @@ fi
 
 
 
+   if test "x$usable" = "xyes"
+then :
 
+else $as_nop
+
+
+   LUA_SYSTEM="yes"
+
+
+
+   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking Lua script support" >&5
+printf %s "checking Lua script support... " >&6; }
+
+   # Check whether --enable-lua was given.
+if test ${enable_lua+y}
+then :
+  enableval=$enable_lua; if test "x$enableval" = xno
+then :
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
+printf "%s\n" "disabled by user" >&6; }
+fi
+else $as_nop
+
+         enableval=${DEFAULT_LUA:-yes}
+         if test "x$enableval" = xno
+then :
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
+printf "%s\n" "disabled by default" >&6; }
+fi
+
+
+fi
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+   if test "x$enableval" = xyes
+then :
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+fi
+
+   if test "x$enableval" = "xyes"
+then :
+  usable=yes
+else $as_nop
+  usable=no
+fi
+
+
+   enable_lua="$enableval"
+
+
+   if test "x$usable" = xyes
+then :
+
+
+
+      if test "x$LUA_SYSTEM" = xyes
+then :
+
+
+
+pkg_failed=no
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for lua5.3" >&5
+printf %s "checking for lua5.3... " >&6; }
+
+if test -n "$LUA_CFLAGS"; then
+    pkg_cv_LUA_CFLAGS="$LUA_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"lua5.3\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "lua5.3") 2>&5
+  ac_status=$?
+  printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_LUA_CFLAGS=`$PKG_CONFIG --cflags "lua5.3" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$LUA_LIBS"; then
+    pkg_cv_LUA_LIBS="$LUA_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"lua5.3\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "lua5.3") 2>&5
+  ac_status=$?
+  printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_LUA_LIBS=`$PKG_CONFIG --libs "lua5.3" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        LUA_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "lua5.3" 2>&1`
+        else
+	        LUA_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "lua5.3" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$LUA_PKG_ERRORS" >&5
+
+	usable=no
+
+elif test $pkg_failed = untried; then
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+	usable=no
+
+else
+	LUA_CFLAGS=$pkg_cv_LUA_CFLAGS
+	LUA_LIBS=$pkg_cv_LUA_LIBS
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+   MY_LINK_IFELSE_CPPFLAGS="$CPPFLAGS"
+   MY_LINK_IFELSE_LIBS="$LIBS"
+   CPPFLAGS="$CPPFLAGS $LUA_CFLAGS"
+   LIBS="$LUA_LIBS $LIBS"
+   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for LUA usability" >&5
+printf %s "checking for LUA usability... " >&6; }
+   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <lua.h>
+int
+main (void)
+{
+lua_newstate(NULL, NULL)
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  usable=yes
+else $as_nop
+  usable=no
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
+printf "%s\n" "$usable" >&6; }
+   CPPFLAGS="$MY_LINK_IFELSE_CPPFLAGS"
+   LIBS="$MY_LINK_IFELSE_LIBS"
+
+   if test "x$usable" = "xyes"
+then :
+
+            LUA_CPPFLAGS=`$PKG_CONFIG --cflags-only-I lua5.3`
+            LUA_CFLAGS=`$PKG_CONFIG --cflags-only-other lua5.3`
+
+
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Adding CPPFLAGS: $LUA_CPPFLAGS" >&5
+printf "%s\n" "$as_me: Adding CPPFLAGS: $LUA_CPPFLAGS" >&6;}
+      CPPFLAGS="$LUA_CPPFLAGS $CPPFLAGS"
+
+
+
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Adding CXXFLAGS: $LUA_CFLAGS" >&5
+printf "%s\n" "$as_me: Adding CXXFLAGS: $LUA_CFLAGS" >&6;}
+      CXXFLAGS="$LUA_CFLAGS $CXXFLAGS"
+
+
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Adding LIBS: $LUA_LIBS" >&5
+printf "%s\n" "$as_me: Adding LIBS: $LUA_LIBS" >&6;}
+      LIBS="$LUA_LIBS $LIBS"
+
+
+
+
+fi
+
+
+fi
+
+   if test "x$usable" = "xyes"
+then :
+
+else $as_nop
+  usable=no
+
+fi
+
+
+
+
+
+
+fi
+
+fi
+
+   LUA_USABLE=$usable
+
+
+
+
+
+
+
+   HAS_LUA=$LUA_USABLE
+
+   if test "x$HAS_LUA" = "xyes" ; then
+      HAS_LUA=1
+   fi
+
+   if test "x$HAS_LUA" = "x0" || test "x$HAS_LUA" = "xno" ; then
+      HAS_LUA=
+   fi
+
+
+
+   if test "x$HAS_LUA" = "x1" ; then
+      PTLIB_LUA=yes
+      printf "%s\n" "#define P_LUA 1" >>confdefs.h
+
+   else
+      PTLIB_LUA=no
+   fi
+
+
+
+
+
+fi
 
 
 
@@ -16001,8 +16419,63 @@ then :
 
 else $as_nop
 
-                     V8_CFLAGS="$V8_EXTRA_CFLAGS"
-                     V8_LIBS="-lv8 $V8_EXTRA_LIBS"
+
+   MY_LINK_IFELSE_CPPFLAGS="$CPPFLAGS"
+   MY_LINK_IFELSE_LIBS="$LIBS"
+   CPPFLAGS="$CPPFLAGS $V8_EXTRA_CFLAGS"
+   LIBS="-lv8 $V8_EXTRA_LIBS $LIBS"
+   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for V8 Javascript script support usability" >&5
+printf %s "checking for V8 Javascript script support usability... " >&6; }
+   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <v8.h>
+int
+main (void)
+{
+v8::V8::Initialize()
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"
+then :
+  usable=yes
+else $as_nop
+  usable=no
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
+printf "%s\n" "$usable" >&6; }
+   CPPFLAGS="$MY_LINK_IFELSE_CPPFLAGS"
+   LIBS="$MY_LINK_IFELSE_LIBS"
+
+   if test "x$usable" = "xyes"
+then :
+
+
+
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Adding CPPFLAGS: $V8_EXTRA_CFLAGS" >&5
+printf "%s\n" "$as_me: Adding CPPFLAGS: $V8_EXTRA_CFLAGS" >&6;}
+      CPPFLAGS="$V8_EXTRA_CFLAGS $CPPFLAGS"
+
+
+
+
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Adding LIBS: -lv8 $V8_EXTRA_LIBS" >&5
+printf "%s\n" "$as_me: Adding LIBS: -lv8 $V8_EXTRA_LIBS" >&6;}
+      LIBS="-lv8 $V8_EXTRA_LIBS $LIBS"
+
+
+                           usable=yes
+
+else $as_nop
+  usable=no
+
+fi
+
+
 
 
 fi
@@ -16247,8 +16720,63 @@ then :
 
 else $as_nop
 
-                     V8_CFLAGS="$V8_EXTRA_CFLAGS"
-                     V8_LIBS="-lv8 $V8_EXTRA_LIBS"
+
+   MY_LINK_IFELSE_CPPFLAGS="$CPPFLAGS"
+   MY_LINK_IFELSE_LIBS="$LIBS"
+   CPPFLAGS="$CPPFLAGS $V8_EXTRA_CFLAGS"
+   LIBS="-lv8 $V8_EXTRA_LIBS $LIBS"
+   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for V8 Javascript script support (C++17) usability" >&5
+printf %s "checking for V8 Javascript script support (C++17) usability... " >&6; }
+   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <v8.h>
+int
+main (void)
+{
+v8::V8::Initialize()
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"
+then :
+  usable=yes
+else $as_nop
+  usable=no
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
+printf "%s\n" "$usable" >&6; }
+   CPPFLAGS="$MY_LINK_IFELSE_CPPFLAGS"
+   LIBS="$MY_LINK_IFELSE_LIBS"
+
+   if test "x$usable" = "xyes"
+then :
+
+
+
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Adding CPPFLAGS: $V8_EXTRA_CFLAGS" >&5
+printf "%s\n" "$as_me: Adding CPPFLAGS: $V8_EXTRA_CFLAGS" >&6;}
+      CPPFLAGS="$V8_EXTRA_CFLAGS $CPPFLAGS"
+
+
+
+
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Adding LIBS: -lv8 $V8_EXTRA_LIBS" >&5
+printf "%s\n" "$as_me: Adding LIBS: -lv8 $V8_EXTRA_LIBS" >&6;}
+      LIBS="-lv8 $V8_EXTRA_LIBS $LIBS"
+
+
+                           usable=yes
+
+else $as_nop
+  usable=no
+
+fi
+
+
 
 
 fi
@@ -21391,8 +21919,60 @@ then :
 
 else $as_nop
 
-                     CURSES_CFLAGS=""
-                     CURSES_LIBS="-lncurses"
+
+   MY_LINK_IFELSE_CPPFLAGS="$CPPFLAGS"
+   MY_LINK_IFELSE_LIBS="$LIBS"
+   CPPFLAGS="$CPPFLAGS "
+   LIBS="-lncurses $LIBS"
+   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for disable Curses (text mode windows) support usability" >&5
+printf %s "checking for disable Curses (text mode windows) support usability... " >&6; }
+   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <ncurses.h>
+int
+main (void)
+{
+initscr()
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"
+then :
+  usable=yes
+else $as_nop
+  usable=no
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
+printf "%s\n" "$usable" >&6; }
+   CPPFLAGS="$MY_LINK_IFELSE_CPPFLAGS"
+   LIBS="$MY_LINK_IFELSE_LIBS"
+
+   if test "x$usable" = "xyes"
+then :
+
+
+
+
+
+
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Adding LIBS: -lncurses" >&5
+printf "%s\n" "$as_me: Adding LIBS: -lncurses" >&6;}
+      LIBS="-lncurses $LIBS"
+
+
+                           usable=yes
+
+else $as_nop
+  usable=no
+
+fi
+
+
 
 
 fi
@@ -22687,8 +23267,59 @@ then :
 
 else $as_nop
 
-                     ODBC_CFLAGS=""
-                     ODBC_LIBS="-lodbc"
+
+   MY_LINK_IFELSE_CPPFLAGS="$CPPFLAGS"
+   MY_LINK_IFELSE_LIBS="$LIBS"
+   CPPFLAGS="$CPPFLAGS "
+   LIBS="-lodbc $LIBS"
+   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for ODBC database support usability" >&5
+printf %s "checking for ODBC database support usability... " >&6; }
+   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <sql.h>
+int
+main (void)
+{
+SQLFreeHandle(0, 0)
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  usable=yes
+else $as_nop
+  usable=no
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
+printf "%s\n" "$usable" >&6; }
+   CPPFLAGS="$MY_LINK_IFELSE_CPPFLAGS"
+   LIBS="$MY_LINK_IFELSE_LIBS"
+
+   if test "x$usable" = "xyes"
+then :
+
+
+
+
+
+
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Adding LIBS: -lodbc" >&5
+printf "%s\n" "$as_me: Adding LIBS: -lodbc" >&6;}
+      LIBS="-lodbc $LIBS"
+
+
+                           usable=yes
+
+else $as_nop
+  usable=no
+
+fi
+
+
 
 
 fi
@@ -22931,8 +23562,60 @@ then :
 
 else $as_nop
 
-                     ODBC_CFLAGS=""
-                     ODBC_LIBS="-lodbc"
+
+   MY_LINK_IFELSE_CPPFLAGS="$CPPFLAGS"
+   MY_LINK_IFELSE_LIBS="$LIBS"
+   CPPFLAGS="$CPPFLAGS "
+   LIBS="-lodbc $LIBS"
+   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for unixODBC database support usability" >&5
+printf %s "checking for unixODBC database support usability... " >&6; }
+   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <sql.h>
+int
+main (void)
+{
+SQLFreeHandle(0, 0)
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  usable=yes
+else $as_nop
+  usable=no
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
+printf "%s\n" "$usable" >&6; }
+   CPPFLAGS="$MY_LINK_IFELSE_CPPFLAGS"
+   LIBS="$MY_LINK_IFELSE_LIBS"
+
+   if test "x$usable" = "xyes"
+then :
+
+
+
+
+
+
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Adding LIBS: -lodbc" >&5
+printf "%s\n" "$as_me: Adding LIBS: -lodbc" >&6;}
+      LIBS="-lodbc $LIBS"
+
+
+                           usable=yes
+
+else $as_nop
+  usable=no
+
+fi
+
+
 
 
 fi
@@ -24131,8 +24814,59 @@ then :
 
 else $as_nop
 
-                     PORTAUDIO_CFLAGS=""
-                     PORTAUDIO_LIBS="-;portaudio"
+
+   MY_LINK_IFELSE_CPPFLAGS="$CPPFLAGS"
+   MY_LINK_IFELSE_LIBS="$LIBS"
+   CPPFLAGS="$CPPFLAGS "
+   LIBS="-;portaudio $LIBS"
+   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for PortAudio library usability" >&5
+printf %s "checking for PortAudio library usability... " >&6; }
+   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <portaudio.h>
+int
+main (void)
+{
+Pa_GetDeviceCount()
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"
+then :
+  usable=yes
+else $as_nop
+  usable=no
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
+printf "%s\n" "$usable" >&6; }
+   CPPFLAGS="$MY_LINK_IFELSE_CPPFLAGS"
+   LIBS="$MY_LINK_IFELSE_LIBS"
+
+   if test "x$usable" = "xyes"
+then :
+
+
+
+
+
+
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Adding LIBS: -;portaudio" >&5
+printf "%s\n" "$as_me: Adding LIBS: -;portaudio" >&6;}
+      LIBS="-;portaudio $LIBS"
+
+
+                           usable=yes
+
+else $as_nop
+  usable=no
+
+fi
+
+
 
 
 fi

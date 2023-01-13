@@ -215,8 +215,18 @@ AC_DEFUN([MY_MODULE_OPTION],[
                   [$8],
                   [],
                   [
-                     $1[_CFLAGS]="$5"
-                     $1[_LIBS]="$6"
+                     MY_LINK_IFELSE(
+                        [for $3 usability],
+                        [$5],
+                        [$6],
+                        [$7],
+                        [$8],
+                        [
+                           MY_ADD_FLAGS([$6], [$5])
+                           usable=yes
+                        ],
+                        [usable=no]
+                     )
                   ]
                )]
             )],
