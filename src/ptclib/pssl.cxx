@@ -104,8 +104,8 @@ extern "C" {
 #endif
 };
 
-#if (OPENSSL_VERSION_NUMBER < 0x10002000L)
-  #error OpenSSL too old! Use at least 1.0.2
+#if (OPENSSL_VERSION_NUMBER < 0x10101000L)
+  #error OpenSSL too old! Use at least 1.1.1
 #endif
 
 #ifdef P_SSL_LIB1
@@ -127,28 +127,7 @@ extern "C" {
 
 #define PTraceModule() "SSL"
 
-#if (OPENSSL_VERSION_NUMBER < 0x10100000L)
-  __inline unsigned char * EVP_CIPHER_CTX_iv(EVP_CIPHER_CTX * ctx) { return ctx->iv; }
-  __inline void DH_get0_pqg(const DH *dh, const BIGNUM **p, const BIGNUM **q, const BIGNUM **g) { if(p)*p=dh->p; if(q)*q=dh->q; if(g)*g=dh->g; }
-  __inline void DH_set0_pqg(DH *dh, BIGNUM *p, BIGNUM *q, BIGNUM *g) { dh->p = p; dh->q = q; dh->g = g; }
-  __inline void DH_get0_key(const DH *dh, const BIGNUM **pub_key, const BIGNUM **priv_key) { if(pub_key)*pub_key=dh->pub_key; if(priv_key)*priv_key=dh->priv_key; }
-  __inline void DH_set0_key(DH *dh, BIGNUM *pub_key, BIGNUM *priv_key) { dh->pub_key = pub_key; dh->priv_key = priv_key; }
-  typedef BIO_METHOD * BIO_METHOD_PTR;
-  __inline BIO_METHOD *BIO_meth_new(int type, const char *name) { BIO_METHOD * biom = new BIO_METHOD(); memset(biom, 0, sizeof(*biom)); biom->type = type; biom->name = name; return biom; }
-  __inline void BIO_meth_free(BIO_METHOD *biom) { delete biom; }
-  __inline void BIO_meth_set_write(BIO_METHOD *biom, int (*write) (BIO *, const char *, int)) { biom->bwrite = write; }
-  __inline void BIO_meth_set_read(BIO_METHOD *biom, int (*read) (BIO *, char *, int)) { biom->bread = read;  }
-  __inline void BIO_meth_set_ctrl(BIO_METHOD *biom, long (*ctrl) (BIO *, int, long, void *)) { biom->ctrl = ctrl;  }
-  __inline void BIO_meth_set_destroy(BIO_METHOD *biom, int (*destroy) (BIO *)) { biom->destroy = destroy;  }
-  __inline int BIO_get_init(const BIO * bio) { return bio->init; }
-  __inline void BIO_set_init(BIO * bio, int init) { bio->init = init; }
-  __inline int BIO_get_shutdown(const BIO * bio) { return bio->shutdown; }
-  __inline void BIO_set_shutdown(BIO * bio, int shutdown) { bio->shutdown = shutdown; }
-  __inline void * BIO_get_data(const BIO * bio) { return bio->ptr; }
-  __inline void BIO_set_data(BIO * bio, void * data) { bio->ptr = data; }
-#else
-  typedef BIO_METHOD const * BIO_METHOD_PTR;
-#endif
+typedef BIO_METHOD const * BIO_METHOD_PTR;
 
 class PSSLInitialiser : public PProcessStartup
 {
@@ -158,29 +137,6 @@ class PSSLInitialiser : public PProcessStartup
     virtual void OnShutdown();
 
     PFACTORY_GET_SINGLETON(PProcessStartupFactory, PSSLInitialiser);
-
-#if (OPENSSL_VERSION_NUMBER < 0x10100000L)
-    static unsigned long ThreadIdCallback()
-    {
-      return PThread::GetCurrentUniqueIdentifier();
-    }
-
-    static void StaticLockingCallback(int mode, int n, const char *, int)
-    {
-      PSSLInitialiser::GetInstance().LockingCallback(mode, n);
-    }
-
-    void LockingCallback(int mode, int n)
-    {
-      if ((mode & CRYPTO_LOCK) != 0)
-        mutexes[n].Wait();
-      else
-        mutexes[n].Signal();
-    }
-
-  private:
-    vector<PMutex> mutexes;
-#endif
 };
 
 PFACTORY_CREATE_SINGLETON(PProcessStartupFactory, PSSLInitialiser);
@@ -620,11 +576,7 @@ bool PSSLCertificate::CreateRoot(const PString & subject,
 
   const EVP_MD * pDigest;
   if (digest == NULL)
-#if (OPENSSL_VERSION_NUMBER < 0x10101000L)
-    pDigest = EVP_sha1();
-#else
     pDigest = EVP_sha256();
-#endif
   else {
     pDigest = EVP_get_digestbyname(digest);
     if (pDigest == NULL) {
@@ -1868,11 +1820,7 @@ PINDEX PSSLDiffieHellman::GetNumBits() const
   if (m_dh == NULL)
     return 0;
 
-#if (OPENSSL_VERSION_NUMBER < 0x10100000L)
-  return BN_num_bits(m_dh->p);
-#else
   return DH_size(m_dh)*8;
-#endif
 }
 
 
@@ -1958,14 +1906,6 @@ void PSSLInitialiser::OnStartup()
   for (size_t i = 0; i < sizeof(seed); i++)
     seed[i] = (BYTE)rand();
   RAND_seed(seed, sizeof(seed));
-
-#if (OPENSSL_VERSION_NUMBER < 0x10100000L)
-  // set up multithread stuff
-  for (int i = 0; i < CRYPTO_num_locks(); ++i)
-    mutexes.push_back(PMutex(PDebugLocation(__FILE__, __LINE__, "SSLMutex")));
-  CRYPTO_set_locking_callback(StaticLockingCallback);
-  CRYPTO_set_id_callback(ThreadIdCallback);
-#endif
 }
 
 
@@ -1973,9 +1913,6 @@ void PSSLInitialiser::OnShutdown()
 {
   CRYPTO_set_locking_callback(NULL);
   ERR_free_strings();
-#if (OPENSSL_VERSION_NUMBER < 0x10100000L)
-  mutexes.clear();
-#endif
 }
 
 
@@ -2062,11 +1999,7 @@ static int VerifyCallback(int ok, X509_STORE_CTX * ctx)
   PSSLChannel::VerifyInfo info(ok, X509_STORE_CTX_get_current_cert(ctx), X509_STORE_CTX_get_error(ctx));
 
   PSSLChannel * channel;
-#if (OPENSSL_VERSION_NUMBER < 0x10101000L)
-  SSL * ssl = reinterpret_cast<SSL *>(X509_STORE_CTX_get_app_data(ctx));
-#else
   SSL * ssl = reinterpret_cast<SSL *>(X509_STORE_CTX_get_ex_data(ctx, SSL_get_ex_data_X509_STORE_CTX_idx()));
-#endif
   if (ssl != NULL && (channel = reinterpret_cast<PSSLChannel *>(SSL_get_app_data(ssl))) != NULL)
     channel->OnVerify(info);
 
@@ -2223,7 +2156,6 @@ PSSLContext::PSSLContext(const void * sessionId, PINDEX idSize)
 
 void PSSLContext::Construct(const void * sessionId, PINDEX idSize)
 {
-#if OPENSSL_VERSION_NUMBER >= 0x10100000L
   m_context = SSL_CTX_new(TLS_method());
   if (m_context == NULL) {
     PSSLAssert("Error creating context: ");
@@ -2238,41 +2170,6 @@ void PSSLContext::Construct(const void * sessionId, PINDEX idSize)
     SSL_CTX_set_min_proto_version(m_context, 0);
     SSL_CTX_set_max_proto_version(m_context, ssl_versions[m_method]);
   }
-#else
-  // create the new SSL context
-  const SSL_METHOD * meth;
-
-  switch (m_method) {
-#ifndef OPENSSL_NO_SSL3
-    case SSLv3:
-      meth = SSLv3_method();
-      break;
-#endif
-
-  #pragma message ("Using " OPENSSL_VERSION_TEXT " - TLS 1.1 & 1.2 not available, using 1.0")
-    case TLSv1:
-    case TLSv1_1:
-    case TLSv1_2:
-      meth = TLSv1_method();
-      break;
-
-#pragma message ("Using " OPENSSL_VERSION_TEXT " - DTLS 1.2 not available, using 1.0")
-    case DTLSv1:
-    case DTLSv1_2:
-    case DTLSv1_2_v1_0:
-      meth = DTLSv1_method();
-      break;
-    default :
-      PAssertAlways("Unsupported TLS/DTLS version");
-      m_context = NULL;
-      return;
-  }
-  m_context = SSL_CTX_new(meth);
-  if (m_context == NULL) {
-    PSSLAssert("Error creating context: ");
-    return;
-  }
-#endif
 
   if (sessionId != NULL) {
     if (idSize == 0)
@@ -3282,4 +3179,7 @@ bool PSSLChannelDTLS::InternalConnect()
   SSL_set_connect_state(m_ssl);
   return true;
 }
+
+#else
+  #pragma message("OpenSSL is not available")
 #endif // P_SSL
