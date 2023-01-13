@@ -7769,6 +7769,42 @@ fi
 
 
 
+   oldCPPFLAGS="$CPPFLAGS"
+   CPPFLAGS="$CPPFLAGS -Wno-unknown-warning-option"
+   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking warnings on unknown warnings (-Wno-unknown-warning-option)" >&5
+printf %s "checking warnings on unknown warnings (-Wno-unknown-warning-option)... " >&6; }
+   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  usable=yes
+else $as_nop
+  usable=no
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
+printf "%s\n" "$usable" >&6; }
+   CPPFLAGS="$oldCPPFLAGS"
+
+   if test "x$usable" = "xyes"
+then :
+  CPPFLAGS="-Wno-unknown-warning-option $CPPFLAGS"
+
+fi
+
+
+
+
  OLD_LDFLAGS="$LDFLAGS"
  LDFLAGS="-rdynamic $LDFLAGS"
  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking Dynamic linker (-rdynamic)" >&5

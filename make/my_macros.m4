@@ -796,6 +796,14 @@ MY_COMPILE_IFELSE(
    [CPPFLAGS="-Wall $CPPFLAGS"]
 )
 
+MY_COMPILE_IFELSE(
+   [warnings on unknown warnings (-Wno-unknown-warning-option)],
+   [-Wno-unknown-warning-option],
+   [],
+   [],
+   [CPPFLAGS="-Wno-unknown-warning-option $CPPFLAGS"]
+)
+
 
  OLD_LDFLAGS="$LDFLAGS"
  LDFLAGS="-rdynamic $LDFLAGS"
