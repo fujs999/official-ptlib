@@ -152,8 +152,8 @@ AC_DEFUN([MY_PKG_CHECK_MODULE],[
          [$3],
          [$4],
          [
-            $1[_CPPFLAGS]=`$PKG_CONFIG --cflags-only-I $2`
-            $1[_CFLAGS]=`$PKG_CONFIG --cflags-only-other $2`
+            $1[_CPPFLAGS]=`$PKG_CONFIG --cflags-only-I "$2"`
+            $1[_CFLAGS]=`$PKG_CONFIG --cflags-only-other "$2"`
             MY_ADD_FLAGS([$$1[_LIBS]], [$$1[_CPPFLAGS]], [], [$$1[_CFLAGS]])
          ]
       )],

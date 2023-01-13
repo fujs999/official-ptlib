@@ -12912,8 +12912,8 @@ printf "%s\n" "$usable" >&6; }
    if test "x$usable" = "xyes"
 then :
 
-            LIBAVUTIL_CPPFLAGS=`$PKG_CONFIG --cflags-only-I libavutil >= 55`
-            LIBAVUTIL_CFLAGS=`$PKG_CONFIG --cflags-only-other libavutil >= 55`
+            LIBAVUTIL_CPPFLAGS=`$PKG_CONFIG --cflags-only-I "libavutil >= 55"`
+            LIBAVUTIL_CFLAGS=`$PKG_CONFIG --cflags-only-other "libavutil >= 55"`
 
 
       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Adding CPPFLAGS: $LIBAVUTIL_CPPFLAGS" >&5
@@ -13054,8 +13054,8 @@ printf "%s\n" "$usable" >&6; }
    if test "x$usable" = "xyes"
 then :
 
-            LIBSWRESAMPLE_CPPFLAGS=`$PKG_CONFIG --cflags-only-I libswresample`
-            LIBSWRESAMPLE_CFLAGS=`$PKG_CONFIG --cflags-only-other libswresample`
+            LIBSWRESAMPLE_CPPFLAGS=`$PKG_CONFIG --cflags-only-I "libswresample"`
+            LIBSWRESAMPLE_CFLAGS=`$PKG_CONFIG --cflags-only-other "libswresample"`
 
 
       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Adding CPPFLAGS: $LIBSWRESAMPLE_CPPFLAGS" >&5
@@ -13196,8 +13196,8 @@ printf "%s\n" "$usable" >&6; }
    if test "x$usable" = "xyes"
 then :
 
-            LIBSWSCALE_CPPFLAGS=`$PKG_CONFIG --cflags-only-I libswscale >= 4`
-            LIBSWSCALE_CFLAGS=`$PKG_CONFIG --cflags-only-other libswscale >= 4`
+            LIBSWSCALE_CPPFLAGS=`$PKG_CONFIG --cflags-only-I "libswscale >= 4"`
+            LIBSWSCALE_CFLAGS=`$PKG_CONFIG --cflags-only-other "libswscale >= 4"`
 
 
       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Adding CPPFLAGS: $LIBSWSCALE_CPPFLAGS" >&5
@@ -13338,8 +13338,8 @@ printf "%s\n" "$usable" >&6; }
    if test "x$usable" = "xyes"
 then :
 
-            LIBAVCODEC_CPPFLAGS=`$PKG_CONFIG --cflags-only-I libavcodec >= 57`
-            LIBAVCODEC_CFLAGS=`$PKG_CONFIG --cflags-only-other libavcodec >= 57`
+            LIBAVCODEC_CPPFLAGS=`$PKG_CONFIG --cflags-only-I "libavcodec >= 57"`
+            LIBAVCODEC_CFLAGS=`$PKG_CONFIG --cflags-only-other "libavcodec >= 57"`
 
 
       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Adding CPPFLAGS: $LIBAVCODEC_CPPFLAGS" >&5
@@ -13480,8 +13480,8 @@ printf "%s\n" "$usable" >&6; }
    if test "x$usable" = "xyes"
 then :
 
-            LIBAVFORMAT_CPPFLAGS=`$PKG_CONFIG --cflags-only-I libavformat >= 57`
-            LIBAVFORMAT_CFLAGS=`$PKG_CONFIG --cflags-only-other libavformat >= 57`
+            LIBAVFORMAT_CPPFLAGS=`$PKG_CONFIG --cflags-only-I "libavformat >= 57"`
+            LIBAVFORMAT_CFLAGS=`$PKG_CONFIG --cflags-only-other "libavformat >= 57"`
 
 
       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Adding CPPFLAGS: $LIBAVFORMAT_CPPFLAGS" >&5
@@ -13727,8 +13727,8 @@ printf "%s\n" "$usable" >&6; }
    if test "x$usable" = "xyes"
 then :
 
-            IMAGEMAGICK_CPPFLAGS=`$PKG_CONFIG --cflags-only-I MagickWand`
-            IMAGEMAGICK_CFLAGS=`$PKG_CONFIG --cflags-only-other MagickWand`
+            IMAGEMAGICK_CPPFLAGS=`$PKG_CONFIG --cflags-only-I "MagickWand"`
+            IMAGEMAGICK_CFLAGS=`$PKG_CONFIG --cflags-only-other "MagickWand"`
 
 
       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Adding CPPFLAGS: $IMAGEMAGICK_CPPFLAGS" >&5
@@ -13959,8 +13959,8 @@ printf "%s\n" "$usable" >&6; }
    if test "x$usable" = "xyes"
 then :
 
-            IMAGEMAGICK_CPPFLAGS=`$PKG_CONFIG --cflags-only-I MagickWand`
-            IMAGEMAGICK_CFLAGS=`$PKG_CONFIG --cflags-only-other MagickWand`
+            IMAGEMAGICK_CPPFLAGS=`$PKG_CONFIG --cflags-only-I "MagickWand"`
+            IMAGEMAGICK_CFLAGS=`$PKG_CONFIG --cflags-only-other "MagickWand"`
 
 
       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Adding CPPFLAGS: $IMAGEMAGICK_CPPFLAGS" >&5
@@ -14230,8 +14230,8 @@ printf "%s\n" "$usable" >&6; }
    if test "x$usable" = "xyes"
 then :
 
-            LIBJPEG_CPPFLAGS=`$PKG_CONFIG --cflags-only-I libjpeg`
-            LIBJPEG_CFLAGS=`$PKG_CONFIG --cflags-only-other libjpeg`
+            LIBJPEG_CPPFLAGS=`$PKG_CONFIG --cflags-only-I "libjpeg"`
+            LIBJPEG_CFLAGS=`$PKG_CONFIG --cflags-only-other "libjpeg"`
 
 
       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Adding CPPFLAGS: $LIBJPEG_CPPFLAGS" >&5
@@ -14862,8 +14862,8 @@ printf "%s\n" "$usable" >&6; }
    if test "x$usable" = "xyes"
 then :
 
-            OPENLDAP_CPPFLAGS=`$PKG_CONFIG --cflags-only-I ldap`
-            OPENLDAP_CFLAGS=`$PKG_CONFIG --cflags-only-other ldap`
+            OPENLDAP_CPPFLAGS=`$PKG_CONFIG --cflags-only-I "ldap"`
+            OPENLDAP_CFLAGS=`$PKG_CONFIG --cflags-only-other "ldap"`
 
 
       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Adding CPPFLAGS: $OPENLDAP_CPPFLAGS" >&5
@@ -15182,8 +15182,8 @@ printf "%s\n" "$usable" >&6; }
    if test "x$usable" = "xyes"
 then :
 
-            OPENSSL_CPPFLAGS=`$PKG_CONFIG --cflags-only-I openssl`
-            OPENSSL_CFLAGS=`$PKG_CONFIG --cflags-only-other openssl`
+            OPENSSL_CPPFLAGS=`$PKG_CONFIG --cflags-only-I "openssl"`
+            OPENSSL_CFLAGS=`$PKG_CONFIG --cflags-only-other "openssl"`
 
 
       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Adding CPPFLAGS: $OPENSSL_CPPFLAGS" >&5
@@ -15563,8 +15563,8 @@ printf "%s\n" "$usable" >&6; }
    if test "x$usable" = "xyes"
 then :
 
-            EXPAT_CPPFLAGS=`$PKG_CONFIG --cflags-only-I expat`
-            EXPAT_CFLAGS=`$PKG_CONFIG --cflags-only-other expat`
+            EXPAT_CPPFLAGS=`$PKG_CONFIG --cflags-only-I "expat"`
+            EXPAT_CFLAGS=`$PKG_CONFIG --cflags-only-other "expat"`
 
 
       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Adding CPPFLAGS: $EXPAT_CPPFLAGS" >&5
@@ -15883,8 +15883,8 @@ printf "%s\n" "$usable" >&6; }
    if test "x$usable" = "xyes"
 then :
 
-            LUA_CPPFLAGS=`$PKG_CONFIG --cflags-only-I lua`
-            LUA_CFLAGS=`$PKG_CONFIG --cflags-only-other lua`
+            LUA_CPPFLAGS=`$PKG_CONFIG --cflags-only-I "lua"`
+            LUA_CFLAGS=`$PKG_CONFIG --cflags-only-other "lua"`
 
 
       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Adding CPPFLAGS: $LUA_CPPFLAGS" >&5
@@ -16111,8 +16111,8 @@ printf "%s\n" "$usable" >&6; }
    if test "x$usable" = "xyes"
 then :
 
-            LUA_CPPFLAGS=`$PKG_CONFIG --cflags-only-I lua5.3`
-            LUA_CFLAGS=`$PKG_CONFIG --cflags-only-other lua5.3`
+            LUA_CPPFLAGS=`$PKG_CONFIG --cflags-only-I "lua5.3"`
+            LUA_CFLAGS=`$PKG_CONFIG --cflags-only-other "lua5.3"`
 
 
       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Adding CPPFLAGS: $LUA_CPPFLAGS" >&5
@@ -16423,8 +16423,8 @@ printf "%s\n" "$usable" >&6; }
    if test "x$usable" = "xyes"
 then :
 
-            V8_CPPFLAGS=`$PKG_CONFIG --cflags-only-I v8`
-            V8_CFLAGS=`$PKG_CONFIG --cflags-only-other v8`
+            V8_CPPFLAGS=`$PKG_CONFIG --cflags-only-I "v8"`
+            V8_CFLAGS=`$PKG_CONFIG --cflags-only-other "v8"`
 
 
       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Adding CPPFLAGS: $V8_CPPFLAGS" >&5
@@ -16724,8 +16724,8 @@ printf "%s\n" "$usable" >&6; }
    if test "x$usable" = "xyes"
 then :
 
-            V8_CPPFLAGS=`$PKG_CONFIG --cflags-only-I `
-            V8_CFLAGS=`$PKG_CONFIG --cflags-only-other `
+            V8_CPPFLAGS=`$PKG_CONFIG --cflags-only-I ""`
+            V8_CFLAGS=`$PKG_CONFIG --cflags-only-other ""`
 
 
       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Adding CPPFLAGS: $V8_CPPFLAGS" >&5
@@ -17051,8 +17051,8 @@ printf "%s\n" "$usable" >&6; }
    if test "x$usable" = "xyes"
 then :
 
-            AWS_SDK_CPPFLAGS=`$PKG_CONFIG --cflags-only-I aws-sdk`
-            AWS_SDK_CFLAGS=`$PKG_CONFIG --cflags-only-other aws-sdk`
+            AWS_SDK_CPPFLAGS=`$PKG_CONFIG --cflags-only-I "aws-sdk"`
+            AWS_SDK_CFLAGS=`$PKG_CONFIG --cflags-only-other "aws-sdk"`
 
 
       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Adding CPPFLAGS: $AWS_SDK_CPPFLAGS" >&5
@@ -17278,8 +17278,8 @@ printf "%s\n" "$usable" >&6; }
    if test "x$usable" = "xyes"
 then :
 
-            AWS_SDK_CPPFLAGS=`$PKG_CONFIG --cflags-only-I aws-cpp-sdk-core`
-            AWS_SDK_CFLAGS=`$PKG_CONFIG --cflags-only-other aws-cpp-sdk-core`
+            AWS_SDK_CPPFLAGS=`$PKG_CONFIG --cflags-only-I "aws-cpp-sdk-core"`
+            AWS_SDK_CFLAGS=`$PKG_CONFIG --cflags-only-other "aws-cpp-sdk-core"`
 
 
       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Adding CPPFLAGS: $AWS_SDK_CPPFLAGS" >&5
@@ -17441,8 +17441,8 @@ printf "%s\n" "$usable" >&6; }
    if test "x$usable" = "xyes"
 then :
 
-            AWS_SDK_POLLY_CPPFLAGS=`$PKG_CONFIG --cflags-only-I aws-cpp-sdk-polly`
-            AWS_SDK_POLLY_CFLAGS=`$PKG_CONFIG --cflags-only-other aws-cpp-sdk-polly`
+            AWS_SDK_POLLY_CPPFLAGS=`$PKG_CONFIG --cflags-only-I "aws-cpp-sdk-polly"`
+            AWS_SDK_POLLY_CFLAGS=`$PKG_CONFIG --cflags-only-other "aws-cpp-sdk-polly"`
 
 
       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Adding CPPFLAGS: $AWS_SDK_POLLY_CPPFLAGS" >&5
@@ -17585,8 +17585,8 @@ printf "%s\n" "$usable" >&6; }
    if test "x$usable" = "xyes"
 then :
 
-            AWS_SDK_TRANSCRIBE_CPPFLAGS=`$PKG_CONFIG --cflags-only-I aws-cpp-sdk-transcribe`
-            AWS_SDK_TRANSCRIBE_CFLAGS=`$PKG_CONFIG --cflags-only-other aws-cpp-sdk-transcribe`
+            AWS_SDK_TRANSCRIBE_CPPFLAGS=`$PKG_CONFIG --cflags-only-I "aws-cpp-sdk-transcribe"`
+            AWS_SDK_TRANSCRIBE_CFLAGS=`$PKG_CONFIG --cflags-only-other "aws-cpp-sdk-transcribe"`
 
 
       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Adding CPPFLAGS: $AWS_SDK_TRANSCRIBE_CPPFLAGS" >&5
@@ -21923,8 +21923,8 @@ printf "%s\n" "$usable" >&6; }
    if test "x$usable" = "xyes"
 then :
 
-            CURSES_CPPFLAGS=`$PKG_CONFIG --cflags-only-I ncurses`
-            CURSES_CFLAGS=`$PKG_CONFIG --cflags-only-other ncurses`
+            CURSES_CPPFLAGS=`$PKG_CONFIG --cflags-only-I "ncurses"`
+            CURSES_CFLAGS=`$PKG_CONFIG --cflags-only-other "ncurses"`
 
 
       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Adding CPPFLAGS: $CURSES_CPPFLAGS" >&5
@@ -22257,8 +22257,8 @@ printf "%s\n" "$usable" >&6; }
    if test "x$usable" = "xyes"
 then :
 
-            SDL_CPPFLAGS=`$PKG_CONFIG --cflags-only-I sdl2`
-            SDL_CFLAGS=`$PKG_CONFIG --cflags-only-other sdl2`
+            SDL_CPPFLAGS=`$PKG_CONFIG --cflags-only-I "sdl2"`
+            SDL_CFLAGS=`$PKG_CONFIG --cflags-only-other "sdl2"`
 
 
       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Adding CPPFLAGS: $SDL_CPPFLAGS" >&5
@@ -22512,8 +22512,8 @@ printf "%s\n" "$usable" >&6; }
    if test "x$usable" = "xyes"
 then :
 
-            GSTREAMER_CPPFLAGS=`$PKG_CONFIG --cflags-only-I gstreamer-app-0.10`
-            GSTREAMER_CFLAGS=`$PKG_CONFIG --cflags-only-other gstreamer-app-0.10`
+            GSTREAMER_CPPFLAGS=`$PKG_CONFIG --cflags-only-I "gstreamer-app-0.10"`
+            GSTREAMER_CFLAGS=`$PKG_CONFIG --cflags-only-other "gstreamer-app-0.10"`
 
 
       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Adding CPPFLAGS: $GSTREAMER_CPPFLAGS" >&5
@@ -22738,8 +22738,8 @@ printf "%s\n" "$usable" >&6; }
    if test "x$usable" = "xyes"
 then :
 
-            GLIB_CPPFLAGS=`$PKG_CONFIG --cflags-only-I gio-2.0`
-            GLIB_CFLAGS=`$PKG_CONFIG --cflags-only-other gio-2.0`
+            GLIB_CPPFLAGS=`$PKG_CONFIG --cflags-only-I "gio-2.0"`
+            GLIB_CFLAGS=`$PKG_CONFIG --cflags-only-other "gio-2.0"`
 
 
       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Adding CPPFLAGS: $GLIB_CPPFLAGS" >&5
@@ -22963,8 +22963,8 @@ printf "%s\n" "$usable" >&6; }
    if test "x$usable" = "xyes"
 then :
 
-            GSTREAMER_CPPFLAGS=`$PKG_CONFIG --cflags-only-I gstreamer-app-1.0`
-            GSTREAMER_CFLAGS=`$PKG_CONFIG --cflags-only-other gstreamer-app-1.0`
+            GSTREAMER_CPPFLAGS=`$PKG_CONFIG --cflags-only-I "gstreamer-app-1.0"`
+            GSTREAMER_CFLAGS=`$PKG_CONFIG --cflags-only-other "gstreamer-app-1.0"`
 
 
       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Adding CPPFLAGS: $GSTREAMER_CPPFLAGS" >&5
@@ -23271,8 +23271,8 @@ printf "%s\n" "$usable" >&6; }
    if test "x$usable" = "xyes"
 then :
 
-            ODBC_CPPFLAGS=`$PKG_CONFIG --cflags-only-I odbc`
-            ODBC_CFLAGS=`$PKG_CONFIG --cflags-only-other odbc`
+            ODBC_CPPFLAGS=`$PKG_CONFIG --cflags-only-I "odbc"`
+            ODBC_CFLAGS=`$PKG_CONFIG --cflags-only-other "odbc"`
 
 
       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Adding CPPFLAGS: $ODBC_CPPFLAGS" >&5
@@ -23566,8 +23566,8 @@ printf "%s\n" "$usable" >&6; }
    if test "x$usable" = "xyes"
 then :
 
-            ODBC_CPPFLAGS=`$PKG_CONFIG --cflags-only-I unixODBC`
-            ODBC_CFLAGS=`$PKG_CONFIG --cflags-only-other unixODBC`
+            ODBC_CPPFLAGS=`$PKG_CONFIG --cflags-only-I "unixODBC"`
+            ODBC_CFLAGS=`$PKG_CONFIG --cflags-only-other "unixODBC"`
 
 
       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Adding CPPFLAGS: $ODBC_CPPFLAGS" >&5
@@ -24436,8 +24436,8 @@ printf "%s\n" "$usable" >&6; }
    if test "x$usable" = "xyes"
 then :
 
-            ESD_CPPFLAGS=`$PKG_CONFIG --cflags-only-I esound`
-            ESD_CFLAGS=`$PKG_CONFIG --cflags-only-other esound`
+            ESD_CPPFLAGS=`$PKG_CONFIG --cflags-only-I "esound"`
+            ESD_CFLAGS=`$PKG_CONFIG --cflags-only-other "esound"`
 
 
       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Adding CPPFLAGS: $ESD_CPPFLAGS" >&5
@@ -24818,8 +24818,8 @@ printf "%s\n" "$usable" >&6; }
    if test "x$usable" = "xyes"
 then :
 
-            PORTAUDIO_CPPFLAGS=`$PKG_CONFIG --cflags-only-I portaudio`
-            PORTAUDIO_CFLAGS=`$PKG_CONFIG --cflags-only-other portaudio`
+            PORTAUDIO_CPPFLAGS=`$PKG_CONFIG --cflags-only-I "portaudio"`
+            PORTAUDIO_CFLAGS=`$PKG_CONFIG --cflags-only-other "portaudio"`
 
 
       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Adding CPPFLAGS: $PORTAUDIO_CPPFLAGS" >&5
