@@ -162,12 +162,18 @@ using namespace std; // Not a good practice (name space polution), but will take
 
 #ifdef _MSC_VER
   #define P_PUSH_MSVC_WARNINGS(warnings) __pragma(warning(push)) __pragma(warning(disable:warnings))
-  #define P_POP_MSVC_WARNINGS() __pragma(warning(pop))
+  #define P_POP_MSVC_WARNINGS()          __pragma(warning(pop))
+  #define P_PUSH_GCC_WARNING(warning)
+  #define P_POP_GCC_WARNING()
 #else
   #define P_PUSH_MSVC_WARNINGS(warnings)
   #define P_POP_MSVC_WARNINGS()
+  #define P_GCC_PRAGMA(token) _Pragma(#token)
+  #define P_PUSH_GCC_WARNING(warning) _Pragma("GCC diagnostic push") P_GCC_PRAGMA(GCC diagnostic ignored warning)
+  #define P_POP_GCC_WARNING()         _Pragma("GCC diagnostic pop")
 #endif // _MSC_VER
-#define P_DISABLE_MSVC_WARNINGS(warnings, statement) P_PUSH_MSVC_WARNINGS(warnings) statement P_POP_MSVC_WARNINGS()
+#define P_DISABLE_MSVC_WARNINGS(warnings, statement) P_PUSH_MSVC_WARNINGS(warnings) statement  P_POP_MSVC_WARNINGS()
+#define P_DISABLE_GCC_WARNING(warning, statement)    P_PUSH_GCC_WARNING(warning)    statement; P_POP_GCC_WARNING()
 
 #ifdef _MSC_VER
   #define PIGNORE_RETURN(t,e)	(void)(e)
