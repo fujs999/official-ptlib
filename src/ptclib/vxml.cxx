@@ -280,6 +280,9 @@ protected:
 
   virtual bool FinishTraversal(PVXMLSession & session, PXMLElement & element) const
   {
+    if (!IsTraversing(element))
+      return false;
+
     PVXMLNodeHandler::FinishTraversal(session, element);
     if (!element.GetAttribute(InternalEventStateAttribute).IsTrue())
       return true;
