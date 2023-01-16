@@ -288,6 +288,13 @@ class PSafeObject : public PObject, PNonCopyable
     unsigned GetSafeReferenceCount() const { PWaitAndSignal lock(m_safetyMutex); return m_safeReferenceCount; }
   //@}
 
+#if PTRACING
+    static atomic<unsigned> m_traceObjectContext;
+    static atomic<unsigned> m_traceObjectLevel;
+    static atomic<unsigned> m_traceDetailLevel;
+    unsigned GetTraceLogLevel() const { return m_traceContextIdentifier == m_traceObjectContext ? m_traceObjectLevel : m_traceDetailLevel; }
+#endif // PTRACING
+
   private:
     bool InternalLockReadOnly(const PDebugLocation * location) const;
     void InternalUnlockReadOnly(const PDebugLocation * location) const;
