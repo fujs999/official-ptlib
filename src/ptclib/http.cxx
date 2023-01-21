@@ -211,6 +211,10 @@ PHTTPCookies::Info::Info()
 
 bool PHTTPCookies::Info::operator<(const Info & other) const
 {
+  // If same name, which should be unique, then is never less than or greater thans
+  if (m_name == other.m_name)
+    return false;
+
   // Yes, this is a greater than, for a less than function returning true
   // This is so std::set<> orders longer paths before shorter paths as per RFC6265
   if (m_path.length() > other.m_path.length())
@@ -299,6 +303,8 @@ bool PHTTPCookies::Parse(const PString & strCookies,const PURL & url, const PTim
     if (info.m_path[0] != '/')
       info.m_path.Splice("/", 0);
 
+    // Overwrite existing cookie
+    m_cookies.erase(info);
     m_cookies.insert(info);
   }
   return !m_cookies.empty();
