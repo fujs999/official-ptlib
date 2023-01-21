@@ -4118,8 +4118,10 @@ void PVXMLGrammar::SetPartFilled(const PString & input, bool overwrite)
 {
   if (overwrite)
     m_value = input;
-  else
+  else if (m_usingDTMF)
     m_value += input;
+  else
+    m_value &= input;
 
   PTimeInterval timeout = m_session.GetTimeProperty(m_usingDTMF ? InterDigitTimeoutProperty : IncompleteTimeoutProperty);
 
@@ -4136,7 +4138,7 @@ void PVXMLGrammar::SetPartFilled(const PString & input, bool overwrite)
 }
 
 
-void PVXMLGrammar::SetFilled(const PString & input)
+void PVXMLGrammar::SetFilled(const PString & input, bool overwrite)
 {
   GrammarState prev = Started;
   if (!m_state.compare_exchange_strong(prev, Filled)) {
@@ -4147,8 +4149,12 @@ void PVXMLGrammar::SetFilled(const PString & input)
     }
   }
 
+  if (overwrite)
+    m_value = input;
+  else
+    m_value += input;
+
   m_timer.Stop(false);
-  m_value += input;
   PTRACE(3, "Grammar " << *this << " filled: value=" << m_value.ToLiteral());
   Finished();
 }
@@ -4528,7 +4534,7 @@ bool PVXMLGrammarSRGS::Item::Parse(PXMLElement & grammar, PXMLElement * element)
 }
 
 
-PVXMLGrammar::GrammarState PVXMLGrammarSRGS::Item::OnInput(const PString & input)
+PVXMLGrammar::GrammarState PVXMLGrammarSRGS::Item::OnInput(const PString & input, bool usingDTMF)
 {
   if (m_token == input) {
     ++m_repeatCount;
@@ -4546,18 +4552,24 @@ PVXMLGrammar::GrammarState PVXMLGrammarSRGS::Item::OnInput(const PString & input
   GrammarState myState = Started;
   for (Items::iterator it = m_items.begin(); it != m_items.end(); ++it) {
     for (std::vector<Item>::iterator alt = it->begin(); alt != it->end(); ++alt) {
-      switch (alt->OnInput(input)) {
+      switch (alt->OnInput(input, usingDTMF)) {
         case Started:
           break;
         case PartFill:
           myState = PartFill;
-          m_value += alt->m_value;
+          if (usingDTMF)
+            m_value += alt->m_value;
+          else
+            m_value &= alt->m_value;
           break;
         case Filled:
           ++m_repeatCount;
           PTRACE(4, "SRGS matched one of \"" << alt->m_value << "\" count=" << m_repeatCount
                  << " (" << m_minRepeat << '-' << m_maxRepeat << ')');
-          m_value += alt->m_value;
+          if (usingDTMF)
+            m_value += alt->m_value;
+          else
+            m_value &= alt->m_value;
 
           if (m_repeatCount < m_minRepeat)
             break;
@@ -4578,12 +4590,12 @@ PVXMLGrammar::GrammarState PVXMLGrammarSRGS::Item::OnInput(const PString & input
 
 void PVXMLGrammarSRGS::OnInput(const PString & input)
 {
-  switch (m_rule.OnInput(input)) {
+  switch (m_rule.OnInput(input, m_usingDTMF)) {
     case PartFill:
       SetPartFilled(m_rule.m_value, true);
       break;
     case Filled:
-      SetFilled(m_rule.m_value);
+      SetFilled(m_rule.m_value, true);
       break;
     default:
       ;

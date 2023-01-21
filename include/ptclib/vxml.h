@@ -204,7 +204,7 @@ class PVXMLGrammar : public PObject, protected PVXMLGrammarInit
     virtual void GetWordsToRecognise(PStringArray & words) const;
     virtual void OnInput(const PString & input) = 0;
     virtual void SetPartFilled(const PString & input, bool overwrite = false);
-    virtual void SetFilled(const PString & value);
+    virtual void SetFilled(const PString & value, bool overwrite = false);
     virtual void Finished();
 
     PSpeechRecognition * m_recogniser;
@@ -311,7 +311,7 @@ class PVXMLGrammarSRGS : public PVXMLGrammar
 
       Item() : m_minRepeat(1), m_maxRepeat(1), m_repeatCount(0) { }
       bool Parse(PXMLElement & grammar, PXMLElement * element);
-      GrammarState OnInput(const PString & input);
+      GrammarState OnInput(const PString & input, bool usingDTMF);
       void AddWordsToRecognise(PStringArray & words) const;
     };
 
