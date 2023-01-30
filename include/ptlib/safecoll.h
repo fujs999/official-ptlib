@@ -287,6 +287,13 @@ class PSafeObject : public PObject
     unsigned GetSafeReferenceCount() const { PWaitAndSignal lock(m_safetyMutex); return m_safeReferenceCount; }
   //@}
 
+#if PTRACING
+    static atomic<unsigned> m_traceObjectContext;
+    static atomic<unsigned> m_traceObjectLevel;
+    static atomic<unsigned> m_traceDetailLevel;
+    unsigned GetTraceLogLevel() const { return m_traceContextIdentifier == m_traceObjectContext ? m_traceObjectLevel : m_traceDetailLevel; }
+#endif // PTRACING
+
   private:
     void operator=(const PSafeObject &) { }
 
