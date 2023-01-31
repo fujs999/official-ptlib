@@ -38,6 +38,10 @@
 
 /////////////////////////////////////////////////////////////////////////////
 
+atomic<unsigned> PSafeObject::m_traceObjectContext(1234567890);
+atomic<unsigned> PSafeObject::m_traceObjectLevel(3);
+atomic<unsigned> PSafeObject::m_traceDetailLevel(7);
+
 PSafeObject::PSafeObject()
   : m_safeReferenceCount(0)
   , m_safelyBeingRemoved(false)
@@ -95,7 +99,7 @@ PBoolean PSafeObject::SafeReference()
       count = ++m_safeReferenceCount;
   }
 
-  unsigned level = count == 0  || m_traceContextIdentifier == 1234567890 ? 3 : 7;
+  unsigned level = count == 0 ? 2 : GetTraceLogLevel();
   if (PTrace::CanTrace(level)) {
     ostream & trace = PTRACE_BEGIN(level);
     trace << GetClassName() << ' ' << (void *)this;
@@ -130,13 +134,13 @@ PBoolean PSafeObject::SafeDereference()
   }
 #if PTRACING
   unsigned count = m_safeReferenceCount;
-  unsigned level = m_traceContextIdentifier == 1234567890 ? 3 : 7;
+  unsigned level = GetTraceLogLevel();
 #endif
   m_safetyMutex.Signal();
 
   PTRACE(level, GetClassName() << ' ' << (void *)this << " decremented reference count to " << count);
 
-  // At this point the object could be deleted in another trhead, do not use it anymore!
+  // At this point the object could be deleted in another thread, do not use it anymore!
   return mayBeDeleted;
 }
 
@@ -152,52 +156,52 @@ PReadWriteMutex & PSafeObject::InternalGetMutex() const
 
 bool PSafeObject::InternalLockReadOnly(const PDebugLocation * location) const
 {
-  PTRACE(m_traceContextIdentifier == 1234567890 ? 3 : 7, "Waiting read ("<<(void *)this<<")");
+  PTRACE(GetTraceLogLevel(), "Waiting read ("<<(void *)this<<")");
   m_safetyMutex.Wait();
 
   if (m_safelyBeingRemoved) {
     m_safetyMutex.Signal();
-    PTRACE(6, "Being removed while waiting read ("<<(void *)this<<")");
+    PTRACE(GetTraceLogLevel(), "Being removed while waiting read ("<<(void *)this<<")");
     return false;
   }
 
   m_safetyMutex.Signal();
 
   InternalGetMutex().StartRead(location);
-  PTRACE(m_traceContextIdentifier == 1234567890 ? 3 : 7, "Locked read ("<<(void *)this<<")");
+  PTRACE(GetTraceLogLevel(), "Locked read ("<<(void *)this<<")");
   return true;
 }
 
 
 void PSafeObject::InternalUnlockReadOnly(const PDebugLocation * location) const
 {
-  PTRACE(m_traceContextIdentifier == 1234567890 ? 3 : 7, "Unlocked read ("<<(void *)this<<")");
+  PTRACE(GetTraceLogLevel(), "Unlocked read ("<<(void *)this<<")");
   InternalGetMutex().EndRead(location);
 }
 
 
 bool PSafeObject::InternalLockReadWrite(const PDebugLocation * location) const
 {
-  PTRACE(m_traceContextIdentifier == 1234567890 ? 3 : 7, "Waiting readWrite ("<<(void *)this<<")");
+  PTRACE(GetTraceLogLevel(), "Waiting readWrite ("<<(void *)this<<")");
   m_safetyMutex.Wait();
 
   if (m_safelyBeingRemoved) {
     m_safetyMutex.Signal();
-    PTRACE(6, "Being removed while waiting readWrite ("<<(void *)this<<")");
+    PTRACE(GetTraceLogLevel(), "Being removed while waiting readWrite ("<<(void *)this<<")");
     return false;
   }
 
   m_safetyMutex.Signal();
 
   InternalGetMutex().StartWrite(location);
-  PTRACE(m_traceContextIdentifier == 1234567890 ? 3 : 7, "Locked readWrite ("<<(void *)this<<")");
+  PTRACE(GetTraceLogLevel(), "Locked readWrite ("<<(void *)this<<")");
   return true;
 }
 
 
 void PSafeObject::InternalUnlockReadWrite(const PDebugLocation * location) const
 {
-  PTRACE(m_traceContextIdentifier == 1234567890 ? 3 : 7, "Unlocked readWrite ("<<(void *)this<<")");
+  PTRACE(GetTraceLogLevel(), "Unlocked readWrite ("<<(void *)this<<")");
   InternalGetMutex().EndWrite(location);
 }
 
@@ -289,7 +293,7 @@ PSafeCollection::~PSafeCollection()
       delete &*i;
     else {
       // If anything still has a PSafePtr .. "detach" it from the collection so
-      // will be deleted whan that PSafePtr finally goes out of scope.
+      // will be deleted when that PSafePtr finally goes out of scope.
       i->m_safelyBeingRemoved = false;
     }
   }
@@ -401,14 +405,18 @@ PBoolean PSafeCollection::DeleteObjectsToBeRemoved()
       if (it->GarbageCollection() && it->SafelyCanBeDeleted()) {
         PObject * obj = &*it;
         m_toBeRemoved.Remove(obj);
+
         m_removalMutex.Signal();
         DeleteObject(obj);
         m_removalMutex.Wait();
 
         it = m_toBeRemoved.begin(); // Restart looking through list
       }
-      else
+      else {
+        PTRACE(it->GetTraceLogLevel(), it->GetClassName() << ' ' << (void *)&*it
+               << " awaiting delete: references=" << it->GetSafeReferenceCount());
         ++it;
+      }
     }
 
     if (!m_toBeRemoved.IsEmpty())
@@ -635,7 +643,7 @@ void PSafePtrBase::DeleteObject(PSafeObject * obj)
   if (obj == NULL)
     return;
 
-  PTRACE(6, "Deleting object (" << obj << ')');
+  PTRACE(obj->GetTraceLogLevel(), "Deleting object (" << obj << ')');
   obj->GarbageCollection();
   delete obj;
 }

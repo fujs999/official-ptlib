@@ -79,6 +79,7 @@ static PConstCaselessString const SafeKeyword("safe");
 static PConstString const FormElement("form");
 static PConstString const FieldElement("field");
 static PConstString const MenuElement("menu");
+static PConstString const ChoiceElement("choice");
 static PConstString const PromptElement("prompt");
 static PConstString const FilledElement("filled");
 static PConstString const NoInputElement("noinput");
@@ -86,6 +87,11 @@ static PConstString const NoMatchElement("nomatch");
 static PConstString const ErrorElement("error");
 static PConstString const CatchElement("catch");
 static PConstString const NameAttribute("name");
+static PConstString const TypeAttribute("type");
+static PConstString const ModeAttribute("mode");
+static PConstString const LanguagesAttribute("languages");
+static PConstString const GenderAttribute("gender");
+static PConstString const CountAttribute("count");
 static PConstString const IdAttribute("id");
 static PConstString const ExprAttribute("expr");
 static PConstString const SrcAttribute("src");
@@ -96,6 +102,8 @@ static PConstString const DestAttribute("dest");
 static PConstString const DestExprAttribute("destexpr");
 static PConstString const MaxAgeAttribute("maxage");
 static PConstString const MaxStaleAttribute("maxstale");
+static PConstString const EventAttribute("event");
+static PConstString const EventExprAttribute("eventexpr");
 static PConstString const ErrorSemantic("error.semantic");
 static PConstString const ErrorBadFetch("error.badfetch");
 
@@ -103,21 +111,19 @@ static PConstCaselessString const SRGS("application/srgs");
 
 
 #if PTRACING
-  #define ThrowSemanticError2(session, element, reason) ( \
-      PTRACE(2, "Semantic error thrown in " << (element).PrintTrace() << " - " << reason), \
-      (session).GoToEventHandler(element, ErrorSemantic, true) \
-    )
-  #define ThrowBadFetchError2(session, element, reason) ( \
-      PTRACE(2, "Bad fetch error thrown in " << (element).PrintTrace() << " - " << reason), \
-      (session).GoToEventHandler(element, ErrorBadFetch, true) \
+  #define ThrowError2(session, element, errorName, reason) ( \
+      PTRACE(2, errorName << " thrown in " << (element).PrintTrace() << " - " << reason), \
+      (session).GoToEventHandler(element, errorName, true, true) \
     )
 #else
-  #define ThrowSemanticError2(session, element, reason) (session).GoToEventHandler(element, ErrorSemantic, true)
-  #define ThrowBadFetchError2(session, element, reason) (session).GoToEventHandler(element, ErrorBadFetch, true)
+  #define ThrowError2(session, element, errorName, reason) (session).GoToEventHandler(element, errorName, true, true)
 #endif
 
-#define ThrowSemanticError(element, reason) ThrowSemanticError2(*this, element, reason)
-#define ThrowBadFetchError(element, reason) ThrowBadFetchError2(*this, element, reason)
+#define ThrowSemanticError2(session, element, reason)  ThrowError2(session, element, ErrorSemantic, reason)
+#define ThrowBadFetchError2(session, element, reason)  ThrowError2(session, element, ErrorBadFetch, reason)
+#define ThrowError(element, errorName, reason)         ThrowError2(*this, element, errorName, reason)
+#define ThrowSemanticError(element, reason)            ThrowError2(*this, element, ErrorSemantic, reason)
+#define ThrowBadFetchError(element, reason)            ThrowError2(*this, element, ErrorBadFetch, reason)
 
 
 
@@ -188,6 +194,9 @@ static PConstString const InternalTraversingNodeAttribute("PTLibInternalTraversi
 
 bool PVXMLNodeHandler::StartTraversal(PVXMLSession & session, PXMLElement & node) const
 {
+//  if (IsTraversing(node))
+//    return false;
+
   PTRACE(4, &session, "Traversing " << GetDescription() << ' ' << node.PrintTrace());
   node.SetAttribute(InternalTraversingNodeAttribute, true);
   if (node.GetName() != "property")
@@ -215,13 +224,13 @@ bool PVXMLNodeHandler::IsTraversing(PXMLElement & node)
   typedef PVXMLSinglePhaseNodeHandler<&PVXMLSession::Traverse##name> PVXMLTraverse##name; \
   PFACTORY_CREATE(PVXMLNodeFactory, PVXMLTraverse##name, #name, true)
 
+TRAVERSE_NODE(RootNode);
+TRAVERSE_NODE(Reprompt);
 TRAVERSE_NODE(Audio);
 TRAVERSE_NODE(Break);
 TRAVERSE_NODE(Value);
-TRAVERSE_NODE(SayAs);
 TRAVERSE_NODE(Voice);
 TRAVERSE_NODE(Goto);
-TRAVERSE_NODE(Grammar);
 TRAVERSE_NODE(ElseIf);
 TRAVERSE_NODE(Else);
 TRAVERSE_NODE(Exit);
@@ -240,11 +249,14 @@ TRAVERSE_NODE(Script);
 TRAVERSE_NODE2(Menu);
 TRAVERSE_NODE2(Form);
 TRAVERSE_NODE2(Field);
+TRAVERSE_NODE2(Grammar);
 TRAVERSE_NODE2(Transfer);
 TRAVERSE_NODE2(Record);
 TRAVERSE_NODE2(Prompt);
 TRAVERSE_NODE2(If);
 TRAVERSE_NODE2(Block);
+TRAVERSE_NODE2(SayAs);
+PFACTORY_SYNONYM(PVXMLNodeFactory, PVXMLTraverseSayAs, SSML, "say-as");
 
 
 static PConstString const InternalEventStateAttribute("PTLibInternalEventState");
@@ -255,17 +267,30 @@ class PVXMLTraverseEvent : public PVXMLNodeHandler
 protected:
   virtual bool StartTraversal(PVXMLSession & session, PXMLElement & element) const
   {
-    PVXMLNodeHandler::StartTraversal(session, element);
-    return element.GetAttribute(InternalEventStateAttribute).IsTrue();
+    if (!PVXMLNodeHandler::StartTraversal(session, element))
+      return false;
+
+    if (!element.GetAttribute(InternalEventStateAttribute).IsTrue())
+      return false;
+
+    if (session.m_promptMode != PVXMLSession::e_FinalProcessing)
+      session.m_promptMode = PVXMLSession::e_EventPrompt;
+    return true;
   }
 
   virtual bool FinishTraversal(PVXMLSession & session, PXMLElement & element) const
   {
+    if (!IsTraversing(element))
+      return false;
+
     PVXMLNodeHandler::FinishTraversal(session, element);
     if (!element.GetAttribute(InternalEventStateAttribute).IsTrue())
       return true;
 
     element.SetAttribute(InternalEventStateAttribute, false);
+
+    if (session.m_promptMode == PVXMLSession::e_EventPrompt)
+      session.m_promptMode = PVXMLSession::e_NormalPrompt;
 
     // We got moved to another node
     if (session.m_currentNode != NULL)
@@ -273,10 +298,13 @@ protected:
 
     // See if there is another event handler up the heirarchy
     PXMLElement * parent = element.GetParent();
-    if (parent != NULL &&
-        parent->GetParent() != NULL &&
-        session.GoToEventHandler(*parent->GetParent(), element.GetName(), false))
-      return false;
+    if (parent != NULL && parent->GetParent() != NULL) {
+      PString name = element.GetName();
+      if (name == CatchElement)
+        name = element.GetAttribute(EventAttribute);
+      if (session.GoToEventHandler(*parent->GetParent(), name, false, false))
+        return false;
+    }
 
     // No other handler continue with the aprent
     session.SetCurrentNode(parent);
@@ -284,7 +312,7 @@ protected:
   }
 
 #if PTRACING
-  virtual const char * GetDescription() const { return "event"; }
+  virtual const char * GetDescription() const { return EventAttribute; }
 #endif
 };
 PFACTORY_CREATE(PVXMLNodeFactory, PVXMLTraverseEvent, CatchElement, true);
@@ -296,7 +324,9 @@ class PVXMLTraverseFilled : public PVXMLTraverseEvent
 {
   virtual bool StartTraversal(PVXMLSession & session, PXMLElement & element) const
   {
-    PVXMLNodeHandler::StartTraversal(session, element);
+    if (!PVXMLNodeHandler::StartTraversal(session, element))
+      return false;
+
     if (!element.GetAttribute(InternalEventStateAttribute).IsTrue())
       return false;
 
@@ -307,7 +337,7 @@ class PVXMLTraverseFilled : public PVXMLTraverseEvent
     if (parent == NULL)
       return ThrowBadFetchError2(session, element, "No parent on <filled>");
 
-    PCaselessString mode = element.GetAttribute("mode");
+    PCaselessString mode = element.GetAttribute(ModeAttribute);
     PStringSet namelist = element.GetAttribute("namelist").Tokenise(" \t", false);
 
     if (parent->GetName() != "form") {
@@ -468,9 +498,7 @@ public:
       ostream & trace = PTRACE_BEGIN(Level);
       trace << "Error " << code;
       if (m_library != NULL && m_library->SLErrorText.IsPresent()) {
-        SLErrorData errorData;
-        errorData.m_code = code;
-        memset(errorData.m_text, 0, sizeof(errorData.m_text));
+        SLErrorData errorData = { code };
         m_library->SLErrorText(&errorData);
         if (errorData.m_text[0] != '\0')
           trace << " \"" << errorData.m_text << '"';
@@ -638,9 +666,7 @@ public:
     PTRACE(5, "Sign Language Control:"
            " instance=" << instance << ","
            " data=" << ctrl.ToLiteral());
-    SLControlData data;
-    data.m_instance = instance;
-    data.m_control = ctrl;
+    SLControlData data = { instance, ctrl };
     int result = m_library->SLControl(&data);
     CheckError(result PTRACE_PARAM(, "controlling"));
     return result;
@@ -1071,6 +1097,7 @@ bool PVXMLPlayableHTTP::OnStart()
   // open the resource
   PVXMLSession & session = m_vxmlChannel->GetSession();
   PHTTPClient * client = session.CreateHTTPClient();
+  client->SetReadTimeout(session.GetTimeProperty(FetchTimeoutProperty));
   client->SetPersistent(false);
   PMIMEInfo outMIME, replyMIME;
   session.AddCookie(outMIME, m_url);
@@ -1300,12 +1327,15 @@ PVXMLSession::PVXMLSession()
   , m_videoReceiver(*this)
 #endif
   , m_vxmlThread(NULL)
+  , m_closing(false)
   , m_abortVXML(false)
   , m_currentNode(NULL)
   , m_speakNodeData(true)
   , m_bargeIn(true)
   , m_bargingIn(false)
   , m_promptCount(0)
+  , m_promptMode(e_NormalPrompt)
+  , m_promptType(PTextToSpeech::Default)
   , m_defaultMenuDTMF('N') /// Disabled
   , m_scriptContext(PScriptLanguage::Create(PSimpleScript::LanguageName()))
   , m_recordingStatus(NotRecording)
@@ -1338,7 +1368,7 @@ PVXMLSession::PVXMLSession()
   props.SetAt(TermCharProperty, "#");
   props.SetAt(CompleteTimeoutProperty, "2s");
   props.SetAt(IncompleteTimeoutProperty, "5s");
-  props.SetAt(FetchTimeoutProperty, "15s");
+  props.SetAt(FetchTimeoutProperty, "5s");
   props.SetAt(DocumentMaxAgeProperty, "3600s");
   props.SetAt(DocumentMaxStaleProperty, "1s");
   props.SetAt(AudioMaxAgeProperty, "3600s");
@@ -1372,26 +1402,35 @@ PVXMLSession::~PVXMLSession()
 }
 
 
-PTextToSpeech * PVXMLSession::SetTextToSpeech(PTextToSpeech * tts, PBoolean autoDelete)
+PTextToSpeech * PVXMLSession::SetTextToSpeech(PTextToSpeech * tts, PBoolean autoDelete, const PStringOptions & options)
 {
   PWaitAndSignal mutex(m_sessionMutex);
 
-  if (m_autoDeleteTextToSpeech)
+  if (m_autoDeleteTextToSpeech && tts != m_textToSpeech)
     delete m_textToSpeech;
 
   m_autoDeleteTextToSpeech = autoDelete;
-  PTRACE_IF(4, tts != NULL, "Text to Speech set: " << *tts);
+
+  if (tts != NULL) {
+    PStringOptions extraOptions = options;
+    m_httpMutex.Wait();
+    m_httpProxies.ToOptions(extraOptions);
+    m_httpMutex.Signal();
+    tts->SetOptions(extraOptions);
+    PTRACE_IF(4, m_textToSpeech != tts, "Text to Speech set: " << *tts);
+  }
+
   return m_textToSpeech = tts;
 }
 
 
-PTextToSpeech * PVXMLSession::SetTextToSpeech(const PString & ttsName)
+PTextToSpeech * PVXMLSession::SetTextToSpeech(const PString & ttsName, const PStringOptions & options)
 {
   PFactory<PTextToSpeech>::Key_T name = (const char *)ttsName;
   if (ttsName.IsEmpty()) {
     PFactory<PTextToSpeech>::KeyList_T engines = PFactory<PTextToSpeech>::GetKeyList();
     if (engines.empty())
-      return SetTextToSpeech(NULL, false);
+      return SetTextToSpeech(NULL, false, options);
 
 #ifdef _WIN32
     name = "Microsoft SAPI";
@@ -1402,7 +1441,7 @@ PTextToSpeech * PVXMLSession::SetTextToSpeech(const PString & ttsName)
 
   PTextToSpeech * tts = PFactory<PTextToSpeech>::CreateInstance(name);
   PTRACE_IF(2, tts == NULL && !(ttsName *= "none"), "Could not create TextToSpeech for \"" << ttsName << '"');
-  return SetTextToSpeech(tts, true);
+  return SetTextToSpeech(tts, true, options);
 }
 
 
@@ -1548,26 +1587,21 @@ bool PVXMLSession::LoadCachedResource(const PURL & url,
 }
 
 
-#if P_SSL
-void PVXMLSession::SetSSLCredentials(const PString & authority,
-                                     const PString & certificate,
-                                     const PString & privateKey)
+void PVXMLSession::SetProxies(const PHTTP::Proxies & proxies)
 {
-  PWaitAndSignal lock(m_httpMutex);
-  m_httpAuthority = authority;
-  m_httpCertificate = certificate;
-  m_httpPrivateKey = privateKey;
+  m_httpMutex.Wait();
+  m_httpProxies = proxies;
+  m_httpMutex.Signal();
+  SetTextToSpeech(m_textToSpeech, m_autoDeleteTextToSpeech);
 }
-#endif
 
 
 PHTTPClient * PVXMLSession::CreateHTTPClient() const
 {
   PHTTPClient * http = new PHTTPClient("PTLib VXML Client");
-#if P_SSL
+  http->SetSSLCredentials(*this);
   PWaitAndSignal lock(m_httpMutex);
-  http->SetSSLCredentials(m_httpAuthority, m_httpCertificate, m_httpPrivateKey);
-#endif
+  http->SetProxies(m_httpProxies);
   return http;
 }
 
@@ -1697,6 +1731,11 @@ bool PVXMLSession::SetCurrentForm(const PString & searchId, bool fullURI)
 {
   ClearBargeIn();
   m_eventCount.clear();
+
+  if (IsFinalProcessing())
+    return false; // Cannot go to new form when in final
+
+  m_promptMode = e_NormalPrompt;
   m_promptCount = 0;
 
   PTRACE(4, "Setting current form to \"" << searchId << '"');
@@ -1796,12 +1835,10 @@ void PVXMLSession::InternalStartThread()
 {
   PWaitAndSignal mutex(m_sessionMutex);
 
-  if (IsOpen()) {
-    if (m_vxmlThread == NULL && m_newXML.get() != NULL)
-      m_vxmlThread = new PThreadObj<PVXMLSession>(*this, &PVXMLSession::InternalThreadMain, false, "VXML");
-    else
-      Trigger();
-  }
+  if (IsOpen() && m_promptMode != e_FinalProcessing && m_vxmlThread == NULL && m_newXML.get() != NULL)
+    m_vxmlThread = new PThreadObj<PVXMLSession>(*this, &PVXMLSession::InternalThreadMain, false, "VXML");
+  else
+    Trigger();
 }
 
 
@@ -1812,10 +1849,10 @@ PBoolean PVXMLSession::Close()
 
   ClearGrammars();
 
-  // Stop condition for thread
-  m_abortVXML = true;
+  // Indicate closing and throw disconnect exception
+  m_closing = true;
   Trigger();
-  PThread::WaitAndDelete(m_vxmlThread, 10000, &m_sessionMutex, false);
+  PThread::WaitAndDelete(m_vxmlThread, 30000, &m_sessionMutex, false);
 
 #if P_VXML_VIDEO
   m_videoReceiver.Close();
@@ -1891,10 +1928,6 @@ void PVXMLSession::InternalThreadMain()
     newScript->CreateComposite(SessionScope);
     newScript->CreateComposite(ApplicationScope);
     InternalSetVar(ApplicationScope, RootURIVar, PString::Empty());
-#if P_VXML_VIDEO
-    newScript->SetFunction(SIGN_LANGUAGE_PREVIEW_SCRIPT_FUNCTION, PCREATE_NOTIFIER(SignLanguagePreviewFunction));
-    newScript->SetFunction(SIGN_LANGUAGE_CONTROL_SCRIPT_FUNCTION, PCREATE_NOTIFIER(SignLanguageControlFunction));
-#endif
 
     PSimpleScript * simpleScript = dynamic_cast<PSimpleScript *>(m_scriptContext.get());
     if (simpleScript != NULL) {
@@ -1905,6 +1938,10 @@ void PVXMLSession::InternalThreadMain()
     m_scriptContext.reset(newScript);
   }
 
+#if P_VXML_VIDEO
+  m_scriptContext->SetFunction(SIGN_LANGUAGE_PREVIEW_SCRIPT_FUNCTION, PCREATE_NOTIFIER(SignLanguagePreviewFunction));
+  m_scriptContext->SetFunction(SIGN_LANGUAGE_CONTROL_SCRIPT_FUNCTION, PCREATE_NOTIFIER(SignLanguageControlFunction));
+#endif
   m_scriptContext->PushScopeChain(SessionScope, false);
   m_scriptContext->PushScopeChain(ApplicationScope, false);
 
@@ -1929,10 +1966,15 @@ void PVXMLSession::InternalThreadMain()
         ;
     } while (NextNode(processChildren));
 
-    if (m_newXML.get() != NULL) {
+    if (m_closing) {
+      if (m_currentNode == NULL)
+        ProcessEvents(); // Move to connection.disconnect event
+    }
+    else {
       /* Replace old XML with new, now it is safe to do so and no XML elements
-         pointers are being referenced by the code any more */
-      InternalStartVXML();
+          pointers are being referenced by the code any more */
+      if (m_newXML.get() != NULL)
+        InternalStartVXML();
     }
 
     // Determine if we should quit
@@ -1981,42 +2023,55 @@ bool PVXMLSession::ProcessEvents()
 {
   // m_sessionMutex already locked
 
-  if (m_abortVXML || !IsOpen())
+  if (m_abortVXML || m_promptMode == e_FinalProcessing || m_currentNode == NULL || !IsOpen())
     return false;
 
   PVXMLChannel * vxmlChannel = GetVXMLChannel();
   if (PAssertNULL(vxmlChannel) == NULL)
     return false;
 
-  PString input;
+  if (m_closing) {
+    m_closing = false;
+    PTRACE(4, "Entering final processing.");
+    m_promptMode = e_FinalProcessing;
+    vxmlChannel->FlushQueue();
 
-  m_userInputMutex.Wait();
-  if (!m_userInputQueue.empty()) {
-    input = m_userInputQueue.front();
-    m_userInputQueue.pop();
+    PXMLElement * element = dynamic_cast<PXMLElement *>(m_currentNode);
+    if (element == NULL)
+      element = m_currentNode->GetParent();
+    GoToEventHandler(*element,
+                     m_transferStatus != NotTransfering
+                         ? "connection.disconnect.transfer"
+                         : "connection.disconnect.hangup",
+                     true,
+                     true);
+    return false;
   }
-  m_userInputMutex.Signal();
 
-  if (!input.empty()) {
+  if (!m_userInputQueue.empty()) {
     if (m_recordingStatus == RecordingInProgress) {
-      PTRACE(3, "Recording ended via user input \"" << input << '"');
+      PTRACE(3, "Recording ended via user input");
       if (m_recordStopOnDTMF && vxmlChannel->EndRecording(false)) {
-        if (!m_recordingName.IsEmpty())
-          InternalSetVar(m_recordingName, "termchar", input[0]);
+        if (!m_recordingName.IsEmpty()) {
+          PString input;
+          if (m_userInputQueue.Dequeue(input))
+            InternalSetVar(m_recordingName, "termchar", input[0]);
+        }
       }
     }
-    else if (m_bargeIn) {
-      PTRACE(3, "Executing bargein with user input \"" << input << '"');
-      m_bargingIn = true;
-      vxmlChannel->FlushQueue();
-      OnUserInputToGrammars(input);
-    }
     else if (vxmlChannel->IsPlaying()) {
-      PTRACE(3, "No bargein, ignoring user input \"" << input << '"');
+      if (m_bargeIn) {
+        PTRACE_IF(3, !m_bargingIn, "Executing bargein");
+        m_bargingIn = true;
+        vxmlChannel->FlushQueue();
+      }
+      else {
+        PTRACE(3, "No bargein");
+        FlushInput(); // Ignore input so far
+      }
     }
-    else {
-      PTRACE(3, "Handling user input \"" << input << '"');
-      OnUserInputToGrammars(input);
+    else if (!m_bargingIn) {
+      OnUserInputToGrammars();
     }
   }
 
@@ -2050,12 +2105,13 @@ bool PVXMLSession::ProcessEvents()
   m_waitForEvent.Wait();
   m_sessionMutex.Wait();
 
-  if (m_newXML.get() == NULL)
+  if (m_closing || m_newXML.get() == NULL)
     return true;
 
   PTRACE(4, "XML changed, flushing queue");
 
   // Clear out any audio being output, so can start fresh on new VXML.
+  // Don't use vxmlChannel as may have changed during m_waitForEvent
   if (IsOpen())
     GetVXMLChannel()->FlushQueue();
 
@@ -2145,8 +2201,10 @@ bool PVXMLSession::NextNode(bool processChildren)
 
   PXMLElement * element = dynamic_cast<PXMLElement *>(m_currentNode);
   if (element != NULL) {
-    if ((m_transferStatus == TransferSuccessful || m_transferStatus == TransferFailed) && CompletedTransfer(*element))
+    if (m_transferStatus == TransferSuccessful || m_transferStatus == TransferFailed) {
+      CompletedTransfer(*element);
       return false;
+    }
 
       // if the current node has children, then process the first child
     if (processChildren && (m_currentNode = element->GetSubObject(0)) != NULL)
@@ -2193,6 +2251,29 @@ bool PVXMLSession::NextNode(bool processChildren)
 }
 
 
+bool PVXMLSession::SelectMenuChoice(PXMLElement & choice)
+{
+  if ((choice.HasAttribute(NextAttribute) +
+       choice.HasAttribute(ExprAttribute) +
+       choice.HasAttribute(EventAttribute) +
+       choice.HasAttribute(EventExprAttribute)) != 1)
+    return ThrowBadFetchError(choice, "Only one of next, nextexpr, event, eventexpr alllowed");
+
+  PString next = choice.GetAttribute(NextAttribute);
+  if (next.empty() && EvaluateExpr(choice, ExprAttribute, next))
+    return true;
+
+  if (!next.empty())
+    return SetCurrentForm(next, true);
+
+  next = choice.GetAttribute(EventAttribute);
+  if (next.empty() && EvaluateExpr(choice, EventExprAttribute, next))
+    return true;
+
+  return !next.empty() && GoToEventHandler(choice, next, false, true);
+}
+
+
 void PVXMLSession::ClearBargeIn()
 {
   PTRACE_IF(4, m_bargingIn, "Ending barge in");
@@ -2202,10 +2283,9 @@ void PVXMLSession::ClearBargeIn()
 
 void PVXMLSession::FlushInput()
 {
-  m_userInputMutex.Wait();
-  while (!m_userInputQueue.empty())
-    m_userInputQueue.pop();
-  m_userInputMutex.Signal();
+  PTRACE(4, "Flushing user input queue");
+  m_userInputQueue.Close(false);
+  m_userInputQueue.Restart();
 }
 
 
@@ -2222,7 +2302,7 @@ bool PVXMLSession::ProcessNode()
   PXMLData * nodeData = dynamic_cast<PXMLData *>(m_currentNode);
   if (nodeData != NULL) {
     if (m_speakNodeData)
-      PlayText(nodeData->GetString().Trim());
+      PlayText(nodeData->GetString().Trim(), m_promptType);
     return true;
   }
 
@@ -2258,15 +2338,16 @@ bool PVXMLSession::ProcessNode()
 
 void PVXMLSession::OnUserInput(const PString & str)
 {
-  m_userInputMutex.Wait();
-  m_userInputQueue.push(str);
-  m_userInputMutex.Signal();
+  m_userInputQueue.Enqueue(str);
   Trigger();
 }
 
 
 PBoolean PVXMLSession::TraverseRecord(PXMLElement & element)
 {
+  if (IsFinalProcessing())
+    return false;
+
   if (!ExecuteCondition(element))
     return false;
 
@@ -2285,14 +2366,14 @@ PBoolean PVXMLSession::TraversedRecord(PXMLElement & element)
       return false;
 
     case RecordingComplete :
-      return !GoToEventHandler(element, FilledElement, false);
+      return !GoToEventHandler(element, FilledElement, false, true);
 
     default :
       break;
   }
 
   static const PConstString supportedFileType(".wav");
-  PCaselessString typeMIME = element.GetAttribute("type");
+  PCaselessString typeMIME = element.GetAttribute(TypeAttribute);
   if (typeMIME.IsEmpty())
     typeMIME = PMIMEInfo::GetContentType(supportedFileType);
 
@@ -2342,7 +2423,7 @@ PBoolean PVXMLSession::TraversedRecord(PXMLElement & element)
   }
 
   m_recordingName = name + '$';
-  InternalSetVar(m_recordingName, "type", typeMIME);
+  InternalSetVar(m_recordingName, TypeAttribute, typeMIME);
   InternalSetVar(m_recordingName, "uri", PURL(destination));
   InternalSetVar(m_recordingName, "maxtime", false);
   InternalSetVar(m_recordingName, "termchar", ' ');
@@ -2499,7 +2580,7 @@ void PVXMLSession::SetConnectionVars(const PString & localURI,
 
 
 PCaselessString PVXMLSession::GetProperty(const PString & propName,
-                                          PXMLElement * overrideElement,
+                                          const PXMLElement * overrideElement,
                                           const PString & attrName) const
 {
   if (overrideElement != NULL) {
@@ -2637,29 +2718,26 @@ PBoolean PVXMLSession::PlayResource(const PURL & url, PINDEX repeat, PINDEX dela
 }
 
 
-void PVXMLSession::LoadGrammar(const PString & type, const PVXMLGrammarInit & init)
+void PVXMLSession::LoadGrammar(const PVXMLGrammarInit & init)
 {
-  PCaselessString adjustedType = type.empty() ? SRGS : type;
-  PVXMLGrammar * grammar = PVXMLGrammarFactory::CreateInstance(adjustedType, init);
+  PVXMLGrammar * grammar = PVXMLGrammarFactory::CreateInstance(init.m_type, init);
   if (grammar == NULL) {
-    PTRACE(2, "Could not set grammar of type \"" << adjustedType << '"');
-    GoToEventHandler(init.m_field, "error.unsupported.builtin", true);
+    ThrowError(init.m_field, "error.unsupported.builtin", "Could not set grammar of type \"" << init.m_type << '"');
     return;
   }
+  PTRACE_CONTEXT_ID_TO(grammar);
 
   PVXMLGrammar::GrammarState state = grammar->GetState();
   if (state != PVXMLGrammar::Idle) {
     delete grammar;
     if (state == PVXMLGrammar::BadFetch)
       ThrowBadFetchError(init.m_field, "Bad fetch in grammar " << *grammar);
-    else {
-      PTRACE(2, "Illegal/unsupported grammar of type \"" << adjustedType << '"');
-      GoToEventHandler(init.m_field, "error.unsupported.format", true);
-    }
+    else
+      ThrowError(init.m_field, "error.unsupported.format", "Illegal/unsupported grammar of type \"" << init.m_type << '"');
     return;
   }
 
-  PTRACE(2, "Grammar set to " << *grammar << " from \"" << adjustedType << '"');
+  PTRACE(2, "Grammar set to " << *grammar << " from \"" << init.m_type << '"');
   m_grammersMutex.Wait();
   m_grammars.Append(grammar);
   m_grammersMutex.Signal();
@@ -2683,16 +2761,25 @@ void PVXMLSession::ClearGrammars()
 void PVXMLSession::StartGrammars()
 {
   PWaitAndSignal lock(m_grammersMutex);
+  PTRACE(3, "Starting " << m_grammars.size() << " grammars");
   for (Grammars::iterator it = m_grammars.begin(); it != m_grammars.end(); ++it)
     it->Start();
+  OnUserInputToGrammars();
 }
 
 
-void PVXMLSession::OnUserInputToGrammars(const PString & input)
+void PVXMLSession::OnUserInputToGrammars()
 {
   PWaitAndSignal lock(m_grammersMutex);
-  for (Grammars::iterator it = m_grammars.begin(); it != m_grammars.end(); ++it)
-    it->OnUserInput(input);
+  if (m_grammars.empty())
+    return;
+
+  PString input;
+  while (m_userInputQueue.Dequeue(input, 0)) {
+    PTRACE(3, "Sending \"" << input << "\" to " << m_grammars.size() << " grammars");
+    for (Grammars::iterator it = m_grammars.begin(); it != m_grammars.end(); ++it)
+      it->OnUserInput(input);
+  }
 }
 
 
@@ -2798,6 +2885,13 @@ void PVXMLSession::SetPause(PBoolean pause)
 }
 
 
+PBoolean PVXMLSession::TraverseRootNode(PXMLElement &)
+{
+  m_abortVXML = true;
+  return false;
+}
+
+
 PBoolean PVXMLSession::TraverseBlock(PXMLElement & element)
 {
   unsigned col, line;
@@ -2811,6 +2905,14 @@ PBoolean PVXMLSession::TraversedBlock(PXMLElement & element)
 {
   m_scriptContext->PopScopeChain(true);
   return ExecuteCondition(element);
+}
+
+
+PBoolean PVXMLSession::TraverseReprompt(PXMLElement &)
+{
+  if (m_promptMode != e_FinalProcessing)
+    m_promptMode = e_Reprompt;
+  return false;
 }
 
 
@@ -2855,20 +2957,46 @@ PBoolean PVXMLSession::TraverseBreak(PXMLElement & element)
 
 PBoolean PVXMLSession::TraverseValue(PXMLElement & element)
 {
-  PString className = element.GetAttribute("class");
   PString value;
-  bool retval = EvaluateExpr(element, ExprAttribute, value);
-  if (value.IsEmpty())
-    return retval;
-
-  SayAs(className, value, GetProperty(VoiceAttribute, &element));
-  return true;
+  EvaluateExpr(element, ExprAttribute, value);
+  PlayText(value.Trim(), m_promptType);
+  return false;
 }
 
 
 PBoolean PVXMLSession::TraverseSayAs(PXMLElement & element)
 {
-  SayAs(element.GetAttribute("class"), element.GetData());
+  PCaselessString interpretAs = element.GetAttribute("interpret-as");
+  static const struct
+  {
+    PConstCaselessString m_name;
+    PTextToSpeech::TextType m_value;
+  } TextTypes[] = {
+    { "vxml:boolean",     PTextToSpeech::Boolean },
+    { "vxml:date",        PTextToSpeech::Date },
+    { "vxml:digits",      PTextToSpeech::Digits },
+    { "vxml:currency",    PTextToSpeech::Currency },
+    { "vxml:number",      PTextToSpeech::Number },
+    { "vxml:phone",       PTextToSpeech::Phone },
+    { "vxml:time",        PTextToSpeech::Time },
+    { "x-opal:ip",        PTextToSpeech::IPAddress },
+    { "x-opal:ipaddress", PTextToSpeech::IPAddress },
+    { "x-opal:duration",  PTextToSpeech::Duration }
+  };
+  for (PINDEX i = 0; i < PARRAYSIZE(TextTypes); ++i) {
+    if (TextTypes[i].m_name == interpretAs) {
+      m_promptType = TextTypes[i].m_value;
+      break;
+    }
+  }
+
+  return true;
+}
+
+
+PBoolean PVXMLSession::TraversedSayAs(PXMLElement &)
+{
+  m_promptType = PTextToSpeech::Default;
   return true;
 }
 
@@ -2877,7 +3005,7 @@ static bool UnsupportedVoiceAttribute(const PStringArray & attr)
 {
   for (PINDEX i = 0; i < attr.GetSize(); ++i) {
     PCaselessString a = attr[i];
-    if (a != "name" || a != "languages")
+    if (a != NameAttribute || a != LanguagesAttribute || a != GenderAttribute)
       return true;
   }
   return false;
@@ -2889,56 +3017,136 @@ PBoolean PVXMLSession::TraverseVoice(PXMLElement & element)
   if (m_textToSpeech == NULL)
     return true;
 
-  PStringArray names = element.GetAttribute("name").Tokenise(" ", false);
-  PStringArray languages = element.GetAttribute("languages").Tokenise(" ", false);
-  if (names.empty() && languages.empty())
-    return ThrowSemanticError(element, "<voice> must have name or language");
+  PStringArray names = element.GetAttribute(NameAttribute).Tokenise(" ", false);
+  PStringArray languages = element.GetAttribute(LanguagesAttribute).Tokenise(" ", false);
+  PString gender = element.GetAttribute("gender");
+  if (names.empty() && languages.empty() && gender.empty())
+    return ThrowSemanticError(element, "<voice> must have one of name, language or gender");
 
   PStringArray required = element.GetAttribute("required").Tokenise(" ", false);
   PStringArray ordering = element.GetAttribute("ordering").Tokenise(" ", false);
   if (UnsupportedVoiceAttribute(required) && UnsupportedVoiceAttribute(ordering))
     return ThrowSemanticError(element, "<voice> has unsupported required/ordering");
 
-  if (names.empty() || languages.empty() || ordering.empty() || (ordering[0] *= "name")) {
-    if (languages.empty()) {
-      for (PINDEX i = 0; i < names.GetSize(); ++i) {
-        if (m_textToSpeech->SetVoice(names[i]))
-          return true;
-      }
-    }
-    else if (names.empty()) {
-      for (PINDEX i = 0; i < languages.GetSize(); ++i) {
-        if (m_textToSpeech->SetVoice(':' + languages[i]))
-          return true;
-      }
-    }
-    else {
-      for (PINDEX i = 0; i < names.GetSize(); ++i) {
-        for (PINDEX j = 0; j < languages.GetSize(); ++j) {
-          if (m_textToSpeech->SetVoice(PSTRSTRM(names[i] << ':' << languages[j])))
+  PINDEX pos = ordering.GetValuesIndex(NameAttribute);
+  if (names.empty())
+    ordering.RemoveAt(pos);
+  else if (pos == P_MAX_INDEX)
+    ordering.AppendString(NameAttribute);
+
+  pos = ordering.GetValuesIndex(LanguagesAttribute);
+  if (languages.empty())
+    ordering.RemoveAt(pos);
+  else if (pos == P_MAX_INDEX)
+    ordering.AppendString(LanguagesAttribute);
+
+  pos = ordering.GetValuesIndex(GenderAttribute);
+  if (gender.empty())
+    ordering.RemoveAt(pos);
+  else if (pos == P_MAX_INDEX)
+    ordering.AppendString(GenderAttribute);
+
+  bool prioritySelect = !element.HasAttribute("onvoicefailure") || (element.GetAttribute("onvoicefailure") *= "priorityselect");
+
+  switch (ordering.size()) {
+    case 1 :
+      if (ordering[0] == NameAttribute) {
+        for (PINDEX i = 0; i < names.GetSize(); ++i)
+          if (m_textToSpeech->SetVoice(PSTRSTRM("name=" << names[i])))
             return true;
+      }
+      else if (ordering[0] == LanguagesAttribute) {
+        for (PINDEX i = 0; i < languages.GetSize(); ++i)
+          if (m_textToSpeech->SetVoice(PSTRSTRM("language=" << languages[i])))
+            return true;
+      }
+      else {
+        if (m_textToSpeech->SetVoice(PSTRSTRM("gender=" << gender)))
+          return true;
+      }
+      break;
+    case 2 :
+      if (ordering[0] == NameAttribute && ordering[1] == LanguagesAttribute) {
+        for (PINDEX i = 0; i < names.GetSize(); ++i)
+          for (PINDEX j = 0; j < languages.GetSize(); ++j)
+            if (m_textToSpeech->SetVoice(PSTRSTRM("name=" << names[i] << ";language=" << languages[j])))
+              return true;
+        if (prioritySelect) {
+          for (PINDEX i = 0; i < names.GetSize(); ++i)
+            if (m_textToSpeech->SetVoice(PSTRSTRM("name=" << names[i])))
+              return true;
         }
       }
-    }
-  }
-  else {
-    for (PINDEX j = 0; j < languages.GetSize(); ++j) {
-      for (PINDEX i = 0; i < names.GetSize(); ++i) {
-        if (m_textToSpeech->SetVoice(PSTRSTRM(names[i] << ':' << languages[j])))
-          return true;
+      else if (ordering[0] == LanguagesAttribute && ordering[1] == NameAttribute) {
+        for (PINDEX j = 0; j < languages.GetSize(); ++j)
+          for (PINDEX i = 0; i < names.GetSize(); ++i)
+            if (m_textToSpeech->SetVoice(PSTRSTRM("name=" << names[i] << ";language=" << languages[j])))
+              return true;
+        if (prioritySelect) {
+          for (PINDEX i = 0; i < languages.GetSize(); ++i)
+            if (m_textToSpeech->SetVoice(PSTRSTRM("language=" << languages[i])))
+              return true;
+        }
       }
-    }
+      else if (ordering[0] == NameAttribute || ordering[1] == NameAttribute) {
+        for (PINDEX i = 0; i < names.GetSize(); ++i)
+          if (m_textToSpeech->SetVoice(PSTRSTRM("name=" << names[i] << ";gender=" << gender)))
+            return true;
+        if (prioritySelect) {
+          for (PINDEX i = 0; i < names.GetSize(); ++i)
+            if (m_textToSpeech->SetVoice(PSTRSTRM("name=" << names[i])))
+              return true;
+        }
+      }
+      else {
+        for (PINDEX i = 0; i < languages.GetSize(); ++i)
+          if (m_textToSpeech->SetVoice(PSTRSTRM("language=" << languages[i] << ";gender=" << gender)))
+            return true;
+        if (prioritySelect) {
+          for (PINDEX i = 0; i < languages.GetSize(); ++i)
+            if (m_textToSpeech->SetVoice(PSTRSTRM("language=" << languages[i])))
+              return true;
+        }
+      }
+      break;
+    default :
+      if (ordering.GetValuesIndex(NameAttribute) < ordering.GetValuesIndex(LanguagesAttribute)) {
+        for (PINDEX i = 0; i < names.GetSize(); ++i)
+          for (PINDEX j = 0; j < languages.GetSize(); ++j)
+            if (m_textToSpeech->SetVoice(PSTRSTRM("name=" << names[i] << ";language=" << languages[j] << ";gender=" << gender)))
+              return true;
+        if (prioritySelect) {
+          for (PINDEX i = 0; i < names.GetSize(); ++i)
+            if (m_textToSpeech->SetVoice(PSTRSTRM("name=" << names[i] << ";gender=" << gender)))
+              return true;
+          for (PINDEX i = 0; i < names.GetSize(); ++i)
+            if (m_textToSpeech->SetVoice(PSTRSTRM("name=" << names[i])))
+              return true;
+        }
+      }
+      else {
+        for (PINDEX j = 0; j < languages.GetSize(); ++j)
+          for (PINDEX i = 0; i < names.GetSize(); ++i)
+            if (m_textToSpeech->SetVoice(PSTRSTRM("name=" << names[i] << ";language=" << languages[j] << ";gender=" << gender)))
+              return true;
+        if (prioritySelect) {
+          for (PINDEX i = 0; i < languages.GetSize(); ++i)
+            if (m_textToSpeech->SetVoice(PSTRSTRM("language=" << languages[i] << ";gender=" << gender)))
+              return true;
+          for (PINDEX i = 0; i < languages.GetSize(); ++i)
+            if (m_textToSpeech->SetVoice(PSTRSTRM("language=" << languages[i])))
+              return true;
+        }
+      }
   }
 
-  PString failure = element.GetAttribute("onvoicefailure");
-  PTRACE(3, "Could not set voice to any of [" << setfill(',') << names << "], onvoicefailure=" << failure);
+  PTRACE(3, "Could not set voice to any of [" << setfill(',') << names << "],"
+            " [" << setfill(',') << languages << "], gender=\"" << gender << '"');
 
-  if (failure.empty() || (failure *= "priorityselect"))
-    m_textToSpeech->SetVoice(":");
-  else if (failure *= "processorchoice")
-    m_textToSpeech->SetVoice(PString::Empty());
+  if (prioritySelect)
+    m_textToSpeech->SetVoice("*");
 
-  return true;
+  return ThrowError(element, "error.voice", "<voice> cannot be used.");
 }
 
 
@@ -2966,7 +3174,7 @@ PBoolean PVXMLSession::TraverseGoto(PXMLElement & element)
   }
 
   if (SetCurrentForm(target, fullURI))
-    return ProcessNode();
+    return false;
 
   return ThrowBadFetchError(element, "<goto> has invalid URI \"" << target << '"');
 }
@@ -2975,32 +3183,68 @@ PBoolean PVXMLSession::TraverseGoto(PXMLElement & element)
 PBoolean PVXMLSession::TraverseGrammar(PXMLElement & element)
 {
   m_speakNodeData = false;
-  LoadGrammar(element.GetAttribute("type"), PVXMLGrammarInit(*this, *element.GetParent(), &element));
+
+  PString type = element.GetAttribute(TypeAttribute);
+  if (type.empty()) {
+    PString src = element.GetAttribute(SrcAttribute);
+    PConstString builtin("builtin:");
+    if (src.NumCompare(builtin, builtin.length()) == EqualTo) {
+      PINDEX pos = src.Find('/');
+      if (pos == P_MAX_INDEX || pos <= builtin.length())
+        type = src.Mid(builtin.length());
+      else {
+        type = src.Mid(pos+1);
+        PCaselessString srcMode = src(8, pos-1);
+        PCaselessString modeAttr = element.GetAttribute(ModeAttribute);
+        if (modeAttr.empty())
+          element.SetAttribute(ModeAttribute, srcMode);
+        else if (srcMode != modeAttr)
+          return ThrowSemanticError(element, "Builtin disagrees with mode attribute");
+      }
+    }
+  }
+
+  LoadGrammar(PVXMLGrammarInit(type.empty() ? static_cast<PString>(SRGS) : type, *this, *element.GetParent(), &element));
   return false; // Skip subelements
+}
+
+
+PBoolean PVXMLSession::TraversedGrammar(PXMLElement &)
+{
+  m_speakNodeData = true;
+  return true;
 }
 
 
 // Finds the proper event hander for 'noinput', 'filled', 'nomatch' and 'error'
 // by searching the scope hiearchy from the current from
-bool PVXMLSession::GoToEventHandler(PXMLElement & element, const PString & eventName, bool exitIfNotFound)
+bool PVXMLSession::GoToEventHandler(PXMLElement & element, const PString & eventName, bool exitIfNotFound, bool firstInHierarchy)
 {
+  if (eventName.empty())
+    return false;
+
   PXMLElement * level = &element;
   PXMLElement * handler = NULL;
 
-  unsigned actualCount = ++m_eventCount[eventName];
+  unsigned actualCount = firstInHierarchy ? ++m_eventCount[eventName] : m_eventCount[eventName];
 
   // Look in all the way up the tree for a handler either explicitly or in a catch
   while ((handler = FindElementWithCount(*level, eventName, actualCount)) == NULL) {
     level = level->GetParent();
     if (level == NULL) {
-      PTRACE(4, "No event handler found for \"" << eventName << '"');
+      PTRACE(4, "No event handler found for \"" << eventName << "\" (" << actualCount << ')');
       static PConstString const MatchAll(".");
       if (eventName != MatchAll) {
         PINDEX dot = eventName.FindLast('.');
-        return GoToEventHandler(element, dot == P_MAX_INDEX ? static_cast<PString>(MatchAll) : eventName.Left(dot), exitIfNotFound);
+        return GoToEventHandler(element,
+                                dot == P_MAX_INDEX
+                                    ? static_cast<PString>(MatchAll)
+                                    : eventName.Left(dot),
+                                exitIfNotFound,
+                                firstInHierarchy);
       }
 
-      if (exitIfNotFound) {
+      if (exitIfNotFound || m_closing) {
         PTRACE(3, "Exiting script.");
         SetCurrentNode(NULL);
       }
@@ -3009,95 +3253,36 @@ bool PVXMLSession::GoToEventHandler(PXMLElement & element, const PString & event
   }
 
   handler->SetAttribute(InternalEventStateAttribute, true);
-  PTRACE(4, "Setting event handler to node " << handler->PrintTrace() << " for \"" << eventName << '"');
+  PTRACE(4, "Setting event handler to node " << handler->PrintTrace() << " for \"" << eventName << "\" (" << actualCount << ')');
   return SetCurrentNode(handler);
-}
-
-
-static unsigned GetCountAttribute(PXMLElement & element)
-{
-  PString str = element.GetAttribute("count");
-  return str.IsEmpty() ? 1 : str.AsUnsigned();
 }
 
 
 PXMLElement * PVXMLSession::FindElementWithCount(PXMLElement & parent, const PString & name, unsigned count)
 {
-  std::map<unsigned, PXMLElement *> elements;
+  typedef std::map<unsigned, PXMLElement *, std::greater<unsigned> > ElementsByCount;
+  ElementsByCount elements;
   PXMLElement * element;
   PINDEX idx = 0;
   while ((element = parent.GetElement(idx++)) != NULL) {
+    PString str = element->GetAttribute(CountAttribute);
+    unsigned elementCount = str.IsEmpty() ? 1 : str.AsUnsigned();
+
     if (element->GetName() == name)
-      elements[GetCountAttribute(*element)] = element;
+      elements[elementCount] = element;
     else if (element->GetName() == CatchElement) {
-      PStringArray events = element->GetAttribute("event").Tokenise(" ", false);
+      PStringArray events = element->GetAttribute(EventAttribute).Tokenise(" ", false);
       for (size_t i = 0; i < events.size(); ++i) {
         if (events[i] *= name) {
-          elements[GetCountAttribute(*element)] = element;
+          elements[elementCount] = element;
           break;
         }
       }
     }
   }
 
-  if (elements.empty())
-    return NULL;
-
-  while (count > 0) {
-    std::map<unsigned, PXMLElement *>::iterator it = elements.find(count);
-    if (it != elements.end() && ExecuteCondition(*it->second))
-      return it->second;
-    --count;
-  }
-
-  return NULL;
-}
-
-
-void PVXMLSession::SayAs(const PString & className, const PString & text)
-{
-  SayAs(className, text, GetProperty(VoiceAttribute));
-}
-
-
-void PVXMLSession::SayAs(const PString & className, const PString & textToSay, const PString & voice)
-{
-  if (m_textToSpeech != NULL)
-    m_textToSpeech->SetVoice(voice);
-
-  PString text = textToSay.Trim();
-  if (!text.IsEmpty()) {
-    PTextToSpeech::TextType type = PTextToSpeech::Literal;
-
-    if (className *= "digits")
-      type = PTextToSpeech::Digits;
-
-    else if (className *= "literal")
-      type = PTextToSpeech::Literal;
-
-    else if (className *= "number")
-      type = PTextToSpeech::Number;
-
-    else if (className *= "currency")
-      type = PTextToSpeech::Currency;
-
-    else if (className *= "time")
-      type = PTextToSpeech::Time;
-
-    else if (className *= "date")
-      type = PTextToSpeech::Date;
-
-    else if (className *= "phone")
-      type = PTextToSpeech::Phone;
-
-    else if (className *= "ipaddress")
-      type = PTextToSpeech::IPAddress;
-
-    else if (className *= "duration")
-      type = PTextToSpeech::Duration;
-
-    PlayText(text, type);
-  }
+  ElementsByCount::iterator it = elements.lower_bound(count);
+  return it != elements.end() ? it->second : NULL;
 }
 
 
@@ -3245,8 +3430,9 @@ PBoolean PVXMLSession::TraverseSubmit(PXMLElement & element)
       url.SetQueryVar(*it, GetVar(*it));
 
     PBYTEArray body;
-    if (LoadCachedResource(url, &element, DocumentMaxAgeProperty, DocumentMaxStaleProperty, body))
-      return InternalLoadVXML(url, PString(body), PString::Empty());
+    if (LoadCachedResource(url, &element, DocumentMaxAgeProperty, DocumentMaxStaleProperty, body) &&
+        InternalLoadVXML(url, PString(body), PString::Empty()))
+      return true;
     return ThrowBadFetchError(element, "Could not GET " << url);
   }
 
@@ -3262,14 +3448,12 @@ PBoolean PVXMLSession::TraverseSubmit(PXMLElement & element)
       vars.SetAt(*it, GetVar(*it));
 
     PString replyBody;
-    if (http->PostData(url, sendMIME, vars, replyMIME, replyBody)) {
-      PTRACE(4, "<submit> POST " << url << " succeeded and returned body:\n" << replyBody);
-      return InternalLoadVXML(url, replyBody, PString::Empty());
-    }
+    if (http->PostData(url, sendMIME, vars, replyMIME, replyBody) &&
+        InternalLoadVXML(url, replyBody, PString::Empty()))
+      return true;
 
-    PTRACE(2, "<submit> POST " << url << " failed with "
-           << http->GetLastResponseCode() << ' ' << http->GetLastResponseInfo());
-    return GoToEventHandler(element, PSTRSTRM(ErrorBadFetch << '.' << url.GetScheme() << '.' << http->GetLastResponseCode()), true);
+    return ThrowError(element, PSTRSTRM(ErrorBadFetch << '.' << url.GetScheme() << '.' << http->GetLastResponseCode()),
+                      "<submit> POST " << url << " failed with " << http->GetLastResponseCode() << ' ' << http->GetLastResponseInfo());
   }
 
   // Put in boundary
@@ -3322,20 +3506,17 @@ PBoolean PVXMLSession::TraverseSubmit(PXMLElement & element)
       << "\r\n";
   }
 
-  if (entityBody.IsEmpty()) {
-    PTRACE(2, "<submit> could not find anything to send using \"" << setfill(',') << namelist << '"');
-    return false;
-  }
+  if (entityBody.IsEmpty())
+    return ThrowError(element, PSTRSTRM(ErrorBadFetch << '.' << url.GetScheme() << '.' << http->GetLastResponseCode()),
+                      "<submit> could not find anything to send using \"" << setfill(',') << namelist << '"');
 
   PString replyBody;
-  if (http->PostData(url, sendMIME, entityBody, replyMIME, replyBody)) {
-    PTRACE(2, "<submit> POST " << url << " succeeded and returned body:\n" << replyBody);
-    return InternalLoadVXML(url, replyBody, PString::Empty());
-  }
+  if (http->PostData(url, sendMIME, entityBody, replyMIME, replyBody) &&
+      InternalLoadVXML(url, replyBody, PString::Empty()))
+    return true;
 
-  PTRACE(2, "<submit> POST " << url << " failed with "
-         << http->GetLastResponseCode() << ' ' << http->GetLastResponseInfo());
-  return false;
+  return ThrowError(element, PSTRSTRM(ErrorBadFetch << '.' << url.GetScheme() << '.' << http->GetLastResponseCode()),
+                    "<submit> POST " << url << " failed with " << http->GetLastResponseCode() << ' ' << http->GetLastResponseInfo());
 }
 
 
@@ -3380,6 +3561,9 @@ PBoolean PVXMLSession::TraverseProperty(PXMLElement & element)
 
 PBoolean PVXMLSession::TraverseTransfer(PXMLElement & element)
 {
+  if (IsFinalProcessing())
+    return false;
+
   if (!ExecuteCondition(element))
     return false;
 
@@ -3401,7 +3585,7 @@ PBoolean PVXMLSession::TraversedTransfer(PXMLElement & element)
   if (element.GetAttribute("bridge").IsFalse())
     type = BlindTransfer;
   else {
-    PCaselessString typeStr = element.GetAttribute("type");
+    PCaselessString typeStr = element.GetAttribute(TypeAttribute);
     if (typeStr == "blind")
       type = BlindTransfer;
     else if (typeStr == "consultation")
@@ -3416,6 +3600,7 @@ PBoolean PVXMLSession::TraversedTransfer(PXMLElement & element)
       return true;
   }
 
+  m_transferStatus = TransferInProgress;
   if (OnTransfer(dest, type)) {
     if (type == BlindTransfer) {
       if (element.HasAttribute("connecttimeout"))
@@ -3423,7 +3608,6 @@ PBoolean PVXMLSession::TraversedTransfer(PXMLElement & element)
       else
         m_transferTimeout.SetInterval(0, 0, 1);
     }
-    m_transferStatus = TransferInProgress;
     return false;
   }
 
@@ -3452,22 +3636,30 @@ void PVXMLSession::SetTransferComplete(bool state)
 }
 
 
-bool PVXMLSession::CompletedTransfer(PXMLElement & element)
+void PVXMLSession::CompletedTransfer(PXMLElement & element)
 {
-  bool error = m_transferStatus != TransferSuccessful;
-  PTRACE(4, "Transfer " << (error ? "failed" : "successful") << " in " << element.PrintTrace());
-
   InternalSetVar(element.GetAttribute(NameAttribute) + '$',
                  "duration",
                  (PTime() - m_transferStartTime).AsString(0, PTimeInterval::SecondsOnly));
 
+  if (m_transferStatus != TransferSuccessful) {
+    PTRACE(3, "Transfer failed in " << element.PrintTrace());
+    GoToEventHandler(element, ErrorElement, true, true);
+  }
+  else {
+    PTRACE(3, "Transfer successful in " << element.PrintTrace());
+    GoToEventHandler(element, FilledElement, false, true);
+    m_closing = true;
+  }
   m_transferStatus = TransferCompleted;
-  return GoToEventHandler(element, error ? ErrorElement : FilledElement, error);
 }
 
 
 PBoolean PVXMLSession::TraverseMenu(PXMLElement & element)
 {
+  if (IsFinalProcessing())
+    return false;
+
   if (element.GetParent() && element.GetParent()->GetName() != "vxml")
     return ThrowSemanticError(element, "<menu> must be at top level.");
 
@@ -3475,7 +3667,7 @@ PBoolean PVXMLSession::TraverseMenu(PXMLElement & element)
     m_scriptContext->PopScopeChain(true);
   m_scriptContext->PushScopeChain(DialogScope, true);
 
-  LoadGrammar(MenuElement, PVXMLGrammarInit(*this, element));
+  LoadGrammar(PVXMLGrammarInit(MenuElement, *this, element));
   m_defaultMenuDTMF = element.GetAttribute(DtmfAttribute).IsTrue() ? '1' : 'N';
   ++m_promptCount;
   return true;
@@ -3523,12 +3715,16 @@ PBoolean PVXMLSession::TraverseAssign(PXMLElement & element)
 
 PBoolean PVXMLSession::TraverseDisconnect(PXMLElement & element)
 {
-  return GoToEventHandler(element, "connection.disconnect", true);
+  m_promptMode = e_FinalProcessing;
+  return GoToEventHandler(element, "connection.disconnect.hangup", true, true);
 }
 
 
 PBoolean PVXMLSession::TraverseForm(PXMLElement & element)
 {
+  if (IsFinalProcessing())
+    return false;
+
   if (element.GetParent() && element.GetParent()->GetName() != "vxml")
     return ThrowSemanticError(element, "<form> must be at top level.");
 
@@ -3560,9 +3756,14 @@ PBoolean PVXMLSession::TraversedForm(PXMLElement &)
 
 PBoolean PVXMLSession::TraversePrompt(PXMLElement & element)
 {
+  if (m_promptCount > 1 && m_promptMode == e_NormalPrompt) {
+    PTRACE(3, "No reprompt preventing execution: " << element.PrintTrace());
+    return false;
+  }
+
   PXMLElement * validPrompt = FindElementWithCount(*element.GetParent(), PromptElement, m_promptCount);
-  if (validPrompt == NULL || GetCountAttribute(*validPrompt) != GetCountAttribute(element)) {
-    PTRACE(3, "Prompt count/cond attribute preventing execution: " << element.PrintTrace());
+  if (validPrompt != &element) {
+    PTRACE(3, "Prompt count attribute preventing execution: " << element.PrintTrace());
     return false;
   }
 
@@ -3592,6 +3793,9 @@ PBoolean PVXMLSession::TraversedPrompt(PXMLElement& element)
 
 PBoolean PVXMLSession::TraverseField(PXMLElement & element)
 {
+  if (IsFinalProcessing())
+    return false;
+
   if (!ExecuteCondition(element))
     return false;
 
@@ -3602,9 +3806,9 @@ PBoolean PVXMLSession::TraverseField(PXMLElement & element)
   m_scriptContext->CreateComposite(PSTRSTRM(DialogScope << '.' << name << '$'));
   SetDialogVar(name, PString::Empty());
 
-  PString type = element.GetAttribute("type");
+  PString type = element.GetAttribute(TypeAttribute);
   if (!type.empty())
-    LoadGrammar(type, PVXMLGrammarInit(*this, element));
+    LoadGrammar(PVXMLGrammarInit(type, *this, element));
 
   return true;
 }
@@ -3791,10 +3995,9 @@ PVXMLGrammar::PVXMLGrammar(const PVXMLGrammarInit & init)
   , m_recogniser(NULL)
   , m_allowDTMF(true)
   , m_fieldName(m_field.GetAttribute(NameAttribute))
-  , m_terminators(m_session.GetProperty(TermCharProperty))
+  , m_usingDTMF(false)
+  , m_confidence(1.0)
   , m_state(Idle)
-  , m_noInputTimeout(m_session.GetTimeProperty(TimeoutProperty))
-  , m_partFillTimeout(m_session.GetTimeProperty(InterDigitTimeoutProperty))
 {
   m_timer.SetNotifier(PCREATE_NOTIFIER(OnTimeout), "VXMLGrammar");
 }
@@ -3803,12 +4006,9 @@ PVXMLGrammar::PVXMLGrammar(const PVXMLGrammarInit & init)
 void PVXMLGrammar::OnRecognition(PSpeechRecognition &, PSpeechRecognition::Transcript transcript)
 {
   if (Start()) {
-    if (!m_fieldName.empty()) {
-      m_session.SetDialogVar(m_fieldName+"$.utterance", PSTRSTRM(transcript.m_content));
-      m_session.SetDialogVar(m_fieldName+"$.confidence", PSTRSTRM(transcript.m_confidence));
-      m_session.SetDialogVar(m_fieldName+"$.inputmode", VoiceAttribute);
-    }
-
+    m_usingDTMF = false;
+    if (m_confidence > transcript.m_confidence)
+      m_confidence = transcript.m_confidence;
     OnInput(transcript.m_content);
   }
 }
@@ -3817,12 +4017,9 @@ void PVXMLGrammar::OnRecognition(PSpeechRecognition &, PSpeechRecognition::Trans
 void PVXMLGrammar::OnUserInput(const PString & input)
 {
   if (m_allowDTMF && Start()) {
-    m_session.SetDialogVar(m_fieldName+"$.utterance", input);
-    m_session.SetDialogVar(m_fieldName+"$.confidence", "1.0");
-    m_session.SetDialogVar(m_fieldName+"$.inputmode", DtmfAttribute);
-
-    for (size_t i = 0; i < input.length(); ++i)
-      OnInput(input[i]);
+    m_usingDTMF = true;
+    m_confidence = 1.0;
+    OnInput(input);
   }
 }
 
@@ -3851,18 +4048,19 @@ bool PVXMLGrammar::Start()
   if (!m_state.compare_exchange_strong(prev, Started))
     return prev == Started || prev == PartFill;
 
-  m_terminators = m_session.GetProperty(TermCharProperty);
-  m_noInputTimeout = m_session.GetTimeProperty(TimeoutProperty);
-  m_partFillTimeout = m_session.GetTimeProperty(InterDigitTimeoutProperty);
+  if (m_terminators.empty())
+    m_terminators = m_session.GetProperty(TermCharProperty);
+  if (m_noInputTimeout == 0)
+    m_noInputTimeout = m_session.GetTimeProperty(TimeoutProperty);
 
-  PString inputModes = m_session.GetProperty(InputModesProperty, m_grammarElement, "mode");
+  PString inputModes = m_session.GetProperty(InputModesProperty, m_grammarElement, ModeAttribute);
 
   // Can't be empty, default to DTMF
   m_allowDTMF = inputModes.empty() || inputModes.Find(DtmfAttribute) != P_MAX_INDEX;
 
   bool allowVoice = inputModes.Find(VoiceAttribute) != P_MAX_INDEX;
   if (m_grammarElement != NULL) {
-    PCaselessString attrib = m_grammarElement->GetAttribute("mode");
+    PCaselessString attrib = m_grammarElement->GetAttribute(ModeAttribute);
     if (!attrib.empty())
       allowVoice = attrib == VoiceAttribute;
   }
@@ -3874,9 +4072,12 @@ bool PVXMLGrammar::Start()
       m_allowDTMF = true; // Turn on despite element indication, as no other way for input!
     }
     else {
-      PTimeInterval incomplete = m_session.GetTimeProperty(IncompleteTimeoutProperty);
-      if (incomplete < m_partFillTimeout)
-        m_partFillTimeout = incomplete;
+      PTRACE_CONTEXT_ID_TO(m_recogniser);
+      PStringToString options;
+      m_session.m_httpMutex.Wait();
+      m_session.m_httpProxies.ToOptions(options);
+      m_session.m_httpMutex.Signal();
+      m_recogniser->SetOptions(options);
     }
   }
 
@@ -3888,11 +4089,9 @@ bool PVXMLGrammar::Start()
       lang = m_grammarElement->GetAttribute("xml:lang");
     if (lang.empty())
       lang = m_session.GetLanguage();
-    if (!lang.empty() && !m_recogniser->SetLanguage(lang)) {
-      PTRACE(2, "Grammar " << *this << " could not set speech recognition language to \"" << lang << '"');
-      m_session.GoToEventHandler(m_field, "error.unsupported.language", true);
-      return false;
-    }
+    if (!lang.empty() && !m_recogniser->SetLanguage(lang))
+      return ThrowError2(m_session, m_field, "error.unsupported.language",
+                         "Grammar " << *this << " could not set speech recognition language to \"" << lang << '"');
 
     // Currentlly, in AWS world, it takes several seconds to create a vocabulary.
     // So we need to figure out another solution than setting it up here.
@@ -3910,37 +4109,36 @@ bool PVXMLGrammar::Start()
          " inputModes=" << inputModes << ","
          " dtmf=" << boolalpha << m_allowDTMF << ","
          " voice=" << (m_recogniser != NULL) << ","
-         " noInputTimeout=" << m_noInputTimeout << ","
-         " partFillTimeout=" << m_partFillTimeout);
+         " noInputTimeout=" << m_noInputTimeout);
   return true;
 }
 
 
-void PVXMLGrammar::SetIdle()
+void PVXMLGrammar::SetPartFilled(const PString & input, bool overwrite)
 {
-  m_state = Idle;
-  m_timer = m_noInputTimeout;
-}
+  if (overwrite)
+    m_value = input;
+  else if (m_usingDTMF)
+    m_value += input;
+  else
+    m_value &= input;
 
-
-void PVXMLGrammar::SetPartFilled(const PString & input)
-{
-  m_value += input;
+  PTimeInterval timeout = m_session.GetTimeProperty(m_usingDTMF ? InterDigitTimeoutProperty : IncompleteTimeoutProperty);
 
   GrammarState prev = Started;
   if (m_state.compare_exchange_strong(prev, PartFill)) {
-    PTRACE(3, "Grammar " << *this << " start part fill: value=" << m_value.ToLiteral());
+    PTRACE(3, "Grammar " << *this << " start part fill: value=" << m_value.ToLiteral() << ", timeout=" << timeout);
     m_session.ClearBargeIn();
   }
   else {
-    PTRACE_IF(4, !m_value.empty(), "Grammar " << *this << " part filled: value=" << m_value.ToLiteral());
+    PTRACE_IF(4, !m_value.empty(), "Grammar " << *this << " part filled: value=" << m_value.ToLiteral() << ", timeout=" << timeout);
   }
 
-  m_timer = m_partFillTimeout;
+  m_timer = timeout;
 }
 
 
-void PVXMLGrammar::SetFilled(const PString & input)
+void PVXMLGrammar::SetFilled(const PString & input, bool overwrite)
 {
   GrammarState prev = Started;
   if (!m_state.compare_exchange_strong(prev, Filled)) {
@@ -3951,10 +4149,14 @@ void PVXMLGrammar::SetFilled(const PString & input)
     }
   }
 
-  m_value += input;
-  PTRACE(3, "Grammar " << *this << " filled: value=" << m_value.ToLiteral());
+  if (overwrite)
+    m_value = input;
+  else
+    m_value += input;
+
   m_timer.Stop(false);
-  m_session.Trigger();
+  PTRACE(3, "Grammar " << *this << " filled: value=" << m_value.ToLiteral());
+  Finished();
 }
 
 
@@ -3987,6 +4189,17 @@ void PVXMLGrammar::OnTimeout(PTimer &, P_INT_PTR)
       m_state = NoMatch;
     }
   }
+  Finished();
+}
+
+
+void PVXMLGrammar::Finished()
+{
+  if (!m_fieldName.empty() && !m_value.empty()) {
+    m_session.SetDialogVar(m_fieldName+"$.utterance", m_value);
+    m_session.SetDialogVar(m_fieldName+"$.confidence", PSTRSTRM(m_confidence));
+    m_session.SetDialogVar(m_fieldName+"$.inputmode", m_usingDTMF ? DtmfAttribute : VoiceAttribute);
+  }
   m_session.Trigger();
 }
 
@@ -3999,6 +4212,8 @@ bool PVXMLGrammar::Process()
   switch (m_state.load()) {
     case Filled:
       m_timer.Stop(false);
+      if (m_field.GetName() == ChoiceElement)
+        return m_session.SelectMenuChoice(m_field);
       m_session.SetDialogVar(m_fieldName, m_value);
       m_field.SetAttribute(InternalFilledStateAttribute, true);
       handler = FilledElement;
@@ -4016,11 +4231,12 @@ bool PVXMLGrammar::Process()
       return false;
   }
 
-  if (m_session.GoToEventHandler(m_field, handler, false))
+  if (m_session.GoToEventHandler(m_field, handler, false, true))
     return true;
 
   PTRACE(2, "Grammar: " << *this << ", restarting node " << PXMLObject::PrintTrace(&m_field));
-  SetIdle();
+  m_state = Idle;
+  m_timer = m_noInputTimeout;
   return false;
 }
 
@@ -4037,16 +4253,13 @@ PVXMLMenuGrammar::PVXMLMenuGrammar(const PVXMLGrammarInit & init)
 
 void PVXMLMenuGrammar::OnInput(const PString & input)
 {
-  // Sadly, this is only English
-  static const char * const Numerals[] = { "zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine" };
-  for (PINDEX i = 0; i < PARRAYSIZE(Numerals); ++i) {
-    if (input *= Numerals[i]) {
-      SetFilled((char)(i+'0'));
-      return;
+  static const PConstString ValidMenuDTMF("0123456789*#ABCDabcd");
+  for (PINDEX i = 0; i < input.length(); ++i) {
+    if (ValidMenuDTMF.Find(input[i]) != P_MAX_INDEX) {
+      SetFilled(input);
+      break;
     }
   }
-
-  SetFilled(input);
 }
 
 
@@ -4055,23 +4268,11 @@ bool PVXMLMenuGrammar::Process()
   if (m_state == Filled) {
     PXMLElement * choice;
     PINDEX index = 0;
-    while ((choice = m_field.GetElement("choice", index++)) != NULL) {
+    while ((choice = m_field.GetElement(ChoiceElement, index++)) != NULL) {
       // Check if DTMF value for grammarResult matches the DTMF value for the choice
       if (choice->GetAttribute(DtmfAttribute) == m_value) {
         PTRACE(3, "Grammar " << *this << " matched menu choice: " << m_value << " to " << choice->PrintTrace());
-
-        PString next = choice->GetAttribute(NextAttribute);
-        if (next.IsEmpty()) {
-          bool retval = m_session.EvaluateExpr(*choice, ExprAttribute, next);
-          if (next.IsEmpty())
-            return retval;
-        }
-
-        if (m_session.SetCurrentForm(next, true))
-          return true;
-
-        if (m_session.GoToEventHandler(m_field, choice->GetAttribute("event"), false))
-          return true;
+        return m_session.SelectMenuChoice(*choice);
       }
     }
 
@@ -4087,7 +4288,7 @@ void PVXMLMenuGrammar::GetWordsToRecognise(PStringArray & words) const
 {
   PXMLElement * choice;
   PINDEX index = 0;
-  while ((choice = m_field.GetElement("choice", index++)) != NULL) {
+  while ((choice = m_field.GetElement(ChoiceElement, index++)) != NULL) {
     if (choice->HasAttribute(DtmfAttribute))
       words.AppendString(choice->GetAttribute(DtmfAttribute));
   }
@@ -4102,19 +4303,37 @@ PFACTORY_SYNONYM(PVXMLGrammarFactory, PVXMLDigitsGrammar, OPAL_digits, "X-OPAL/d
 PVXMLDigitsGrammar::PVXMLDigitsGrammar(const PVXMLGrammarInit & init)
   : PVXMLGrammar(init)
   , m_minDigits(1)
-  , m_maxDigits(UINT_MAX)
+  , m_maxDigits(10)
 {
   if (init.m_grammarElement == NULL)
     return;
 
-  PStringOptions tokens;
-  PURL::SplitVars(init.m_grammarElement->GetData(), tokens, ';', '=');
-  m_minDigits = tokens.GetInteger("minDigits", 1);
-  m_maxDigits = tokens.GetInteger("maxDigits", 10),
-    m_terminators = tokens.GetString("terminators", m_terminators);
+  if (init.m_parameters.empty()) {
+    PStringOptions tokens;
+    PURL::SplitVars(init.m_grammarElement->GetData(), tokens, ';', '=');
+
+    m_minDigits = tokens.GetVar("minDigits", m_minDigits);
+    m_maxDigits = tokens.GetVar("maxDigits", m_maxDigits);
+
+    if (tokens.Contains("terminators")) {
+      m_terminators = tokens.GetString("terminators");
+
+      // An empty terminators token is set to an impossible DTMF value, as if m_terminators
+      // is an empty string, it is set to the terminators property in PVXMLGrammar::Start()
+      if (m_terminators.empty())
+        m_terminators = '\n';
+    }
+  }
+  else if (init.m_parameters.Contains("length"))
+    m_minDigits = m_maxDigits = init.m_parameters.GetVar("length", m_minDigits);
+  else {
+    m_minDigits = init.m_parameters.GetVar("minlength", m_minDigits);
+    m_maxDigits = init.m_parameters.GetVar("maxlength", m_maxDigits);
+  }
 
   if (m_minDigits == 0)
     m_minDigits = 1;
+
   if (m_maxDigits < m_minDigits)
     m_maxDigits = m_minDigits;
 }
@@ -4165,15 +4384,17 @@ PFACTORY_CREATE(PVXMLGrammarFactory, PVXMLBooleanGrammar, "boolean");
 
 PVXMLBooleanGrammar::PVXMLBooleanGrammar(const PVXMLGrammarInit & init)
   : PVXMLGrammar(init)
+  , m_yes(init.m_parameters.Get("y", "1"))
+  , m_no(init.m_parameters.Get("n", "2"))
 {
 }
 
 
 void PVXMLBooleanGrammar::OnInput(const PString & input)
 {
-  if (input == "1" || (input *= "yes"))
+  if (m_yes == input || (input *= "yes"))
     SetFilled(PString(true));
-  else if (input == "2" || (input *= "no"))
+  else if (m_no == input || (input *= "no"))
     SetFilled(PString(false));
 }
 
@@ -4204,15 +4425,12 @@ void PVXMLTextGrammar::OnRecognition(PSpeechRecognition& sr, PSpeechRecognition:
 }
 
 
-void PVXMLTextGrammar::OnUserInput(const PString & input)
-{
-  SetPartFilled(input);
-}
-
-
 void PVXMLTextGrammar::OnInput(const PString & input)
 {
-  SetFilled(input);
+  if (m_terminators.Find(input) != P_MAX_INDEX)
+    SetFilled(input);
+  else
+    SetPartFilled(input);
 }
 
 
@@ -4232,7 +4450,7 @@ PVXMLGrammarSRGS::PVXMLGrammarSRGS(const PVXMLGrammarInit & init)
 
   PAutoPtr<PXML> loadedXML;
   PXMLElement * grammar;
-  PString src = init.m_grammarElement->GetAttribute("src");
+  PString src = init.m_grammarElement->GetAttribute(SrcAttribute);
   if (src.empty())
     grammar = init.m_grammarElement;
   else {
@@ -4257,11 +4475,15 @@ PVXMLGrammarSRGS::PVXMLGrammarSRGS(const PVXMLGrammarInit & init)
   }
 
   // Load the root rule
+  PTRACE_CONTEXT_ID_TO(m_rule);
   PString rootName = grammar->GetAttribute("root");
   if (m_rule.Parse(*grammar,
-                   rootName.empty() ? grammar->GetElement("rule")
-                   : grammar->GetElement("rule", "id", rootName)))
+                   rootName.empty()
+                      ? grammar->GetElement("rule")
+                      : grammar->GetElement("rule", "id", rootName))) {
+    PTRACE(4, "Parsed SRGS grammar");
     return;
+  }
 
   PTRACE(2, "Could not parse SRGS <grammar>");
   m_state = Illegal;
@@ -4288,6 +4510,7 @@ bool PVXMLGrammarSRGS::Item::Parse(PXMLElement & grammar, PXMLElement * element)
   while ((subElement = element->GetElement(idx++)) != NULL) {
     if (subElement->GetName() == "item") {
       Item item;
+      PTRACE_CONTEXT_ID_TO(item);
       if (!item.Parse(grammar, subElement))
         return false;
       m_items.push_back(std::vector<Item>(1, item));
@@ -4299,6 +4522,7 @@ bool PVXMLGrammarSRGS::Item::Parse(PXMLElement & grammar, PXMLElement * element)
       PXMLElement * altElement;
       while ((altElement = subElement->GetElement(alt++)) != NULL) {
         Item item;
+        PTRACE_CONTEXT_ID_TO(item);
         if (!item.Parse(grammar, altElement))
           return false;
         alternatives.push_back(item);
@@ -4310,44 +4534,68 @@ bool PVXMLGrammarSRGS::Item::Parse(PXMLElement & grammar, PXMLElement * element)
 }
 
 
-PVXMLGrammar::GrammarState PVXMLGrammarSRGS::Item::OnInput(const PString & input)
+PVXMLGrammar::GrammarState PVXMLGrammarSRGS::Item::OnInput(const PString & input, bool usingDTMF)
 {
   if (m_token == input) {
-    m_value = m_token;
-    return PartFill;
+    ++m_repeatCount;
+    PTRACE(4, "SRGS matched \"" << input << "\" count=" << m_repeatCount
+           << " (" << m_minRepeat << '-' << m_maxRepeat << ')');
+    m_value &= m_token;
+    if (m_repeatCount < m_minRepeat)
+      return Started;
+    if (m_repeatCount < m_maxRepeat)
+      return PartFill;
+    return Filled;
   }
 
-  if (m_currentItem >= m_items.size())
-    return Started;
+  m_value.MakeEmpty();
+  GrammarState myState = Started;
+  for (Items::iterator it = m_items.begin(); it != m_items.end(); ++it) {
+    for (std::vector<Item>::iterator alt = it->begin(); alt != it->end(); ++alt) {
+      switch (alt->OnInput(input, usingDTMF)) {
+        case Started:
+          break;
+        case PartFill:
+          myState = PartFill;
+          if (usingDTMF)
+            m_value += alt->m_value;
+          else
+            m_value &= alt->m_value;
+          break;
+        case Filled:
+          ++m_repeatCount;
+          PTRACE(4, "SRGS matched one of \"" << alt->m_value << "\" count=" << m_repeatCount
+                 << " (" << m_minRepeat << '-' << m_maxRepeat << ')');
+          if (usingDTMF)
+            m_value += alt->m_value;
+          else
+            m_value &= alt->m_value;
 
-  for (std::vector<Item>::iterator alt = m_items[m_currentItem].begin(); alt != m_items[m_currentItem].end(); ++alt) {
-    GrammarState state = alt->OnInput(input);
-    switch (state) {
-      case Started:
-        break;
-      case PartFill:
-      case Filled:
-        m_value += alt->m_value;
-        if (++m_currentItem >= m_items.size())
-          return Filled;
-        break;
-      default:
-        return state;
+          if (m_repeatCount < m_minRepeat)
+            break;
+          if (m_repeatCount < m_maxRepeat)
+            myState = PartFill;
+          else if (myState == Started)
+            myState = Filled;
+          break;
+        default:
+          myState = Illegal;
+      }
     }
   }
 
-  return Started;
+  return myState;
 }
 
 
 void PVXMLGrammarSRGS::OnInput(const PString & input)
 {
-  switch (m_rule.OnInput(input)) {
+  switch (m_rule.OnInput(input, m_usingDTMF)) {
     case PartFill:
-      SetPartFilled(PString::Empty());
+      SetPartFilled(m_rule.m_value, true);
       break;
     case Filled:
-      SetFilled(m_rule.m_value);
+      SetFilled(m_rule.m_value, true);
       break;
     default:
       ;
@@ -4365,8 +4613,9 @@ void PVXMLGrammarSRGS::Item::AddWordsToRecognise(PStringArray & words) const
 {
   if (!m_token.empty())
     words.AppendString(m_token);
-  for (std::vector<Item>::const_iterator alt = m_items[m_currentItem].begin(); alt != m_items[m_currentItem].end(); ++alt)
-    alt->AddWordsToRecognise(words);
+  for (Items::const_iterator it = m_items.begin(); it != m_items.end(); ++it)
+    for (std::vector<Item>::const_iterator alt = it->begin(); alt != it->end(); ++alt)
+      alt->AddWordsToRecognise(words);
 }
 
 
@@ -4811,7 +5060,7 @@ bool PVXMLChannelPCM::SetSampleRate(unsigned rate)
     return false;
 
   m_sampleRate = rate;
-  frameSize = rate*2*m_channels*frameDelay/1000;
+  frameSize = rate*sizeof(uint16_t)*m_channels*frameDelay/1000;
   return true;
 }
 

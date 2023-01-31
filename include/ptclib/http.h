@@ -43,6 +43,8 @@
 
 
 #include <ptclib/html.h>
+#include <ptclib/pssl.h>
+
 
 //////////////////////////////////////////////////////////////////////////////
 // PHTTPSpace
@@ -180,6 +182,7 @@ class PHTTP : public PInternetProtocol
       TransportConnectError,       ///< Could not connect transport
       TransportWriteError,         ///< Could not write transport
       TransportReadError,          ///< Could not read transport
+      ProxyAuthOnCONNECT,          ///< Proxy authenication on CONNECT command
       Continue = 100,              ///< 100 - Continue
       SwitchingProtocols,          ///< 101 - upgrade allowed
       RequestOK = 200,             ///< 200 - request has succeeded
@@ -258,7 +261,51 @@ class PHTTP : public PInternetProtocol
 
     static const PCaselessString & FormUrlEncoded();
 
-  protected:
+    enum SelectProxyResult
+    {
+      e_NoProxy,
+      e_BadProxy,
+      e_HasProxy
+    };
+
+    static const PString & HttpProxyKey();
+    static const PString & HttpsProxyKey();
+    static const PString & NoProxyKey();
+
+    ///  Proxy information
+    struct Proxies
+    {
+      PString m_httpProxy;
+      PString m_httpsProxy;
+      PString m_noProxy;
+
+      Proxies() { }
+      Proxies(const PString & httpProxy, const PString & httpsProxy, const PString & noProxy)
+        : m_httpProxy(httpProxy)
+        , m_httpsProxy(httpsProxy)
+        , m_noProxy(noProxy)
+      { }
+      /**Get active proxy from config or environment variables.
+        */
+      Proxies(const PConfig & cfg);
+      /**Get active proxy from options dictionary.
+        */
+      Proxies(const PStringOptions & options);
+
+      /// Set string options to pxoxy values
+      void ToOptions(PStringToString & options) const;
+
+      /// Return true if no proxies set
+      bool IsEmpty() const { return m_httpProxy.empty() && m_httpsProxy.empty(); }
+
+      /// Select the proxy given the destination
+      SelectProxyResult Select(
+        PURL & proxyURL,
+        const PURL & destURL
+      ) const;
+    };
+
+protected:
     /** Create a TCP/IP HTTP protocol channel.
      */
     PHTTP();
@@ -506,7 +553,7 @@ class PHTTPClientDigestAuthentication : public PHTTPClientAuthentication
          PError << "HTTP conection failed." << endl;
       </CODE></PRE>
  */
-class PHTTPClient : public PHTTP
+class PHTTPClient : public PHTTP, public PSSLCertificateInfo
 {
   PCLASSINFO(PHTTPClient, PHTTP)
 
@@ -785,20 +832,22 @@ class PHTTPClient : public PHTTP
       const PURL & url        ///< Universal Resource Locator for document.
     );
 
-    /** Set authentication paramaters to be use for retreiving documents
+    /**Set proxy for connections.
+      */
+    void SetProxies(
+      const Proxies & proxies ///< Proxy in host:port form
+    ) { m_proxies = proxies; }
+
+    /**Get proxy for connections.
+      */
+    const Proxies & GetProxies() const { return m_proxies; }
+
+/** Set authentication paramaters to be use for retreiving documents
     */
     void SetAuthenticationInfo(
-      const PString & userName,
-      const PString & password
+      const PString & username,   ///< Authentication user (non-proxy)
+      const PString & password    ///< Authentication password (non-proxy)
     );
-
-#if P_SSL
-    void SetSSLCredentials(
-      const PString & authority,
-      const PString & certificate,
-      const PString & privateKey
-    );
-#endif
 
     /// Set persistent connection mode
     void SetPersistent(
@@ -820,18 +869,20 @@ class PHTTPClient : public PHTTP
     static PINDEX MaxTraceContentSize;
 #endif
 
+    virtual SelectProxyResult SelectProxy(const PURL & url, PURL & proxy);
+    virtual bool HandleAuthorisation(bool isProxy, PMIMEInfo & replyMIME);
+
   protected:
     PString  m_userAgentName;
     bool     m_persist;
     unsigned m_maxRedirects;
-    PString  m_userName;
-    PString  m_password;
-#if P_SSL
-    PString  m_authority;    // Directory, file or data
-    PString  m_certificate;  // File or data
-    PString  m_privateKey;   // File or data
-#endif
+    Proxies  m_proxies;
+    struct {
+      PString  m_userName;
+      PString  m_password;
+    } m_auth[2];
     PHTTPClientAuthentication * m_authentication;
+    PURL::UrlFormat m_commandUrlFormat;
 };
 
 
@@ -841,7 +892,7 @@ class PHTTPClient : public PHTTP
 /**A class for a pool of PHTTPClient instances/threads for efficient high
    volume access. e.g. for REST API access.
  */
-class PHTTPClientPool : public PObject
+class PHTTPClientPool : public PObject, public PSSLCertificateInfo
 {
     PCLASSINFO(PHTTPClientPool, PObject);
   public:
@@ -859,14 +910,6 @@ class PHTTPClientPool : public PObject
       , m_readTimeout(readTimeout)
     { }
     ~PHTTPClientPool() { ShutDown(); }
-
-#if P_SSL
-    void SetSSLCredentials(
-      const PString & authority,
-      const PString & certificate,
-      const PString & privateKey
-    );
-#endif
 
     void ShutDown();
 
@@ -921,11 +964,6 @@ class PHTTPClientPool : public PObject
     PTimeInterval m_timeToLive;
     PTimeInterval m_connectTimeout;
     PTimeInterval m_readTimeout;
-#if P_SSL
-    PString  m_authority;    // Directory, file or data
-    PString  m_certificate;  // File or data
-    PString  m_privateKey;   // File or data
-#endif
 
     PDECLARE_MUTEX(m_mutex);
 
@@ -958,7 +996,7 @@ class PHTTPClientPool : public PObject
     Note the WebSocket handshake is assumed to have already occurred.
 */
 
-class PWebSocket : public PIndirectChannel
+class PWebSocket : public PIndirectChannel, public PSSLCertificateInfo
 {
     PCLASSINFO(PWebSocket, PIndirectChannel)
   public:
@@ -1037,17 +1075,16 @@ class PWebSocket : public PIndirectChannel
       bool txt = true
     ) { m_binaryWrite = !txt; }
 
-    /// Set security credentials
-    void SetSSLCredentials(
-      const PString & authority,    ///< Authority directory/filename/data
-      const PString & certificate,  ///< Certificate filename/data
-      const PString & privateKey    ///< Private key filename/data
-    );
-
   ///  Set maximum possible frame size. Defaults to 1GB.
     void SetMaxFrameSize(
       uint64_t maxFrameSize  ///< New maximum size.
     ) { maxFrameSize = m_maxFrameSize; }
+
+    /**Set proxy for connections.
+      */
+    void SetProxies(
+      const PHTTP::Proxies & proxies ///< Proxy in host:port form
+    ) { m_proxies = proxies; }
 
   protected:
     enum OpCodes
@@ -1080,6 +1117,8 @@ class PWebSocket : public PIndirectChannel
     bool InternalWrite(OpCodes  opCode, bool fragmenting, const void * data, PINDEX len);
     bool WriteMasked(const uint32_t * data, PINDEX len, uint32_t mask);
 
+    PHTTP::Proxies m_proxies;
+
     bool     m_client;
     bool     m_fragmentingWrite;
     bool     m_binaryWrite;
@@ -1091,10 +1130,6 @@ class PWebSocket : public PIndirectChannel
     bool     m_fragmentedRead;
 
     bool     m_recursiveRead;
-
-    PString  m_authority;    // Directory, file or data
-    PString  m_certificate;  // File or data
-    PString  m_privateKey;   // File or data
 };
 
 #endif // P_SSL
@@ -1109,11 +1144,9 @@ class PHTTPServer;
    Protocol request. This information is required by handler functions on
    <code>PHTTPResource</code> descendant classes to manage the connection correctly.
 */
-class PHTTPConnectionInfo : public PObject
+class PHTTPConnectionInfo : public PObject, PNonCopyable
 {
   PCLASSINFO(PHTTPConnectionInfo, PObject)
-  private:
-    void operator=(const PHTTPConnectionInfo &) { }
   public:
     PHTTPConnectionInfo();
     PHTTPConnectionInfo(const PHTTPConnectionInfo &);

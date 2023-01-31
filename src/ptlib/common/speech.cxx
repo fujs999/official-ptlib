@@ -41,6 +41,12 @@
 #include <ptlib/sound.h>
 #include <ptlib/ipsock.h>
 #include <ptclib/pwavfile.h>
+#include <ptclib/url.h>
+
+
+const PCaselessString & PTextToSpeech::VoiceName() { static PConstCaselessString s("name"); return s; }
+const PCaselessString & PTextToSpeech::VoiceLanguage() { static PConstCaselessString s("language"); return s; }
+const PCaselessString & PTextToSpeech::VoiceGender() { static PConstCaselessString s("gender"); return s; }
 
 
 PTextToSpeech * PTextToSpeech::Create(const PString & name)
@@ -48,7 +54,7 @@ PTextToSpeech * PTextToSpeech::Create(const PString & name)
   if (!name.empty())
     return PFactory<PTextToSpeech>::CreateInstance(name);
 
-  PTextToSpeech * tts;
+  PTextToSpeech * tts = NULL;
 #ifdef P_TEXT_TO_SPEECH_AWS
   if ((tts = PFactory<PTextToSpeech>::CreateInstance(P_TEXT_TO_SPEECH_AWS)) == NULL)
 #endif
@@ -58,7 +64,11 @@ PTextToSpeech * PTextToSpeech::Create(const PString & name)
 #ifdef P_TEXT_TO_SPEECH_SAPI
       if ((tts = PFactory<PTextToSpeech>::CreateInstance(P_TEXT_TO_SPEECH_SAPI)) == NULL)
 #endif
-        tts = PFactory<PTextToSpeech>::CreateInstance(PFactory<PTextToSpeech>::GetKeyList().front());
+      {
+        vector<string> keys = PFactory<PTextToSpeech>::GetKeyList();
+        if (!keys.empty())
+          tts = PFactory<PTextToSpeech>::CreateInstance(keys.front());
+      }
   if (tts != NULL)
     PTRACE(4, tts, "Created " << *tts);
   else
@@ -67,83 +77,73 @@ PTextToSpeech * PTextToSpeech::Create(const PString & name)
 }
 
 
-bool PTextToSpeech::SetVoice(const PString & voice)
+const PString & PTextToSpeech::VoiceKey() { static const PConstString s("TTS-Voice"); return s; }
+const PString & PTextToSpeech::SampleRateKey() { static const PConstString s("TTS-Sample-Rate"); return s; }
+const PString & PTextToSpeech::ChannelsKey() { static const PConstString s("TTS-Channels"); return s; }
+const PString & PTextToSpeech::VolumeKey() { static const PConstString s("TTS-Volume"); return s; }
+
+bool PTextToSpeech::SetOptions(const PStringOptions & options)
 {
-  PStringArray voices = GetVoiceList();
-
-  PString name, language;
-  if (voice.empty()) {
-    if (m_voiceName.empty())
-      voices[0].Split(':', name, language, PString::SplitDefaultToBefore|PString::SplitTrim);
-    else {
-      name = m_voiceName;
-      language = m_voiceLanguage;
-    }
+  if (options.Has(VoiceKey())) {
+    if (!SetVoice(options.GetString(VoiceKey())))
+      return false;
   }
-  else
-    voice.Split(':', name, language, PString::SplitDefaultToBefore|PString::SplitTrim);
 
-  PINDEX found = P_MAX_INDEX;
-  unsigned count = 0;
+  if (options.Has(SampleRateKey())) {
+    if (!SetSampleRate(options.GetInteger(SampleRateKey())))
+      return false;
+  }
 
-  if (name.empty()) {
-    if (language.empty())
-      language = "US English";
-    for (PINDEX i = 0; i < voices.GetSize(); ++i) {
-      PString v = voices[i];
-      if (v.NumCompare(language, language.length(), v.Find(':')+1) == PObject::EqualTo) {
-        found = i;
-        ++count;
-        break;
-      }
-    }
+  if (options.Has(ChannelsKey())) {
+    if (!SetChannels(options.GetInteger(ChannelsKey())))
+      return false;
   }
-  else if (language.empty()) {
-    for (PINDEX i = 0; i < voices.GetSize(); ++i) {
-      if (voices[i].NumCompare(name) == PObject::EqualTo) {
-        if (found == P_MAX_INDEX)
-          found = i;
-        ++count;
-      }
-    }
+
+  if (options.Has(VolumeKey())) {
+    if (!SetVolume(options.GetInteger(VolumeKey())))
+      return false;
   }
+
+  PTRACE(4, "SetOptions succeeded");
+  return true;
+}
+
+
+bool PTextToSpeech::SetVoice(const PString & voiceStr)
+{
+  PStringOptions voice;
+  if (voiceStr.empty() || voiceStr == ":" || voiceStr == "*") {
+    if (m_voice.empty() || !voiceStr.empty()) {
+      PStringArray voices = GetVoiceList();
+      if (!voices.empty())
+        PURL::SplitVars(voices[0], m_voice);
+    }
+    voice = m_voice;
+  }
+  else if (voiceStr.find('=') != string::npos)
+    PURL::SplitVars(voiceStr, voice);
   else {
-    for (PINDEX i = 0; i < voices.GetSize(); ++i) {
-      PString v = voices[i];
-      if (v.NumCompare(name) == PObject::EqualTo && v.NumCompare(language, language.length(), v.Find(':')+1) == PObject::EqualTo) {
-        if (found == P_MAX_INDEX)
-          found = i;
-        ++count;
-      }
-    }
+    PString name, language;
+    voiceStr.Split(':', name, language, PString::SplitDefaultToBefore|PString::SplitTrim);
+    if (!name.empty())
+      voice.Set(VoiceName, name);
+    if (!language.empty())
+      voice.Set(VoiceLanguage, language);
   }
 
-  switch (count) {
-    case 0 :
-      PTRACE(2, "No voice \"" << voice << "\" available in " << setfill(',') << voices);
-      return false;
-    case 1 :
-      voices[found].Split(':', name, language);
-      break;
-    default :
-      PTRACE(2, "Multiple voices matching \"" << voice << "\" in " << setfill(',') << voices);
-      return false;
-  }
-
-  if (IsOpen() && !InternalSetVoice(name, language))
+  if (!InternalSetVoice(voice))
     return false;
 
-  m_voiceName = name;
-  m_voiceLanguage = language;
+  m_voice = voice;
   return true;
 }
 
 
 PString PTextToSpeech::GetVoice() const
 {
-  if (m_voiceLanguage.empty())
-    return m_voiceName;
-  return PSTRSTRM(m_voiceName << ':' << m_voiceLanguage);
+  if (m_voice.size() == 1)
+    return m_voice.Get(VoiceName);
+  return PSTRSTRM(m_voice);
 }
 
 
@@ -252,7 +252,7 @@ public:
   }
   PBoolean SpeakFile(const PString & text)
   {
-    PFilePath f = PDirectory(m_voiceName) + (text.ToLower() + ".wav");
+    PFilePath f = PDirectory(m_voice.Get(VoiceName)) + (text.ToLower() + ".wav");
     if (!PFile::Exists(f)) {
       PTRACE(2, "Unable to find explicit file for " << text);
       return false;
@@ -486,19 +486,49 @@ PSpeechRecognition * PSpeechRecognition::Create(const PString & name)
   if (!name.empty())
     return PFactory<PSpeechRecognition>::CreateInstance(name);
 
-  PSpeechRecognition * sr;
+  PSpeechRecognition * sr = NULL;
 #ifdef P_SPEECH_RECOGNITION_AWS
   if ((sr = PFactory<PSpeechRecognition>::CreateInstance(P_SPEECH_RECOGNITION_AWS)) == NULL)
 #endif
 #ifdef P_SPEECH_RECOGNITION_SAPI
     if ((sr = PFactory<PSpeechRecognition>::CreateInstance(P_SPEECH_RECOGNITION_SAPI)) == NULL)
 #endif
-      sr = PFactory<PSpeechRecognition>::CreateInstance(PFactory<PSpeechRecognition>::GetKeyList().front());
+    {
+      vector<string> keys = PFactory<PSpeechRecognition>::GetKeyList();
+      if (!keys.empty())
+        sr = PFactory<PSpeechRecognition>::CreateInstance(keys.front());
+    }
   if (sr != NULL)
     PTRACE(4, sr, "Created " << *sr);
   else
     PTRACE(2, sr, "Could not create default Speech Recognition engine");
   return sr;
+}
+
+
+const PString & PSpeechRecognition::SampleRateKey() { static const PConstString s("SR-Sample-Rate"); return s; }
+const PString & PSpeechRecognition::ChannelsKey  () { static const PConstString s("SR-Channels"); return s; }
+const PString & PSpeechRecognition::LanguageKey  () { static const PConstString s("SR-Language"); return s; }
+
+bool PSpeechRecognition::SetOptions(const PStringOptions & options)
+{
+  if (options.Has(SampleRateKey())) {
+    if (!SetSampleRate(options.GetInteger(SampleRateKey())))
+      return false;
+  }
+
+  if (options.Has(ChannelsKey())) {
+    if (!SetChannels(options.GetInteger(ChannelsKey())))
+      return false;
+  }
+
+  if (options.Has(LanguageKey())) {
+    if (!SetLanguage(options.GetString(LanguageKey())))
+      return false;
+  }
+
+  PTRACE(4, "SetOptions succeeded");
+  return true;
 }
 
 

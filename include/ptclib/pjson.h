@@ -45,7 +45,7 @@ class PJSON : public PObject
     };
 
     ////////////////////////////////////////////////////////////////////////////////////////////
-    class Base
+    class Base : PNonCopyable
     {
       public:
         Base() { }
@@ -54,9 +54,6 @@ class PJSON : public PObject
         virtual void ReadFrom(istream & strm) = 0;
         virtual void PrintOn(ostream & strm) const = 0;
         virtual Base * DeepClone() const = 0;
-      private:
-        Base(const Base &) { }
-        void operator=(const Base &);
 
       friend ostream & operator<<(ostream & s, const Base & b) { b.PrintOn(s); return s; }
     };
@@ -114,10 +111,6 @@ class PJSON : public PObject
         bool SetInterval(const PString & name, const PTimeInterval & value);
 
         bool Remove(const PString & name);
-
-      private:
-        Object(const Object &) { }
-        void operator=(const Object &) { }
     };
 
     class Array : public Base, public std::vector<Base *>
@@ -161,10 +154,6 @@ class PJSON : public PObject
         void AppendInterval(const PTimeInterval & value);
 
         bool Remove(size_t index);
-
-      private:
-        Array(const Array &) { }
-        void operator=(const Array &) { }
     };
 
     class String : public Base, public PString
@@ -243,12 +232,12 @@ class PJSON : public PObject
 
     bool IsValid() const { return m_valid; }
 
-    bool IsType(Types type) const { return PAssertNULL(m_root)->IsType(type); }
+    bool IsType(Types type) const { return PAssertNULL(m_root) && m_root->IsType(type); }
 
     void Set(Types type);
 
-    template <class T> const T & GetAs() const { return dynamic_cast<const T &>(*PAssertNULL(m_root)); }
-    template <class T>       T & GetAs()       { return dynamic_cast<      T &>(*PAssertNULL(m_root)); }
+    template <class T> const T & GetAs() const { return PConstCastPtrToRef<T, Base>(m_root); }
+    template <class T>       T & GetAs()       { return PCastPtrToRef<T, Base>(m_root); }
     const Object  & GetObject()  const { return GetAs<Object>();  }
           Object  & GetObject()        { return GetAs<Object>();  }
     const Array   & GetArray ()  const { return GetAs<Array>();   }
@@ -269,8 +258,9 @@ class PJSON : public PObject
 
 class PJSONWrapMember;
 
-class PJSONRecord
+class PJSONRecord : public PObject
 {
+  PCLASSINFO(PJSONRecord, PObject)
   friend class PJSONWrapMember;
 protected:
   std::map<PString, PJSONWrapMember *> m_jsonDataMembers;

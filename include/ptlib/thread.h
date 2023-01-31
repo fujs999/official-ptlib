@@ -63,7 +63,7 @@ class PSyncPoint;
    Previous versions of PTLib/PWLib have some support for co-operative
    threads, but this has been removed.
  */
-class PThread : public PObject, PProfiling::HighWaterMark<PThread>
+class PThread : public PObject, PProfiling::HighWaterMark<PThread>, PNonCopyable
 {
   PCLASSINFO(PThread, PObject);
 
@@ -509,21 +509,6 @@ class PThread : public PObject, PProfiling::HighWaterMark<PThread>
     friend class PProcess;
     friend class PExternalThread;
     // So a PProcess can get at PThread() constructor but nothing else.
-
-    PThread(const PThread &)
-      : PObject ()
-      , m_type()
-      , m_originalStackSize()
-      , m_threadId()
-      , m_uniqueId()
-#ifdef _WIN32
-      , m_comInitialised()
-#endif
-    { }
-    // Empty constructor to prevent copying of thread instances.
-
-    PThread & operator=(const PThread &) { return *this; }
-    // Empty assignment operator to prevent copying of thread instances.
 
   protected:
     enum Type { e_IsAutoDelete, e_IsManualDelete, e_IsProcess, e_IsExternal } m_type;

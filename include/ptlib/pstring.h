@@ -2160,7 +2160,7 @@ class PCaselessString : public PString
    and is completely thread safe in it's construction.
   */
 template <class ParentString>
-class PConstantString : public ParentString
+class PConstantString : public ParentString, PNonCopyable
 {
   private:
     PContainerReference m_staticReference;
@@ -2187,9 +2187,6 @@ class PConstantString : public ParentString
     virtual PBoolean SetSize(PINDEX s) { return s <= this->m_length+1; }
     virtual void AssignContents(const PContainer &) { PAssertAlways(PInvalidParameter); }
     virtual void DestroyReference() { this->reference = NULL; }
-
-  private:
-    void operator=(const PConstantString &) { }
 };
 
 
@@ -2223,7 +2220,7 @@ template <typename T> inline PString PScaleSI(T value, unsigned significantFigur
    All of the standard stream I/O operators, manipulators etc will operate on
    the PStringStream class.
  */
-class PStringStream : public PString, public std::iostream
+class PStringStream : public PString, public std::iostream, PNonCopyable
 {
   PCLASSINFO(PStringStream, PString);
 
@@ -2338,11 +2335,6 @@ class PStringStream : public PString, public std::iostream
     virtual void AssignContents(const PContainer & cont);
 
   private:
-    PStringStream(int, const PStringStream &)
-      : std::iostream(cout.rdbuf())
-    {
-    }
-
     class Buffer : public streambuf {
       public:
         Buffer(PStringStream & str, PINDEX size);

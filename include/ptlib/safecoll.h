@@ -33,6 +33,7 @@
 
 
 #include <ptlib/syncthrd.h>
+#include <ptlib/notifier.h>
 
 
 #if P_TIMERS
@@ -120,7 +121,7 @@ class PTimer;
   </CODE>
 
  */
-class PSafeObject : public PObject
+class PSafeObject : public PObject, PNonCopyable
 {
     PCLASSINFO(PSafeObject, PObject);
   public:
@@ -290,9 +291,14 @@ class PSafeObject : public PObject
     unsigned GetSafeReferenceCount() const { PWaitAndSignal lock(m_safetyMutex); return m_safeReferenceCount; }
   //@}
 
-  private:
-    void operator=(const PSafeObject &) { }
+#if PTRACING
+    static atomic<unsigned> m_traceObjectContext;
+    static atomic<unsigned> m_traceObjectLevel;
+    static atomic<unsigned> m_traceDetailLevel;
+    unsigned GetTraceLogLevel() const { return m_traceContextIdentifier == m_traceObjectContext ? m_traceObjectLevel : m_traceDetailLevel; }
+#endif // PTRACING
 
+  private:
     bool InternalLockReadOnly(const PDebugLocation * location) const;
     void InternalUnlockReadOnly(const PDebugLocation * location) const;
     bool InternalLockReadWrite(const PDebugLocation * location) const;
@@ -411,7 +417,7 @@ class PSafeLockReadWrite : public PSafeLockBase
   See the PSafeObject class for more details. Especially in regard to
   enumeration of collections.
  */
-class PSafeCollection : public PSmartObject
+class PSafeCollection : public PSmartObject, PNonCopyable
 {
     PCLASSINFO(PSafeCollection, PSmartObject);
   public:
@@ -536,15 +542,6 @@ class PSafeCollection : public PSmartObject
     PDECLARE_NOTIFIER(PTimer, PSafeCollection, DeleteObjectsTimeout);
     PTimer           * m_deleteObjectsTimer;
 #endif
-
-  private:
-    PSafeCollection(const PSafeCollection & other)
-      : PSmartObject(other)
-      , m_collection()
-      , m_deleteObjects()
-      , m_deleteObjectsTimer()
-    { }
-    void operator=(const PSafeCollection &) { }
 
   friend class PSafePtrBase;
 };

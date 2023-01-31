@@ -87,7 +87,9 @@ bool PSimpleScript::Run(const char * script)
 
   PString varName, expr;
   if (!PString(script).Split('=', varName, expr, PString::SplitAfterNonEmpty|PString::SplitBeforeNonEmpty)) {
-    OnError(1, "Only assignment expression allowed");
+    if (InternalEvaluateExpr(script) != "undefined")
+      return true;
+    OnError(1, "Only assignment expressions, or simple function calls, are allowed");
     return false;
   }
 
@@ -152,6 +154,10 @@ PString PSimpleScript::InternalEvaluateExpr(const PString & expr)
       PTRACE(4, "Found " << funcname << " function: expression=\"" << expression << "\"");
       if (funcname == "eval")
         result += InternalEvaluateExpr(InternalEvaluateExpr(expression));
+      else if (funcname == "Date")
+        result += PTime().AsString(PTime::ShortDate);
+      else if (funcname == "Time")
+        result += PTime().AsString(PTime::LongTime);
       else {
         FunctionMap::iterator func = m_functions.find(funcname);
         if (func == m_functions.end()) {

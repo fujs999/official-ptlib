@@ -51,7 +51,7 @@ class PTextToSpeech_Festival : public PTextToSpeech
 
     // overrides
     PStringArray GetVoiceList();
-    PBoolean InternalSetVoice(const PString & /*name*/, const PString & /*language*/);
+    PBoolean InternalSetVoice(PStringOptions & voice);
 
     PBoolean SetSampleRate(unsigned rate);
     unsigned GetSampleRate() const;
@@ -161,9 +161,9 @@ PStringArray PTextToSpeech_Festival::GetVoiceList()
 }
 
 
-PBoolean PTextToSpeech_Festival::InternalSetVoice(const PString & voice, const PString & language)
+PBoolean PTextToSpeech_Festival::InternalSetVoice(PStringOptions & voice)
 {
-  return voice == "default" && language.empty();
+  return voice.Get(VoiceName) == "default" && voice.Get(VoiceLanguage).empty();
 }
 
 

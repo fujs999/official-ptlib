@@ -44,6 +44,12 @@ class PTextToSpeech : public PObject
   public:
     static PTextToSpeech * Create(const PString & name = PString::Empty());
 
+    static const PString & VoiceKey();
+    static const PString & SampleRateKey();
+    static const PString & ChannelsKey();
+    static const PString & VolumeKey();
+    virtual bool SetOptions(const PStringOptions & options);
+
     virtual PStringArray GetVoiceList() = 0;
     bool SetVoice(const PString & voice);
     PString GetVoice() const;
@@ -74,14 +80,19 @@ class PTextToSpeech : public PObject
       Phone,
       IPAddress,
       Duration,
-      Spell
+      Spell,
+      Boolean
     );
 
     virtual bool Speak(const PString & text, TextType hint = Default) = 0;
 
+    static const PCaselessString & VoiceName();
+    static const PCaselessString & VoiceLanguage();
+    static const PCaselessString & VoiceGender();
+
   protected:
-    virtual bool InternalSetVoice(const PString & /*name*/, const PString & /*language*/) { return true; }
-    PString m_voiceName, m_voiceLanguage;
+    virtual bool InternalSetVoice(PStringOptions & /*voice*/) { return true; }
+    PStringOptions m_voice;
 };
 
 PFACTORY_LOAD(PTextToSpeech_WAV);
@@ -109,6 +120,11 @@ class PSpeechRecognition : public PObject
     PCLASSINFO(PSpeechRecognition, PObject);
   public:
     static PSpeechRecognition * Create(const PString & name = PString::Empty());
+
+    static const PString & SampleRateKey();
+    static const PString & ChannelsKey();
+    static const PString & LanguageKey();
+    virtual bool SetOptions(const PStringOptions & options);
 
     virtual bool SetSampleRate(unsigned rate) = 0;
     virtual unsigned GetSampleRate() const = 0;

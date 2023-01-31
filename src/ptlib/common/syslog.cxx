@@ -91,19 +91,6 @@ PSystemLog::PSystemLog(Level level)   ///< only messages at this level or higher
 }
 
 
-PSystemLog::PSystemLog(const PSystemLog & other)
-  : PObject(other)
-  , std::ostream(&m_buffer)
-{
-}
-
-
-PSystemLog & PSystemLog::operator=(const PSystemLog &)
-{ 
-  return *this; 
-}
-
-
 ///////////////////////////////////////////////////////////////
 
 PSystemLog::Buffer::Buffer()
@@ -206,18 +193,6 @@ PSystemLogTarget::PSystemLogTarget()
   : m_thresholdLevel(PSystemLog::Warning)
   , m_outputLevelName(true)
 {
-}
-
-
-PSystemLogTarget::PSystemLogTarget(const PSystemLogTarget & other)
-  : PObject(other)
-{
-}
-
-
-PSystemLogTarget & PSystemLogTarget::operator=(const PSystemLogTarget &)
-{ 
-  return *this; 
 }
 
 

@@ -45,7 +45,7 @@
 
 /** Remote Access Connection class.
 */
-class PRemoteConnection : public PObject
+class PRemoteConnection : public PObject, PNonCopyable
 {
   PCLASSINFO(PRemoteConnection, PObject);
 
@@ -277,8 +277,6 @@ class PRemoteConnection : public PObject
     DWORD osError;
 
   private:
-    PRemoteConnection(const PRemoteConnection &) { }
-    void operator=(const PRemoteConnection &) { }
     void Construct();
 
 

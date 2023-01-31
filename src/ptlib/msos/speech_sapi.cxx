@@ -316,11 +316,12 @@ class PTextToSpeech_SAPI : public PTextToSpeech, protected PSpStreamFormat
     }
 
 
-    virtual bool InternalSetVoice(const PString & name, const PString & /*language*/)
+    virtual bool InternalSetVoice(PStringOptions & voice)
     {
       if (!IsOpen())
-        return false;
+        return true;
 
+      PString name = voice.Get(VoiceName);
       PTRACE(4, "Trying to set voice \"" << name << '"');
 
       //Enumerate voice tokens with attribute "Name=<specified voice>"

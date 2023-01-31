@@ -253,7 +253,7 @@ class PIntCondMutex : public PCondMutex
    http://arxiv.org/ftp/arxiv/papers/1309/1309.4507.pdf to improve efficiency.
  */
 
-class PReadWriteMutex : public PObject, public PMutexExcessiveLockInfo, PProfiling::HighWaterMark<PReadWriteMutex>
+class PReadWriteMutex : public PObject, public PMutexExcessiveLockInfo, PProfiling::HighWaterMark<PReadWriteMutex>, PNonCopyable
 {
   PCLASSINFO(PReadWriteMutex, PObject);
   public:
@@ -363,10 +363,6 @@ class PReadWriteMutex : public PObject, public PMutexExcessiveLockInfo, PProfili
     void InternalStartWriteWithNest(Nest & nest, const PDebugLocation & location);
     void InternalEndWriteWithNest(Nest & nest, const PDebugLocation & location);
     void InternalWait(Nest & nest, PSync & sync, const PDebugLocation & location) const;
-
-  private:
-    PReadWriteMutex(const PReadWriteMutex & other) : PObject(other), m_readerCount(), m_writerCount() { }
-    void operator=(const PReadWriteMutex &) { }
 
   friend class PSafeObject;
   friend class PReadWaitAndSignal;
@@ -576,7 +572,7 @@ class PWriteWaitAndSignal : public PReadWriteWaitAndSignalBase
     This implements a queue of objects between threads. The dequeue action will
     always block until an object is placed into the queue.
   */
-template <class T> class PSyncQueue : public PObject
+template <class T> class PSyncQueue : public PObject, PNonCopyable
 {
     PCLASSINFO(PSyncQueue, PObject);
   public:
@@ -760,10 +756,6 @@ template <class T> class PSyncQueue : public PObject
     PSemaphore     m_available;
     PDECLARE_MUTEX(m_mutex);
     PSyncPoint     m_closed;
-
-  private:
-    __inline PSyncQueue(const PSyncQueue & other) : PObject(other) { }
-    __inline void operator=(const PSyncQueue &) { }
 };
 
 

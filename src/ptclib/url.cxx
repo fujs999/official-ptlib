@@ -798,11 +798,11 @@ void PURL::SetPort(WORD newPort)
 }
 
 
-PString PURL::GetHostPort() const
+PString PURL::GetHostPort(bool alwaysWithPort) const
 {
   PStringStream strm;
   strm << m_hostname;
-  if (m_portSupplied)
+  if (alwaysWithPort || m_portSupplied)
     strm << ':' << m_port;
   return strm;
 }

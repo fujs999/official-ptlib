@@ -46,6 +46,7 @@
   #pragma warning(disable:4786)  // identifier was truncated to '255' characters in the debug information
   #pragma warning(disable:4097)  // typedef synonym for class
   #pragma warning(disable:4800)  // forcing value to bool 'true' or 'false' (performance warning)
+  #pragma warning(disable:26439) // This kind of function may not throw.Declare it 'noexcept' (f.6).
 
   #if P_64BIT
     #pragma warning(disable:4267)  // possible loss of data -- just too many to fix.
@@ -218,9 +219,14 @@ class PWin32Handle
     bool Wait(DWORD timeout) const;
     bool Duplicate(HANDLE h, DWORD flags = DUPLICATE_SAME_ACCESS, DWORD access = 0);
 
+#if __cplusplus < 201103L
   private:
     PWin32Handle(const PWin32Handle &) : m_handle() { }
     void operator=(const PWin32Handle &) { }
+#else
+    PWin32Handle(const PWin32Handle &) = delete;
+    PWin32Handle & operator=(const PWin32Handle &) = delete;
+#endif
 };
 
 

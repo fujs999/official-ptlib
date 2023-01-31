@@ -259,7 +259,9 @@ class PURL : public PObject
     PBoolean GetPortSupplied() const { return m_portSupplied; }
 
     /// Get the hostname and optional port fields of the URL.
-    PString GetHostPort() const;
+    PString GetHostPort(
+      bool alwaysWithPort = false
+    ) const;
 
     /// Get if path is relative or absolute
     PBoolean GetRelativePath() const { return m_relativePath; }

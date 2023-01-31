@@ -191,7 +191,8 @@ class PXMLRPCBlock : public PXML
 
 /////////////////////////////////////////////////////////////////
 
-class PXMLRPCVariableBase : public PObject {
+class PXMLRPCVariableBase : public PObject, PNonCopyable
+{
     PCLASSINFO(PXMLRPCVariableBase, PObject);
   protected:
     PXMLRPCVariableBase(const char * name, const char * type = NULL);
@@ -214,9 +215,6 @@ class PXMLRPCVariableBase : public PObject {
   protected:
     const char * m_name;
     const char * m_type;
-
-  private:
-    PXMLRPCVariableBase(const PXMLRPCVariableBase &) : PObject() { }
 };
 
 
@@ -256,13 +254,12 @@ class PXMLRPCArrayObjectsBase : public PXMLRPCArrayBase {
 };
 
 
-class PXMLRPCStructBase : public PObject {
+class PXMLRPCStructBase : public PObject, PNonCopyable
+{
     PCLASSINFO(PXMLRPCStructBase, PObject);
   protected:
     PXMLRPCStructBase();
     PXMLRPCStructBase & operator=(const PXMLRPCStructBase &);
-  private:
-    PXMLRPCStructBase(const PXMLRPCStructBase &) : PObject() { }
 
   public:
     void PrintOn(ostream & strm) const;

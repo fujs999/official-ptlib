@@ -1577,7 +1577,7 @@ class ReachabilityRouteTableDetector : public PIPSocket::RouteTableDetector
 
   private:
     PSyncPoint m_cancel;
-	PBoolean m_continue;
+    bool       m_continue;
 };
 
 PIPSocket::RouteTableDetector * PIPSocket::CreateRouteTableDetector()

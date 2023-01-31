@@ -95,6 +95,13 @@ using namespace std; // Not a good practice (name space polution), but will take
 ///////////////////////////////////////////////////////////////////////////////
 // Deal with different C++ versions and std::auto_ptr deprecation
 #if __cplusplus < 201103L
+  struct PNonCopyable
+  {
+    PNonCopyable() { }
+  private:
+    PNonCopyable(const PNonCopyable &) { }
+    PNonCopyable & operator=(const PNonCopyable &) { return *this; }
+  };
   template <typename T> class PAutoPtr : public std::auto_ptr<T>
   {
     public:
@@ -104,6 +111,12 @@ using namespace std; // Not a good practice (name space polution), but will take
       void transfer(PAutoPtr & other) { this->reset(other.release()); }
   };
 #else
+  struct PNonCopyable
+  {
+    PNonCopyable() = default;
+    PNonCopyable(const PNonCopyable &) = delete;
+    PNonCopyable & operator=(const PNonCopyable &) = delete;
+  };
   template <typename T> class PAutoPtr : public std::unique_ptr<T>
   {
     public:
@@ -149,12 +162,18 @@ using namespace std; // Not a good practice (name space polution), but will take
 
 #ifdef _MSC_VER
   #define P_PUSH_MSVC_WARNINGS(warnings) __pragma(warning(push)) __pragma(warning(disable:warnings))
-  #define P_POP_MSVC_WARNINGS() __pragma(warning(pop))
+  #define P_POP_MSVC_WARNINGS()          __pragma(warning(pop))
+  #define P_PUSH_GCC_WARNING(warning)
+  #define P_POP_GCC_WARNING()
 #else
   #define P_PUSH_MSVC_WARNINGS(warnings)
   #define P_POP_MSVC_WARNINGS()
+  #define P_GCC_PRAGMA(token) _Pragma(#token)
+  #define P_PUSH_GCC_WARNING(warning) _Pragma("GCC diagnostic push") P_GCC_PRAGMA(GCC diagnostic ignored warning)
+  #define P_POP_GCC_WARNING()         _Pragma("GCC diagnostic pop")
 #endif // _MSC_VER
-#define P_DISABLE_MSVC_WARNINGS(warnings, statement) P_PUSH_MSVC_WARNINGS(warnings) statement P_POP_MSVC_WARNINGS()
+#define P_DISABLE_MSVC_WARNINGS(warnings, statement) P_PUSH_MSVC_WARNINGS(warnings) statement  P_POP_MSVC_WARNINGS()
+#define P_DISABLE_GCC_WARNING(warning, statement)    P_PUSH_GCC_WARNING(warning)    statement; P_POP_GCC_WARNING()
 
 #ifdef _MSC_VER
   #define PIGNORE_RETURN(t,e)	(void)(e)
@@ -1444,14 +1463,11 @@ namespace PProfiling
      the time used by a section of code delimited by the scope (block till the close
      brace) with minimum, maximum and averages displayed as a PTRACE().
     */
-  class TimeScope
+  class TimeScope : PNonCopyable
   {
     protected:
       struct Implementation;
       Implementation * const m_implementation;
-
-    private:
-      void operator=(const TimeScope &) { }
 
     public:
       /**Create a TimeScope instance. This is usually created as a static variable
@@ -2189,6 +2205,19 @@ of compatibility with documentation systems.
 #define PIsDescendant(ptr, cls)    (dynamic_cast<const cls *>(ptr) != NULL) 
 #define PRemoveConst(cls, ptr)  (const_cast<cls*>(ptr))
 
+template <class CLS, class BASE> CLS & PCastPtrToRef(BASE * obj)
+{
+  if (obj)
+    return dynamic_cast<CLS &>(*obj);
+  PAssertAlways(PNullPointerReference);
+  std::abort();
+}
+
+template <class CLS, class BASE> const CLS & PConstCastPtrToRef(const BASE * obj)
+{
+  return PCastPtrToRef<const CLS, const BASE>(obj);
+}
+
 #if P_USE_ASSERTS
 template<class BaseClass> inline BaseClass * PAssertCast(BaseClass * obj, const char * file, int line) 
   { if (obj == NULL) PAssertFunc(PDebugLocation(file, line, obj->Class()), PInvalidCast); return obj; }
@@ -2501,7 +2530,7 @@ struct PIntReversedOrder {
   __inline PIntReversedOrder & operator=(const PIntReversedOrder & value)                 { data = value.data;           return *this; }
   __inline operator type() const                                                          { return ReverseBytes(data); }
   __inline friend ostream & operator<<(ostream & s, const PIntReversedOrder & value)      { return s << ReverseBytes(value.data); }
-  __inline friend istream & operator>>(istream & s, PIntReversedOrder & value)            { type i; s >> i; value = i; return s; }
+  __inline friend istream & operator>>(istream & s, PIntReversedOrder & value)            { type i = 0; s >> i; value = i; return s; }
 
   private:
     type data;

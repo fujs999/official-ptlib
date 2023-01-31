@@ -207,9 +207,13 @@ PINDEX PArrayObjects::InsertAt(PINDEX index, PObject * obj)
 
 PObject * PArrayObjects::RemoveAt(PINDEX index)
 {
+  PINDEX size = GetSize();
+  if (index >= size)
+    return NULL;
+
   PObject * obj = m_objectArray->GetAt(index);
 
-  PINDEX size = GetSize()-1;
+  --size;
   PINDEX i;
   for (i = index; i < size; i++)
     m_objectArray->SetAt(i, m_objectArray->GetAt(i+1));

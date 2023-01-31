@@ -512,7 +512,7 @@ PTHREAD_MUTEX_RECURSIVE_NP
         PFilePath fn(m_filename);
         log << " to \"" << fn.GetDirectory() << fn.GetTitle() << m_rolloverPattern << fn.GetType();
       }
-      log << '"';
+      log << "\"\n";
       InternalEnd(log);
     }
   }
@@ -1247,6 +1247,26 @@ PDirectory::PDirectory(const PDirectory & dir)
   : PFilePathString(dir)
 {
   Construct();
+}
+
+
+bool PDirectory::RemoveTree(const PString & path, bool force)
+{
+  PDirectory dir(path);
+  if (dir.Open()) {
+    do {
+      PFilePath entry = dir + dir.GetEntryName();
+      if (dir.IsSubDir()) {
+        if (!RemoveTree(entry))
+          return false;
+      }
+      else {
+        if (!PFile::Remove(entry, force))
+          return false;
+      }
+    } while (dir.Next());
+  }
+  return dir.Remove();
 }
 
 
@@ -2429,7 +2449,7 @@ PString PConfigArgs::CharToString(char letter) const
 ///////////////////////////////////////////////////////////////////////////////
 // PProcess
 
-PProcess * PProcessInstance = NULL;
+static atomic<PProcess *> PProcessInstance(NULL);
 
 
 P_PUSH_MSVC_WARNINGS(4702)
@@ -2533,8 +2553,8 @@ PProcess::PProcess(const char * manuf, const char * name,
   PTraceInfo::Instance();
 #endif
 
-  PAssert(PProcessInstance == NULL, "Only one instance of PProcess allowed");
-  PProcessInstance = this;
+  if (PProcessInstance.exchange(this) != NULL)
+    PAssertAlways("Only one instance of PProcess allowed");
 
 #if RELEASE_THREAD_LOCAL_STORAGE
   s_ThreadLocalStorageData = new PThreadLocalStorageData;
@@ -2816,7 +2836,7 @@ PProcess::~PProcess()
 #endif
 
   // Last chance to log anything ...
-  PTRACE(4, PProcessInstance, "Completed process destruction.");
+  PTRACE(4, "Completed process destruction.");
 
   // Can't do any more tracing after this ...
 #if PTRACING
@@ -2824,17 +2844,18 @@ PProcess::~PProcess()
   PTrace::SetLevel(0);
 #endif
 
-  PProcessInstance = NULL;
+  PProcessInstance.store(NULL);
 }
 
 
 PProcess & PProcess::Current()
 {
-  if (PProcessInstance == NULL) {
+  PProcess * process = PProcessInstance.load();
+  if (process == NULL) {
     PAssertAlways("Catastrophic failure, PProcess::Current() = NULL!!");
     AbortProcess(132);
   }
-  return *PProcessInstance;
+  return *process;
 }
 
 
@@ -3098,7 +3119,7 @@ bool PProcess::OnInterrupt(bool)
 
 PBoolean PProcess::IsInitialised()
 {
-  return PProcessInstance != NULL;
+  return PProcessInstance.load() != NULL;
 }
 
 

@@ -1615,7 +1615,7 @@ PTLIB_MODULE_OPTION(
    [],
    [-lldap -llber],
    [#include <ldap.h>],
-   [ldap_init("localhost", 1234)],
+   [ldap_initialize(NULL, "http://localhost")],
    [],
    [],
    [HAS_DNS_RESOLVER]
@@ -1635,12 +1635,26 @@ dnl As if that is not enough, autoconf gets very confused if configure.in
 dnl contains a AC_CHECK_HEADER directive that never gets used. So we have 
 dnl to ensure that it is always called
 
+dnl MSWIN_DISPLAY    opensslvc32,Open SSL (vcpkg 32 bit)
+dnl MSWIN_CHECK_FILE opensslvc32,include\openssl\ssl.h,P_SSL_VCPKG32=1
+dnl MSWIN_CHECK_DIR  opensslvc32,..\external\vcpkg\installed\x86-windows\
+dnl MSWIN_CHECK_DIR  opensslvc32,..\..\external\vcpkg\installed\x86-windows\
+dnl MSWIN_CHECK_DIR  opensslvc32,%ProgramFiles%\vcpkg\installed\x86-windows\
+dnl MSWIN_CHECK_DIR  opensslvc32,%ProgramW6432%\vcpkg\installed\x86-windows\
+
+dnl MSWIN_DISPLAY    opensslvc64,Open SSL (vcpkg 64 bit)
+dnl MSWIN_CHECK_FILE opensslvc64,include\openssl\ssl.h,P_SSL_VCPKG64=1
+dnl MSWIN_CHECK_DIR  opensslvc64,..\external\vcpkg\installed\x64-windows\
+dnl MSWIN_CHECK_DIR  opensslvc64,..\..\external\vcpkg\installed\x64-windows\
+dnl MSWIN_CHECK_DIR  opensslvc64,%ProgramFiles%\vcpkg\installed\x64-windows\
+dnl MSWIN_CHECK_DIR  opensslvc64,%ProgramW6432%\vcpkg\installed\x64-windows\
+
 dnl MSWIN_DISPLAY    openssl,Open SSL (32 bit)
+dnl MSWIN_IF_FEATURE openssl,!opensslvc32
 dnl MSWIN_CHECK_FILE openssl,inc32\openssl\ssl.h,P_SSL_WIN32=1
 dnl MSWIN_CHECK_FILE openssl,include\openssl\ssl.h,P_SSL_WIN32=2
 dnl MSWIN_FIND_FILE  openssl,P_SSL_AES32,aes.h,...
 dnl MSWIN_FIND_FILE  openssl,P_SSL_LIBEAY32,libeay32MD.lib,...
-dnl MSWIN_DEFINE     openssl,P_SSL_SRTP
 dnl MSWIN_DIR_SYMBOL openssl,SSL_WIN32_DIR
 dnl MSWIN_CHECK_DIR  openssl,%OPENSSL32DIR%\
 dnl MSWIN_CHECK_DIR  openssl,..\openssl\
@@ -1657,11 +1671,11 @@ dnl MSWIN_CHECK_DIR  openssl,%ProgramW6432%\OpenSSL\
 dnl MSWIN_CHECK_DIR  openssl,\OpenSSL-Win32
 
 dnl MSWIN_DISPLAY    openssl64,Open SSL (64 bit)
+dnl MSWIN_IF_FEATURE openssl64,!opensslvc64
 dnl MSWIN_CHECK_FILE openssl64,include\openssl\ssl.h,P_SSL_WIN64=1
 dnl MSWIN_FIND_FILE  openssl64,P_SSL_AES64,aes.h,...
 dnl MSWIN_FIND_FILE  openssl64,P_SSL_LIBEAY64,libeay32MD.lib,...
 dnl MSWIN_DIR_SYMBOL openssl64,SSL_WIN64_DIR
-dnl MSWIN_DEFINE     openssl64,P_SSL_SRTP
 dnl MSWIN_CHECK_DIR  openssl64,%OPENSSL64DIR%\
 dnl MSWIN_CHECK_DIR  openssl64,..\openssl64\
 dnl MSWIN_CHECK_DIR  openssl64,..\OpenSSL-Win64\
@@ -1686,33 +1700,6 @@ PTLIB_MODULE_OPTION(
    [#include <openssl/ssl.h>],
    [TLSv1_method()],
    [
-      MY_COMPILE_IFELSE(
-         [for OPENSSL const arg to d2i_AutoPrivateKey],
-         [$OPENSSL_CFLAGS],
-         [#include <openssl/evp.h>],
-         [
-            EVP_PKEY **a;
-            const unsigned char **p;
-            long l;
-            d2i_AutoPrivateKey(a, p, l);
-         ],
-         [AC_DEFINE([P_SSL_USE_CONST], [1], [SSL with const])]
-      )
-
-      MY_COMPILE_IFELSE(
-         [for OPENSSL SRTP support],
-         [$OPENSSL_CFLAGS],
-         [#include <openssl/ssl.h>],
-         [
-            SSL *s;
-            SRTP_PROTECTION_PROFILE * srtp = SSL_get_selected_srtp_profile(s);
-         ],
-         [
-            AC_DEFINE([P_SSL_SRTP], [1],[openssl with SRTP yes])
-            HAS_SSL_SRTP=1
-         ]
-      )
-
       MY_COMPILE_IFELSE(
          [for OPENSSL AES header],
          [$OPENSSL_CFLAGS],
@@ -1835,10 +1822,20 @@ PTLIB_MODULE_OPTION(
    [LUA],
    [lua],
    [Lua script support],
-   [$LUA_PKG], 
+   [lua], 
    [],[],
    [#include <lua.h>],
-   [lua_newstate(NULL, NULL)]
+   [lua_newstate(NULL, NULL)],
+   [],
+   [PTLIB_MODULE_OPTION(
+      [LUA],
+      [lua],
+      [Lua script support],
+      [lua5.3], 
+      [],[],
+      [#include <lua.h>],
+      [lua_newstate(NULL, NULL)]
+   )]
 )
 
 AC_LANG_POP(C)
@@ -1867,8 +1864,8 @@ CXXFLAGS="$CXXFLAGS $CPLUSPLUS_STD"
  
 AS_VAR_IF([target_os], [Darwin],
    [
-      V8_EXTRA_CFLAGS=""
-      V8_EXTRA_LIBS="-lv8_libplatform -lv8_libbase"
+      V8_EXTRA_CFLAGS="-I/opt/homebrew/opt/v8/include"
+      V8_EXTRA_LIBS="-L/opt/homebrew/opt/v8/lib -lv8_libplatform -lv8_libbase"
    ]
 )
 
@@ -1882,18 +1879,18 @@ PTLIB_MODULE_OPTION(
    [#include <v8.h>],
    [v8::V8::Initialize()],
    [],
-   [AS_VAR_IF([CPLUSPLUS_STD], ["-std=c++03"],[],[
-      CXXFLAGS="$oldCXXFLAGS -std=c++14"
+   [AS_VAR_IF([CPLUSPLUS_STD], ["-std=c++03"],[
+      CXXFLAGS="$oldCXXFLAGS -std=c++17"
       MY_MODULE_OPTION(
          [V8],
          [v8],
-         [V8 Javascript script support (C++14)],
+         [V8 Javascript script support (C++17)],
          [],
          [$V8_EXTRA_CFLAGS],
          [-lv8 $V8_EXTRA_LIBS],
          [#include <v8.h>],
          [v8::V8::Initialize()],
-         [AC_SUBST(CPLUSPLUS_STD,"-std=c++14")]
+         [AC_SUBST(CPLUSPLUS_STD,"-std=c++17")]
       )
    ])],
 )
@@ -1904,8 +1901,16 @@ CXXFLAGS="$oldCXXFLAGS"
 dnl ########################################################################
 dnl check for AWS SDK library
 
-dnl MSWIN_DISPLAY    aws,AWS SDK
-dnl MSWIN_CHECK_FILE aws,include/aws/core/Aws.h,P_AWS_SDK_DEFAULT=1
+dnl MSWIN_DISPLAY    awsvc,AWS SDK (vcpkg)
+dnl MSWIN_CHECK_FILE awsvc,include/aws/core/Aws.h,P_AWS_SDK_VCPKG=1
+dnl MSWIN_CHECK_DIR  awsvc,..\external\vcpkg\installed
+dnl MSWIN_CHECK_DIR  awsvc,..\..\external\vcpkg\installed
+dnl MSWIN_CHECK_DIR  awsvc,\vcpkg\installed
+dnl MSWIN_CHECK_DIR  awsvc,%ProgramFiles%\vcpkg\installed
+dnl MSWIN_CHECK_DIR  awsvc,%ProgramW6432%\vcpkg\installed
+
+dnl MSWIN_DISPLAY    aws,AWS SDK (local build)
+dnl MSWIN_IF_FEATURE aws,!awsvc
 dnl MSWIN_CHECK_FILE aws,out/install/x86-Debug/include/aws/core/Aws.h,P_AWS_SDK_DEBUG32=1
 dnl MSWIN_CHECK_FILE aws,out/install/x86-Release/include/aws/core/Aws.h,P_AWS_SDK_RELEASE32=1
 dnl MSWIN_CHECK_FILE aws,out/install/x64-Debug/include/aws/core/Aws.h,P_AWS_SDK_DEBUG64=1
@@ -1936,23 +1941,22 @@ PTLIB_MODULE_OPTION(
       [#include <aws/core/Aws.h>],
       [Aws::InitAPI(Aws::SDKOptions())],
       [
+         AS_VAR_IF([CPLUSPLUS_STD], ["-std=c++03"],[AC_SUBST(CPLUSPLUS_STD,"-std=c++11")])
          MY_PKG_CHECK_MODULE(
             [AWS_SDK_POLLY],
             [aws-cpp-sdk-polly],
             [#include <aws/polly/PollyClient.h>],
-            [Aws::Polly::PollyClient x]
-         )
-         MY_PKG_CHECK_MODULE(
-            [AWS_SDK_TTS],
-            [aws-cpp-sdk-text-to-speech],
-            [#include <aws/text-to-speech/TextToSpeechManager.h>],
-            [Aws::TextToSpeech::DeviceInfo x]
+            [Aws::Polly::PollyClient x],
+            [],
+            [AC_SUBST(AWS_SDK_USABLE, 0)]
          )
          MY_PKG_CHECK_MODULE(
             [AWS_SDK_TRANSCRIBE],
             [aws-cpp-sdk-transcribe],
             [#include <aws/transcribe/TranscribeServiceClient.h>],
-            [Aws::TranscribeService::TranscribeServiceClient x]
+            [Aws::TranscribeService::TranscribeServiceClient x],
+            [],
+            [AC_SUBST(AWS_SDK_USABLE, 0)]
          )
       ]
    )]

@@ -147,15 +147,25 @@ Default variables:
 
 struct PVXMLGrammarInit
 {
+  PString        m_type;
   PVXMLSession & m_session;
   PXMLElement  & m_field;
   PXMLElement  * m_grammarElement;
+  PStringOptions m_parameters;
 
-  PVXMLGrammarInit(PVXMLSession & session, PXMLElement & field, PXMLElement  * grammar = NULL)
-    :m_session(session)
+  PVXMLGrammarInit(const PString & builtinType, PVXMLSession & session, PXMLElement & field, PXMLElement  * grammar = NULL)
+    : m_session(session)
     , m_field(field)
     , m_grammarElement(grammar)
-  { }
+  {
+    PINDEX pos = builtinType.Find('?');
+    if (pos == P_MAX_INDEX)
+      m_type = builtinType;
+    else {
+      m_type = builtinType.Left(pos);
+      PURL::SplitVars(builtinType.Mid(pos+1), m_parameters);
+    }
+  }
 };
 
 
@@ -183,9 +193,6 @@ class PVXMLGrammar : public PObject, protected PVXMLGrammarInit
     GrammarState GetState() const { return m_state; }
 
     virtual bool Start();
-    virtual void SetIdle();
-    virtual void SetPartFilled(const PString & input);
-    virtual void SetFilled(const PString & value);
     virtual void Stop();
     virtual bool Process();
 
@@ -196,15 +203,19 @@ class PVXMLGrammar : public PObject, protected PVXMLGrammarInit
     PDECLARE_SpeechRecognitionNotifier(PVXMLGrammar, OnRecognition);
     virtual void GetWordsToRecognise(PStringArray & words) const;
     virtual void OnInput(const PString & input) = 0;
+    virtual void SetPartFilled(const PString & input, bool overwrite = false);
+    virtual void SetFilled(const PString & value, bool overwrite = false);
+    virtual void Finished();
 
     PSpeechRecognition * m_recogniser;
     bool                 m_allowDTMF;
     PString              m_fieldName;
     PString              m_terminators;
     PString              m_value;
+    bool                 m_usingDTMF;
+    float                m_confidence;
     atomic<GrammarState> m_state;
     PTimeInterval        m_noInputTimeout;
-    PTimeInterval        m_partFillTimeout;
     PTimer               m_timer;
 };
 
@@ -256,6 +267,9 @@ class PVXMLBooleanGrammar : public PVXMLGrammar
 
   protected:
     virtual void GetWordsToRecognise(PStringArray & words) const;
+
+    PCaselessString m_yes;
+    PCaselessString m_no;
 };
 
 
@@ -268,7 +282,6 @@ class PVXMLTextGrammar : public PVXMLGrammar
     PVXMLTextGrammar(const PVXMLGrammarInit & init);
 
     virtual void OnRecognition(PSpeechRecognition &, PSpeechRecognition::Transcript transcript);
-    virtual void OnUserInput(const PString & input);
     virtual void OnInput(const PString & input);
 };
 
@@ -286,19 +299,19 @@ class PVXMLGrammarSRGS : public PVXMLGrammar
   protected:
     virtual void GetWordsToRecognise(PStringArray & words) const;
 
-    struct Item
+    struct Item : PObject
     {
       unsigned          m_minRepeat;
       unsigned          m_maxRepeat;
       PString           m_token;
       PString           m_value;
-      unsigned          m_currentItem;
+      unsigned          m_repeatCount;
       typedef std::vector< std::vector<Item> > Items;
       Items m_items; // A sequence of alternatives
 
-      Item() : m_minRepeat(1), m_maxRepeat(1), m_currentItem(0) { }
+      Item() : m_minRepeat(1), m_maxRepeat(1), m_repeatCount(0) { }
       bool Parse(PXMLElement & grammar, PXMLElement * element);
-      GrammarState OnInput(const PString & input);
+      GrammarState OnInput(const PString & input, bool usingDTMF);
       void AddWordsToRecognise(PStringArray & words) const;
     };
 
@@ -349,7 +362,7 @@ class PVXMLCache : public PSafeObject
 
 class PVXMLChannel;
 
-class PVXMLSession : public PIndirectChannel
+class PVXMLSession : public PIndirectChannel, public PSSLCertificateInfo
 {
   PCLASSINFO(PVXMLSession, PIndirectChannel);
   public:
@@ -357,8 +370,8 @@ class PVXMLSession : public PIndirectChannel
     virtual ~PVXMLSession();
 
     // new functions
-    PTextToSpeech * SetTextToSpeech(PTextToSpeech * tts, PBoolean autoDelete = false);
-    PTextToSpeech * SetTextToSpeech(const PString & ttsName);
+    PTextToSpeech * SetTextToSpeech(PTextToSpeech * tts, PBoolean autoDelete = false, const PStringOptions & options = PStringOptions());
+    PTextToSpeech * SetTextToSpeech(const PString & ttsName, const PStringOptions & options = PStringOptions());
     PTextToSpeech * GetTextToSpeech() const { return m_textToSpeech; }
     bool SetSpeechRecognition(const PString & srName);
     PString GetSpeechRecognition() const { PWaitAndSignal lock(m_grammersMutex); return m_speechRecognition.c_str(); }
@@ -372,13 +385,7 @@ class PVXMLSession : public PIndirectChannel
     void SetRecordDirectory(const PDirectory & dir) { m_recordDirectory = dir; }
     const PDirectory & GetRecordDirectory() const { return m_recordDirectory; }
 
-#if P_SSL
-    void SetSSLCredentials(
-      const PString & authority,
-      const PString & certificate,
-      const PString & privateKey
-    );
-#endif
+    void SetProxies(const PHTTP::Proxies & proxies);
     PHTTPClient * CreateHTTPClient() const;
 
     virtual PBoolean Load(const PString & source);
@@ -433,7 +440,7 @@ class PVXMLSession : public PIndirectChannel
 
     PCaselessString GetProperty(
       const PString & propName,
-      PXMLElement * overrideElement = NULL,
+      const PXMLElement * overrideElement = NULL,
       const PString & attrName = PString::Empty()
     ) const;
     PTimeInterval GetTimeProperty(
@@ -463,7 +470,7 @@ class PVXMLSession : public PIndirectChannel
     );
 
     bool SetCurrentForm(const PString & id, bool fullURI);
-    bool GoToEventHandler(PXMLElement & element, const PString & eventName, bool exitIfNotFound);
+    bool GoToEventHandler(PXMLElement & element, const PString & eventName, bool exitIfNotFound, bool firstInHierarchy);
     PXMLElement * FindElementWithCount(PXMLElement & parent, const PString & name, unsigned count);
 
     // overrides from VXMLChannelInterface
@@ -471,15 +478,19 @@ class PVXMLSession : public PIndirectChannel
     virtual void Trigger();
 
 
+    virtual PBoolean TraverseRootNode(PXMLElement & element);
     virtual PBoolean TraverseBlock(PXMLElement & element);
     virtual PBoolean TraversedBlock(PXMLElement & element);
+    virtual PBoolean TraverseReprompt(PXMLElement & element);
     virtual PBoolean TraverseAudio(PXMLElement & element);
     virtual PBoolean TraverseBreak(PXMLElement & element);
     virtual PBoolean TraverseValue(PXMLElement & element);
     virtual PBoolean TraverseSayAs(PXMLElement & element);
+    virtual PBoolean TraversedSayAs(PXMLElement & element);
     virtual PBoolean TraverseVoice(PXMLElement & element);
     virtual PBoolean TraverseGoto(PXMLElement & element);
     virtual PBoolean TraverseGrammar(PXMLElement & element);
+    virtual PBoolean TraversedGrammar(PXMLElement & element);
     virtual PBoolean TraverseRecord(PXMLElement & element);
     virtual PBoolean TraversedRecord(PXMLElement & element);
     virtual PBoolean TraverseIf(PXMLElement & element);
@@ -534,12 +545,11 @@ class PVXMLSession : public PIndirectChannel
     virtual bool ProcessNode();
     virtual bool ProcessEvents();
     virtual bool NextNode(bool processChildren);
+    bool SelectMenuChoice(PXMLElement & choice);
     bool ExecuteCondition(PXMLElement & element);
     void ClearBargeIn();
     void FlushInput();
-
-    void SayAs(const PString & className, const PString & text);
-    void SayAs(const PString & className, const PString & text, const PString & voice);
+    bool IsFinalProcessing() const { return m_closing || m_promptMode == e_FinalProcessing; }
 
     PURL NormaliseResourceName(const PString & src);
 
@@ -555,12 +565,8 @@ class PVXMLSession : public PIndirectChannel
 
     CachePtr m_resourceCache;
 
-#if P_SSL
-    PString m_httpAuthority;
-    PString m_httpCertificate;
-    PString m_httpPrivateKey;
     PDECLARE_MUTEX(m_httpMutex);
-#endif
+    PHTTP::Proxies m_httpProxies;
 
 #if P_VXML_VIDEO
     void SetRealVideoSender(PVideoInputDevice * device);
@@ -604,6 +610,7 @@ class PVXMLSession : public PIndirectChannel
 #endif // P_VXML_VIDEO
 
     PThread     *    m_vxmlThread;
+    bool             m_closing;
     bool             m_abortVXML;
     PSyncPoint       m_waitForEvent;
     PURL             m_newURL;
@@ -617,6 +624,8 @@ class PVXMLSession : public PIndirectChannel
     bool             m_bargingIn;
     PStringSet       m_dialogFieldNames;
     unsigned         m_promptCount;
+    enum { e_NormalPrompt, e_Reprompt, e_EventPrompt, e_FinalProcessing } m_promptMode;
+    PTextToSpeech::TextType m_promptType;
     std::map<std::string, unsigned> m_eventCount;
 
     struct Properties : PStringToString
@@ -645,10 +654,10 @@ class PVXMLSession : public PIndirectChannel
       PBYTEArray & data,
       PVXMLCache::Params & cacheParams
     );
-    virtual void LoadGrammar(const PString & type, const PVXMLGrammarInit & init);
+    virtual void LoadGrammar(const PVXMLGrammarInit & init);
     void ClearGrammars();
     void StartGrammars();
-    void OnUserInputToGrammars(const PString & input);
+    void OnUserInputToGrammars();
     void OnAudioInputToGrammars(const short * samples, size_t count);
     bool IsGrammarRunning() const;
     typedef PList<PVXMLGrammar> Grammars;
@@ -658,8 +667,7 @@ class PVXMLSession : public PIndirectChannel
 
     PAutoPtr<PScriptLanguage> m_scriptContext;
 
-    std::queue<PString> m_userInputQueue;
-    PDECLARE_MUTEX(     m_userInputMutex);
+    PSyncQueue<PString> m_userInputQueue;
 
     enum {
       NotRecording,
@@ -681,7 +689,7 @@ class PVXMLSession : public PIndirectChannel
     PTime m_transferStartTime;
     PTimer m_transferTimeout;
     PDECLARE_NOTIFIER(PTimer, PVXMLSession, OnTransferTimeout);
-    bool CompletedTransfer(PXMLElement & element);
+    void CompletedTransfer(PXMLElement & element);
 
     friend class PVXMLChannel;
     friend class PVXMLMenuGrammar;
@@ -985,8 +993,7 @@ class PVXMLSinglePhaseNodeHandler : public PVXMLNodeHandler
 public:
   virtual bool StartTraversal(PVXMLSession & session, PXMLElement & node) const
   {
-    PVXMLNodeHandler::StartTraversal(session, node);
-    return (session.*traversing)(node);
+    return PVXMLNodeHandler::StartTraversal(session, node) && (session.*traversing)(node);
   }
 #if PTRACING
   virtual const char * GetDescription() const { return "single phase"; }
@@ -1003,8 +1010,7 @@ template <
 public:
   virtual bool StartTraversal(PVXMLSession & session, PXMLElement & node) const
   {
-    PVXMLNodeHandler::StartTraversal(session, node);
-    return (session.*traversing)(node);
+    return PVXMLNodeHandler::StartTraversal(session, node) && (session.*traversing)(node);
   }
   virtual bool FinishTraversal(PVXMLSession & session, PXMLElement & node) const
   {
