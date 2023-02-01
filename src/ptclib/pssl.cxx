@@ -98,10 +98,7 @@ extern "C" {
 #include <openssl/sha.h>
 #include <openssl/x509v3.h>
 #include <openssl/evp.h>
-
-#ifdef P_SSL_AES
-  #include <openssl/aes.h>
-#endif
+#include <openssl/aes.h>
 };
 
 #if (OPENSSL_VERSION_NUMBER < 0x10101000L)
@@ -1011,7 +1008,6 @@ bool PSSLCertificateFingerprint::FromString(const PString & str)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifdef P_SSL_AES
 PAESContext::PAESContext()
   : m_key(new AES_KEY)
 {
@@ -1056,7 +1052,6 @@ void PAESContext::Decrypt(const void * in, void * out)
 {
   AES_decrypt((const unsigned char *)in, (unsigned char *)out, m_key);
 }
-#endif // P_SSL_AES
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1751,21 +1746,6 @@ PSSLDiffieHellman::~PSSLDiffieHellman()
   if (m_dh != NULL)
     DH_free(m_dh);
 }
-
-#ifdef P_d2i_DHparams_bio_OLD
-// 2/21/04 Yuri Kiryanov - fix for compiler choke on BeOS for usage of
-// SSL function d2i_DHparams_bio below in PSSLDiffieHellman::Load
-// 5/26/06 Hannes Friederich - Mac OS X seems to need that fix too...
-// 3/15/08 Hannes Friederich - Mac OS X 10.5 (Darwin 9.X) no longer needs this
-#undef  d2i_DHparams_bio
-#define d2i_DHparams_bio(bp,x) \
- (DH *)ASN1_d2i_bio( \
-         (char *(*)(...))(void *)DH_new, \
-         (char *(*)(...))(void *)d2i_DHparams, \
-         (bp), \
-         (unsigned char **)(x) \
-)
-#endif
 
 PBoolean PSSLDiffieHellman::Load(const PFilePath & dhFile, PSSLFileTypes fileType)
 {

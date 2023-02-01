@@ -420,9 +420,6 @@
 
   #if P_64BIT
 
-    #undef P_SSL_AES64
-    #define P_SSL_AES P_SSL_AES64
-
     #define P_SSL_INCLUDE(inc) include_alias(<inc>, <@SSL_WIN64_DIR@/include/inc>)
 
     #undef P_SSL_LIBEAY64
@@ -447,9 +444,6 @@
   #elif P_SSL_WIN32==2
 
     #define P_SSL_USE_CONST 1
-
-    #undef P_SSL_AES32
-    #define P_SSL_AES P_SSL_AES32
 
     #define P_SSL_INCLUDE(inc) include_alias(<inc>, <@SSL_WIN32_DIR@/include/inc>)
 
@@ -584,7 +578,9 @@
   #pragma P_SSL_INCLUDE(openssl/prov_ssl.h)
 #endif
 
-#undef P_d2i_DHparams_bio_OLD
+// For backward compatibility, should always be present now
+#define P_SSL_AES 1
+
 
 
 /////////////////////////////////////////////////

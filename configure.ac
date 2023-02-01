@@ -1653,7 +1653,6 @@ dnl MSWIN_DISPLAY    openssl,Open SSL (32 bit)
 dnl MSWIN_IF_FEATURE openssl,!opensslvc32
 dnl MSWIN_CHECK_FILE openssl,inc32\openssl\ssl.h,P_SSL_WIN32=1
 dnl MSWIN_CHECK_FILE openssl,include\openssl\ssl.h,P_SSL_WIN32=2
-dnl MSWIN_FIND_FILE  openssl,P_SSL_AES32,aes.h,...
 dnl MSWIN_FIND_FILE  openssl,P_SSL_LIBEAY32,libeay32MD.lib,...
 dnl MSWIN_DIR_SYMBOL openssl,SSL_WIN32_DIR
 dnl MSWIN_CHECK_DIR  openssl,%OPENSSL32DIR%\
@@ -1673,7 +1672,6 @@ dnl MSWIN_CHECK_DIR  openssl,\OpenSSL-Win32
 dnl MSWIN_DISPLAY    openssl64,Open SSL (64 bit)
 dnl MSWIN_IF_FEATURE openssl64,!opensslvc64
 dnl MSWIN_CHECK_FILE openssl64,include\openssl\ssl.h,P_SSL_WIN64=1
-dnl MSWIN_FIND_FILE  openssl64,P_SSL_AES64,aes.h,...
 dnl MSWIN_FIND_FILE  openssl64,P_SSL_LIBEAY64,libeay32MD.lib,...
 dnl MSWIN_DIR_SYMBOL openssl64,SSL_WIN64_DIR
 dnl MSWIN_CHECK_DIR  openssl64,%OPENSSL64DIR%\
@@ -1695,39 +1693,21 @@ PTLIB_MODULE_OPTION(
    [OPENSSL], 
    [openssl],
    [OpenSSL support],
-   [openssl], 
+   [openssl >= 1.1.0], 
    [],[],
    [#include <openssl/ssl.h>],
-   [TLSv1_method()],
-   [
-      MY_COMPILE_IFELSE(
-         [for OPENSSL AES header],
-         [$OPENSSL_CFLAGS],
-         [#include <openssl/aes.h>],
-         [],
-         [
-            AC_DEFINE([P_SSL_AES], [1],[openssl with AES yes])
-            HAS_SSL_AES=1
-         ]
-      )
-
-      MY_COMPILE_IFELSE(
-         [for OPENSSL d2i_DHparams_bio new variant],
-         [$OPENSSL_CFLAGS],
-         [
-            #include <openssl/dh.h>
-            #include <openssl/asn1.h>
-         ],
-         [
-            BIO * in;
-            d2i_DHparams_bio(in, NULL);
-         ],
-         [],
-         [AC_DEFINE(P_d2i_DHparams_bio_OLD, 1)]
-      )
-   ]
+   [TLS_method()],
+   [],
+   [PTLIB_MODULE_OPTION(
+      [OPENSSL],
+      [openssl],
+      [OpenSSL support],
+      [openssl11],
+      [],[],
+      [#include <openssl/ssl.h>],
+      [TLS_method()]
+   )]
 )
-PTLIB_SUBST(SSL_AES)
 
 
 dnl ########################################################################

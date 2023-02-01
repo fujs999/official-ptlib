@@ -835,8 +835,6 @@ EXPAT_USABLE
 EXPAT_LIBS
 EXPAT_CFLAGS
 EXPAT_SYSTEM
-PTLIB_SSL_AES
-HAS_SSL_AES
 PTLIB_OPENSSL
 HAS_OPENSSL
 OPENSSL_USABLE
@@ -15078,19 +15076,19 @@ then :
 
 
 pkg_failed=no
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for openssl" >&5
-printf %s "checking for openssl... " >&6; }
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for openssl >= 1.1.0" >&5
+printf %s "checking for openssl >= 1.1.0... " >&6; }
 
 if test -n "$OPENSSL_CFLAGS"; then
     pkg_cv_OPENSSL_CFLAGS="$OPENSSL_CFLAGS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"openssl\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "openssl") 2>&5
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"openssl >= 1.1.0\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "openssl >= 1.1.0") 2>&5
   ac_status=$?
   printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_OPENSSL_CFLAGS=`$PKG_CONFIG --cflags "openssl" 2>/dev/null`
+  pkg_cv_OPENSSL_CFLAGS=`$PKG_CONFIG --cflags "openssl >= 1.1.0" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
@@ -15102,12 +15100,12 @@ if test -n "$OPENSSL_LIBS"; then
     pkg_cv_OPENSSL_LIBS="$OPENSSL_LIBS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"openssl\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "openssl") 2>&5
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"openssl >= 1.1.0\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "openssl >= 1.1.0") 2>&5
   ac_status=$?
   printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_OPENSSL_LIBS=`$PKG_CONFIG --libs "openssl" 2>/dev/null`
+  pkg_cv_OPENSSL_LIBS=`$PKG_CONFIG --libs "openssl >= 1.1.0" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
@@ -15128,9 +15126,9 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-	        OPENSSL_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "openssl" 2>&1`
+	        OPENSSL_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "openssl >= 1.1.0" 2>&1`
         else
-	        OPENSSL_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "openssl" 2>&1`
+	        OPENSSL_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "openssl >= 1.1.0" 2>&1`
         fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$OPENSSL_PKG_ERRORS" >&5
@@ -15160,7 +15158,7 @@ printf %s "checking for OPENSSL usability... " >&6; }
 int
 main (void)
 {
-TLSv1_method()
+TLS_method()
   ;
   return 0;
 }
@@ -15182,8 +15180,8 @@ printf "%s\n" "$usable" >&6; }
    if test "x$usable" = "xyes"
 then :
 
-            OPENSSL_CPPFLAGS=`$PKG_CONFIG --cflags-only-I "openssl"`
-            OPENSSL_CFLAGS=`$PKG_CONFIG --cflags-only-other "openssl"`
+            OPENSSL_CPPFLAGS=`$PKG_CONFIG --cflags-only-I "openssl >= 1.1.0"`
+            OPENSSL_CFLAGS=`$PKG_CONFIG --cflags-only-other "openssl >= 1.1.0"`
 
 
       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Adding CPPFLAGS: $OPENSSL_CPPFLAGS" >&5
@@ -15233,89 +15231,255 @@ fi
    if test "x$usable" = "xyes"
 then :
 
+else $as_nop
 
-   oldCPPFLAGS="$CPPFLAGS"
+
+   OPENSSL_SYSTEM="yes"
+
+
+
+   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking OpenSSL support" >&5
+printf %s "checking OpenSSL support... " >&6; }
+
+   # Check whether --enable-openssl was given.
+if test ${enable_openssl+y}
+then :
+  enableval=$enable_openssl; if test "x$enableval" = xno
+then :
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
+printf "%s\n" "disabled by user" >&6; }
+fi
+else $as_nop
+
+         enableval=${DEFAULT_OPENSSL:-yes}
+         if test "x$enableval" = xno
+then :
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
+printf "%s\n" "disabled by default" >&6; }
+fi
+
+
+fi
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+   if test "x$enableval" = xyes
+then :
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+fi
+
+   if test "x$enableval" = "xyes"
+then :
+  usable=yes
+else $as_nop
+  usable=no
+fi
+
+
+   enable_openssl="$enableval"
+
+
+   if test "x$usable" = xyes
+then :
+
+
+
+      if test "x$OPENSSL_SYSTEM" = xyes
+then :
+
+
+
+pkg_failed=no
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for openssl11" >&5
+printf %s "checking for openssl11... " >&6; }
+
+if test -n "$OPENSSL_CFLAGS"; then
+    pkg_cv_OPENSSL_CFLAGS="$OPENSSL_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"openssl11\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "openssl11") 2>&5
+  ac_status=$?
+  printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_OPENSSL_CFLAGS=`$PKG_CONFIG --cflags "openssl11" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$OPENSSL_LIBS"; then
+    pkg_cv_OPENSSL_LIBS="$OPENSSL_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"openssl11\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "openssl11") 2>&5
+  ac_status=$?
+  printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_OPENSSL_LIBS=`$PKG_CONFIG --libs "openssl11" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        OPENSSL_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "openssl11" 2>&1`
+        else
+	        OPENSSL_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "openssl11" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$OPENSSL_PKG_ERRORS" >&5
+
+	usable=no
+
+elif test $pkg_failed = untried; then
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+	usable=no
+
+else
+	OPENSSL_CFLAGS=$pkg_cv_OPENSSL_CFLAGS
+	OPENSSL_LIBS=$pkg_cv_OPENSSL_LIBS
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+   MY_LINK_IFELSE_CPPFLAGS="$CPPFLAGS"
+   MY_LINK_IFELSE_LIBS="$LIBS"
    CPPFLAGS="$CPPFLAGS $OPENSSL_CFLAGS"
-   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for OPENSSL AES header" >&5
-printf %s "checking for OPENSSL AES header... " >&6; }
+   LIBS="$OPENSSL_LIBS $LIBS"
+   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for OPENSSL usability" >&5
+printf %s "checking for OPENSSL usability... " >&6; }
    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-#include <openssl/aes.h>
+#include <openssl/ssl.h>
 int
 main (void)
 {
+TLS_method()
 
   ;
   return 0;
 }
 _ACEOF
-if ac_fn_cxx_try_compile "$LINENO"
+if ac_fn_cxx_try_link "$LINENO"
 then :
   usable=yes
 else $as_nop
   usable=no
 
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
 printf "%s\n" "$usable" >&6; }
-   CPPFLAGS="$oldCPPFLAGS"
+   CPPFLAGS="$MY_LINK_IFELSE_CPPFLAGS"
+   LIBS="$MY_LINK_IFELSE_LIBS"
 
    if test "x$usable" = "xyes"
 then :
 
+            OPENSSL_CPPFLAGS=`$PKG_CONFIG --cflags-only-I "openssl11"`
+            OPENSSL_CFLAGS=`$PKG_CONFIG --cflags-only-other "openssl11"`
 
-printf "%s\n" "#define P_SSL_AES 1" >>confdefs.h
 
-            HAS_SSL_AES=1
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Adding CPPFLAGS: $OPENSSL_CPPFLAGS" >&5
+printf "%s\n" "$as_me: Adding CPPFLAGS: $OPENSSL_CPPFLAGS" >&6;}
+      CPPFLAGS="$OPENSSL_CPPFLAGS $CPPFLAGS"
+
+
+
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Adding CXXFLAGS: $OPENSSL_CFLAGS" >&5
+printf "%s\n" "$as_me: Adding CXXFLAGS: $OPENSSL_CFLAGS" >&6;}
+      CXXFLAGS="$OPENSSL_CFLAGS $CXXFLAGS"
+
+
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Adding LIBS: $OPENSSL_LIBS" >&5
+printf "%s\n" "$as_me: Adding LIBS: $OPENSSL_LIBS" >&6;}
+      LIBS="$OPENSSL_LIBS $LIBS"
+
+
 
 
 fi
 
 
+fi
 
-
-   oldCPPFLAGS="$CPPFLAGS"
-   CPPFLAGS="$CPPFLAGS $OPENSSL_CFLAGS"
-   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for OPENSSL d2i_DHparams_bio new variant" >&5
-printf %s "checking for OPENSSL d2i_DHparams_bio new variant... " >&6; }
-   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-            #include <openssl/dh.h>
-            #include <openssl/asn1.h>
-
-int
-main (void)
-{
-
-            BIO * in;
-            d2i_DHparams_bio(in, NULL);
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_cxx_try_compile "$LINENO"
+   if test "x$usable" = "xyes"
 then :
-  usable=yes
+
 else $as_nop
   usable=no
 
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
-   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
-printf "%s\n" "$usable" >&6; }
-   CPPFLAGS="$oldCPPFLAGS"
 
-   if test "x$usable" = "xyes"
-then :
 
-else $as_nop
-  printf "%s\n" "#define P_d2i_DHparams_bio_OLD 1" >>confdefs.h
+
+
 
 
 fi
+
+fi
+
+   OPENSSL_USABLE=$usable
+
+
+
+
+
+
+
+   HAS_OPENSSL=$OPENSSL_USABLE
+
+   if test "x$HAS_OPENSSL" = "xyes" ; then
+      HAS_OPENSSL=1
+   fi
+
+   if test "x$HAS_OPENSSL" = "x0" || test "x$HAS_OPENSSL" = "xno" ; then
+      HAS_OPENSSL=
+   fi
+
+
+
+   if test "x$HAS_OPENSSL" = "x1" ; then
+      PTLIB_OPENSSL=yes
+      printf "%s\n" "#define P_OPENSSL 1" >>confdefs.h
+
+   else
+      PTLIB_OPENSSL=no
+   fi
+
 
 
 
@@ -15344,29 +15508,6 @@ fi
       PTLIB_OPENSSL=no
    fi
 
-
-
-
-
-
-
-   if test "x$HAS_SSL_AES" = "xyes" ; then
-      HAS_SSL_AES=1
-   fi
-
-   if test "x$HAS_SSL_AES" = "x0" || test "x$HAS_SSL_AES" = "xno" ; then
-      HAS_SSL_AES=
-   fi
-
-
-
-   if test "x$HAS_SSL_AES" = "x1" ; then
-      PTLIB_SSL_AES=yes
-      printf "%s\n" "#define P_SSL_AES 1" >>confdefs.h
-
-   else
-      PTLIB_SSL_AES=no
-   fi
 
 
 
