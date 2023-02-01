@@ -549,7 +549,6 @@ class PSSLDiffieHellman : public PObject
 };
 
 
-#ifdef P_SSL_AES
 /// AES encryption scheme
 class PAESContext : public PObject
 {
@@ -568,7 +567,6 @@ class PAESContext : public PObject
   protected:
     aes_key_st * m_key;
 };
-#endif // P_SSL_AES
 
 
 /// Encryption/decryption context
