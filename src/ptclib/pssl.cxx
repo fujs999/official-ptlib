@@ -84,6 +84,7 @@
 
 #include <ptclib/pssl.h>
 #include <ptclib/mime.h>
+#include <ptclib/random.h>
 
 #if P_SSL
 
@@ -1883,55 +1884,58 @@ void PSSLInitialiser::OnStartup()
 
   // Seed the random number generator
   BYTE seed[128];
-  for (size_t i = 0; i < sizeof(seed); i++)
-    seed[i] = (BYTE)rand();
+  PRandom::Octets(seed, sizeof(seed));
   RAND_seed(seed, sizeof(seed));
 }
 
 
 void PSSLInitialiser::OnShutdown()
 {
-  CRYPTO_set_locking_callback(NULL);
   ERR_free_strings();
 }
 
 
+#if PTRACING
 static void InfoCallback(const SSL * PTRACE_PARAM(ssl), int PTRACE_PARAM(location), int PTRACE_PARAM(ret))
 {
-#if PTRACING
   static const unsigned Level = 4;
-  if (PTrace::GetLevel() >= Level) {
-    ostream & trace = PTRACE_BEGIN(Level);
+  if (PTrace::GetLevel() < Level)
+    return;
 
-    if (location & SSL_CB_ALERT) {
-      trace << "Alert "
-            << ((location & SSL_CB_READ) ? "read" : "write")
-            << ' ' << SSL_alert_type_string_long(ret)
-            << ": " << SSL_alert_desc_string_long(ret);
-    }
-    else {
-      if (location & SSL_ST_CONNECT)
-        trace << "Connect";
-      else if (location & SSL_ST_ACCEPT)
-        trace << "Accept";
-      else
-        trace << "General";
+  ostream & trace = PTRACE_BEGIN(Level);
 
-      trace << ": ";
+  if (location & SSL_ST_CONNECT)
+    trace << "Connect";
+  else if (location & SSL_ST_ACCEPT)
+    trace << "Accept";
+  else
+    trace << "General";
 
-      if (location & SSL_CB_EXIT) {
-        if (ret == 0)
-          trace << "failed in ";
-        else if (ret < 0)
-          trace << "error in ";
-      }
+  if (location & SSL_CB_HANDSHAKE_START)
+    trace << ": Handshake start";
+  else if (location & SSL_CB_HANDSHAKE_DONE)
+    trace << ": Handshake done";
 
-      trace << "state=" << SSL_state_string_long(ssl);
-    }
-    trace << PTrace::End;
+  if (location & SSL_CB_READ)
+    trace << ": Read";
+  else if (location & SSL_CB_WRITE)
+    trace << ": Write";
+
+  if (location & SSL_CB_ALERT)
+    trace << ": Alert " << SSL_alert_type_string_long(ret) << '/' << SSL_alert_desc_string_long(ret);
+  else if (location & SSL_CB_EXIT) {
+    if (ret == 0)
+      trace << ": Exit failed";
+    else if (ret < 0)
+      trace << ": Exit error=" << ret;
+    else
+      trace << ": Exit success=" << ret;
   }
-#endif // PTRACING
+
+  trace << ": state=" << SSL_state_string_long(ssl)
+        << PTrace::End;
 }
+#endif // PTRACING
 
 
 #if PTRACING
@@ -2158,7 +2162,9 @@ void PSSLContext::Construct(const void * sessionId, PINDEX idSize)
     SSL_CTX_sess_set_cache_size(m_context, 128);
   }
 
+#if PTRACING
   SSL_CTX_set_info_callback(m_context, InfoCallback);
+#endif // PTRACING
   SetVerifyMode(VerifyNone);
 
   /* Specify an ECDH group for ECDHE ciphers, otherwise they cannot be
