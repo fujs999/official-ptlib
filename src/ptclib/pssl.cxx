@@ -1896,7 +1896,7 @@ void PSSLInitialiser::OnShutdown()
 
 
 #if PTRACING
-static void InfoCallback(const SSL * PTRACE_PARAM(ssl), int PTRACE_PARAM(location), int PTRACE_PARAM(ret))
+static void InfoCallback(const SSL * ssl, int location, int ret)
 {
   static const unsigned Level = 4;
   if (PTrace::GetLevel() < Level)
@@ -1935,10 +1935,10 @@ static void InfoCallback(const SSL * PTRACE_PARAM(ssl), int PTRACE_PARAM(locatio
   trace << ": state=" << SSL_state_string_long(ssl)
         << PTrace::End;
 }
-#endif // PTRACING
+
+#define SetInfoCallback(ctx) SSL_CTX_set_info_callback(ctx, InfoCallback);
 
 
-#if PTRACING
 static void TraceVerifyCallback(int ok, X509_STORE_CTX * ctx)
 {
   const unsigned Level = ok ? 5 : 2;
@@ -1975,6 +1975,7 @@ static void TraceVerifyCallback(int ok, X509_STORE_CTX * ctx)
   }
 }
 #else
+  #define SetInfoCallback(ctx)
   #define TraceVerifyCallback(ok, ctx)
 #endif // PTRACING
 
@@ -2162,9 +2163,7 @@ void PSSLContext::Construct(const void * sessionId, PINDEX idSize)
     SSL_CTX_sess_set_cache_size(m_context, 128);
   }
 
-#if PTRACING
-  SSL_CTX_set_info_callback(m_context, InfoCallback);
-#endif // PTRACING
+  SetInfoCallback(m_context);
   SetVerifyMode(VerifyNone);
 
   /* Specify an ECDH group for ECDHE ciphers, otherwise they cannot be
