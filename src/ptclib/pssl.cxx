@@ -2156,6 +2156,15 @@ void PSSLContext::Construct(const void * sessionId, PINDEX idSize)
     SSL_CTX_set_max_proto_version(m_context, ssl_versions[m_method]);
   }
 
+#if (OPENSSL_VERSION_NUMBER >= 0x10100000L)
+  if (m_method == DTLSv1_2_v1_0) {
+    PTRACE(5, "Changing security level to zero, was " << SSL_CTX_get_security_level(m_context));
+    SSL_CTX_set_security_level(m_context, 0);
+    SSL_CTX_set_min_proto_version(m_context, DTLS1_VERSION);
+    SSL_CTX_set_max_proto_version(m_context, DTLS1_2_VERSION);
+  }
+#endif
+
   if (sessionId != NULL) {
     if (idSize == 0)
       idSize = ::strlen((const char *)sessionId)+1;
