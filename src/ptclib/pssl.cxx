@@ -1939,12 +1939,15 @@ static void InfoCallback(const SSL * ssl, int location, int ret)
 #define SetInfoCallback(ctx) SSL_CTX_set_info_callback(ctx, InfoCallback);
 
 
-static void TraceVerifyCallback(int ok, X509_STORE_CTX * ctx)
+static void TraceVerifyCallback(int ok, X509_STORE_CTX * ctx, PSSLChannel * channel)
 {
   const unsigned Level = ok ? 5 : 2;
   if (PTrace::CanTrace(Level)) {
     ostream & trace = PTRACE_BEGIN(Level);
-    trace << "Verify callback: depth=" << X509_STORE_CTX_get_error_depth(ctx);
+    trace << "Verify callback: channel=" << (void *)channel;
+    if (channel != NULL)
+      trace << ' ' << channel->GetClassName();
+    trace << " depth=" << X509_STORE_CTX_get_error_depth(ctx);
 
     int err = X509_STORE_CTX_get_error(ctx);
     if (err != 0)
@@ -1976,7 +1979,7 @@ static void TraceVerifyCallback(int ok, X509_STORE_CTX * ctx)
 }
 #else
   #define SetInfoCallback(ctx)
-  #define TraceVerifyCallback(ok, ctx)
+  #define TraceVerifyCallback(ok, ctx, channel)
 #endif // PTRACING
 
 static int VerifyCallback(int ok, X509_STORE_CTX * ctx)
@@ -1988,7 +1991,7 @@ static int VerifyCallback(int ok, X509_STORE_CTX * ctx)
   if (ssl != NULL && (channel = reinterpret_cast<PSSLChannel *>(SSL_get_app_data(ssl))) != NULL)
     channel->OnVerify(info);
 
-  TraceVerifyCallback(ok, ctx);
+  TraceVerifyCallback(ok, ctx, channel);
   return info.m_ok;
 }
 
