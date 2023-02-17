@@ -2792,6 +2792,7 @@ int PSSLChannel::BioClose(bio_st * bio)
 
 int PSSLChannel::BioClose()
 {
+#if (OPENSSL_VERSION_NUMBER < 0x30000000L)
   if (BIO_get_shutdown(m_bio)) {
     if (BIO_get_init(m_bio)) {
       Shutdown(PSocket::ShutdownReadAndWrite);
@@ -2800,6 +2801,9 @@ int PSSLChannel::BioClose()
     BIO_set_init(m_bio, 0);
     BIO_set_flags(m_bio, 0);
   }
+#else
+  PIndirectChannel::Close();
+#endif
 
   return 1;
 }
