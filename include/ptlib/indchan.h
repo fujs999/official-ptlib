@@ -330,16 +330,20 @@ class PIndirectChannel : public PChannel
       */
     template <class ChannelClass> ChannelClass * FindChannel()
     {
-      ChannelClass * channel = dynamic_cast<ChannelClass *>(this);
-      if (channel == NULL) {
-        PIndirectChannel * indirect = dynamic_cast<PIndirectChannel *>(readChannel);
-        if (indirect == NULL || (channel = indirect->FindChannel<ChannelClass>()) == NULL) {
-          indirect = dynamic_cast<PIndirectChannel *>(writeChannel);
-          if (indirect != NULL)
-            channel = indirect->FindChannel<ChannelClass>();
-        }
-      }
-      return channel;
+      PReadWaitAndSignal mutex(channelPointerMutex);
+      ChannelClass * channel;
+      if ((channel = dynamic_cast<ChannelClass *>(this)) != NULL)
+        return channel;
+      if ((channel = dynamic_cast<ChannelClass *>(GetReadChannel())) != NULL)
+        return channel;
+      if ((channel = dynamic_cast<ChannelClass *>(GetWriteChannel())) != NULL)
+        return channel;
+      PIndirectChannel * indirect;
+      if ((indirect = dynamic_cast<PIndirectChannel *>(GetReadChannel())) != NULL)
+        return indirect->FindChannel<ChannelClass>();
+      if ((indirect = dynamic_cast<PIndirectChannel *>(GetWriteChannel())) != NULL)
+        return indirect->FindChannel<ChannelClass>();
+      return NULL;
     }
   //@}
 

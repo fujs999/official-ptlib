@@ -84,6 +84,7 @@
 
 #include <ptclib/pssl.h>
 #include <ptclib/mime.h>
+#include <ptclib/random.h>
 
 #if P_SSL
 
@@ -1883,64 +1884,70 @@ void PSSLInitialiser::OnStartup()
 
   // Seed the random number generator
   BYTE seed[128];
-  for (size_t i = 0; i < sizeof(seed); i++)
-    seed[i] = (BYTE)rand();
+  PRandom::Octets(seed, sizeof(seed));
   RAND_seed(seed, sizeof(seed));
 }
 
 
 void PSSLInitialiser::OnShutdown()
 {
-  CRYPTO_set_locking_callback(NULL);
   ERR_free_strings();
 }
 
 
-static void InfoCallback(const SSL * PTRACE_PARAM(ssl), int PTRACE_PARAM(location), int PTRACE_PARAM(ret))
-{
 #if PTRACING
+static void InfoCallback(const SSL * ssl, int location, int ret)
+{
   static const unsigned Level = 4;
-  if (PTrace::GetLevel() >= Level) {
-    ostream & trace = PTRACE_BEGIN(Level);
+  if (PTrace::GetLevel() < Level)
+    return;
 
-    if (location & SSL_CB_ALERT) {
-      trace << "Alert "
-            << ((location & SSL_CB_READ) ? "read" : "write")
-            << ' ' << SSL_alert_type_string_long(ret)
-            << ": " << SSL_alert_desc_string_long(ret);
-    }
-    else {
-      if (location & SSL_ST_CONNECT)
-        trace << "Connect";
-      else if (location & SSL_ST_ACCEPT)
-        trace << "Accept";
-      else
-        trace << "General";
+  ostream & trace = PTRACE_BEGIN(Level);
 
-      trace << ": ";
+  if (location & SSL_ST_CONNECT)
+    trace << "Connect";
+  else if (location & SSL_ST_ACCEPT)
+    trace << "Accept";
+  else
+    trace << "General";
 
-      if (location & SSL_CB_EXIT) {
-        if (ret == 0)
-          trace << "failed in ";
-        else if (ret < 0)
-          trace << "error in ";
-      }
+  if (location & SSL_CB_HANDSHAKE_START)
+    trace << ": Handshake start";
+  else if (location & SSL_CB_HANDSHAKE_DONE)
+    trace << ": Handshake done";
 
-      trace << "state=" << SSL_state_string_long(ssl);
-    }
-    trace << PTrace::End;
+  if (location & SSL_CB_READ)
+    trace << ": Read";
+  else if (location & SSL_CB_WRITE)
+    trace << ": Write";
+
+  if (location & SSL_CB_ALERT)
+    trace << ": Alert " << SSL_alert_type_string_long(ret) << '/' << SSL_alert_desc_string_long(ret);
+  else if (location & SSL_CB_EXIT) {
+    if (ret == 0)
+      trace << ": Exit failed";
+    else if (ret < 0)
+      trace << ": Exit error=" << ret;
+    else
+      trace << ": Exit success=" << ret;
   }
-#endif // PTRACING
+
+  trace << ": state=" << SSL_state_string_long(ssl)
+        << PTrace::End;
 }
 
+#define SetInfoCallback(ctx) SSL_CTX_set_info_callback(ctx, InfoCallback);
 
-#if PTRACING
-static void TraceVerifyCallback(int ok, X509_STORE_CTX * ctx)
+
+static void TraceVerifyCallback(int ok, X509_STORE_CTX * ctx, PSSLChannel * channel)
 {
   const unsigned Level = ok ? 5 : 2;
   if (PTrace::CanTrace(Level)) {
     ostream & trace = PTRACE_BEGIN(Level);
-    trace << "Verify callback: depth=" << X509_STORE_CTX_get_error_depth(ctx);
+    trace << "Verify callback: channel=" << (void *)channel;
+    if (channel != NULL)
+      trace << ' ' << channel->GetClassName();
+    trace << " depth=" << X509_STORE_CTX_get_error_depth(ctx);
 
     int err = X509_STORE_CTX_get_error(ctx);
     if (err != 0)
@@ -1971,19 +1978,20 @@ static void TraceVerifyCallback(int ok, X509_STORE_CTX * ctx)
   }
 }
 #else
-  #define TraceVerifyCallback(ok, ctx)
+  #define SetInfoCallback(ctx)
+  #define TraceVerifyCallback(ok, ctx, channel)
 #endif // PTRACING
 
 static int VerifyCallback(int ok, X509_STORE_CTX * ctx)
 {
   PSSLChannel::VerifyInfo info(ok, X509_STORE_CTX_get_current_cert(ctx), X509_STORE_CTX_get_error(ctx));
 
-  PSSLChannel * channel;
+  PSSLChannel * channel = NULL;
   SSL * ssl = reinterpret_cast<SSL *>(X509_STORE_CTX_get_ex_data(ctx, SSL_get_ex_data_X509_STORE_CTX_idx()));
   if (ssl != NULL && (channel = reinterpret_cast<PSSLChannel *>(SSL_get_app_data(ssl))) != NULL)
     channel->OnVerify(info);
 
-  TraceVerifyCallback(ok, ctx);
+  TraceVerifyCallback(ok, ctx, channel);
   return info.m_ok;
 }
 
@@ -2151,6 +2159,27 @@ void PSSLContext::Construct(const void * sessionId, PINDEX idSize)
     SSL_CTX_set_max_proto_version(m_context, ssl_versions[m_method]);
   }
 
+#if (OPENSSL_VERSION_NUMBER >= 0x10100000L)
+  if (m_method >= DTLSv1) {
+    PTRACE(5, "Changing security level to zero, was " << SSL_CTX_get_security_level(m_context));
+    SSL_CTX_set_security_level(m_context, 0);
+    
+    switch (m_method) {
+      case DTLSv1_2 :
+        SSL_CTX_set_min_proto_version(m_context, DTLS1_2_VERSION);
+        SSL_CTX_set_max_proto_version(m_context, DTLS1_2_VERSION);
+        break;
+      case DTLSv1:
+        SSL_CTX_set_min_proto_version(m_context, DTLS1_VERSION);
+        SSL_CTX_set_max_proto_version(m_context, DTLS1_VERSION);
+        break;
+      default:
+        SSL_CTX_set_min_proto_version(m_context, DTLS1_VERSION);
+        SSL_CTX_set_max_proto_version(m_context, DTLS1_2_VERSION);
+    }
+  }
+#endif
+
   if (sessionId != NULL) {
     if (idSize == 0)
       idSize = ::strlen((const char *)sessionId)+1;
@@ -2158,7 +2187,7 @@ void PSSLContext::Construct(const void * sessionId, PINDEX idSize)
     SSL_CTX_sess_set_cache_size(m_context, 128);
   }
 
-  SSL_CTX_set_info_callback(m_context, InfoCallback);
+  SetInfoCallback(m_context);
   SetVerifyMode(VerifyNone);
 
   /* Specify an ECDH group for ECDHE ciphers, otherwise they cannot be
@@ -2766,6 +2795,7 @@ int PSSLChannel::BioClose(bio_st * bio)
 
 int PSSLChannel::BioClose()
 {
+#if (OPENSSL_VERSION_NUMBER < 0x30000000L)
   if (BIO_get_shutdown(m_bio)) {
     if (BIO_get_init(m_bio)) {
       Shutdown(PSocket::ShutdownReadAndWrite);
@@ -2774,6 +2804,9 @@ int PSSLChannel::BioClose()
     BIO_set_init(m_bio, 0);
     BIO_set_flags(m_bio, 0);
   }
+#else
+  PIndirectChannel::Close();
+#endif
 
   return 1;
 }

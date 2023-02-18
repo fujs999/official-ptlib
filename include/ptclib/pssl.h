@@ -836,7 +836,7 @@ class PSSLContext : public PObject, PNonCopyable
       TLSv1_1,
       TLSv1_2,
       TLSv1_3,
-      DTLSv1,
+      DTLSv1,   // Note DTLS should always be greater than TLS
       DTLSv1_2,
       DTLSv1_2_v1_0
     );

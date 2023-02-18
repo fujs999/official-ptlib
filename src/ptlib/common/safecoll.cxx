@@ -38,9 +38,11 @@
 
 /////////////////////////////////////////////////////////////////////////////
 
+#if PTRACING
 atomic<unsigned> PSafeObject::m_traceObjectContext(1234567890);
 atomic<unsigned> PSafeObject::m_traceObjectLevel(3);
 atomic<unsigned> PSafeObject::m_traceDetailLevel(7);
+#endif // PTRACING
 
 PSafeObject::PSafeObject()
   : m_safeReferenceCount(0)
