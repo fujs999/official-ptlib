@@ -1022,7 +1022,7 @@ ostream & PTraceInfo::InternalEnd(ostream & paramStream)
     message.Replace("\n", "\\n", true);
   }
 
-  if (message.GetLength() > m_maxLength)
+  if (context->m_level > 0 && message.GetLength() > m_maxLength)
     message.Splice("...", m_maxLength - 4, P_MAX_INDEX);
 
   if (outputJSON)
