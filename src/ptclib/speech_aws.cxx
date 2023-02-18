@@ -367,7 +367,9 @@ class PSpeechRecognition_AWS : public PSpeechRecognition, PAwsClient<Aws::Transc
 
   unsigned m_sampleRate;
   Aws::TranscribeService::Model::LanguageCode m_language;
-  PStringSet m_vocabularies;
+  PStringSet m_createdVocabularies;
+  PStringSet m_activeVocabularies;
+  PStringSet m_activeLanguages;
 
   PWebSocket m_webSocket;
   PThread  * m_eventThread;
@@ -599,12 +601,12 @@ class PSpeechRecognition_AWS : public PSpeechRecognition, PAwsClient<Aws::Transc
 
   void DeleteVocabulary(const PString & name)
   {
-    if (name.empty() || !m_vocabularies.Contains(name))
+    if (name.empty() || !m_createdVocabularies.Contains(name))
       return;
 
     GetClient()->DeleteVocabulary(Aws::TranscribeService::Model::DeleteVocabularyRequest()
                                     .WithVocabularyName(name.c_str()));
-    m_vocabularies -= name;
+    m_createdVocabularies -= name;
   }
 
 
@@ -620,8 +622,8 @@ public:
   {
     Close();
 
-    while (!m_vocabularies.empty())
-      DeleteVocabulary(*m_vocabularies.begin());
+    while (!m_createdVocabularies.empty())
+      DeleteVocabulary(*m_createdVocabularies.begin());
   }
 
 
@@ -682,7 +684,7 @@ public:
   }
 
 
-  virtual bool SetVocabulary(const PString & name, const PStringArray & words)
+  virtual bool CreateVocabulary(const PString & name, const PStringArray & words)
   {
     DeleteVocabulary(name);
 
@@ -698,16 +700,24 @@ public:
                                                   .WithLanguageCode(m_language)
                                                   .WithPhrases(phrases));
     if (outcome.IsSuccess()) {
-      m_vocabularies += name;
+      m_createdVocabularies += name;
       return true;
     }
 
     PTRACE(2, "Could not create vocubulary: " << outcome.GetResult().GetFailureReason());
     return false;
+    }
+
+
+  virtual bool ActivateVocabulary(const PStringSet & names, const PString & languages)
+  {
+    m_activeVocabularies = names;
+    m_activeLanguages = languages;
+    return true;
   }
 
 
-  virtual bool Open(const Notifier & notifier, const PString & vocabulary)
+  virtual bool Open(const Notifier & notifier)
   {
     PWaitAndSignal lock(m_openMutex);
     Close();
@@ -721,8 +731,19 @@ public:
     headers["media-encoding"] = "pcm";
     headers["sample-rate"] = GetSampleRate();
 
-    if (!vocabulary.empty())
-      headers["vocabulary-name"] = vocabulary;
+    if (m_activeVocabularies.size() == 1)
+      headers["vocabulary-name"] = *m_activeVocabularies.begin();
+    else
+      headers["vocabulary-names"] = PSTRSTRM(setfill(',') << m_activeVocabularies);
+
+    if (m_activeVocabularies.empty())
+      headers["language-code"] = GetLanguage();
+    else if (m_activeLanguages.size() < 2)
+      headers["language-code"] = *m_activeVocabularies.begin();
+    else {
+      headers["identify-language"] = "true";
+      headers["language-options"] = PSTRSTRM(setfill(',') << m_activeLanguages);
+    }
 
     PURL url = SignURL("wss://transcribestreaming:8443/stream-transcription-websocket", "transcribe", headers);
 

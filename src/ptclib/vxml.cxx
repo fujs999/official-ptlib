@@ -4098,6 +4098,10 @@ bool PVXMLGrammar::Start()
     //PStringArray words;
     //GetWordsToRecognise(words);
     //m_recogniser->SetVocabulary()
+
+    m_recogniser->ActivateVocabulary(m_session.GetProperty("aws_sr_customvocabularynames").Tokenise(","),
+                                     m_session.GetProperty("aws_sr_customvocabularylanguages").Tokenise(","));
+
     if (!m_recogniser->Open(PCREATE_NOTIFIER(OnRecognition))) {
       PTRACE(2, "Grammar " << *this << " could not open speech recognition language to \"" << lang << '"');
       delete m_recogniser;

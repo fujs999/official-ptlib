@@ -532,6 +532,24 @@ bool PSpeechRecognition::SetOptions(const PStringOptions & options)
 }
 
 
+bool PSpeechRecognition::CreateVocabulary(const PString &, const PStringArray &)
+{
+  return false;
+}
+
+
+bool PSpeechRecognition::DeleteVocabulary(const PString &, const PStringArray &)
+{
+  return false;
+}
+
+
+bool PSpeechRecognition::ActivateVocabulary(const PStringSet &, const PStringSet &)
+{
+  return false;
+}
+
+
 PSpeechRecognition::Transcript::Transcript(bool final, const PTimeInterval & when, const PString & content, float confidence)
   : m_final(final)
   , m_when(when)
