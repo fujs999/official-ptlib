@@ -1008,7 +1008,7 @@ template <class T> class PArray : public PArrayObjects
         value_type * operator->() const { return  this->Ptr(); }
         value_type & operator* () const { return *this->Ptr(); }
 
-      friend PArray;
+      friend class PArray;
     };
 
     iterator begin()  { return empty() ? end() : iterator(this, 0); }
@@ -1034,7 +1034,7 @@ template <class T> class PArray : public PArrayObjects
         const value_type * operator->() const { return  this->Ptr(); }
         const value_type & operator* () const { return *this->Ptr(); }
 
-      friend PArray;
+      friend class PArray;
     };
 
     const_iterator begin()  const { return empty() ? end() : const_iterator(this, 0); }
