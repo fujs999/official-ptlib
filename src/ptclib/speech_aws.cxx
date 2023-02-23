@@ -727,13 +727,12 @@ public:
     m_notifier = notifier;
 
     HeaderMap headers;
-    headers["language-code"] = GetLanguage();
     headers["media-encoding"] = "pcm";
     headers["sample-rate"] = GetSampleRate();
 
     if (m_activeVocabularies.size() == 1)
       headers["vocabulary-name"] = *m_activeVocabularies.begin();
-    else
+    else if (!m_activeVocabularies.empty())
       headers["vocabulary-names"] = PSTRSTRM(setfill(',') << m_activeVocabularies);
 
     if (m_activeVocabularies.empty())
