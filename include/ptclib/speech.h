@@ -145,7 +145,7 @@ class PSpeechRecognition : public PObject
     );
     virtual bool ActivateVocabulary(
       const PStringSet & names,
-      const PStringSet & languages
+      const PStringSet & languages = PStringSet()
     );
 
     struct Transcript : PObject
