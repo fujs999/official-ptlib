@@ -3481,7 +3481,6 @@ PBoolean PVXMLSession::TraverseSubmit(PXMLElement & element)
   boundary.Splice("--", 0, 0);
 
   PStringStream entityBody;
-  entityBody.fill('\r');
 
   for (PStringSet::iterator itName = namelist.begin(); itName != namelist.end(); ++itName) {
     PCaselessString recordingType = InternalGetVar(*itName+'$', RecordingFileType);
@@ -3489,7 +3488,7 @@ PBoolean PVXMLSession::TraverseSubmit(PXMLElement & element)
       PMIMEInfo part1;
       part1.Set(PMIMEInfo::ContentTypeTag, PMIMEInfo::TextPlain());
       part1.Set(PMIMEInfo::ContentDispositionTag, PSTRSTRM("form-data; name=\"" << *itName << '"'));
-      entityBody << boundary << CRLF << part1 << GetVar(*itName) << CRLF;
+      entityBody << boundary << CRLF << setfill('\r') << part1 << GetVar(*itName) << CRLF;
       continue;
     }
 
@@ -3515,9 +3514,9 @@ PBoolean PVXMLSession::TraverseSubmit(PXMLElement & element)
     file.Read(data.GetPointer(fileLength), fileLength);
 
     entityBody << boundary << CRLF
-               << part1 << PBase64::Encode(data, PBase64::Options::e_NoLF) << CRLF
+               << setfill('\r') << part1 << PBase64::Encode(data, PBase64::Options::e_NoLF) << CRLF
                << boundary << CRLF
-               << part2 << fileLength << CRLF;
+               << setfill('\r') << part2 << fileLength << CRLF;
   }
 
   if (entityBody.IsEmpty())
