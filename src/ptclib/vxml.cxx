@@ -3481,6 +3481,7 @@ PBoolean PVXMLSession::TraverseSubmit(PXMLElement & element)
   boundary.Splice("--", 0, 0);
 
   PStringStream entityBody;
+  entityBody.fill('\r');
 
   for (PStringSet::iterator itName = namelist.begin(); itName != namelist.end(); ++itName) {
     PCaselessString recordingType = InternalGetVar(*itName+'$', RecordingFileType);
