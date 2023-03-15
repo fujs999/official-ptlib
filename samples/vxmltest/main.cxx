@@ -58,6 +58,7 @@ void VxmlTest::Main()
                   "S-sr: Speech recognition method\n"
                   "c-cache: Text to speech cache directory\n"
                   "-clear-cache. Clear the cache on execution\n"
+                  "d-record-dir: Record directory\n"
                   "r-property: Set default property value: name=value\n"
 #if P_VXML_VIDEO
                   "V-video. Enabled video support\n"
@@ -382,6 +383,9 @@ bool TestInstance::Initialise(unsigned instance, const PArgList & args)
     GetCache().SetDirectory(args.GetOptionString("cache"));
   if (args.HasOption("clear-cache"))
     PDirectory::RemoveTree(GetCache().GetDirectory());
+
+  if (args.HasOption("record-dir"))
+    SetRecordDirectory(args.GetOptionString("record-dir"));
 
   if (!Open(VXML_PCM16, audioParams.m_sampleRate, audioParams.m_channels)) {
     cerr << "Instance " << m_instance << " error: cannot open VXML device in PCM mode" << endl;

@@ -102,12 +102,20 @@ static PConstString const DestAttribute("dest");
 static PConstString const DestExprAttribute("destexpr");
 static PConstString const MaxAgeAttribute("maxage");
 static PConstString const MaxStaleAttribute("maxstale");
+static PConstString const MaxTimeAttribute("maxtime");
+static PConstString const DurationAttribute("duration");
+static PConstString const SizeAttribute("size");
 static PConstString const EventAttribute("event");
 static PConstString const EventExprAttribute("eventexpr");
 static PConstString const ErrorSemantic("error.semantic");
 static PConstString const ErrorBadFetch("error.badfetch");
 
 static PConstCaselessString const SRGS("application/srgs");
+
+static PConstString const RecordingFileType("x-filetype");
+static PConstString const RecordingFilePath("x-filepath");
+
+static PConstString const CRLF("\r\n");
 
 
 #if PTRACING
@@ -2055,7 +2063,7 @@ bool PVXMLSession::ProcessEvents()
         if (!m_recordingName.IsEmpty()) {
           PString input;
           if (m_userInputQueue.Dequeue(input))
-            InternalSetVar(m_recordingName, "termchar", input[0]);
+            InternalSetVar(m_recordingName, TermCharProperty, input[0]);
         }
       }
     }
@@ -2080,6 +2088,15 @@ bool PVXMLSession::ProcessEvents()
   }
   else if (vxmlChannel->IsRecording()) {
     PTRACE(4, "Is recording, awaiting event");
+  }
+  else if (m_recordingStatus == RecordingComplete) {
+    PXMLElement * element = dynamic_cast<PXMLElement *>(m_currentNode);
+    if (element != NULL && element->GetName() == "record") {
+      PTRACE(4, "Recording completed.");
+      m_recordingStatus = NotRecording;
+      GoToEventHandler(*element, FilledElement, false, true);
+      return false;
+    }
   }
   else if (IsGrammarRunning()) {
     PTRACE(4, "Grammar awaiting input, awaiting event");
@@ -2394,21 +2411,18 @@ PBoolean PVXMLSession::TraversedRecord(PXMLElement & element)
 
   // Get the destination filename (dest) which is a private extension, not standard VXML
   if (element.HasAttribute(DestAttribute)) {
-    PURL uri;
-    if (uri.Parse(element.GetAttribute(DestAttribute), "file"))
-      destination = uri.AsFilePath();
+    destination = element.GetAttribute(DestAttribute);
+    if (destination.empty())
+      return ThrowSemanticError(element, "Bad URI in dest");
   }
   else if (element.HasAttribute(DestExprAttribute)) {
     PString dest;
     if (EvaluateExpr(element, DestExprAttribute, dest, true))
       return true; // Threw exception
 
-    if (!dest.IsEmpty()) {
-      PURL uri;
-      if (!uri.Parse(dest, "file"))
-        return ThrowSemanticError(element, "Bad URI");
-      destination = uri.AsFilePath();
-    }
+    if (dest.empty())
+      return ThrowSemanticError(element, "Bad URI in destination expression");
+    destination = dest;
   }
 
   PString name = InternalGetName(element, false);
@@ -2422,13 +2436,15 @@ PBoolean PVXMLSession::TraversedRecord(PXMLElement & element)
     destination = PSTRSTRM(m_recordDirectory << name << '_' << PTime().AsString("yyyyMMdd_hhmmss") << supportedFileType);
   }
 
-  m_recordingName = name + '$';
-  InternalSetVar(m_recordingName, TypeAttribute, typeMIME);
-  InternalSetVar(m_recordingName, "uri", PURL(destination));
-  InternalSetVar(m_recordingName, "maxtime", false);
-  InternalSetVar(m_recordingName, "termchar", ' ');
-  InternalSetVar(m_recordingName, "duration" , 0);
-  InternalSetVar(m_recordingName, "size", 0);
+  m_recordingName = PSTRSTRM(DialogScope << '.' << name << '$');
+  m_scriptContext->CreateComposite(m_recordingName);
+
+  InternalSetVar(m_recordingName, RecordingFileType, typeMIME);
+  InternalSetVar(m_recordingName, RecordingFilePath, destination);
+  InternalSetVar(m_recordingName, MaxTimeAttribute, false);
+  InternalSetVar(m_recordingName, TermCharProperty, ' ');
+  InternalSetVar(m_recordingName, DurationAttribute , 0);
+  InternalSetVar(m_recordingName, SizeAttribute, 0);
 
   // Disable stop on DTMF if attribute explicitly false, default is true
   m_recordStopOnDTMF = !element.GetAttribute("dtmfterm").IsFalse();
@@ -2442,7 +2458,7 @@ PBoolean PVXMLSession::TraversedRecord(PXMLElement & element)
   }
 
   recordable->SetFinalSilence(PTimeInterval(element.GetAttribute("finalsilence")));
-  recordable->SetMaxDuration(PTimeInterval(element.GetAttribute("maxtime")));
+  recordable->SetMaxDuration(PTimeInterval(element.GetAttribute(MaxTimeAttribute)));
 
   if (!GetVXMLChannel()->QueueRecordable(recordable))
     return true;
@@ -2939,8 +2955,8 @@ PBoolean PVXMLSession::TraverseBreak(PXMLElement & element)
   if (!time.empty())
     return PlaySilence(PTimeInterval(time+"ms"));
 
-  if (element.HasAttribute("size")) {
-    PString size = element.GetAttribute("size");
+  if (element.HasAttribute(SizeAttribute)) {
+    PString size = element.GetAttribute(SizeAttribute);
     if (size *= "none")
       return true;
     if (size *= "small")
@@ -3457,8 +3473,9 @@ PBoolean PVXMLSession::TraverseSubmit(PXMLElement & element)
   }
 
   // Put in boundary
-  PString boundary = "--------012345678901234567890123458VXML";
-  sendMIME.SetAt( PHTTP::ContentTypeTag(), "multipart/form-data; boundary=" + boundary);
+  PString boundary = "PTLibVXML314159265358979323846";
+  sendMIME.SetAt(PHTTP::ContentTypeTag(), "multipart/form-data; boundary=" + boundary);
+  sendMIME.SetAt(PHTTP::ContentEncodingTag(), "base64");
 
   // After this all boundaries have a "--" prepended
   boundary.Splice("--", 0, 0);
@@ -3466,49 +3483,49 @@ PBoolean PVXMLSession::TraverseSubmit(PXMLElement & element)
   PStringStream entityBody;
 
   for (PStringSet::iterator itName = namelist.begin(); itName != namelist.end(); ++itName) {
-    PString type = GetVar(*itName + ".type");
-    if (type.empty()) {
+    PCaselessString recordingType = InternalGetVar(*itName+'$', RecordingFileType);
+    if (recordingType.empty()) {
       PMIMEInfo part1;
-
       part1.Set(PMIMEInfo::ContentTypeTag, PMIMEInfo::TextPlain());
-      part1.Set(PMIMEInfo::ContentDispositionTag, PSTRSTRM("form-data; name=\"" << *itName << "\"; "));
-
-      entityBody << "--" << boundary << "\r\n"
-        << part1 << GetVar(*itName) << "\r\n";
-
+      part1.Set(PMIMEInfo::ContentDispositionTag, PSTRSTRM("form-data; name=\"" << *itName << '"'));
+      entityBody << boundary << CRLF << part1 << GetVar(*itName) << CRLF;
       continue;
     }
 
-    if (GetVar(*itName + ".type") != "audio/wav" ) {
-      PTRACE(2, "<submit> does not (yet) support submissions of types other than \"audio/wav\"");
+    if (recordingType != "audio/wav") {
+      PTRACE(2, "<submit> does not (yet) support submissions of type \"" << recordingType << '"');
       continue;
     }
 
-    PFile file(GetVar(*itName + ".filename"), PFile::ReadOnly);
+    PFile file(InternalGetVar(*itName+'$', RecordingFilePath), PFile::ReadOnly);
     if (!file.IsOpen()) {
-      PTRACE(2, "<submit> could not find file \"" << file.GetFilePath() << '"');
+      PTRACE(2, "<submit> could not open file \"" << file.GetFilePath() << "\" - " << file.GetErrorText());
       continue;
     }
 
     PMIMEInfo part1, part2;
-    part1.Set(PMIMEInfo::ContentTypeTag, "audio/wav");
+    part1.Set(PMIMEInfo::ContentTypeTag, recordingType);
     part1.Set(PMIMEInfo::ContentDispositionTag,
               "form-data; name=\"voicemail\"; filename=\"" + file.GetFilePath().GetFileName() + '"');
-    // Make PHP happy?
-    // Anyway, this shows how to add more variables, for when namelist containes more elements
-    part2.Set(PMIMEInfo::ContentDispositionTag, "form-data; name=\"MAX_FILE_SIZE\"\r\n\r\n3000000");
+    part2.Set(PMIMEInfo::ContentDispositionTag, "form-data; name=\"MAX_FILE_SIZE\"");
 
-    entityBody << "--" << boundary << "\r\n"
-      << part1 << "\r\n"
-      << file.ReadString(file.GetLength())
-      << "--" << boundary << "\r\n"
-      << part2
-      << "\r\n";
+    off_t fileLength = file.GetLength();
+    PBYTEArray data(fileLength);
+    file.Read(data.GetPointer(fileLength), fileLength);
+
+    entityBody << boundary << CRLF
+               << part1 << PBase64::Encode(data, PBase64::Options::e_NoLF) << CRLF
+               << boundary << CRLF
+               << part2 << fileLength << CRLF;
   }
 
   if (entityBody.IsEmpty())
     return ThrowError(element, PSTRSTRM(ErrorBadFetch << '.' << url.GetScheme() << '.' << http->GetLastResponseCode()),
                       "<submit> could not find anything to send using \"" << setfill(',') << namelist << '"');
+
+  // End boundary has trailing -- as well as leading
+  entityBody << boundary << "--" << CRLF;
+PTrace::SetMaxLength(10000000); PTRACE(4, "Entity body:\n" << entityBody);
 
   PString replyBody;
   if (http->PostData(url, sendMIME, entityBody, replyMIME, replyBody) &&
@@ -3639,7 +3656,7 @@ void PVXMLSession::SetTransferComplete(bool state)
 void PVXMLSession::CompletedTransfer(PXMLElement & element)
 {
   InternalSetVar(element.GetAttribute(NameAttribute) + '$',
-                 "duration",
+                 DurationAttribute,
                  (PTime() - m_transferStartTime).AsString(0, PTimeInterval::SecondsOnly));
 
   if (m_transferStatus != TransferSuccessful) {
@@ -3824,9 +3841,9 @@ PBoolean PVXMLSession::TraversedField(PXMLElement &)
 void PVXMLSession::OnEndRecording(PINDEX bytesRecorded, bool timedOut)
 {
   if (!m_recordingName.IsEmpty()) {
-    InternalSetVar(m_recordingName, "duration" , (PTime() - m_recordingStartTime).GetMilliSeconds());
-    InternalSetVar(m_recordingName, "size", bytesRecorded);
-    InternalSetVar(m_recordingName, "maxtime", timedOut);
+    InternalSetVar(m_recordingName, DurationAttribute , (PTime() - m_recordingStartTime).GetMilliSeconds());
+    InternalSetVar(m_recordingName, SizeAttribute, bytesRecorded);
+    InternalSetVar(m_recordingName, MaxTimeAttribute, timedOut);
   }
 
   m_recordingStatus = RecordingComplete;
