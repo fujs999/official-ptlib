@@ -3525,7 +3525,6 @@ PBoolean PVXMLSession::TraverseSubmit(PXMLElement & element)
 
   // End boundary has trailing -- as well as leading
   entityBody << boundary << "--" << CRLF;
-PTrace::SetMaxLength(10000000); PTRACE(4, "Entity body:\n" << entityBody);
 
   PString replyBody;
   if (http->PostData(url, sendMIME, entityBody, replyMIME, replyBody) &&
