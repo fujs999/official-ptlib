@@ -3506,7 +3506,7 @@ PBoolean PVXMLSession::TraverseSubmit(PXMLElement & element)
     PMIMEInfo part1, part2;
     part1.Set(PMIMEInfo::ContentTypeTag, recordingType);
     part1.Set(PMIMEInfo::ContentDispositionTag,
-              "form-data; name=\"voicemail\"; filename=\"" + file.GetFilePath().GetFileName() + '"');
+              PSTRSTRM("form-data; name=\"" << *itName << "\"; filename=\"" << file.GetFilePath().GetFileName() << '"'));
     part2.Set(PMIMEInfo::ContentDispositionTag, "form-data; name=\"MAX_FILE_SIZE\"");
 
     off_t fileLength = file.GetLength();
