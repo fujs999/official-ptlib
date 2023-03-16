@@ -277,7 +277,7 @@ PHTTP::StatusCode PHTTPClient::ExecuteCommand(Commands cmd,
 
 
 PHTTP::StatusCode PHTTPClient::ExecuteCommand(Commands cmd,
-                                              const PURL & url,
+                                              const PURL & originalURL,
                                               PMIMEInfo & outMIME,
                                               ContentProcessor & processor,
                                               PMIMEInfo & replyMIME)
@@ -294,7 +294,7 @@ PHTTP::StatusCode PHTTPClient::ExecuteCommand(Commands cmd,
   unsigned redirectCount = m_maxRedirects;
   bool needAuthentication = true;
   bool forceReopen = !m_persist;
-  PURL adjustableURL = url;
+  PURL adjustableURL(originalURL);
   for (unsigned retry = 0; retry < 3; ++retry) {
     if (forceReopen)
       CloseBaseReadChannel();
@@ -305,13 +305,13 @@ PHTTP::StatusCode PHTTPClient::ExecuteCommand(Commands cmd,
 
     // Have connection, so fill in the required MIME fields
     if (!outMIME.Contains(HostTag)) {
-      if (url.GetHostName().IsEmpty())
+      if (adjustableURL.GetHostName().IsEmpty())
         outMIME.SetAt(HostTag, "localhost");
       else
-        outMIME.SetAt(HostTag, url.GetHostPort(true));
+        outMIME.SetAt(HostTag, adjustableURL.GetHostPort(true));
     }
 
-    if (!WriteCommand(cmd, url.AsString(m_commandUrlFormat), outMIME, processor))
+    if (!WriteCommand(cmd, adjustableURL.AsString(m_commandUrlFormat), outMIME, processor))
       continue;
 
     // If not persisting need to shut down write so other end stops reading
@@ -880,10 +880,10 @@ bool PHTTPClient::ConnectURL(const PURL & destURL)
 
       if (usingProxy) {
         for (unsigned retry = 0; retry < 3; ++retry) {
+          PTRACE(4, "Connecting " << destURL.AsString(PURL::HostPortOnly) << " via proxy at " << ap);
           if (!tcp->Connect(ap.GetAddress()))
             return SetLastResponse(TransportConnectError, PSTRSTRM("TCP connect fail: " << tcp->GetErrorText() << " (errno=" << tcp->GetErrorNumber() << ')'));
 
-          PTRACE(4, "Connected to secure proxy at " << ap);
           if (!Open(tcp.get(), false)) {
             Detach();
             return SetLastResponse(TransportConnectError, PString::Empty());
@@ -907,9 +907,9 @@ bool PHTTPClient::ConnectURL(const PURL & destURL)
         Detach(); // Connects again later
       }
       else {
+        PTRACE(4, "Connecting " << destURL.AsString(PURL::HostPortOnly) << " to " << ap);
         if (!tcp->Connect(ap.GetAddress()))
           return SetLastResponse(TransportConnectError, PSTRSTRM("TCP connect fail: " << tcp->GetErrorText() << " (errno=" << tcp->GetErrorNumber() << ')'));
-        PTRACE(4, "Connected for secure URL at " << ap);
       }
 
       PAutoPtr<PSSLContext> context(new PSSLContext(method));
@@ -938,9 +938,9 @@ bool PHTTPClient::ConnectURL(const PURL & destURL)
     return SetLastResponse(TransportConnectError, "TLS secure sockets unsupported");
 #endif
   {
+    PTRACE(4, "Connecting " << destURL.AsString(PURL::HostPortOnly) <<  (usingProxy ? " via proxy at " : " to ") << ap);
     if (!Connect(ap.GetAddress(), ap.GetPort()))
       return SetLastResponse(TransportConnectError, PString::Empty());
-    PTRACE(4, "Connected " << (usingProxy ? "to proxy" : "for URL") << " at " << ap);
   }
   return true;
 }
