@@ -3475,7 +3475,6 @@ PBoolean PVXMLSession::TraverseSubmit(PXMLElement & element)
   // Put in boundary
   PString boundary = "PTLibVXML314159265358979323846";
   sendMIME.SetAt(PHTTP::ContentTypeTag(), "multipart/form-data; boundary=" + boundary);
-  sendMIME.SetAt(PHTTP::ContentEncodingTag(), "base64");
 
   // After this all boundaries have a "--" prepended
   boundary.Splice("--", 0, 0);
@@ -3503,20 +3502,20 @@ PBoolean PVXMLSession::TraverseSubmit(PXMLElement & element)
       continue;
     }
 
+    off_t fileLength = file.GetLength();
+
     PMIMEInfo part1, part2;
+    part1.Set(PHTTP::ContentLengthTag, fileLength);
     part1.Set(PMIMEInfo::ContentTypeTag, recordingType);
     part1.Set(PMIMEInfo::ContentDispositionTag,
               PSTRSTRM("form-data; name=\"" << *itName << "\"; filename=\"" << file.GetFilePath().GetFileName() << '"'));
     part2.Set(PMIMEInfo::ContentDispositionTag, "form-data; name=\"MAX_FILE_SIZE\"");
 
-    off_t fileLength = file.GetLength();
-    PBYTEArray data(fileLength);
-    file.Read(data.GetPointer(fileLength), fileLength);
-
-    entityBody << boundary << CRLF
-               << setfill('\r') << part1 << PBase64::Encode(data, PBase64::Options::e_NoLF) << CRLF
-               << boundary << CRLF
-               << setfill('\r') << part2 << fileLength << CRLF;
+    entityBody << boundary << CRLF << setfill('\r') << part1;
+    char buffer[10000];
+    while (file.Read(buffer,sizeof(buffer)))
+      entityBody.write(buffer, file.GetLastReadCount());
+    entityBody << CRLF << boundary << CRLF << setfill('\r') << part2 << fileLength << CRLF;
   }
 
   if (entityBody.IsEmpty())
