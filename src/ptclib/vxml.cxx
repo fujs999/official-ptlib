@@ -3456,6 +3456,8 @@ PBoolean PVXMLSession::TraverseSubmit(PXMLElement & element)
   http->SetReadTimeout(GetTimeProperty(FetchTimeoutProperty, &element));
 
   PMIMEInfo sendMIME, replyMIME;
+  PString replyBody;
+
   AddCookie(sendMIME, url);
 
   if (urlencoded) {
@@ -3463,7 +3465,6 @@ PBoolean PVXMLSession::TraverseSubmit(PXMLElement & element)
     for (PStringSet::iterator it = namelist.begin(); it != namelist.end(); ++it)
       vars.SetAt(*it, GetVar(*it));
 
-    PString replyBody;
     if (http->PostData(url, sendMIME, vars, replyMIME, replyBody) &&
         InternalLoadVXML(url, replyBody, PString::Empty()))
       return true;
@@ -3479,7 +3480,7 @@ PBoolean PVXMLSession::TraverseSubmit(PXMLElement & element)
   // After this all boundaries have a "--" prepended
   boundary.Splice("--", 0, 0);
 
-  PStringStream entityBody;
+  std::ostringstream entityBody;
 
   for (PStringSet::iterator itName = namelist.begin(); itName != namelist.end(); ++itName) {
     PCaselessString recordingType = InternalGetVar(*itName+'$', RecordingFileType);
@@ -3518,15 +3519,16 @@ PBoolean PVXMLSession::TraverseSubmit(PXMLElement & element)
     entityBody << CRLF << boundary << CRLF << setfill('\r') << part2 << fileLength << CRLF;
   }
 
-  if (entityBody.IsEmpty())
-    return ThrowError(element, PSTRSTRM(ErrorBadFetch << '.' << url.GetScheme() << '.' << http->GetLastResponseCode()),
-                      "<submit> could not find anything to send using \"" << setfill(',') << namelist << '"');
-
   // End boundary has trailing -- as well as leading
   entityBody << boundary << "--" << CRLF;
 
-  PString replyBody;
-  if (http->PostData(url, sendMIME, entityBody, replyMIME, replyBody) &&
+  std::string bodyStr = entityBody.str();
+  if (bodyStr.length() <= boundary.length()+4)
+    return ThrowError(element, PSTRSTRM(ErrorBadFetch << '.' << url.GetScheme() << '.' << http->GetLastResponseCode()),
+                      "<submit> could not find anything to send using \"" << setfill(',') << namelist << '"');
+
+  if (http->ExecuteCommand(PHTTP::POST, url, sendMIME, PBYTEArray(bodyStr, false), replyMIME) == PHTTP::RequestOK &&
+      http->ReadContentBody(replyMIME, replyBody) &&
       InternalLoadVXML(url, replyBody, PString::Empty()))
     return true;
 

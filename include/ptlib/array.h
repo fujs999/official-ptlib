@@ -629,6 +629,13 @@ class PBYTEArray : public PBaseArray<BYTE>
       PBoolean dynamic = true ///< Buffer is copied and dynamically allocated.
     ) : ParentClass(buffer, length, dynamic) { }
 
+    /**Construct a new dynamic array of unsigned chars.
+     */
+    PBYTEArray(
+      const std::string & str,  ///< String to copy to BYTE array
+      PBoolean dynamic = true   ///< Buffer is copied and dynamically allocated.
+    ) : ParentClass(reinterpret_cast<const BYTE *>(str.data()), str.length(), dynamic) { }
+
     PBYTEArray(PContainerReference & reference_)
       : ParentClass(reference_) { }
   //@}
