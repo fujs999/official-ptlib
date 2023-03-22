@@ -4110,17 +4110,18 @@ bool PVXMLGrammar::Start()
       return ThrowError2(m_session, m_field, "error.unsupported.language",
                          "Grammar " << *this << " could not set speech recognition language to \"" << lang << '"');
 
-    // Currentlly, in AWS world, it takes several seconds to create a vocabulary.
+    // Currently, in AWS world, it takes several seconds to create a vocabulary.
     // So we need to figure out another solution than setting it up here.
     //PStringArray words;
     //GetWordsToRecognise(words);
-    //m_recogniser->SetVocabulary()
+    //m_recogniser->CreateVocabulary("grammar_words", words);
+    //m_recogniser->ActivateVocabulary("grammar_words");
 
-    m_recogniser->ActivateVocabulary(m_session.GetProperty("aws_sr_customvocabularynames").Tokenise(","),
-                                     m_session.GetProperty("aws_sr_customvocabularylanguages").Tokenise(","));
+    m_recogniser->ActivateVocabulary(m_session.GetProperty("vocabularynames").Tokenise(","),
+                                     m_session.GetProperty("vocabularylanguages").Tokenise(","));
 
     if (!m_recogniser->Open(PCREATE_NOTIFIER(OnRecognition))) {
-      PTRACE(2, "Grammar " << *this << " could not open speech recognition language to \"" << lang << '"');
+      PTRACE(2, "Grammar " << *this << " could not open speech recognition.");
       delete m_recogniser;
       m_recogniser = NULL;
     }

@@ -627,14 +627,14 @@ public:
   }
 
 
-  virtual bool SetOptions(const PStringOptions & options)
+  virtual bool SetOptions(const PStringOptions & options) override
   {
     m_webSocket.SetProxies(options);
     return PAwsClient<Aws::TranscribeService::TranscribeServiceClient>::SetOptions(options) && PSpeechRecognition::SetOptions(options);
   }
 
 
-  virtual bool SetSampleRate(unsigned rate)
+  virtual bool SetSampleRate(unsigned rate) override
   {
     PWaitAndSignal lock(m_openMutex);
     if (IsOpen())
@@ -645,25 +645,25 @@ public:
   }
 
 
-  virtual unsigned GetSampleRate() const
+  virtual unsigned GetSampleRate() const override
   {
     return m_sampleRate;
   }
 
 
-  virtual bool SetChannels(unsigned channels)
+  virtual bool SetChannels(unsigned channels) override
   {
     return channels == 1;
   }
 
 
-  virtual unsigned GetChannels() const
+  virtual unsigned GetChannels() const override
   {
     return 1;
   }
 
 
-  virtual bool SetLanguage(const PString & language)
+  virtual bool SetLanguage(const PString & language) override
   {
     PWaitAndSignal lock(m_openMutex);
     if (IsOpen())
@@ -678,13 +678,13 @@ public:
   }
 
 
-  virtual PString GetLanguage() const
+  virtual PString GetLanguage() const override
   {
     return Aws::TranscribeService::Model::LanguageCodeMapper::GetNameForLanguageCode(m_language);
   }
 
 
-  virtual bool CreateVocabulary(const PString & name, const PStringArray & words)
+  virtual bool CreateVocabulary(const PString & name, const PStringArray & words) override
   {
     DeleteVocabulary(name);
 
@@ -706,10 +706,10 @@ public:
 
     PTRACE(2, "Could not create vocubulary: " << outcome.GetResult().GetFailureReason());
     return false;
-    }
+  }
 
 
-  virtual bool ActivateVocabulary(const PStringSet & names, const PString & languages)
+  virtual bool ActivateVocabulary(const PStringSet & names, const PStringSet & languages) override
   {
     m_activeVocabularies = names;
     m_activeLanguages = languages;
@@ -717,7 +717,7 @@ public:
   }
 
 
-  virtual bool Open(const Notifier & notifier)
+  virtual bool Open(const Notifier & notifier) override
   {
     PWaitAndSignal lock(m_openMutex);
     Close();
@@ -730,18 +730,22 @@ public:
     headers["media-encoding"] = "pcm";
     headers["sample-rate"] = GetSampleRate();
 
-    if (m_activeVocabularies.size() == 1)
-      headers["vocabulary-name"] = *m_activeVocabularies.begin();
-    else if (!m_activeVocabularies.empty())
-      headers["vocabulary-names"] = PSTRSTRM(setfill(',') << m_activeVocabularies);
-
     if (m_activeVocabularies.empty())
       headers["language-code"] = GetLanguage();
-    else if (m_activeLanguages.size() < 2)
-      headers["language-code"] = *m_activeVocabularies.begin();
     else {
-      headers["identify-language"] = "true";
-      headers["language-options"] = PSTRSTRM(setfill(',') << m_activeLanguages);
+      if (m_activeVocabularies.size() > 1)
+        headers["vocabulary-names"] = PSTRSTRM(setfill(',') << m_activeVocabularies);
+      else
+        headers["vocabulary-name"] = *m_activeVocabularies.begin();
+
+      if (m_activeLanguages.empty())
+        headers["language-code"] = GetLanguage();
+      else if (m_activeLanguages.size() == 1)
+        headers["language-code"] = *m_activeLanguages.begin();
+      else {
+        headers["identify-language"] = "true";
+        headers["language-options"] = PSTRSTRM(setfill(',') << m_activeLanguages);
+      }
     }
 
     PURL url = SignURL("wss://transcribestreaming:8443/stream-transcription-websocket", "transcribe", headers);
@@ -756,13 +760,13 @@ public:
   }
 
 
-  virtual bool IsOpen() const
+  virtual bool IsOpen() const override
   {
     return m_webSocket.IsOpen();
   }
 
 
-  virtual bool Close()
+  virtual bool Close() override
   {
     PWaitAndSignal lock(m_openMutex);
     if (!IsOpen())
@@ -776,7 +780,7 @@ public:
   }
 
 
-  virtual bool Listen(const PFilePath & fn)
+  virtual bool Listen(const PFilePath & fn) override
   {
     if (!PAssert(!fn.empty(), PInvalidParameter))
       return false;
@@ -801,7 +805,7 @@ public:
   }
 
 
-  virtual bool Listen(const int16_t * samples, size_t sampleCount)
+  virtual bool Listen(const int16_t * samples, size_t sampleCount) override
   {
     PWaitAndSignal lock(m_openMutex);
     return m_webSocket.IsOpen() && WriteAudioEvent(samples, sampleCount);
