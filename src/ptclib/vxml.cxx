@@ -1104,11 +1104,10 @@ bool PVXMLPlayableHTTP::OnStart()
 
   // open the resource
   PVXMLSession & session = m_vxmlChannel->GetSession();
-  PHTTPClient * client = session.CreateHTTPClient();
+  PHTTPClient * client = session.InternalCreateHTTPClient();
   client->SetReadTimeout(session.GetTimeProperty(FetchTimeoutProperty));
   client->SetPersistent(false);
   PMIMEInfo outMIME, replyMIME;
-  session.AddCookie(outMIME, m_url);
   int code = client->GetDocument(m_url, outMIME, replyMIME);
   if ((code != 200) || (replyMIME(PHTTP::TransferEncodingTag()) *= PHTTP::ChunkedTag())) {
     delete client;
@@ -1512,12 +1511,11 @@ bool PVXMLSession::LoadActualResource(const PURL & url,
                                       PBYTEArray & data,
                                       PVXMLCache::Params & cacheParams)
 {
-  PAutoPtr<PHTTPClient> http(CreateHTTPClient());
+  PAutoPtr<PHTTPClient> http(InternalCreateHTTPClient());
 
   http->SetReadTimeout(timeout);
 
   PMIMEInfo outMIME, replyMIME;
-  AddCookie(outMIME, url);
 
   if (!http->GetDocument(url, outMIME, replyMIME)) {
     PTRACE(2, "GET " << url << " failed with "
@@ -1604,20 +1602,23 @@ void PVXMLSession::SetProxies(const PHTTP::Proxies & proxies)
 }
 
 
-PHTTPClient * PVXMLSession::CreateHTTPClient() const
+PHTTPClient * PVXMLSession::CreateHTTPClient()
 {
-  PHTTPClient * http = new PHTTPClient("PTLib VXML Client");
-  http->SetSSLCredentials(*this);
-  PWaitAndSignal lock(m_httpMutex);
-  http->SetProxies(m_httpProxies);
-  return http;
+  return new PHTTPClient("PTLib VXML Client");
 }
 
 
-void PVXMLSession::AddCookie(PMIMEInfo & mime, const PURL & url) const
+PHTTPClient * PVXMLSession::InternalCreateHTTPClient()
 {
-  PWaitAndSignal lock(m_cookieMutex);
-  m_cookies.AddCookie(mime, url);
+  PHTTPClient * http = CreateHTTPClient();
+  http->SetSSLCredentials(*this);
+  m_httpMutex.Wait();
+  http->SetProxies(m_httpProxies);
+  m_httpMutex.Signal();
+  m_cookieMutex.Wait();
+  http->SetCookies(m_cookies);
+  m_cookieMutex.Signal();
+  return http;
 }
 
 
@@ -3452,13 +3453,11 @@ PBoolean PVXMLSession::TraverseSubmit(PXMLElement & element)
     return ThrowBadFetchError(element, "Could not GET " << url);
   }
 
-  PAutoPtr<PHTTPClient> http(CreateHTTPClient());
+  PAutoPtr<PHTTPClient> http(InternalCreateHTTPClient());
   http->SetReadTimeout(GetTimeProperty(FetchTimeoutProperty, &element));
 
   PMIMEInfo sendMIME, replyMIME;
   PString replyBody;
-
-  AddCookie(sendMIME, url);
 
   if (urlencoded) {
     PStringToString vars;

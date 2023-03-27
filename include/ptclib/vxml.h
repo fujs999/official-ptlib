@@ -386,7 +386,7 @@ class PVXMLSession : public PIndirectChannel, public PSSLCertificateInfo
     const PDirectory & GetRecordDirectory() const { return m_recordDirectory; }
 
     void SetProxies(const PHTTP::Proxies & proxies);
-    PHTTPClient * CreateHTTPClient() const;
+    virtual PHTTPClient * CreateHTTPClient();
 
     virtual PBoolean Load(const PString & source);
     virtual PBoolean LoadFile(const PFilePath & file, const PString & firstForm = PString::Empty());
@@ -526,7 +526,6 @@ class PVXMLSession : public PIndirectChannel, public PSSLCertificateInfo
 #endif // P_VXML_VIDEO
 
     PHTTPCookies GetCookies() const { PWaitAndSignal lock(m_cookieMutex);  return m_cookies; }
-    void AddCookie(PMIMEInfo & mime, const PURL & url) const;
 
     const PString & GetLanguage() const { return m_xmlLanguage; }
 
@@ -552,6 +551,7 @@ class PVXMLSession : public PIndirectChannel, public PSSLCertificateInfo
     bool IsFinalProcessing() const { return m_closing || m_promptMode == e_FinalProcessing; }
 
     PURL NormaliseResourceName(const PString & src);
+    PHTTPClient * InternalCreateHTTPClient();
 
     PDECLARE_MUTEX(m_sessionMutex);
 
@@ -700,6 +700,7 @@ class PVXMLSession : public PIndirectChannel, public PSSLCertificateInfo
     friend class PVXMLTraverseEvent;
     friend class PVXMLTraverseFilled;
     friend class PVXMLTraverseLog;
+    friend class PVXMLPlayableHTTP;
 };
 
 

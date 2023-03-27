@@ -291,6 +291,7 @@ PHTTP::StatusCode PHTTPClient::ExecuteCommand(Commands cmd,
   if (m_persist && !outMIME.Contains(ConnectionTag()))
     outMIME.SetAt(ConnectionTag(), KeepAliveTag());
 
+  bool noPredefinedCookies = !outMIME.Has(PHTTP::CookieTag);
   unsigned redirectCount = m_maxRedirects;
   bool needAuthentication = true;
   bool forceReopen = !m_persist;
@@ -310,6 +311,9 @@ PHTTP::StatusCode PHTTPClient::ExecuteCommand(Commands cmd,
       else
         outMIME.SetAt(HostTag, adjustableURL.GetHostPort(true));
     }
+
+    if (noPredefinedCookies)
+      m_cookies.AddCookie(outMIME, adjustableURL);
 
     if (!WriteCommand(cmd, adjustableURL.AsString(m_commandUrlFormat), outMIME, processor))
       continue;

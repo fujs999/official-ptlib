@@ -842,6 +842,16 @@ class PHTTPClient : public PHTTP, public PSSLCertificateInfo
       */
     const Proxies & GetProxies() const { return m_proxies; }
 
+    /**Set cookies for connections.
+      */
+    void SetCookies(
+      const PHTTPCookies & cookies ///< Cookies
+    ) { m_cookies = cookies; }
+
+    /**Get proxy for connections.
+      */
+    const PHTTPCookies & GetCookies() const { return m_cookies; }
+
 /** Set authentication paramaters to be use for retreiving documents
     */
     void SetAuthenticationInfo(
@@ -873,10 +883,11 @@ class PHTTPClient : public PHTTP, public PSSLCertificateInfo
     virtual bool HandleAuthorisation(bool isProxy, PMIMEInfo & replyMIME);
 
   protected:
-    PString  m_userAgentName;
-    bool     m_persist;
-    unsigned m_maxRedirects;
-    Proxies  m_proxies;
+    PString      m_userAgentName;
+    bool         m_persist;
+    unsigned     m_maxRedirects;
+    Proxies      m_proxies;
+    PHTTPCookies m_cookies;
     struct {
       PString  m_userName;
       PString  m_password;
