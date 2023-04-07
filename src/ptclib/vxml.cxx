@@ -1624,6 +1624,11 @@ PHTTPClient * PVXMLSession::InternalCreateHTTPClient()
 
 PBoolean PVXMLSession::LoadURL(const PURL & url)
 {
+  if (url.IsEmpty()) {
+    PTRACE(1, "No URL spcified to load");
+    return false;
+  }
+
   PTRACE(4, "Loading URL " << url);
 
   // retreive the document (may be a HTTP get)
@@ -1716,12 +1721,14 @@ PURL PVXMLSession::NormaliseResourceName(const PString & src)
   PURL documentURI = InternalGetVar(DocumentScope, DocumentURIVar);
   documentURI.ChangePath(PString::Empty()); // Remove last element of document URL
 
-  if (srcURL.IsEmpty()) {
-    // Use PathOnly as we don't want all the query argements etc
-    if (srcURL.Parse(PSTRSTRM(documentURI.AsString(PURL::PathOnly) << '/' << src), documentURI.GetScheme()))
-      return srcURL;
-  }
-  else if (documentURI.GetScheme() == srcURL.GetScheme()) {
+  // If could not parse src, then must be just a relative path with no scheme,
+  // so we u previous URL PathOnly as we don't want all the query argements etc
+  if (srcURL.IsEmpty() && srcURL.Parse(PSTRSTRM(documentURI.AsString(PURL::PathOnly) << '/' << src), documentURI.GetScheme()))
+    return srcURL;
+
+  // If src was a relative path with a scheme and it is the same as the
+  // previous document, use the various components from that URL
+  if (documentURI.GetScheme() == srcURL.GetScheme()) {
     srcURL.SetHostName(documentURI.GetHostName());
     srcURL.SetPort(documentURI.GetPort());
     srcURL.SetUserName(documentURI.GetUserName());
@@ -1731,7 +1738,12 @@ PURL PVXMLSession::NormaliseResourceName(const PString & src)
     return srcURL;
   }
 
-  PTRACE(2, "NormaliseResourceName failed: document=" << documentURI << ", src=\"" << src << '"');
+  // Finally, if a relative path file URL, we try it against
+  // current working directory
+  if (srcURL.GetScheme() == "file")
+    return srcURL;
+
+  PTRACE(2, "NormaliseResourceName failed: src=\"" << src << "\", document=" << documentURI);
   return PURL();  // Throw error.badfetch
 }
 
