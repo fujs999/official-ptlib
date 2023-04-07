@@ -165,6 +165,8 @@ class PURL : public PObject
       PathTranslation,
       /// Translate the query variable field for a URL.
       QueryTranslation,
+      /// Translate the fragment variable field for a URL.
+      FragmentTranslation,
       /// Translate the parameter variables field for a URL.
       ParameterTranslation,
       /// Translate the quoted parameter variables field for a URL.

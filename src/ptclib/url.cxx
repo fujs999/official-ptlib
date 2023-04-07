@@ -250,6 +250,10 @@ PString PURL::TranslateString(const PString & str, TranslationType type)
 
       return str.ToLiteral();
 
+    case FragmentTranslation :
+      safeChars += ";/?:@&=+$,"; // Section 4.1
+      break;
+
     default :
       break;    // Section 3.4, no reserved characters may be used
   }
@@ -599,7 +603,7 @@ bool PURL::LegacyParse(const char * cstr, const PURLLegacyScheme & schemeInfo)
 
   // chop off any trailing fragment
   if (schemeInfo.hasFragments && (pos = str.Find('#', start)) < end) {
-    m_fragment = UntranslateString(str(pos+1, end), PathTranslation);
+    m_fragment = UntranslateString(str(pos+1, end), FragmentTranslation);
     end = pos-1;
   }
 
@@ -732,11 +736,10 @@ PString PURL::LegacyAsString(PURL::UrlFormat fmt, const PURLLegacyScheme * schem
     str << TranslateString(m_contents, PathTranslation);
 
   if (fmt == FullURL || fmt == RelativeOnly) {
-    if (!m_fragment.IsEmpty())
-      str << "#" << TranslateString(m_fragment, PathTranslation);
-
     OutputVars(str, m_paramVars, ';', ';', '=', ParameterTranslation);
     OutputVars(str, m_queryVars, '?', '&', '=', QueryTranslation);
+    if (!m_fragment.IsEmpty())
+      str << "#" << TranslateString(m_fragment, FragmentTranslation);
   }
 
   return str;
@@ -1272,7 +1275,7 @@ class PURL_DataScheme : public PURLScheme
       if (base64)
         strm << ";base64";
 
-      strm << ',' << PURL::TranslateString(purl.GetContents(), PURL::PathTranslation);
+      strm << ',' << PURL::TranslateString(purl.GetContents(), PURL::FragmentTranslation);
 
       return strm;
     }
