@@ -2957,8 +2957,14 @@ bool PIPSocket::PortRange::Connect(PIPSocket & socket, const Address & addr, con
   do {
     if (socket.Connect(binding, nextPort, addr))
       return true;
-    if (socket.GetErrorNumber() != EADDRINUSE && socket.GetErrorNumber() != EADDRNOTAVAIL)
-      return false;
+    switch (socket.GetErrorNumber()) {
+      case EADDRINUSE:
+      case EADDRNOTAVAIL:
+      case EACCES:
+        return false;
+      default:
+        break;
+    }
     PTRACE(5, &socket, PTraceModule(), "Could not connect using local port " << nextPort);
     if (++nextPort >= maxPort)
       nextPort = basePort;
