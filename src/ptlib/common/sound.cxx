@@ -180,7 +180,7 @@ PSoundChannel * PSoundChannel::CreateOpenedChannel(const Params & params)
     if (adjustedParams.m_driver.IsEmpty())
       adjustedParams.m_device = PSoundChannel::GetDefaultDevice(params.m_direction);
     else {
-      PStringArray devices = PSoundChannel::GetDriversDeviceNames(adjustedParams.m_driver, PSoundChannel::Player);
+      PStringArray devices = PSoundChannel::GetDriversDeviceNames(adjustedParams.m_driver, params.m_direction);
       if (!devices.IsEmpty())
         adjustedParams.m_device = devices[0];
     }
