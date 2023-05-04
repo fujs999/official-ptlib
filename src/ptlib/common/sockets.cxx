@@ -2961,9 +2961,9 @@ bool PIPSocket::PortRange::Connect(PIPSocket & socket, const Address & addr, con
       case EADDRINUSE:
       case EADDRNOTAVAIL:
       case EACCES:
-        return false;
-      default:
         break;
+      default:
+        return false;
     }
     PTRACE(5, &socket, PTraceModule(), "Could not connect using local port " << nextPort);
     if (++nextPort >= maxPort)
