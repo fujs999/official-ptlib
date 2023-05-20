@@ -424,10 +424,11 @@ MY_ARG_ENABLE(
 dnl ########################################################################
 dnl check for headers
 AC_CHECK_HEADERS(limits.h alloca.h signal.h fcntl.h sys/time.h termios.h sys/termios.h \
-                 ioctl.h sys/ioctl.h sys/sockio.h sys/sysctl.h sys/socket.h \
+                 ioctl.h sys/ioctl.h sys/sockio.h sys/socket.h \
                  arpa/inet.h netdb.h ifaddrs.h netinet/in.h netinet/tcp.h \
                  net/if_types.h net/if_dl.h netinet/if_ether.h linux/errqueue.h)
 AC_CHECK_HEADER(net/if.h, [AC_DEFINE(HAVE_NET_IF_H,1)],, [#include <sys/socket.h>])
+AS_VAR_IF([target_os], [linux],[],[AC_CHECK_HEADERS(sys/sysctl.h)])
 AC_HEADER_DIRENT()
 
 
@@ -752,71 +753,6 @@ MY_COMPILE_IFELSE(
    [pid_t p = setpgrp();],
    [AC_DEFINE(P_SETPGRP_NOPARM, 1)]
 )
-   
-
-dnl ########################################################################
-dnl see if using GNU glibc++, because then we have atomic integer operations
-
-dnl MSWIN_DISPLAY    atomic,Has std::atomic
-dnl MSWIN_DEFINE     atomic,P_STD_ATOMIC
-
-MY_COMPILE_IFELSE(
-   [if has std::atomic],
-   [$CPLUSPLUS_STD],
-   [#include <atomic>],
-   [
-      std::atomic<unsigned> val;
-      val.exchange(1);
-   ],
-   [
-      AC_DEFINE(P_STD_ATOMIC, 1)
-   ],
-   [
-   MY_LINK_IFELSE(
-      [if has builtin atomic],
-      [],
-      [],
-      [],
-      [
-         int val;
-         __sync_fetch_and_add(&val, 1);
-      ],
-      [
-         AC_DEFINE(P_ATOMICITY_BUILTIN,1)
-      ],
-      MY_COMPILE_IFELSE(
-         [if has bits/atomicity.h],
-         [],
-         [#include <bits/atomicity.h>],
-         [_Atomic_word val],
-         [P_ATOMICITY_HEADER="<bits/atomicity.h>"],
-         MY_COMPILE_IFELSE(
-            [if has ext/atomicity.h],
-            [],
-            [#include <ext/atomicity.h>],
-            [_Atomic_word val],
-            [P_ATOMICITY_HEADER="<ext/atomicity.h>"],
-            [AC_MSG_RESULT([no (SIMULATING!)])]
-         )
-      )
-   )
-
-   if test -n "$P_ATOMICITY_HEADER" ; then
-      AC_MSG_RESULT(yes $P_ATOMICITY_HEADER)
-      AC_DEFINE_UNQUOTED(P_ATOMICITY_HEADER, $P_ATOMICITY_HEADER)
-
-      AC_MSG_CHECKING(if atomic __exchange_and_add is in __gnu_cxx namespace)
-      AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include P_ATOMICITY_HEADER]], [[
-            _Atomic_word val;
-            __gnu_cxx::__exchange_and_add(&val, 1);
-         ]])],[
-            AC_MSG_RESULT(yes)
-            AC_DEFINE_UNQUOTED(P_ATOMICITY_NAMESPACE, __gnu_cxx::)
-         ],[AC_MSG_RESULT(no)
-      ])
-   fi
-   ]
-)
 
 
 dnl ########################################################################
@@ -1062,30 +998,6 @@ AC_CHECK_HEADERS(
       AC_DEFINE(P_HAS_WCHAR, 1)
       AC_DEFINE(P_HAS_WOSTREAM, 1)
    ]
-)
-
-
-dnl ########################################################################
-dnl check for iostream::set_rdbuf
-
-dnl MSWIN_DISPLAY    set_rdbuf,iostream has set_rdbuf
-dnl MSWIN_DEFINE     set_rdbuf,P_HAS_SET_RDBUF
-dnl MSWIN_IF_FEATURE set_rdbuf,!android
-
-MY_COMPILE_IFELSE(
-   [if has iostream::set_rdbuf],
-   [$CPLUSPLUS_STD],
-   [#include <iostream>],
-   [
-      struct MyStream : public std::iostream {
-        MyStream()
-          : std::iostream(NULL)
-        {
-          set_rdbuf(NULL);
-        }
-      };
-   ],
-   [AC_DEFINE(P_HAS_SET_RDBUF, 1, "set_rdbuf found")]
 )
 
 
@@ -1839,40 +1751,42 @@ dnl MSWIN_FIND_FILE  v8,P_V8_LIB_RELEASE32,v8_monolith.lib,out.gn/ia32.release/.
 dnl MSWIN_FIND_FILE  v8,P_V8_LIB_DEBUG64,v8_monolith.lib,out.gn/x64.debug/...
 dnl MSWIN_FIND_FILE  v8,P_V8_LIB_RELEASE64,v8_monolith.lib,out.gn/x64.release/...
 
+# Needs at least C++17
 oldCXXFLAGS="$CXXFLAGS"
-CXXFLAGS="$CXXFLAGS $CPLUSPLUS_STD"
- 
-AS_VAR_IF([target_os], [Darwin],
-   [
-      V8_EXTRA_CFLAGS="-I/opt/homebrew/opt/v8/include"
-      V8_EXTRA_LIBS="-L/opt/homebrew/opt/v8/lib -lv8_libplatform -lv8_libbase"
-   ]
-)
+CXXFLAGS="$CXXFLAGS -std=c++17"
 
 PTLIB_MODULE_OPTION(
    [V8],
    [v8],
    [V8 Javascript script support],
    [v8],
-   [$V8_EXTRA_CFLAGS],
-   [-lv8 $V8_EXTRA_LIBS],
+   [],
+   [],
    [#include <v8.h>],
    [v8::V8::Initialize()],
-   [],
-   [AS_VAR_IF([CPLUSPLUS_STD], ["-std=c++03"],[
-      CXXFLAGS="$oldCXXFLAGS -std=c++17"
-      MY_MODULE_OPTION(
+   [AC_SUBST(CPLUSPLUS_STD,"-std=c++17")],
+   [MY_MODULE_OPTION(
+      [V8],
+      [v8],
+      [V8 Javascript script support (Ubuntu)],
+      [],
+      [-I/usr/include/v8],
+      [-lv8 -lv8_libplatform -lv8_libbase],
+      [#include <v8.h>],
+      [v8::V8::Initialize()],
+      [AC_SUBST(CPLUSPLUS_STD,"-std=c++17")],
+      [MY_MODULE_OPTION(
          [V8],
          [v8],
-         [V8 Javascript script support (C++17)],
+         [V8 Javascript script support (Homebrew)],
          [],
-         [$V8_EXTRA_CFLAGS],
-         [-lv8 $V8_EXTRA_LIBS],
+         [-I/opt/homebrew/opt/v8/include],
+         [-L/opt/homebrew/opt/v8/lib -lv8 -lv8_libplatform -lv8_libbase],
          [#include <v8.h>],
          [v8::V8::Initialize()],
          [AC_SUBST(CPLUSPLUS_STD,"-std=c++17")]
-      )
-   ])],
+      )]
+   )]
 )
 
 CXXFLAGS="$oldCXXFLAGS"
@@ -2475,6 +2389,104 @@ AC_LANG_POP(C)
 
 
 dnl ########################################################################
+dnl check for iostream::set_rdbuf
+
+dnl MSWIN_DISPLAY    set_rdbuf,iostream has set_rdbuf
+dnl MSWIN_DEFINE     set_rdbuf,P_HAS_SET_RDBUF
+dnl MSWIN_IF_FEATURE set_rdbuf,!android
+
+MY_COMPILE_IFELSE(
+   [if has iostream::set_rdbuf],
+   [$CPLUSPLUS_STD],
+   [#include <iostream>],
+   [
+      struct MyStream : public std::iostream {
+        MyStream()
+          : std::iostream(NULL)
+        {
+          set_rdbuf(NULL);
+        }
+      };
+   ],
+   [AC_DEFINE(P_HAS_SET_RDBUF, 1, "set_rdbuf found")]
+)
+
+
+dnl ########################################################################
+dnl see if using GNU glibc++, because then we have atomic integer operations
+
+dnl MSWIN_DISPLAY    atomic,Has std::atomic
+dnl MSWIN_DEFINE     atomic,P_STD_ATOMIC
+
+MY_COMPILE_IFELSE(
+   [if has std::atomic],
+   [$CPLUSPLUS_STD],
+   [#include <atomic>],
+   [
+      std::atomic<unsigned> val;
+      val.exchange(1);
+   ],
+   [
+      AC_DEFINE(P_STD_ATOMIC, 1)
+   ],
+   [
+   MY_LINK_IFELSE(
+      [if has builtin atomic],
+      [],
+      [],
+      [],
+      [
+         int val;
+         __sync_fetch_and_add(&val, 1);
+      ],
+      [
+         AC_DEFINE(P_ATOMICITY_BUILTIN,1)
+      ],
+      MY_COMPILE_IFELSE(
+         [if has bits/atomicity.h],
+         [],
+         [#include <bits/atomicity.h>],
+         [_Atomic_word val],
+         [P_ATOMICITY_HEADER="<bits/atomicity.h>"],
+         MY_COMPILE_IFELSE(
+            [if has ext/atomicity.h],
+            [],
+            [#include <ext/atomicity.h>],
+            [_Atomic_word val],
+            [P_ATOMICITY_HEADER="<ext/atomicity.h>"],
+            [AC_MSG_RESULT([no (SIMULATING!)])]
+         )
+      )
+   )
+
+   if test -n "$P_ATOMICITY_HEADER" ; then
+      AC_MSG_RESULT(yes $P_ATOMICITY_HEADER)
+      AC_DEFINE_UNQUOTED(P_ATOMICITY_HEADER, $P_ATOMICITY_HEADER)
+
+      AC_MSG_CHECKING(if atomic __exchange_and_add is in __gnu_cxx namespace)
+      AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include P_ATOMICITY_HEADER]], [[
+            _Atomic_word val;
+            __gnu_cxx::__exchange_and_add(&val, 1);
+         ]])],[
+            AC_MSG_RESULT(yes)
+            AC_DEFINE_UNQUOTED(P_ATOMICITY_NAMESPACE, __gnu_cxx::)
+         ],[AC_MSG_RESULT(no)
+      ])
+   fi
+   ]
+)
+
+
+dnl ########################################################################
+dnl dynamic libraries
+
+MY_CHECK_DLFCN([
+   MY_ADD_FLAGS([$DLFCN_LIBS], [$DLFCN_CFLAGS])
+   PTLIB_SUBST([DYNALINK], 1)
+])
+
+
+dnl ########################################################################
 dnl check for Windows video capture support.
 
 PTLIB_SIMPLE_OPTION([vfw], [VFW_CAPTURE], [enable video for windows capture], [HAS_VIDEO])
@@ -2515,15 +2527,6 @@ fi
 
 AC_SUBST(HAS_DIRECTSHOW)
 AC_SUBST(HAS_DIRECTSOUND)
-
-
-dnl ########################################################################
-dnl dynamic libraries
-
-MY_CHECK_DLFCN([
-   MY_ADD_FLAGS([$DLFCN_LIBS], [$DLFCN_CFLAGS])
-   PTLIB_SUBST([DYNALINK], 1)
-])
 
 
 dnl ########################################################################
