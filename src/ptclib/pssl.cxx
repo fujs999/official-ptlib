@@ -131,8 +131,8 @@ class PSSLInitialiser : public PProcessStartup
 {
   PCLASSINFO(PSSLInitialiser, PProcessStartup)
   public:
-    virtual void OnStartup();
-    virtual void OnShutdown();
+    virtual void OnStartup() override;
+    virtual void OnShutdown() override;
 
     PFACTORY_GET_SINGLETON(PProcessStartupFactory, PSSLInitialiser);
 };

@@ -765,29 +765,29 @@ class PSoundChannelEmulation : public PSoundChannel
   public:
     PSoundChannelEmulation();
 
-    virtual PBoolean Close();
-    virtual PBoolean Write(const void * buf, PINDEX len);
-    virtual PBoolean Read(void * buf, PINDEX len);
+    virtual PBoolean Close() override;
+    virtual PBoolean Write(const void * buf, PINDEX len) override;
+    virtual PBoolean Read(void * buf, PINDEX len) override;
 
-    virtual PBoolean SetFormat(unsigned numChannels, unsigned sampleRate, unsigned bitsPerSample);
-    virtual unsigned GetChannels() const;
-    virtual unsigned GetSampleRate() const;
-    virtual unsigned GetSampleSize() const;
-    virtual PBoolean SetBuffers(PINDEX size, PINDEX);
-    virtual PBoolean GetBuffers(PINDEX & size, PINDEX & count);
+    virtual PBoolean SetFormat(unsigned numChannels, unsigned sampleRate, unsigned bitsPerSample) override;
+    virtual unsigned GetChannels() const override;
+    virtual unsigned GetSampleRate() const override;
+    virtual unsigned GetSampleSize() const override;
+    virtual PBoolean SetBuffers(PINDEX size, PINDEX) override;
+    virtual PBoolean GetBuffers(PINDEX & size, PINDEX & count) override;
 
-    virtual PBoolean HasPlayCompleted();
-    virtual PBoolean WaitForPlayCompletion();
-    virtual PBoolean StartRecording();
-    virtual PBoolean IsRecordBufferFull();
-    virtual PBoolean AreAllRecordBuffersFull();
-    virtual PBoolean WaitForRecordBufferFull();
-    virtual PBoolean WaitForAllRecordBuffersFull();
+    virtual PBoolean HasPlayCompleted() override;
+    virtual PBoolean WaitForPlayCompletion() override;
+    virtual PBoolean StartRecording() override;
+    virtual PBoolean IsRecordBufferFull() override;
+    virtual PBoolean AreAllRecordBuffersFull() override;
+    virtual PBoolean WaitForRecordBufferFull() override;
+    virtual PBoolean WaitForAllRecordBuffersFull() override;
 
-    virtual PBoolean SetVolume(unsigned volume);
-    virtual PBoolean GetVolume(unsigned & volume);
-    virtual bool SetMute(bool mute);
-    virtual bool GetMute(bool & mute);
+    virtual PBoolean SetVolume(unsigned volume) override;
+    virtual PBoolean GetVolume(unsigned & volume) override;
+    virtual bool SetMute(bool mute) override;
+    virtual bool GetMute(bool & mute) override;
 
   protected:
     virtual bool RawWrite(const void * data, PINDEX size);

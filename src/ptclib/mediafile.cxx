@@ -439,13 +439,13 @@ public:
   }
 
 
-  bool IsSupported(const PString & type) const
+  bool IsSupported(const PString & type) const override
   {
     return type == Audio();
   }
 
 
-  bool OpenForReading(const PFilePath & filePath)
+  bool OpenForReading(const PFilePath & filePath) override
   {
     if (!m_wavFile.Open(filePath, PFile::ReadOnly))
       return SetErrorText(m_wavFile.GetErrorText());
@@ -456,7 +456,7 @@ public:
   }
 
 
-  bool OpenForWriting(const PFilePath & filePath)
+  bool OpenForWriting(const PFilePath & filePath) override
   {
     if (!m_wavFile.Open(filePath, PFile::WriteOnly))
       return SetErrorText(m_wavFile.GetErrorText());
@@ -467,19 +467,19 @@ public:
   }
 
 
-  bool IsOpen() const
+  bool IsOpen() const override
   {
     return m_wavFile.IsOpen();
   }
 
 
-  bool Close()
+  bool Close() override
   {
     return m_wavFile.Close();
   }
 
 
-  bool GetDefaultTrackInfo(const PCaselessString & type, TrackInfo & info) const
+  bool GetDefaultTrackInfo(const PCaselessString & type, TrackInfo & info) const override
   {
     if (type != Audio())
       return false;
@@ -489,13 +489,13 @@ public:
   }
 
 
-  unsigned GetTrackCount() const
+  unsigned GetTrackCount() const override
   {
     return 1;
   }
 
 
-  bool GetTracks(TracksInfo & tracks)
+  bool GetTracks(TracksInfo & tracks) override
   {
     if (!m_wavFile.IsOpen())
       return SetErrorText("Cannot get tracks info when WAV file not open");
@@ -511,7 +511,7 @@ public:
   }
 
 
-  bool SetTracks(const TracksInfo & tracks)
+  bool SetTracks(const TracksInfo & tracks) override
   {
     if (!m_wavFile.IsOpen())
       return SetErrorText("Cannot Set tracks info when WAV file not open");
@@ -538,7 +538,7 @@ public:
   }
 
 
-  bool ReadNative(unsigned track, void * data, PINDEX & size, unsigned & frames)
+  bool ReadNative(unsigned track, void * data, PINDEX & size, unsigned & frames) override
   {
     if (!CheckOpenTrackAndMode(track, true))
       return false;
@@ -553,7 +553,7 @@ public:
   }
 
 
-  bool WriteNative(unsigned track, const void * data, PINDEX & size, unsigned & frames)
+  bool WriteNative(unsigned track, const void * data, PINDEX & size, unsigned & frames) override
   {
     if (!CheckOpenTrackAndMode(track, false))
       return false;
@@ -571,13 +571,13 @@ public:
   }
 
 
-  bool ConfigureAudio(unsigned track, unsigned channels, unsigned sampleRate)
+  bool ConfigureAudio(unsigned track, unsigned channels, unsigned sampleRate) override
   {
     return CheckOpenAndTrack(track) && m_wavFile.SetSampleRate(sampleRate) && m_wavFile.SetChannels(channels);
   }
 
 
-  bool ReadAudio(unsigned track, void * pcm, PINDEX size, PINDEX & length)
+  bool ReadAudio(unsigned track, void * pcm, PINDEX size, PINDEX & length) override
   {
     if (!CheckOpenTrackAndMode(track, true))
       return false;
@@ -590,7 +590,7 @@ public:
   }
 
 
-  bool WriteAudio(unsigned track, const void * pcm, PINDEX length, PINDEX & written)
+  bool WriteAudio(unsigned track, const void * pcm, PINDEX length, PINDEX & written) override
   {
     if (!CheckOpenTrackAndMode(track, false))
       return false;
@@ -604,19 +604,19 @@ public:
 
 
 #if P_VIDEO
-  bool ConfigureVideo(unsigned, const PVideoFrameInfo &)
+  bool ConfigureVideo(unsigned, const PVideoFrameInfo &) override
   {
     return false;
   }
 
 
-  bool ReadVideo(unsigned, void *, PTimeInterval *)
+  bool ReadVideo(unsigned, void *, PTimeInterval *) override
   {
     return false;
   }
 
 
-  bool WriteVideo(unsigned, const void *, const PTimeInterval &)
+  bool WriteVideo(unsigned, const void *, const PTimeInterval &) override
   {
     return false;
   }
@@ -1531,13 +1531,13 @@ public:
     }
 
 
-    bool IsSupported(const PString & type) const
+    bool IsSupported(const PString & type) const override
     {
       return type == Audio() || type == Video();
     }
 
 
-    bool OpenForReading(const PFilePath & filePath)
+    bool OpenForReading(const PFilePath & filePath) override
     {
       m_reading = true;
       m_filePath = filePath;
@@ -1559,7 +1559,7 @@ public:
     }
 
 
-    bool OpenForWriting(const PFilePath & filePath)
+    bool OpenForWriting(const PFilePath & filePath) override
     {
       m_reading = false;
       m_filePath = filePath;
@@ -1580,13 +1580,13 @@ public:
     }
 
 
-    bool IsOpen() const
+    bool IsOpen() const override
     {
       return m_formatContext != NULL;
     }
 
 
-    bool Close()
+    bool Close() override
     {
       PWaitAndSignal mutex(m_mutex);
 
@@ -1612,7 +1612,7 @@ public:
     }
 
 
-    bool GetDefaultTrackInfo(const PCaselessString & type, TrackInfo & info) const
+    bool GetDefaultTrackInfo(const PCaselessString & type, TrackInfo & info) const override
     {
       PWaitAndSignal mutex(m_mutex);
 
@@ -1642,13 +1642,13 @@ public:
     }
 
 
-    unsigned GetTrackCount() const
+    unsigned GetTrackCount() const override
     {
       return m_tracks.size();
     }
 
 
-    bool GetTracks(TracksInfo & tracks)
+    bool GetTracks(TracksInfo & tracks) override
     {
       if (m_formatContext == NULL) {
         PTRACE(2, "Cannot get track info as file not open");
@@ -1663,7 +1663,7 @@ public:
     }
 
 
-    bool SetTracks(const TracksInfo & tracks)
+    bool SetTracks(const TracksInfo & tracks) override
     {
       if (m_formatContext == NULL) {
         PTRACE(2, "Cannot set track info as file not open");
@@ -1690,35 +1690,35 @@ public:
     }
 
 
-    bool ReadNative(unsigned track, void * data, PINDEX & size, unsigned & frames)
+    bool ReadNative(unsigned track, void * data, PINDEX & size, unsigned & frames) override
     {
       PWaitAndSignal mutex(m_mutex);
       return CheckOpenTrackAndMode(track, true) && m_tracks[track].ReadNative(data, size, frames);
     }
 
 
-    bool WriteNative(unsigned track, const void * data, PINDEX & size, unsigned & frames)
+    bool WriteNative(unsigned track, const void * data, PINDEX & size, unsigned & frames) override
     {
       PWaitAndSignal mutex(m_mutex);
       return CheckOpenTrackAndMode(track, false) && WriteHeader() && m_tracks[track].WriteNative(data, size, frames);
     }
 
 
-    bool ConfigureAudio(unsigned track, unsigned channels, unsigned sampleRate)
+    bool ConfigureAudio(unsigned track, unsigned channels, unsigned sampleRate) override
     {
       PWaitAndSignal mutex(m_mutex);
       return CheckOpenAndTrack(track) && m_tracks[track].ConfigureAudio(channels, sampleRate);
     }
 
 
-    bool ReadAudio(unsigned track, void * pcm, PINDEX size, PINDEX & length)
+    bool ReadAudio(unsigned track, void * pcm, PINDEX size, PINDEX & length) override
     {
       PWaitAndSignal mutex(m_mutex);
       return CheckOpenAndTrack(track) && m_tracks[track].ReadAudio(pcm, size, length);
     }
 
 
-    bool WriteAudio(unsigned track, const void * pcm, PINDEX length, PINDEX & written)
+    bool WriteAudio(unsigned track, const void * pcm, PINDEX length, PINDEX & written) override
     {
       PWaitAndSignal mutex(m_mutex);
       return CheckOpenAndTrack(track) && WriteHeader() && m_tracks[track].WriteAudio(pcm, length, written);
@@ -1726,7 +1726,7 @@ public:
 
 
 #if P_VIDEO
-    bool ConfigureVideo(unsigned track, const PVideoFrameInfo & frameInfo)
+    bool ConfigureVideo(unsigned track, const PVideoFrameInfo & frameInfo) override
     {
       PWaitAndSignal mutex(m_mutex);
       return CheckOpenAndTrack(track) &&
@@ -1734,14 +1734,14 @@ public:
     }
 
 
-    bool ReadVideo(unsigned track, void * data, PTimeInterval * sampleTime)
+    bool ReadVideo(unsigned track, void * data, PTimeInterval * sampleTime) override
     {
       PWaitAndSignal mutex(m_mutex);
       return CheckOpenAndTrack(track) && m_tracks[track].ReadVideo(data, sampleTime);
     }
 
 
-    bool WriteVideo(unsigned track, const void * data, const PTimeInterval & sampleTime)
+    bool WriteVideo(unsigned track, const void * data, const PTimeInterval & sampleTime) override
     {
       PWaitAndSignal mutex(m_mutex);
       return CheckOpenAndTrack(track) && WriteHeader() && m_tracks[track].WriteVideo(data, sampleTime);
@@ -2581,7 +2581,7 @@ public:
     return names;
   }
 
-  virtual PStringArray GetDeviceNames() const
+  virtual PStringArray GetDeviceNames() const override
   {
     return PVideoInputDevice_MediaFile::GetInputDeviceNames();
   }

@@ -469,7 +469,7 @@ class PSafeCollection : public PObject, PNonCopyable
      */
     virtual void PrintOn(
       ostream &strm   // Stream to print the object into.
-    ) const;
+    ) const override;
 
     /**Remove all objects in collection.
       */
@@ -630,7 +630,7 @@ class PSafePtrBase : public PObject
       */
     virtual Comparison Compare(
       const PObject & obj   ///< Other instance to compare against
-    ) const;
+    ) const override;
 
     /** Output the contents of the object to the stream. The exact output is
        dependent on the exact semantics of the descendent class. This is
@@ -640,7 +640,7 @@ class PSafePtrBase : public PObject
      */
     virtual void PrintOn(
       ostream &strm   // Stream to print the object into.
-    ) const;
+    ) const override;
   //@}
 
   /**@name Operations */
@@ -789,14 +789,14 @@ class PSafePtrMultiThreaded : public PSafePtrBase
       */
     virtual Comparison Compare(
       const PObject & obj   ///< Other instance to compare against
-    ) const;
+    ) const override;
   //@}
 
   /**@name Operations */
   //@{
     /**Set the pointer to NULL, unlocking/dereferencing existing pointer value.
       */
-    virtual void SetNULL();
+    virtual void SetNULL() override;
 
     /**Change the locking mode used by this pointer.
 
@@ -806,22 +806,22 @@ class PSafePtrMultiThreaded : public PSafePtrBase
       */
     virtual PBoolean SetSafetyMode(
       PSafetyMode mode  ///< New locking mode
-    );
+    ) override;
   //@}
 
     virtual void Assign(const PSafePtrMultiThreaded & ptr);
-    virtual void Assign(const PSafePtrBase & ptr);
-    virtual void Assign(const PSafeCollection & safeCollection);
-    virtual void Assign(PSafeObject * obj);
-    virtual void Assign(PINDEX idx);
+    virtual void Assign(const PSafePtrBase & ptr) override;
+    virtual void Assign(const PSafeCollection & safeCollection) override;
+    virtual void Assign(PSafeObject * obj) override;
+    virtual void Assign(PINDEX idx) override;
 
   protected:
-    virtual void Next();
-    virtual void Previous();
-    virtual void DeleteObject(PSafeObject * obj);
+    virtual void Next() override;
+    virtual void Previous() override;
+    virtual void DeleteObject(PSafeObject * obj) override;
 
-    virtual void LockPtr() { m_mutex.Wait(); }
-    virtual void UnlockPtr();
+    virtual void LockPtr() override { m_mutex.Wait(); }
+    virtual void UnlockPtr() override;
 
   protected:
     mutable PMutex m_mutex;

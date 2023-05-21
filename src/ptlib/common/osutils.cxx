@@ -77,11 +77,11 @@ class PExternalThread : public PThread
                 " unique-id=" << GetUniqueIdentifier());
     }
 
-    virtual void Main()
+    virtual void Main() override
     {
     }
 
-    virtual void Terminate()
+    virtual void Terminate() override
     {
       PTRACE(2, "Cannot terminate external thread " << this << ","
                 " thread-id=" << GetThreadId() << ","
@@ -108,7 +108,7 @@ class PSimpleThread : public PThread
         WaitForTermination();
     }
 
-    void Main();
+    void Main() override;
 
   protected:
     PNotifier callback;

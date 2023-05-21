@@ -299,10 +299,10 @@ class PIPCacheKey : public PObject
     PIPCacheKey(const PIPSocket::Address & a)
       { addr = a; }
 
-    PObject * Clone() const
+    PObject * Clone() const override
       { return new PIPCacheKey(*this); }
 
-    PINDEX HashFunction() const
+    PINDEX HashFunction() const override
       { return (addr[1] + addr[2] + addr[3])%41; }
 
   private:

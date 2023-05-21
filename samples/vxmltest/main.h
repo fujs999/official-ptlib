@@ -61,7 +61,7 @@ class VxmlTest : public PProcess
 
   public:
     VxmlTest();
-    void Main();
+    virtual void Main() override;
 
   protected:
     PDECLARE_NOTIFIER(PCLI::Arguments, VxmlTest, SimulateInput);

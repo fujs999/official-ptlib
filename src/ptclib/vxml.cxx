@@ -143,16 +143,16 @@ public:
   PVXMLChannelPCM();
 
   // overrides from PVXMLChannel
-  virtual PString GetAudioFormat() const;
-  virtual unsigned GetSampleRate() const;
-  virtual bool SetSampleRate(unsigned rate);
-  virtual unsigned GetChannels() const;
-  virtual bool SetChannels(unsigned channels);
-  virtual PBoolean WriteFrame(const void * buf, PINDEX len);
-  virtual PBoolean ReadFrame(void * buffer, PINDEX amount);
-  virtual PINDEX CreateSilenceFrame(void * buffer, PINDEX amount);
-  virtual PBoolean IsSilenceFrame(const void * buf, PINDEX len) const;
-  virtual void GetBeepData(PBYTEArray & data, unsigned ms);
+  virtual PString GetAudioFormat() const override;
+  virtual unsigned GetSampleRate() const override;
+  virtual bool SetSampleRate(unsigned rate) override;
+  virtual unsigned GetChannels() const override;
+  virtual bool SetChannels(unsigned channels) override;
+  virtual PBoolean WriteFrame(const void * buf, PINDEX len) override;
+  virtual PBoolean ReadFrame(void * buffer, PINDEX amount) override;
+  virtual PINDEX CreateSilenceFrame(void * buffer, PINDEX amount) override;
+  virtual PBoolean IsSilenceFrame(const void * buf, PINDEX len) const override;
+  virtual void GetBeepData(PBYTEArray & data, unsigned ms) override;
 
 protected:
   unsigned m_sampleRate;
@@ -167,15 +167,15 @@ public:
   PVXMLChannelG7231();
 
   // overrides from PVXMLChannel
-  virtual PString GetAudioFormat() const;
-  virtual unsigned GetSampleRate() const;
-  virtual bool SetSampleRate(unsigned rate);
-  virtual unsigned GetChannels() const;
-  virtual bool SetChannels(unsigned channels);
-  virtual PBoolean WriteFrame(const void * buf, PINDEX len);
-  virtual PBoolean ReadFrame(void * buffer, PINDEX amount);
-  virtual PINDEX CreateSilenceFrame(void * buffer, PINDEX amount);
-  virtual PBoolean IsSilenceFrame(const void * buf, PINDEX len) const;
+  virtual PString GetAudioFormat() const override;
+  virtual unsigned GetSampleRate() const override;
+  virtual bool SetSampleRate(unsigned rate) override;
+  virtual unsigned GetChannels() const override;
+  virtual bool SetChannels(unsigned channels) override;
+  virtual PBoolean WriteFrame(const void * buf, PINDEX len) override;
+  virtual PBoolean ReadFrame(void * buffer, PINDEX amount) override;
+  virtual PINDEX CreateSilenceFrame(void * buffer, PINDEX amount) override;
+  virtual PBoolean IsSilenceFrame(const void * buf, PINDEX len) const override;
 };
 
 
@@ -186,15 +186,15 @@ public:
   PVXMLChannelG729();
 
   // overrides from PVXMLChannel
-  virtual PString GetAudioFormat() const;
-  virtual unsigned GetSampleRate() const;
-  virtual bool SetSampleRate(unsigned rate);
-  virtual unsigned GetChannels() const;
-  virtual bool SetChannels(unsigned channels);
-  virtual PBoolean WriteFrame(const void * buf, PINDEX len);
-  virtual PBoolean ReadFrame(void * buffer, PINDEX amount);
-  virtual PINDEX CreateSilenceFrame(void * buffer, PINDEX amount);
-  virtual PBoolean IsSilenceFrame(const void * buf, PINDEX len) const;
+  virtual PString GetAudioFormat() const override;
+  virtual unsigned GetSampleRate() const override;
+  virtual bool SetSampleRate(unsigned rate) override;
+  virtual unsigned GetChannels() const override;
+  virtual bool SetChannels(unsigned channels) override;
+  virtual PBoolean WriteFrame(const void * buf, PINDEX len) override;
+  virtual PBoolean ReadFrame(void * buffer, PINDEX amount) override;
+  virtual PINDEX CreateSilenceFrame(void * buffer, PINDEX amount) override;
+  virtual PBoolean IsSilenceFrame(const void * buf, PINDEX len) const override;
 };
 
 

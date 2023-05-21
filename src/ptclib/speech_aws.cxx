@@ -82,7 +82,7 @@ public:
   }
 
 
-  virtual bool SetOptions(const PStringOptions & options)
+  virtual bool SetOptions(const PStringOptions & options) override
   {
     PString engineStr = options.Get(DefaultVoiceEngine);
     if (!engineStr.empty()) {
@@ -97,7 +97,7 @@ public:
   }
 
 
-  virtual PStringArray GetVoiceList()
+  virtual PStringArray GetVoiceList() override
   {
     PStringArray voices;
     if (m_voices.empty()) {
@@ -160,7 +160,7 @@ public:
   }
 
 
-  virtual bool InternalSetVoice(PStringOptions & voice)
+  virtual bool InternalSetVoice(PStringOptions & voice) override
   {
     if (voice == m_voice)
       return ValidateEngine(voice);
@@ -214,7 +214,7 @@ public:
   }
 
 
-  virtual bool SetSampleRate(unsigned rate)
+  virtual bool SetSampleRate(unsigned rate) override
   {
     if (rate != 8000 && rate != 16000)
       return false;
@@ -224,37 +224,37 @@ public:
   }
 
 
-  virtual unsigned GetSampleRate() const
+  virtual unsigned GetSampleRate() const override
   {
     return m_sampleRate8k ? 8000 : 16000;
   }
 
 
-  virtual bool SetChannels(unsigned channels)
+  virtual bool SetChannels(unsigned channels) override
   {
     return channels == 1;
   }
 
 
-  virtual unsigned GetChannels() const
+  virtual unsigned GetChannels() const override
   {
     return 1;
   }
 
 
-  bool SetVolume(unsigned)
+  bool SetVolume(unsigned) override
   {
     return false;
   }
 
 
-  unsigned GetVolume() const
+  unsigned GetVolume() const override
   {
     return 100;
   }
 
 
-  bool OpenFile(const PFilePath & fn)
+  bool OpenFile(const PFilePath & fn) override
   {
     if (m_file.Open(fn, PFile::WriteOnly))
       return true;
@@ -264,20 +264,20 @@ public:
   }
 
 
-  bool OpenChannel(PChannel * channel)
+  bool OpenChannel(PChannel * channel) override
   {
     Close();
     return m_channel = channel;
   }
 
 
-  bool IsOpen() const
+  bool IsOpen() const override
   {
     return m_channel != NULL || m_file.IsOpen();
   }
 
 
-  bool Close()
+  bool Close() override
   {
     m_file.Close();
     m_channel = NULL;
@@ -285,7 +285,7 @@ public:
   }
 
 
-  bool Speak(const PString & text, TextType hint)
+  bool Speak(const PString & text, TextType hint) override
   {
     if (!IsOpen() || !SetVoice(PString::Empty()))
       return false;

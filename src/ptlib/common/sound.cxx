@@ -58,12 +58,12 @@ class PSoundChannelNull : public PSoundChannelEmulation
   public:
     PSoundChannelNull();
     static PStringArray GetDeviceNames(PSoundChannel::Directions = Player);
-    bool Open(const Params & params);
-    virtual PString GetName() const;
-    PBoolean Close();
-    PBoolean IsOpen() const;
-    PBoolean Write(const void *, PINDEX len);
-    PBoolean Read(void * buf, PINDEX len);
+    bool Open(const Params & params) override;
+    virtual PString GetName() const override;
+    PBoolean Close() override;
+    PBoolean IsOpen() const override;
+    PBoolean Write(const void *, PINDEX len) override;
+    PBoolean Read(void * buf, PINDEX len) override;
 };
 
 

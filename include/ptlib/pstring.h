@@ -482,7 +482,7 @@ class PString : public PCharArray
        array of characters is duplicated as well and the new object is a
        unique reference to that data.
      */
-    virtual PObject * Clone() const;
+    virtual PObject * Clone() const override;
 
     /**Get the relative rank of the two strings. The system standard function,
        eg strcmp(), is used.
@@ -495,13 +495,13 @@ class PString : public PCharArray
      */
     virtual Comparison Compare(
       const PObject & obj   ///< Other PString to compare against.
-    ) const;
+    ) const override;
 
     /**Output the string to the specified stream.
      */
     virtual void PrintOn(
       ostream & strm  ///< I/O stream to output to.
-    ) const;
+    ) const override;
 
     /**Input the string from the specified stream. This will read all
        characters until a end of line is reached. The end of line itself is
@@ -510,7 +510,7 @@ class PString : public PCharArray
      */
     virtual void ReadFrom(
       istream & strm  ///< I/O stream to input from.
-    );
+    ) override;
 
     /**Calculate a hash value for use in sets and dictionaries.
     
@@ -525,7 +525,7 @@ class PString : public PCharArray
        @return
        hash value for string.
      */
-    virtual PINDEX HashFunction() const;
+    virtual PINDEX HashFunction() const override;
   //@}
 
   /**@name Overrides from class PContainer */
@@ -548,7 +548,7 @@ class PString : public PCharArray
      */
     virtual PBoolean SetSize(
       PINDEX newSize  ///< New size of the array in elements.
-    );
+    ) override;
 
     /**Determine if the string is empty. This is semantically slightly
        different from the usual <code>PContainer::IsEmpty()</code> function. It does
@@ -558,7 +558,7 @@ class PString : public PCharArray
        @return
        true if no non-null characters in string.
      */
-    virtual PBoolean IsEmpty() const;
+    virtual PBoolean IsEmpty() const override;
 
     /**Make this instance to be the one and only reference to the container
        contents. This implicitly does a clone of the contents of the container
@@ -568,7 +568,7 @@ class PString : public PCharArray
        @return
        true if the instance was already unique.
      */
-    virtual PBoolean MakeUnique();
+    virtual PBoolean MakeUnique() override;
   //@}
 
 
@@ -599,7 +599,7 @@ class PString : public PCharArray
        @return
        length of the null terminated string.
      */
-    virtual PINDEX GetLength() const { return m_length; }
+    virtual PINDEX GetLength() const override { return m_length; }
   //@}
 
   /**@name Concatenation operators **/
@@ -1973,7 +1973,7 @@ class PString : public PCharArray
      */
     PString(int dummy, const PString * str);
 
-    virtual void AssignContents(const PContainer &);
+    virtual void AssignContents(const PContainer &) override;
     PString(PContainerReference & reference_, PINDEX len)
       : PCharArray(reference_)
       , m_length(len)
@@ -2125,12 +2125,12 @@ class PCaselessString : public PString
        array of characters is duplicated as well and the new object is a
        unique reference to that data.
      */
-    virtual PObject * Clone() const;
+    virtual PObject * Clone() const override;
 
   protected:
   // Overrides from class PString
-    virtual int internal_strcmp(const char * s1, const char *s2) const;
-    virtual int internal_strncmp(const char * s1, const char *s2, size_t n) const;
+    virtual int internal_strcmp(const char * s1, const char *s2) const override;
+    virtual int internal_strncmp(const char * s1, const char *s2, size_t n) const override;
 
     /* Internal function to compare the current string value against the
        specified C string.
@@ -2263,7 +2263,7 @@ class PStringStream : public PString, public std::iostream, PNonCopyable
 
     /**Make the current string empty
       */
-    virtual PString & MakeEmpty();
+    virtual PString & MakeEmpty() override;
 
     /**Assign the string part of the stream to the current object. The current
        instance then becomes another reference to the same string in the <code>strm</code>
@@ -2328,11 +2328,11 @@ class PStringStream : public PString, public std::iostream, PNonCopyable
 
     // Miscellanous fix ups
     __inline void clear() { std::iostream::clear(); }
-    virtual PINDEX GetLength() const;
+    virtual PINDEX GetLength() const override;
 
 
   protected:
-    virtual void AssignContents(const PContainer & cont);
+    virtual void AssignContents(const PContainer & cont) override;
 
   private:
     class Buffer : public streambuf {
@@ -2496,9 +2496,9 @@ class PStringArray : public PArray<PString>
      */
     virtual void ReadFrom(
       istream &strm   // Stream to read the objects contents from.
-    );
+    ) override;
 
-    virtual PObject * Clone() const
+    virtual PObject * Clone() const override
     {
       return new PStringArray(0, this);
     }
@@ -2653,9 +2653,9 @@ class PStringList : public PList<PString>
      */
     virtual void ReadFrom(
       istream &strm   // Stream to read the objects contents from.
-    );
+    ) override;
 
-    virtual PObject * Clone() const
+    virtual PObject * Clone() const override
     {
       return new PStringList(0, this);
     }
@@ -2794,7 +2794,7 @@ class PSortedStringList : public PSortedList<PString>
      */
     virtual void ReadFrom(
       istream &strm   // Stream to read the objects contents from.
-    );
+    ) override;
   //@}
 
   /**@name Operations */
@@ -2908,9 +2908,9 @@ class PStringSet : public PSet<PString>
      */
     virtual void ReadFrom(
       istream &strm   ///< Stream to read the objects contents from.
-    );
+    ) override;
 
-    virtual PObject * Clone() const
+    virtual PObject * Clone() const override
     {
       return PNEW PStringSet(0, this);
     }
@@ -2969,7 +2969,7 @@ template <class K> class PStringDictionary : public PDictionary<K, PString>
        the array are also cloned, so this will make a complete copy of the
        dictionary.
      */
-    virtual PObject * Clone() const
+    virtual PObject * Clone() const override
       { return PNEW PStringDictionary(0, this); }
   //@}
 
@@ -3039,7 +3039,7 @@ template <class K> class PStringDictionary : public PDictionary<K, PString>
   public: \
     cls() \
       : PStringDictionary<K>() { } \
-    virtual PObject * Clone() const \
+    virtual PObject * Clone() const override \
       { return PNEW cls(0, this); } \
 
 
@@ -3104,7 +3104,7 @@ PDECLARE_STRING_DICTIONARY(POrdinalToString, POrdinalKey);
      */
     virtual void ReadFrom(
       istream &strm   // Stream to read the objects contents from.
-    );
+    ) override;
   //@}
 };
 
@@ -3159,7 +3159,7 @@ PDECLARE_ORDINAL_DICTIONARY(PStringToOrdinal, PString);
      */
     virtual void ReadFrom(
       istream &strm   // Stream to read the objects contents from.
-    );
+    ) override;
   //@}
 };
 
@@ -3221,7 +3221,7 @@ PDECLARE_STRING_DICTIONARY(PStringToString, PString);
      */
     virtual void ReadFrom(
       istream &strm   // Stream to read the objects contents from.
-    );
+    ) override;
   //@}
 
   /**@name New functions for class */
@@ -3516,7 +3516,7 @@ class PRegularExpression : public PObject
      */
     virtual void PrintOn(
       ostream & strm  ///< I/O stream to output to.
-    ) const;
+    ) const override;
   //@}
 
   /**@name Status functions */

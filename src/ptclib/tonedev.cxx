@@ -54,15 +54,15 @@ class PSoundChannel_Tones : public PSoundChannelEmulation
 
     static PStringArray GetDeviceNames(PSoundChannel::Directions = Player);
 
-    bool Open(const Params & params);
-    virtual PString GetName() const;
-    PBoolean Close();
-    PBoolean IsOpen() const;
+    bool Open(const Params & params) override;
+    virtual PString GetName() const override;
+    PBoolean Close() override;
+    PBoolean IsOpen() const override;
 
 protected:
-    virtual bool RawWrite(const void * data, PINDEX size);
-    virtual bool RawRead(void * data, PINDEX size);
-    virtual bool Rewind();
+    virtual bool RawWrite(const void * data, PINDEX size) override;
+    virtual bool RawRead(void * data, PINDEX size) override;
+    virtual bool Rewind() override;
 
     PString m_descriptor;
     PTones  m_tones;

@@ -47,7 +47,7 @@ class MyProcess : public PProcess
     unsigned m_recogisedTextCount;
     MyProcess() : m_interrupted(false), m_recogisedTextCount(0) { }
 
-    virtual void Main();
+    virtual void Main() override;
     virtual bool OnInterrupt(bool) { m_interrupted = true; return true; }
 
     void Play(const PArgList & args);

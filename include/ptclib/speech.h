@@ -156,8 +156,8 @@ class PSpeechRecognition : public PObject
       float         m_confidence;  // 0.0 to 1.0
 
       Transcript(bool final, const PTimeInterval & when, const PString & content, float confidence);
-      virtual Comparison Compare(const PObject & other) const;
-      virtual void PrintOn(ostream & strm) const;
+      virtual Comparison Compare(const PObject & other) const override;
+      virtual void PrintOn(ostream & strm) const override;
     };
     typedef PNotifierTemplate<Transcript> Notifier;
     #define PDECLARE_SpeechRecognitionNotifier(cls, fn) PDECLARE_NOTIFIER2(PSpeechRecognition, cls, fn, PSpeechRecognition::Transcript)

@@ -47,8 +47,8 @@ class NAPTRRecord : public PObject
 {
   PCLASSINFO(NAPTRRecord, PObject);
   public:
-    Comparison Compare(const PObject & obj) const;
-    void PrintOn(ostream & strm) const;
+    Comparison Compare(const PObject & obj) const override;
+    void PrintOn(ostream & strm) const override;
 
     WORD order;
     WORD preference;
@@ -60,7 +60,7 @@ class NAPTRRecord : public PObject
 
 PDECLARE_SORTED_LIST(NAPTRRecordList, PDNS::NAPTRRecord)
   public:
-    void PrintOn(ostream & strm) const;
+    void PrintOn(ostream & strm) const override;
 
     NAPTRRecord * GetFirst(const char * service = NULL);
     NAPTRRecord * GetNext(const char * service = NULL);

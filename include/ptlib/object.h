@@ -173,6 +173,7 @@ using namespace std; // Not a good practice (name space polution), but will take
   #define P_GCC_PRAGMA(token) _Pragma(#token)
   #define P_PUSH_GCC_WARNING(warning) _Pragma("GCC diagnostic push") P_GCC_PRAGMA(GCC diagnostic ignored warning)
   #define P_POP_GCC_WARNING()         _Pragma("GCC diagnostic pop")
+  //#pragma clang diagnostic ignored "-Winconsistent-missing-override"
 #endif // _MSC_VER
 #define P_DISABLE_MSVC_WARNINGS(warnings, statement) P_PUSH_MSVC_WARNINGS(warnings) statement  P_POP_MSVC_WARNINGS()
 #define P_DISABLE_GCC_WARNING(warning, statement)    P_PUSH_GCC_WARNING(warning)    statement; P_POP_GCC_WARNING()
