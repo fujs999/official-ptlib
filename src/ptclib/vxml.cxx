@@ -1420,6 +1420,7 @@ PTextToSpeech * PVXMLSession::SetTextToSpeech(PTextToSpeech * tts, PBoolean auto
 
   if (tts != NULL) {
     PStringOptions extraOptions = options;
+    extraOptions.MakeUnique();
     m_httpMutex.Wait();
     m_httpProxies.ToOptions(extraOptions);
     m_httpMutex.Signal();
@@ -1452,7 +1453,7 @@ PTextToSpeech * PVXMLSession::SetTextToSpeech(const PString & ttsName, const PSt
 }
 
 
-bool PVXMLSession::SetSpeechRecognition(const PString & srName)
+bool PVXMLSession::SetSpeechRecognition(const PString & srName, const PStringOptions & options)
 {
   if (!(srName *= "none")) {
     PSpeechRecognition * sr = PSpeechRecognition::Create(srName);
@@ -1465,14 +1466,16 @@ bool PVXMLSession::SetSpeechRecognition(const PString & srName)
 
   PTRACE(4, "Speech Recognition set to \"" << srName << '"');
   PWaitAndSignal lock(m_grammersMutex);
-  m_speechRecognition = srName;
+  m_speechRecognitionName = srName;
+  m_speechRecognitionOptions = options;
+  m_speechRecognitionOptions.MakeUnique();
   return true;
 }
 
 
 PSpeechRecognition * PVXMLSession::CreateSpeechRecognition()
 {
-  return PSpeechRecognition::Create(m_speechRecognition);
+  return PSpeechRecognition::Create(m_speechRecognitionName);
 }
 
 
@@ -4101,7 +4104,8 @@ bool PVXMLGrammar::Start()
     }
     else {
       PTRACE_CONTEXT_ID_TO(m_recogniser);
-      PStringToString options;
+      PStringToString options = m_session.m_speechRecognitionOptions;
+      options.MakeUnique();
       m_session.m_httpMutex.Wait();
       m_session.m_httpProxies.ToOptions(options);
       m_session.m_httpMutex.Signal();

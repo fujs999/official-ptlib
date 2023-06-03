@@ -373,8 +373,8 @@ class PVXMLSession : public PIndirectChannel, public PSSLCertificateInfo
     PTextToSpeech * SetTextToSpeech(PTextToSpeech * tts, PBoolean autoDelete = false, const PStringOptions & options = PStringOptions());
     PTextToSpeech * SetTextToSpeech(const PString & ttsName, const PStringOptions & options = PStringOptions());
     PTextToSpeech * GetTextToSpeech() const { return m_textToSpeech; }
-    bool SetSpeechRecognition(const PString & srName);
-    PString GetSpeechRecognition() const { PWaitAndSignal lock(m_grammersMutex); return m_speechRecognition.c_str(); }
+    bool SetSpeechRecognition(const PString & srName, const PStringOptions & options = PStringOptions());
+    PString GetSpeechRecognition() const { PWaitAndSignal lock(m_grammersMutex); return m_speechRecognitionName.c_str(); }
     virtual PSpeechRecognition * CreateSpeechRecognition();
 
     typedef PSafePtr<PVXMLCache, PSafePtrMultiThreaded> CachePtr;
@@ -561,7 +561,8 @@ class PVXMLSession : public PIndirectChannel, public PSSLCertificateInfo
 
     PTextToSpeech  * m_textToSpeech;
     bool             m_autoDeleteTextToSpeech;
-    PString          m_speechRecognition;
+    PString          m_speechRecognitionName;
+    PStringOptions   m_speechRecognitionOptions;
 
     CachePtr m_resourceCache;
 
