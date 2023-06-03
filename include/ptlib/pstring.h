@@ -1912,17 +1912,21 @@ class PString : public PCharArray
     __inline std::string::size_type size() const { return (std::string::size_type)GetLength(); }
     __inline std::string::size_type length() const { return (std::string::size_type)GetLength(); }
     __inline std::string::size_type capacity() const { return (std::string::size_type)(GetSize()-1); }
+    __inline void reserve(std::string::size_type new_cap) { SetSize(new_cap+1); }
+    __inline void shrink_to_fit() { SetSize(GetLength()-1); }
     __inline bool empty() const { return IsEmpty(); }
     __inline void clear() { MakeEmpty();  }
     __inline const char * c_str() const { return GetPointer(); }
     __inline char * data() { return PCharArray::GetPointer(); }
     __inline char & at(size_t idx) { return *(PCharArray::GetPointer(idx+1)+idx); }
     __inline char   at(size_t idx) const { return GetAt(idx); }
+    __inline char front() { return GetAt(0); }
+    __inline char back() { return GetAt(GetLength()-1); }
     __inline void push_back(char ch) { *this += ch;  }
-    __inline PString & append(std::string::size_type count, char ch) { while (--count > 0) *this += ch; return *this; }
+    __inline PString & append(std::string::size_type count, char ch) { *this += string(count, ch); return *this; }
     __inline PString & append(const char * s) { return *this += s; }
     __inline PString & append(const std::string & s) { return *this += s.c_str();  }
-    __inline PString & insert(std::string::size_type index, std::string::size_type count, char ch) { while (--count > 0) Splice(&ch, index); return *this; }
+    __inline PString & insert(std::string::size_type index, std::string::size_type count, char ch) { Splice(string(count, ch).c_str(), index); return *this; }
     __inline PString & insert(std::string::size_type index, const char * s) { return Splice(s, index); }
     __inline PString & insert(std::string::size_type index, const std::string & s) { return Splice(s.c_str(), index);  }
     __inline PString & erase(std::string::size_type index = 0, std::string::size_type count = std::string::npos) { return Delete(index, count != std::string::npos ? count : P_MAX_INDEX);  }
@@ -1939,6 +1943,23 @@ class PString : public PCharArray
     __inline std::string::size_type find_first_of(const std::string & s, std::string::size_type pos = 0) const { return StdStringPos(FindOneOf(s.c_str(), pos)); }
     __inline std::string::size_type find_first_not_of(const char * s, std::string::size_type pos = 0) const { return StdStringPos(FindSpan(s, pos)); }
     __inline std::string::size_type find_first_not_of(const std::string & s, std::string::size_type pos = 0) const { return StdStringPos(FindSpan(s.c_str(), pos)); }
+    __inline int compare(const PString & str) const { return InternalCompare(0, P_MAX_INDEX, str.c_str()); }
+    __inline int compare(const string & str) const { return InternalCompare(0, P_MAX_INDEX, str.c_str()); }
+    __inline int compare(const char * str) const { return InternalCompare(0, P_MAX_INDEX, str); }
+    __inline int compare(size_t pos, size_t len, const PString & str) const { return InternalCompare(pos, len, str.c_str()); }
+    __inline int compare(size_t pos, size_t len, const string & str) const { return InternalCompare(pos, len, str.c_str()); }
+    __inline int compare(size_t pos, size_t len, const char * str) const { return InternalCompare(pos, len, str); }
+    __inline int compare(size_t pos, size_t len, const PString & str, size_t subpos, size_t sublen) const { return InternalCompare(pos, std::min(len, sublen), str.c_str()+std::min(str.length(),subpos)); }
+    __inline int compare(size_t pos, size_t len, const string & str, size_t subpos, size_t sublen) const { return InternalCompare(pos, std::min(len, sublen), str.c_str()+std::min(str.length(), subpos)); }
+    __inline int compare(size_t pos, size_t len, const char * str, size_t sublen) const { return InternalCompare(pos, std::min(len, sublen), str); }
+    __inline int starts_with(const PString & str) const { return InternalCompare(0, str.length(), str.c_str()) == EqualTo; }
+    __inline int starts_with(const string & str) const { return InternalCompare(0, str.length(), str.c_str()) == EqualTo; }
+    __inline int starts_with(const char * str) const { return InternalCompare(0, strlen(str), str) == EqualTo; }
+    __inline int starts_with(const char c) const { return InternalCompare(0, 1, &c) == EqualTo; }
+    __inline int ends_with(const PString & str) const { return InternalCompare(length()-str.length(), P_MAX_INDEX, str) == EqualTo; }
+    __inline int ends_with(const string & str) const { return InternalCompare(length()-str.length(), P_MAX_INDEX, str.c_str()) == EqualTo; }
+    __inline int ends_with(const char * str) const { return InternalCompare(length()-strlen(str), P_MAX_INDEX, str) == EqualTo; }
+    __inline int ends_with(const char c) const { return InternalCompare(length()-1, 1, &c) == EqualTo; }
     private:
       __inline static std::string::size_type StdStringPos(PINDEX p) { return p != P_MAX_INDEX ? (std::string::size_type)p : std::string::npos; }
     //@}
