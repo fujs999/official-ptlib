@@ -27,8 +27,9 @@ class TestInstance : public PVXMLSession
     bool Initialise(unsigned instance, const PArgList & args);
     void SendInput(const PString & digits) { OnUserInput(digits); }
 
-    virtual void OnEndDialog();
-    virtual void OnEndSession();
+    virtual void OnEndDialog() override;
+    virtual void OnEndSession() override;
+    virtual bool OnTransfer(const PString & destination, TransferType type) override;
 
   protected:
     unsigned             m_instance;
@@ -67,6 +68,7 @@ class VxmlTest : public PProcess
     PDECLARE_NOTIFIER(PCLI::Arguments, VxmlTest, SimulateInput);
     PDECLARE_NOTIFIER(PCLI::Arguments, VxmlTest, SetVar);
     PDECLARE_NOTIFIER(PCLI::Arguments, VxmlTest, GetVar);
+    PDECLARE_NOTIFIER(PCLI::Arguments, VxmlTest, TransferStatus);
     PDECLARE_NOTIFIER(PCLI::Arguments, VxmlTest, Disconnect);
     std::vector< PSharedPtr<TestInstance> > m_tests;
 };

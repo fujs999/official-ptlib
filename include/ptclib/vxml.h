@@ -406,7 +406,7 @@ class PVXMLSession : public PIndirectChannel, public PSSLCertificateInfo
     virtual PBoolean PlayFile(const PString & fn, PINDEX repeat = 1, PINDEX delay = 0, PBoolean autoDelete = false);
     virtual PBoolean PlayData(const PBYTEArray & data, PINDEX repeat = 1, PINDEX delay = 0);
     virtual PBoolean PlayCommand(const PString & data, PINDEX repeat = 1, PINDEX delay = 0);
-    virtual PBoolean PlayResource(const PURL & url, PINDEX repeat = 1, PINDEX delay = 0);
+    virtual PBoolean PlayResource(const PString & src, PINDEX repeat = 1, PINDEX delay = 0, PXMLElement * element = NULL);
     virtual PBoolean PlayTone(const PString & toneSpec, PINDEX repeat = 1, PINDEX delay = 0);
     virtual PBoolean PlayElement(PXMLElement & element);
 
@@ -431,8 +431,22 @@ class PVXMLSession : public PIndirectChannel, public PSSLCertificateInfo
       BlindTransfer,
       ConsultationTransfer
     };
+    // Return false if type not supported, other failures should be indicated via SetTransferStatus
     virtual bool OnTransfer(const PString & destination, TransferType type);
-    void SetTransferComplete(bool state);
+    P_DECLARE_TRACED_ENUM(TransferStatus,
+      NotTransfering,
+      TransferInProgress,
+      TransferCompleted,
+      // States after this are termination states
+      TransferSuccessful,
+      TransferBusy,
+      TransferCongestion,
+      TransferNoAnswer,
+      TransferUnknown,
+      TransferUnsupported,
+      TransferFailed
+    );
+    void SetTransferStatus(TransferStatus status, const PString & protocolError = PString::Empty());
 
     PStringToString GetVariables() const;
     virtual PCaselessString GetVar(const PString & varName) const;
@@ -471,7 +485,6 @@ class PVXMLSession : public PIndirectChannel, public PSSLCertificateInfo
 
     bool SetCurrentForm(const PString & id, bool fullURI);
     bool GoToEventHandler(PXMLElement & element, const PString & eventName, bool exitIfNotFound, bool firstInHierarchy);
-    PXMLElement * FindElementWithCount(PXMLElement & parent, const PString & name, unsigned count);
 
     // overrides from VXMLChannelInterface
     virtual void OnEndRecording(PINDEX bytesRecorded, bool timedOut);
@@ -544,6 +557,7 @@ class PVXMLSession : public PIndirectChannel, public PSSLCertificateInfo
     virtual bool ProcessNode();
     virtual bool ProcessEvents();
     virtual bool NextNode(bool processChildren);
+    void NextElseIfNode(PXMLElement & ifElement, PINDEX pos);
     bool SelectMenuChoice(PXMLElement & choice);
     bool ExecuteCondition(PXMLElement & element);
     void ClearBargeIn();
@@ -680,17 +694,14 @@ class PVXMLSession : public PIndirectChannel, public PSSLCertificateInfo
     PTime      m_recordingStartTime;
     PDirectory m_recordDirectory;
 
-    enum {
-      NotTransfering,
-      TransferInProgress,
-      TransferFailed,
-      TransferSuccessful,
-      TransferCompleted
-    }     m_transferStatus;
+    PXMLElement * m_transferElement;
+    TransferType m_transferType;
+    TransferStatus m_transferStatus;
+    PString m_transferError;
     PTime m_transferStartTime;
     PTimer m_transferTimeout;
     PDECLARE_NOTIFIER(PTimer, PVXMLSession, OnTransferTimeout);
-    void CompletedTransfer(PXMLElement & element);
+    void CompletedTransfer();
 
     friend class PVXMLChannel;
     friend class PVXMLMenuGrammar;
