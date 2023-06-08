@@ -2003,20 +2003,18 @@ void PVXMLSession::InternalThreadMain()
         ;
     } while (NextNode(processChildren));
 
-    if (m_closing) {
-      if (m_currentNode == NULL)
-        ProcessEvents(); // Move to connection.disconnect event
-    }
+    if (m_closing)
+      ProcessEvents(); // Move to connection.disconnect event
     else {
       /* Replace old XML with new, now it is safe to do so and no XML elements
           pointers are being referenced by the code any more */
       if (m_newXML.get() != NULL)
         InternalStartVXML();
-    }
 
-    // Determine if we should quit
-    if (m_currentNode != NULL)
-      continue;
+      // Determine if we have finished the dialog
+      if (m_currentNode != NULL)
+        continue;
+    }
 
     PTRACE(3, "End of VoiceXML elements.");
 
@@ -2082,6 +2080,7 @@ bool PVXMLSession::ProcessEvents()
                          : "connection.disconnect.hangup",
                      true,
                      true);
+    m_currentNode = NULL; // We are done
     return false;
   }
 
@@ -2281,6 +2280,9 @@ bool PVXMLSession::NextNode(bool processChildren)
                  " to=" << m_currentNode->PrintTrace());
           return false;
         }
+
+        if (m_promptMode == e_FinalProcessing)
+          return false;
 
         PTRACE(4, "Continue processing VoiceXML element: " << element->PrintTrace());
         m_currentNode = element;
