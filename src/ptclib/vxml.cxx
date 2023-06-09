@@ -2370,6 +2370,8 @@ bool PVXMLSession::ProcessNode()
       PTRACE_IF(4, !started, "Skipping VoiceXML element: " << element->PrintTrace());
       return started;
     }
+    if (m_currentNode == NULL)
+      return false;
 
     PTRACE(4, "Moved node after processing VoiceXML element:"
            " from=" << element->PrintTrace() << ","
