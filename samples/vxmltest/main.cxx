@@ -467,10 +467,10 @@ void TestInstance::OnEndSession()
 }
 
 
-bool TestInstance::OnTransfer(const PString & destination, TransferType type)
+PVXMLSession::TransferStatus TestInstance::OnTransfer(const PString & destination, TransferType type)
 {
   cout << "VXML Session " << type << " to " << destination << endl;
-  return true;
+  return TransferInProgress;
 }
 
 

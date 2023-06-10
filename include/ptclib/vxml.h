@@ -426,13 +426,11 @@ class PVXMLSession : public PIndirectChannel, public PSSLCertificateInfo
     virtual void OnEndDialog();
     virtual void OnEndSession();
 
-    enum TransferType {
+    P_DECLARE_TRACED_ENUM(TransferType,
       BridgedTransfer,
       BlindTransfer,
       ConsultationTransfer
-    };
-    // Return false if type not supported, other failures should be indicated via SetTransferStatus
-    virtual bool OnTransfer(const PString & destination, TransferType type);
+    );
     P_DECLARE_TRACED_ENUM(TransferStatus,
       NotTransfering,
       TransferInProgress,
@@ -446,6 +444,13 @@ class PVXMLSession : public PIndirectChannel, public PSSLCertificateInfo
       TransferUnsupported,
       TransferFailed
     );
+
+    /* Do the <transfer> operation.
+       Returns: TransferInProgress if proceeding with transfer,
+                TransferUnsupported if type not supported,
+                TransferFailed for most other error
+    */
+    virtual TransferStatus OnTransfer(const PString & destination, TransferType type);
     void SetTransferStatus(TransferStatus status, const PString & protocolError = PString::Empty());
 
     PStringToString GetVariables() const;
@@ -484,7 +489,8 @@ class PVXMLSession : public PIndirectChannel, public PSSLCertificateInfo
     );
 
     bool SetCurrentForm(const PString & id, bool fullURI);
-    bool GoToEventHandler(PXMLElement & element, const PString & eventName, bool exitIfNotFound, bool firstInHierarchy);
+    enum CatchHierarchy { e_CatchStarted, e_CatchNextDot, e_CatchNextScope };
+    bool GoToEventHandler(PXMLElement & element, const PString & eventName, bool exitIfNotFound, CatchHierarchy catchHierarchy = e_CatchStarted);
 
     // overrides from VXMLChannelInterface
     virtual void OnEndRecording(PINDEX bytesRecorded, bool timedOut);

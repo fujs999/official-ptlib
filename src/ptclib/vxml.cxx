@@ -127,10 +127,10 @@ static PConstString const CRLF("\r\n");
 #if PTRACING
   #define ThrowError2(session, element, errorName, reason) ( \
       PTRACE(2, errorName << " thrown in " << (element).PrintTrace() << " - " << reason), \
-      (session).GoToEventHandler(element, errorName, true, true) \
+      (session).GoToEventHandler(element, errorName, true) \
     )
 #else
-  #define ThrowError2(session, element, errorName, reason) (session).GoToEventHandler(element, errorName, true, true)
+  #define ThrowError2(session, element, errorName, reason) (session).GoToEventHandler(element, errorName, true)
 #endif
 
 #define ThrowSemanticError2(session, element, reason)  ThrowError2(session, element, ErrorSemantic, reason)
@@ -317,7 +317,7 @@ protected:
       PString name = element.GetName();
       if (name == CatchElement)
         name = element.GetAttribute(EventAttribute);
-      if (session.GoToEventHandler(*parent->GetParent(), name, false, false))
+      if (session.GoToEventHandler(*parent->GetParent(), name, false, PVXMLSession::e_CatchNextScope))
         return false;
     }
 
@@ -2078,9 +2078,7 @@ bool PVXMLSession::ProcessEvents()
                      m_transferStatus == TransferCompleted
                          ? "connection.disconnect.transfer"
                          : "connection.disconnect.hangup",
-                     true,
                      true);
-    m_currentNode = NULL; // We are done
     return false;
   }
 
@@ -2122,7 +2120,7 @@ bool PVXMLSession::ProcessEvents()
     if (element != NULL && element->GetName() == "record") {
       PTRACE(4, "Recording completed.");
       m_recordingStatus = NotRecording;
-      GoToEventHandler(*element, FilledElement, false, true);
+      GoToEventHandler(*element, FilledElement, false);
       return false;
     }
   }
@@ -2319,7 +2317,7 @@ bool PVXMLSession::SelectMenuChoice(PXMLElement & choice)
   if (next.empty() && EvaluateExpr(choice, EventExprAttribute, next))
     return true;
 
-  return !next.empty() && GoToEventHandler(choice, next, false, true);
+  return !next.empty() && GoToEventHandler(choice, next, false);
 }
 
 
@@ -2419,7 +2417,7 @@ PBoolean PVXMLSession::TraversedRecord(PXMLElement & element)
       return false;
 
     case RecordingComplete :
-      return !GoToEventHandler(element, FilledElement, false, true);
+      return !GoToEventHandler(element, FilledElement, false);
 
     default :
       break;
@@ -3299,15 +3297,18 @@ static ElementSet FindElementWithCount(PXMLElement & parent, const PString & nam
 
 // Finds the proper event hander for 'noinput', 'filled', 'nomatch' and 'error'
 // by searching the scope hiearchy from the current from
-bool PVXMLSession::GoToEventHandler(PXMLElement & element, const PString & eventName, bool exitIfNotFound, bool firstInHierarchy)
+bool PVXMLSession::GoToEventHandler(PXMLElement & element, const PString & eventName, bool exitIfNotFound, CatchHierarchy catchHierarchy)
 {
   if (eventName.empty())
     return false;
 
+  if (catchHierarchy == e_CatchStarted)
+    InternalSetVar(ApplicationScope, "_event", eventName);
+
   PXMLElement * level = &element;
   ElementSet handlers;
 
-  unsigned actualCount = firstInHierarchy ? ++m_eventCount[eventName] : m_eventCount[eventName];
+  unsigned actualCount = catchHierarchy != e_CatchNextScope ? ++m_eventCount[eventName] : m_eventCount[eventName];
 
   // Look in all the way up the tree for a handler either explicitly or in a catch
   while ((handlers = FindElementWithCount(*level, eventName, actualCount)).empty()) {
@@ -3322,7 +3323,7 @@ bool PVXMLSession::GoToEventHandler(PXMLElement & element, const PString & event
                                     ? static_cast<PString>(MatchAll)
                                     : eventName.Left(dot),
                                 exitIfNotFound,
-                                firstInHierarchy);
+                                e_CatchNextDot);
       }
 
       if (exitIfNotFound || m_closing) {
@@ -3336,8 +3337,6 @@ bool PVXMLSession::GoToEventHandler(PXMLElement & element, const PString & event
   PXMLElement * handler = *handlers.begin();
   handler->SetAttribute(InternalEventStateAttribute, true);
   PTRACE(4, "Setting event handler to node " << handler->PrintTrace() << " for \"" << eventName << "\" (" << actualCount << ')');
-  if (handler->GetName() == "catch")
-    InternalSetVar(ApplicationScope, "_event", eventName);
   return SetCurrentNode(handler);
 }
 
@@ -3650,9 +3649,8 @@ PBoolean PVXMLSession::TraversedTransfer(PXMLElement & element)
   if (PURL(dest).IsEmpty())
     return ThrowError(element, "error.connection.baddestination", "<transfer> invalid URL \"" << dest << '"');
 
-  m_transferStatus = TransferInProgress;
-  if (!OnTransfer(dest, m_transferType)) {
-    m_transferStatus = TransferUnsupported;
+  m_transferStatus = OnTransfer(dest, m_transferType);
+  if (m_transferStatus != TransferInProgress) {
     CompletedTransfer();
     return false;
   }
@@ -3672,9 +3670,9 @@ PBoolean PVXMLSession::TraversedTransfer(PXMLElement & element)
 }
 
 
-bool PVXMLSession::OnTransfer(const PString & /*destination*/, TransferType /*type*/)
+PVXMLSession::TransferStatus PVXMLSession::OnTransfer(const PString & /*destination*/, TransferType /*type*/)
 {
-  return false;
+  return TransferUnsupported;
 }
 
 
@@ -3686,11 +3684,22 @@ void PVXMLSession::OnTransferTimeout(PTimer&, P_INT_PTR)
 
 void PVXMLSession::SetTransferStatus(TransferStatus status, const PString & protocolError)
 {
-  PTRACE(3, "Transfer status " << status);
-  if (status != TransferSuccessful || m_transferType != BridgedTransfer)
-    m_transferStatus = status;
-  m_transferError = protocolError;
-  Trigger();
+  switch(m_transferStatus) {
+    case NotTransfering :
+      PTRACE(3, "Not transferring: ignoring status " << status);
+      break;
+
+    case TransferInProgress :
+      PTRACE(3, "Setting transfer status " << status);
+      if (status != TransferSuccessful || m_transferType != BridgedTransfer)
+        m_transferStatus = status;
+      m_transferError = protocolError;
+      Trigger();
+      break;
+
+    default :
+      PTRACE(3, "Transfer completed (" << m_transferStatus << "): ignoring new status " << status);
+  }
 }
 
 
@@ -3717,10 +3726,10 @@ void PVXMLSession::CompletedTransfer()
   m_scriptContext->CreateComposite(scope);
   InternalSetVar(scope, DurationAttribute, m_transferStartTime.GetElapsed().AsString(0, PTimeInterval::SecondsOnly));
 
-  PString value;
+  PString error;
   switch (m_transferStatus) {
     case TransferInProgress:
-      value = "near_end_disconnect";
+      InternalSetVar(DialogScope, name, "near_end_disconnect");
       break;
 
     case TransferSuccessful:
@@ -3729,38 +3738,37 @@ void PVXMLSession::CompletedTransfer()
       break;
 
     case TransferBusy:
-      value = "busy";
+      InternalSetVar(DialogScope, name, "busy");
       break;
 
     case TransferCongestion:
-      value = "network_busy";
+      InternalSetVar(DialogScope, name, "network_busy");
       break;
 
     case TransferNoAnswer:
-      value = "noanswer";
+      InternalSetVar(DialogScope, name, "noanswer");
       break;
 
     case TransferUnknown:
-      value = "unknown";
+      InternalSetVar(DialogScope, name, "unknown");
       break;
 
     case TransferUnsupported:
-      GoToEventHandler(*m_transferElement, UnsupportedError[m_transferType], true, true);
-      return;
+      InternalSetVar(DialogScope, name, "unsupported");
+      error = UnsupportedError[m_transferType];
+      break;
 
     default :
-      PString error = m_transferError;
-      if (error.empty())
-        error = "noroute";
-      GoToEventHandler(*m_transferElement, "error.connection." + error, true, true);
-      return;
+      if (m_transferError.empty())
+        error = "error.connection.noroute";
+      else
+        error = "error.connection." + m_transferError;
   }
 
-  if (!name.empty())
-    InternalSetVar(DialogScope, name, value);
-
-  if (m_currentNode == m_transferElement)
-    GoToEventHandler(*m_transferElement, FilledElement, false, true);
+  if (!error.empty())
+    GoToEventHandler(*m_transferElement, error, true);
+  else if (m_currentNode == m_transferElement)
+    GoToEventHandler(*m_transferElement, FilledElement, false);
 
   m_transferStatus = TransferCompleted;
 }
@@ -3827,7 +3835,7 @@ PBoolean PVXMLSession::TraverseAssign(PXMLElement & element)
 PBoolean PVXMLSession::TraverseDisconnect(PXMLElement & element)
 {
   m_promptMode = e_FinalProcessing;
-  return GoToEventHandler(element, "connection.disconnect.hangup", true, true);
+  return GoToEventHandler(element, "connection.disconnect.hangup", true);
 }
 
 
@@ -4348,7 +4356,7 @@ bool PVXMLGrammar::Process()
       return false;
   }
 
-  if (m_session.GoToEventHandler(m_field, handler, false, true))
+  if (m_session.GoToEventHandler(m_field, handler, false))
     return true;
 
   PTRACE(2, "Grammar: " << *this << ", restarting node " << PXMLObject::PrintTrace(&m_field));

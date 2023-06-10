@@ -29,7 +29,7 @@ class TestInstance : public PVXMLSession
 
     virtual void OnEndDialog() override;
     virtual void OnEndSession() override;
-    virtual bool OnTransfer(const PString & destination, TransferType type) override;
+    virtual TransferStatus OnTransfer(const PString & destination, TransferType type) override;
 
   protected:
     unsigned             m_instance;
