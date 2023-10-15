@@ -256,7 +256,11 @@ class SRVRecord : public PObject
   PCLASSINFO(SRVRecord, PObject);
   public:
     SRVRecord()
-    { used = false; }
+      : used(false)
+      , port(0)
+      , priority(0)
+      , weight(0)
+    { }
 
     Comparison Compare(const PObject & obj) const override;
     void PrintOn(ostream & strm) const override;
@@ -269,8 +273,13 @@ class SRVRecord : public PObject
     WORD weight;
 };
 
-PDECLARE_SORTED_LIST(SRVRecordList, PDNS::SRVRecord)
+class SRVRecordList : public PSortedList<PDNS::SRVRecord>
+{
   public:
+    SRVRecordList()
+      : priPos(0)
+    { }
+
     void PrintOn(ostream & strm) const override;
 
     SRVRecord * GetFirst();
@@ -343,18 +352,25 @@ class MXRecord : public PObject
   PCLASSINFO(MXRecord, PObject);
   public:
     MXRecord()
-    { used = false; }
+      : used(false)
+      , preference(0)
+    { }
     Comparison Compare(const PObject & obj) const override;
     void PrintOn(ostream & strm) const override;
 
     PString            hostName;
     PIPSocket::Address hostAddress;
-    PBoolean               used;
+    bool               used;
     WORD               preference;
 };
 
-PDECLARE_SORTED_LIST(MXRecordList, PDNS::MXRecord)
+class MXRecordList : public PSortedList<PDNS::MXRecord>
+{
   public:
+    MXRecordList()
+      : lastIndex(0)
+    { }
+
     void PrintOn(ostream & strm) const override;
 
     MXRecord * GetFirst();

@@ -58,8 +58,15 @@ class NAPTRRecord : public PObject
     PString replacement;
 };
 
-PDECLARE_SORTED_LIST(NAPTRRecordList, PDNS::NAPTRRecord)
+class NAPTRRecordList : public PSortedList<PDNS::NAPTRRecord>
+{
   public:
+    NAPTRRecordList()
+      : currentPos(0)
+      , lastOrder(0)
+      , orderLocked(false)
+    { }
+
     void PrintOn(ostream & strm) const override;
 
     NAPTRRecord * GetFirst(const char * service = NULL);
@@ -73,7 +80,7 @@ PDECLARE_SORTED_LIST(NAPTRRecordList, PDNS::NAPTRRecord)
   protected:
     PINDEX     currentPos;
     int        lastOrder;
-    PBoolean       orderLocked;
+    bool       orderLocked;
 };
 
 inline PBoolean GetRecords(const PString & domain, NAPTRRecordList & recordList)
